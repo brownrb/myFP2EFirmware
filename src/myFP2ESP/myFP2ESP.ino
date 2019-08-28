@@ -359,6 +359,12 @@ char programName[]  = "myFP2E.L293DMINI";
 #if( DRVBRD == PRO2ESP32L293DMINI)
 char programName[]  = "myFP2ESP32.L293DMINI";
 #endif
+#if( DRVBRD == PRO2EL9110S)
+char programName[]  = "myFP2E.L9110S";
+#endif
+#if( DRVBRD == PRO2ESP32L9110S)
+char programName[]  = "myFP2ESP32.L9110S";
+#endif
 DriverBoard* driverboard;
 #endif
 
@@ -1831,25 +1837,7 @@ void loop()
         else
           fcurrentPosition--;
         steppermotormove(DirOfTravel);
-#ifdef OLEDDISPLAY
-        if ( mySetupData->get_displayenabled() == 1)
-        {
-          if ( mySetupData->get_lcdupdateonmove() == 1 )
-          {
-            updatecount++;
-            if ( updatecount > LCDUPDATEONMOVE )
-            {
-              updatecount = 0;
-#ifdef OLEDGRAPHICS
-              // TODO Holger
-#endif
-#ifdef OLEDTEXT
-              UpdatePositionOledText();       // update position on lcd when moving
-#endif
-            } //  if ( updatecount > LCDUPDATEONMOVE )
-          } // if ( mySetupData->get_lcdupdateonmove() == 1 )
-        } // if ( mySetupData->get_displayenabled() == 1)
-#endif
+
       }
       else
       {
