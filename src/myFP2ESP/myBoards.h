@@ -76,7 +76,7 @@
 //------------------------------------------------------------------------------------------------------
 // DEFINES FOR ESP8266 BOARDS
 //------------------------------------------------------------------------------------------------------
-#if( CHIPMODEL == NODEMCUV1)            // ESP8266
+#if( CHIPMODEL == NODEMCUV1 || CHIPMODEL == WEMOS)            // ESP8266
 #define DRV8825DIR            13
 #define DRV8825STEP           12
 #define DRV8825ENABLE         14
@@ -133,7 +133,7 @@
 //------------------------------------------------------------------------------------------------------
 // DEFINES FOR ESP32 BOARDS
 //------------------------------------------------------------------------------------------------------
-#if( CHIPMODEL == ESP32VROOM)           // ESP32 VROOM
+#if( CHIPMODEL == ESP32WROOM)           // ESP32 WROOM
 #define DRV8825DIR            32        // drv8825 driver board
 #define DRV8825STEP           33        // drv8825 driver board
 #define DRV8825ENABLE         14        // drv8825 driver board
@@ -190,7 +190,7 @@
 #define L9110SSLOW            8000              // do not use values > 15000 due to accuracy issues
 #endif
 
-#if (CHIPMODEL != PRO2EDRV8825 || CHIPMODEL != PRO2ESP32DRV8825 )
+#if (DRVBRD != PRO2EDRV8825 || DRVBRD != PRO2ESP32DRV8825 )
 #include "HalfStepperESP32.h"
 #endif
 
@@ -214,7 +214,7 @@ class DriverBoard
     void setmotorspeed(byte);
 
   private:
-#if (CHIPMODEL != PRO2EDRV8825 || CHIPMODEL != PRO2ESP32DRV8825 )
+#if (DRVBRD != PRO2EDRV8825 || DRVBRD != PRO2ESP32DRV8825 )
     HalfStepper* mystepper;
 #endif
     int inputPins[4];                             // The input pin numbers

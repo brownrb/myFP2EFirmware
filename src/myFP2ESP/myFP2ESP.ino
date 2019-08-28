@@ -3,29 +3,30 @@
 // ESP8266 Supports OLED display, Temperature Probe
 // ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's. Infrared Remote
 // Remember to change your target CPU depending on board selection
-
+//
 // (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
 // (c) Copyright Holger M, 2019, who wrote large portions of code for state machine and esp comms
-
+//
 // CONTRIBUTIONS
 // If you wish to make a small contribution in thanks for this project, please use PayPal and send the amount
 // to user rbb1brown@gmail.com (Robert Brown). All contributions are gratefully accepted.
-
-// Bugs:
-// Reverse Direction does not seem to work??
-
+//
 // 1. Set your DRVBRD [section 1] in this file so the correct driver board is used
 // 2. Set your chipmodel in chipModels.h so that pins are mapped correctly
 // 3. Set your target CPU to match the chipModel you defined
 // 4. Set the correct hardware options [section 4] in this file to match your hardware
 // 5. Compile and upload to your controller
-
+//
 // ----------------------------------------------------------------------------------------------------------
-// PCB BOARDS
+// PCB BOARDS 
 // ----------------------------------------------------------------------------------------------------------
-// ULN2003    https://aisler.net/p/QVXMBSWW
-// DRV8825    https://aisler.net/p/QVXMBSWW
-
+// ESP8266
+//    ULN2003    https://aisler.net/p/QVXMBSWW
+//    DRV8825    https://aisler.net/p/QVXMBSWW
+// ESP32
+//    ULN2003
+//    DRV8825
+//
 // ----------------------------------------------------------------------------------------------
 // 1: SPECIFY DRIVER BOARD HERE
 // ----------------------------------------------------------------------------------------------
@@ -47,6 +48,7 @@
 // FOR ESP8266 DRV8825 YOU MUST CHANGE DRV8825TEPMODE TO MATCH MS1/2/3 JUMPERS ON PCB
 // YOU DO THIS IN myBoards.h file
 
+// DO NOT CHANGE
 #ifndef DRVBRD    // error checking, please do NOT change
 #halt // ERROR you must have DRVBRD defined
 #endif
@@ -61,7 +63,7 @@
 // ----------------------------------------------------------------------------------------------
 // Remember to set CHIPMODEL to the correct chip you using in chipModels.h
 
-// Remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
+// For ESP8266, remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
 // ----------------------------------------------------------------------------------------------------------
 // 4: SPECIFY HARDWARE OPTIONS HERE
@@ -78,18 +80,19 @@
 // To enable backlash in this firmware, uncomment the next line
 #define BACKLASH 1
 
-// To enable In and Out Pushbuttons in this firmware, uncomment the next line [only available on ESP32]
+// To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
 
-// To enable In and Out LEDS in this firmware, uncomment the next line [only available on ESP32]
+// To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTLEDS 1
 
-// To enable the Infrared remote controller, uncomment the next line [only available on ESP32]
+// To enable the Infrared remote controller, uncomment the next line [ESP32 only]
 //#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 #define SHOWSTARTSCRN 1
 
+// DO NOT CHANGE
 #if (DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N \
   || DRVBRD == PRO2EL293DMINI || DSRVBRD == PRO2EL9110S)
 // no support for pushbuttons, inout leds, irremote
@@ -111,6 +114,7 @@
 //#define OLEDGRAPHICS 1
 #define OLEDTEXT 2
 
+// DO NOT CHANGE
 #ifndef OLEDGRAPHICS
 #ifndef OLEDTEXT
 #halt //ERROR - you must have either OLEDGRAPHICS or OLEDTEXT defined
@@ -127,7 +131,7 @@
 // 6: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
 // ----------------------------------------------------------------------------------------------
 
-// to enable Bluetooth mode, uncomment the next line [only available on ESP32]
+// to enable Bluetooth mode, uncomment the next line [ESP32 only]
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
@@ -136,7 +140,7 @@
 // to work as a station accessing a AP, define stationmode
 //#define STATIONMODE 1
 
-// CHECK DEFINES FOR CONFLICTS - DO NOT CHANGE
+// DO NOT CHANGE
 #ifdef ACCESSPOINT
 #ifdef STATIONMODE
 #halt // ERROR - Cannot have both ACCESSPOINT and STATIONMODE defined at the same time
@@ -202,6 +206,7 @@ const char* duckdnsdomain = "myfp2erobert.duckdns.org";
 const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 
+// DO NOT CHANGE
 #ifdef USEDUCKSDNS
 #include <EasyDDNS.h>             // https://github.com/ayushsharma82/EasyDDNS
 #endif

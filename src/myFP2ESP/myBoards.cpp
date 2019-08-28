@@ -2,9 +2,6 @@
 
 #include "myBoards.h"
 
-// myBoard.cpp
-// Routines for DRV8825, ULN2003 driver boards
-
 // this is DRV8825 constructor
 DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd) : boardtype(brdtype), boardname(brdname)
 {

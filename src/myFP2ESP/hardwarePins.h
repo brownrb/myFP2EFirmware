@@ -3,6 +3,10 @@
 #ifndef hardwarePins_h
 #define hardwarePins_h
 
+// Here you can set up different pins for your board depending on chipmodel
+// Pins such as used for temperature probe, i2c bus
+// Pins used for the driver board are defined within myBoards.h
+
 #if (CHIPMODEL == WEMOS)                  // esp8266
 #define CHIPESP8266         1
 #define TEMPPIN             2             // ds18b20 temperature probe WEMOS D1 mini => here we need some clever idea!!!!
@@ -17,7 +21,7 @@
 #define OLED_ADDR           0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address
 #endif // nodemcuv1
 
-#if (CHIPMODEL == ESP32VROOM)             // esp32 vroom dev, 30p device
+#if (CHIPMODEL == ESP32WROOM)             // esp32 wroom dev, 30p device
 #define CHIPESP32           2
 #define I2CDATAPIN          21            // i2c for oled 
 #define I2CCLOCKPIN         22
@@ -28,6 +32,6 @@
 #define OUTPB               35            // has 10K pullup resistor, so will be active low
 #define IRPIN               15            // Infra-red remote controller 
 #define OLED_ADDR           0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address
-#endif // esp32vroom
+#endif // esp32wroom
 
 #endif // hardwarePins.h
