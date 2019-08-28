@@ -18,7 +18,7 @@
 // 5. Compile and upload to your controller
 //
 // ----------------------------------------------------------------------------------------------------------
-// PCB BOARDS 
+// PCB BOARDS
 // ----------------------------------------------------------------------------------------------------------
 // ESP8266
 //    ULN2003    https://aisler.net/p/QVXMBSWW
@@ -31,9 +31,9 @@
 // 1: SPECIFY DRIVER BOARD HERE
 // ----------------------------------------------------------------------------------------------
 // DRIVER BOARDS - Please specify your driver board here, only 1 can be defined, see DRVBRD line
-#include "myBoards.h"
+#include "myBoardTypes.h"
 
-// Set DRVBRD to the correct driver board above, ONLY ONE!!!!
+//Set DRVBRD to the correct driver board above, ONLY ONE!!!!
 #define DRVBRD PRO2EDRV8825
 //#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EL298N
@@ -53,11 +53,16 @@
 #halt // ERROR you must have DRVBRD defined
 #endif
 
+// DO NOT CHANGE - Order is very important
+#include "chipModels.h"             // include chip definitions
+#include "hardwarePins.h"           // include pin mappings for temp probe etc
+#include "myBoards.h"               // include mappings for driver boards and driver board routines
+
 // ----------------------------------------------------------------------------------------------
 // 2: SPECIFY STEPPER MOTOR HERE
 // ----------------------------------------------------------------------------------------------
 // ONLY NEEDED FOR L293D MOTOR SHIELD - ALL OTHER BOARDS PLEASE IGNORE
-//
+
 // ----------------------------------------------------------------------------------------------
 // 3: SPECIFY ESP32/ESP8266 CHIP TYPE
 // ----------------------------------------------------------------------------------------------
@@ -1651,7 +1656,7 @@ void setup()
 #endif
 
 #ifdef INFRAREDREMOTE
-  irrecv.enableIRIn();                      // Start the IR
+  irrecv.enableIRIn();                              // Start the IR
 #endif
 
 #ifdef INOUTLEDS
@@ -1842,7 +1847,27 @@ void loop()
         else
           fcurrentPosition--;
         steppermotormove(DirOfTravel);
-
+#ifdef OLEDDISPLAY
+        if ( mySetupData->get_displayenabled() == 1)
+        {
+          if ( mySetupData->get_lcdupdateonmove() == 1 )
+          {
+            updatecount++;
+            if ( updatecount > LCDUPDATEONMOVE )
+            {
+              delay(5);
+              updatecount = 0;
+#ifdef OLEDGRAPHICS
+              // TODO Holger - updates position and target values on OLED when moving
+              // UpdatePositionOledGraphics();  // ????
+#endif
+#ifdef OLEDTEXT
+              UpdatePositionOledText();
+#endif
+            }
+          }
+        }
+#endif
       }
       else
       {

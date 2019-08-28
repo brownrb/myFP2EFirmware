@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "myBoards.h"
+#include "myBoardTypes.h"
 
 // this is DRV8825 constructor
 DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd) : boardtype(brdtype), boardname(brdname)
@@ -20,22 +21,38 @@ DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd, by
   {
     case PRO2EULN2003:
     case PRO2ESP32ULN2003:
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
       mystepper = new HalfStepper(STEPSPERREVOLUTION, pin1, pin2, pin3, pin4);
+#endif
       this->stepdelay = ULNFAST;
       break;
     case PRO2EL298N:
     case PRO2ESP32L298N:
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
       mystepper = new HalfStepper(STEPSPERREVOLUTION, pin1, pin2, pin3, pin4);
+#endif
       this->stepdelay = L298NFAST;
       break;
     case PRO2EL293DMINI:
     case PRO2ESP32L293DMINI:
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
       mystepper = new HalfStepper(STEPSPERREVOLUTION, pin1, pin2, pin3, pin4);
+#endif
       this->stepdelay = L293DMINIFAST;
       break;
     case PRO2EL9110S:
     case PRO2ESP32L9110S:
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
       mystepper = new HalfStepper(STEPSPERREVOLUTION, pin1, pin2, pin3, pin4);
+#endif
       this->stepdelay = L9110SFAST;
       break;
     default:
@@ -84,15 +101,30 @@ void DriverBoard::setstepmode(byte smode)
       {
         case STEP1:
           this->stepmode = STEP1;
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
+          // put this inside DRVBRD test else compiler throws a fit on next line
           mystepper->SetSteppingMode(SteppingMode::FULL);
+#endif
           break;
         case STEP2:
           this->stepmode = STEP2;
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
+          // put this inside DRVBRD test else compiler throws a fit on next line
           mystepper->SetSteppingMode(SteppingMode::HALF);
+#endif
           break;
         default:
           smode = STEP1;
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
+          // put this inside DRVBRD test else compiler throws a fit on next line
           mystepper->SetSteppingMode(SteppingMode::FULL);
+#endif
           this->stepmode = smode;
           break;
       }
@@ -194,7 +226,12 @@ void DriverBoard::movemotor(byte dir)
     case PRO2ESP32L293DMINI:
     case PRO2EL9110S:
     case PRO2ESP32L9110S:
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
+      // put this inside DRVBRD test else compiler throws a fit on next line
       (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
+#endif
       delayMicroseconds(this->stepdelay);
       break;
   }

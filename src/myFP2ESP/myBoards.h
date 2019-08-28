@@ -3,67 +3,9 @@
 #ifndef myBoards_h
 #define myBoards_h
 
-#include "chipModels.h"
-#include "hardwarePins.h"
-
-#ifndef PRO2EDRV8825
-#define PRO2EDRV8825          35         // if using a drv8825 you also need to set DRV8825STEPMODE in myBoards.h
-#endif
-#ifndef PRO2EULN2003
-#define PRO2EULN2003          36
-#endif
-#ifndef PRO2EL293D
-#define PRO2EL293D            37
-#endif
-#ifndef PRO2EL298N
-#define PRO2EL298N            38         // uses PCB layout for ULN2003
-#endif
-#ifndef PRO2EL293DMINI
-#define PRO2EL293DMINI        39         // uses PCB layout for ULN2003
-#endif
-#ifndef PRO2EL9110S
-#define PRO2EL9110S           40         // uses PCB layout for ULN2003
-#endif
-#ifndef PRO2ESP32DRV8825
-#define PRO2ESP32DRV8825      41
-#endif
-#ifndef PRO2ESP32ULN2003
-#define PRO2ESP32ULN2003      42
-#endif
-#ifndef PRO2ESP32L298N
-#define PRO2ESP32L298N        43
-#endif
-#ifndef PRO2ESP32L293DMINI
-#define PRO2ESP32L293DMINI    44         // uses PCB layout for ULN2003
-#endif
-#ifndef PRO2ESP32L9110S
-#define PRO2ESP32L9110S       45         // uses PCB layout for ULN2003
-#endif
-
-#ifndef SLOW
-#define SLOW                  0           // motorspeeds
-#endif
-#ifndef MED
-#define MED                   1
-#endif
-#ifndef FAST
-#define FAST                  2
-#endif
-
-#define STEP1                 1
-#define STEP2                 2
-#define STEP4                 4
-#define STEP8                 8
-#define STEP16                16
-#define STEP32                32
-
-#define MOTORSPEEDCHANGETHRESHOLD 200
-// You can set the speed of the motor when performing backlash to SLOW, MED or FAST
-#define BACKLASHSPEED         SLOW
-
-// YOU MUST CHANGE THIS TO MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
-#define DRV8825TEPMODE        STEP16    // jumpers MS1/2/3 on the PCB for ESP8266
-
+// ----------------------------------------------------------------------------------------------
+// 1: SPECIFY STEPS PER REVOLUTION FOR ULN2003, L298N, L293DMINI, L9110S BOARDS
+// ----------------------------------------------------------------------------------------------
 // stepper motor steps per full revolution using full steps - Non DRV8825 boards require this to be set
 #define STEPSPERREVOLUTION 2048          // 28BYJ-48 stepper motor unipolar with ULN2003 board  
 // #define STEPSPERREVOLUTION  200        // NEMA17
@@ -72,6 +14,20 @@
 // #define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 // #define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
 // #define STEPSPERREVOLUTION 1036        // NEMA16HS13-0604S-PG5
+
+// ----------------------------------------------------------------------------------------------
+// 2: SPECIFY STEP MODE FOR ESP8266 DRV8825 BOARD
+// ----------------------------------------------------------------------------------------------
+//#define DRV8825TEPMODE        STEP1    // jumpers MS1/2/3 on the PCB for ESP8266
+//#define DRV8825TEPMODE        STEP2    // jumpers MS1/2/3 on the PCB for ESP8266
+//#define DRV8825TEPMODE        STEP4    // jumpers MS1/2/3 on the PCB for ESP8266
+//#define DRV8825TEPMODE        STEP6    // jumpers MS1/2/3 on the PCB for ESP8266
+#define DRV8825TEPMODE        STEP16    // jumpers MS1/2/3 on the PCB for ESP8266
+//#define DRV8825TEPMODE        STEP32    // jumpers MS1/2/3 on the PCB for ESP8266
+
+#define MOTORSPEEDCHANGETHRESHOLD 200
+// You can set the speed of the motor when performing backlash to SLOW, MED or FAST
+#define BACKLASHSPEED         SLOW
 
 //------------------------------------------------------------------------------------------------------
 // DEFINES FOR ESP8266 BOARDS
@@ -190,8 +146,10 @@
 #define L9110SSLOW            8000              // do not use values > 15000 due to accuracy issues
 #endif
 
-#if (DRVBRD != PRO2EDRV8825 || DRVBRD != PRO2ESP32DRV8825 )
-#include "HalfStepperESP32.h"
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
+#include <HalfStepperESP32.h>
 #endif
 
 class DriverBoard
@@ -214,7 +172,9 @@ class DriverBoard
     void setmotorspeed(byte);
 
   private:
-#if (DRVBRD != PRO2EDRV8825 || DRVBRD != PRO2ESP32DRV8825 )
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
+ || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
+ || DRVBRD == PRO2ESP32L9110S )
     HalfStepper* mystepper;
 #endif
     int inputPins[4];                             // The input pin numbers
