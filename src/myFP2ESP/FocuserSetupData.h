@@ -1,23 +1,6 @@
 #include <Arduino.h>
 
-#ifndef SLOW
-#define SLOW  0 // motorspeeds
-#endif
-#ifndef MED
-#define MED   1
-#endif
-#ifndef FAST
-#define FAST  2
-#endif
-
-#ifndef DEFAULTSTEPSIZE
-#define DEFAULTSTEPSIZE 50.0 // This is the default setting for the step size in microns
-#endif
-#ifndef TEMP_PRECISION
-#define TEMP_PRECISION  10   // Set the default DS18B20 precision to 0.25 of a degree 9=0.5, 10=0.25, 11=0.125, 12=0.0625
-#endif
-#define moving_in false
-#define moving_out !moving_in
+#include "generalDefinitions.h"
 
 #define Mode_EEPROM true
 #define Mode_SPIFFS !Mode_EEPROM

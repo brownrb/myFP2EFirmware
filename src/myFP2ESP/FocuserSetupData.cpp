@@ -9,29 +9,34 @@
 #endif
 
 #include "FocuserSetupData.h"
+#include "generalDefinitions.h"
 
 SetupData::SetupData(byte set_mode)
 {
-  Serial.begin(115200);
-
-  Serial.println("Constructor Setupdata");
+  DebugPrintln("Constructor Setupdata");
 
   this->mode = set_mode;
   if (mode == Mode_EEPROM)
-    Serial.println(F("Mode: EEPROM"));
+  {
+    DebugPrintln(F("Mode: EEPROM"));
+  }
   else
-    Serial.println(F("Mode: SPIFFS"));
+  {
+    DebugPrintln(F("Mode: SPIFFS"));
+  }
 
   this->DataAssign = 0;
   this->SnapShotMillis = millis();
 
   // mount SPIFFS
   if (!SPIFFS.begin()) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    DebugPrintln("An Error has occurred while mounting SPIFFS");
     return;
   }
   else
-    Serial.println("SPIFFS mounted");
+  {
+    DebugPrintln("SPIFFS mounted");
+  }
 
   this->LoadConfiguration();
 };
@@ -47,7 +52,7 @@ byte SetupData::LoadConfiguration()
 
   file = SPIFFS.open(filename_vaiable, "r");
   if (!file) {
-    Serial.println("no config file variable data found, load default values");
+    DebugPrintln("no config file variable data found, load default values");
     LoadDefaultVariableData();
     retval = 1;
   }
@@ -58,7 +63,7 @@ byte SetupData::LoadConfiguration()
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_var, file);
     if (error) {
-      Serial.println(F("Failed to read variable data file, using default configuration"));
+      DebugPrintln(F("Failed to read variable data file, using default configuration"));
       LoadDefaultVariableData();
       retval = 2;
     }
@@ -69,7 +74,7 @@ byte SetupData::LoadConfiguration()
     }
   }
   file.close();
-  Serial.println(F("config file variable data loaded"));
+  DebugPrintln(F("config file variable data loaded"));
   return retval;
 }
 
@@ -131,7 +136,9 @@ byte SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTrave
     if (DataAssign & 1)
     {
       if (SavePersitantConfiguration() == false)
-        Serial.println(F("Error save persitant configuration"));
+      {
+        DebugPrintln(F("Error save persitant configuration"));
+      }
       status |= 1;
       DataAssign &= (byte) ~1;   // clear bit0
     }
@@ -139,7 +146,9 @@ byte SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTrave
     if (DataAssign & 2)
     {
       if (SaveVariableConfiguration() == false)
-        Serial.println(F("Error save variable configuration"));
+      {
+        DebugPrintln(F("Error save variable configuration"));
+      }
       status |= 2;
       DataAssign &= (byte) ~2;   // clear bit1
     }
@@ -153,7 +162,7 @@ byte SetupData::SavePersitantConfiguration()
 
   File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
   if (!file) {
-    Serial.println(F("Failed to create file for persitant data"));
+    DebugPrintln(F("Failed to create file for persitant data"));
     return false;
   }
 
@@ -186,7 +195,7 @@ byte SetupData::SavePersitantConfiguration()
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0) {
-    Serial.println("Failed to write to file");
+    DebugPrintln("Failed to write to file");
     file.close();     // Close the file
     return false;
   }
@@ -205,7 +214,7 @@ byte SetupData::SaveVariableConfiguration()
   // Open file for writing
   File file = SPIFFS.open(this->filename_vaiable, "w");
   if (!file) {
-    Serial.println(F("Failed to create file for variable data"));
+    DebugPrintln(F("Failed to create file for variable data"));
     return false;
   }
 
@@ -220,7 +229,7 @@ byte SetupData::SaveVariableConfiguration()
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0) {
-    Serial.println("Failed to write to file");
+    DebugPrintln("Failed to write to file");
     file.close();     // Close the file
     return false;
   }

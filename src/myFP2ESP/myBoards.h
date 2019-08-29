@@ -3,9 +3,13 @@
 #ifndef myBoards_h
 #define myBoards_h
 
-// ----------------------------------------------------------------------------------------------
-// 1: SPECIFY STEPS PER REVOLUTION FOR ULN2003, L298N, L293DMINI, L9110S BOARDS
-// ----------------------------------------------------------------------------------------------
+#include "generalDefinitions.h"
+#include "chipModels.h"
+#include "hardwarePins.h"
+
+// YOU MUST CHANGE THIS TO MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
+#define DRV8825TEPMODE        STEP16    // jumpers MS1/2/3 on the PCB for ESP8266
+
 // stepper motor steps per full revolution using full steps - Non DRV8825 boards require this to be set
 #define STEPSPERREVOLUTION 2048          // 28BYJ-48 stepper motor unipolar with ULN2003 board  
 // #define STEPSPERREVOLUTION  200        // NEMA17
@@ -14,20 +18,6 @@
 // #define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 // #define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
 // #define STEPSPERREVOLUTION 1036        // NEMA16HS13-0604S-PG5
-
-// ----------------------------------------------------------------------------------------------
-// 2: SPECIFY STEP MODE FOR ESP8266 DRV8825 BOARD
-// ----------------------------------------------------------------------------------------------
-//#define DRV8825TEPMODE        STEP1    // jumpers MS1/2/3 on the PCB for ESP8266
-//#define DRV8825TEPMODE        STEP2    // jumpers MS1/2/3 on the PCB for ESP8266
-//#define DRV8825TEPMODE        STEP4    // jumpers MS1/2/3 on the PCB for ESP8266
-//#define DRV8825TEPMODE        STEP6    // jumpers MS1/2/3 on the PCB for ESP8266
-#define DRV8825TEPMODE        STEP16    // jumpers MS1/2/3 on the PCB for ESP8266
-//#define DRV8825TEPMODE        STEP32    // jumpers MS1/2/3 on the PCB for ESP8266
-
-#define MOTORSPEEDCHANGETHRESHOLD 200
-// You can set the speed of the motor when performing backlash to SLOW, MED or FAST
-#define BACKLASHSPEED         SLOW
 
 //------------------------------------------------------------------------------------------------------
 // DEFINES FOR ESP8266 BOARDS
@@ -149,7 +139,7 @@
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
  || DRVBRD == PRO2ESP32L9110S )
-#include <HalfStepperESP32.h>
+#include "HalfStepperESP32.h"
 #endif
 
 class DriverBoard

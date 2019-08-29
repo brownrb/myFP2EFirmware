@@ -34,8 +34,8 @@
 #include "myBoardTypes.h"
 
 //Set DRVBRD to the correct driver board above, ONLY ONE!!!!
-#define DRVBRD PRO2EDRV8825
-//#define DRVBRD PRO2EULN2003
+//#define DRVBRD PRO2EDRV8825
+#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EL298N
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
@@ -54,6 +54,7 @@
 #endif
 
 // DO NOT CHANGE - Order is very important
+#include "generalDefinitions.h"
 #include "chipModels.h"             // include chip definitions
 #include "hardwarePins.h"           // include pin mappings for temp probe etc
 #include "myBoards.h"               // include mappings for driver boards and driver board routines
@@ -160,20 +161,7 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 7. DEBUGGING                                       // do not change - leave this commented out
-// ----------------------------------------------------------------------------------------------
-//#define DEBUG     1
-
-#ifdef DEBUG                                          //Macros are usually in all capital letters.
-#define DebugPrint(...) Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
-#define DebugPrintln(...) Serial.println(__VA_ARGS__) //DPRINTLN is a macro, debug print with new line
-#else
-#define DebugPrint(...)                               //now defines a blank line
-#define DebugPrintln(...)                             //now defines a blank line
-#endif
-
-// ----------------------------------------------------------------------------------------------
-// 8. INCLUDES FOR WIFI
+// 7. INCLUDES FOR WIFI
 // ----------------------------------------------------------------------------------------------
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
@@ -191,7 +179,7 @@
 #include <WiFiServer.h>
 
 // ----------------------------------------------------------------------------------------------------------
-// 9. WIFI NETWORK SSID AND PASSWORD CONFIGURATION
+// 8. WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------------------
 // 1. For access point mode this is the network you connect to
 // 2. For station mode, change these to match your network details
@@ -199,12 +187,12 @@ const char* mySSID = "myfp2eap";
 const char* myPASSWORD = "myfp2eap";
 
 // ----------------------------------------------------------------------------------------------------------
-// 10. DUCKDNS DOMAIN AND TOKEN CONFIGURATION
+// 9. DUCKDNS DOMAIN AND TOKEN CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // To use DucksDNS, uncomment the next line - can only be used together with STATIONMODE
 //#define USEDUCKSDNS 1
 
-// if using DuckDNS you need to set these next two parameters, and enable the define statement for USEDUCKSDNS
+// if using DuckDNS you need to set these next two parameters
 // cannot use DuckDNS with ACCESSPOINT mode
 #ifdef DUCKDNS
 const char* duckdnsdomain = "myfp2erobert.duckdns.org";
@@ -223,7 +211,7 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 
 // ----------------------------------------------------------------------------------------------------------
-// 11. STATIC IP ADDRESS CONFIGURATION
+// 10. STATIC IP ADDRESS CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // must use static IP if using duckdns or as an Access Point
 #define STATICIPON    1
@@ -249,7 +237,7 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // ----------------------------------------------------------------------------------------------------------
-// 12. FIRMWARE CODE START - INCLUDES AND LIBRARIES
+// 11. FIRMWARE CODE START - INCLUDES AND LIBRARIES
 // ----------------------------------------------------------------------------------------------------------
 // Compile this with Arduino IDE 1.8.9 with ESP8266 Core library installed v2.5.2 [for ESP8266]
 // Make sure target board is set to Node MCU 1.0 (ESP12-E Module) [for ESP8266]
@@ -282,7 +270,7 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // ----------------------------------------------------------------------------------------------------------
-// 13. BLUETOOTH MODE - Do not change
+// 12. BLUETOOTH MODE - Do not change
 // ----------------------------------------------------------------------------------------------------------
 #ifdef BLUETOOTHMODE
 #include "BluetoothSerial.h"                // needed for Bluetooth comms
@@ -298,34 +286,7 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
 
 // ----------------------------------------------------------------------------------------------------------
-// 14. GLOBAL DEFINES YOU CAN CHANGE - THESE CAN ONLY BE CONFIGURED AT COMPILE TIME
-// ----------------------------------------------------------------------------------------------------------
-// CHANGE AT YOUR PERIL
-
-#define SERVERPORT          2020
-#define TEMPREFRESHRATE     2000L         // refresh rate between temperature conversions unless an update is requested via serial command
-#define SERIALPORTSPEED     115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
-
-#define EEPROMSIZE          512           // use 512 locations 
-#define EEPROMWRITEINTERVAL 15000         // interval in milliseconds to wait after a move before writing settings to EEPROM, 15s
-#define VALIDDATAFLAG       99            // 01100011 valid eeprom data flag
-#define LCDUPDATEONMOVE     15            // defines how many steps before refreshing position when moving if lcdupdateonmove is 1
-#define TEMP_PRECISION      10            // Set the default DS18B20 precision to 0.25 of a degree 9=0.5, 10=0.25, 11=0.125, 12=0.0625
-#define MOTORSPEEDCHANGETHRESHOLD   200
-#define MOVINGIN            0             // moving focuser inwards towards 0 or home
-#define MOVINGOUT           1             // moving focuser outwars towards maxstep
-#define FOCUSERUPPERLIMIT   2000000000L   // arbitary focuser limit up to 2000000000
-#define FOCUSERLOWERLIMIT   1024L         // lowest value that maxsteps can be
-#define DEFAULTSTEPSIZE     50.0          // This is the default setting for the step size in microns
-#define LCDPAGETIMEMIN      2             // 2s minimum lcd page display time
-#define LCDPAGETIMEMAX      10            // 10s maximum lcd page display time
-
-#define ESPDATA             0
-#define BTDATA              1
-#define QUEUELENGTH         20            // number of commands that can be saved in the serial queue
-
-// ----------------------------------------------------------------------------------------------------------
-// 15. GLOBAL DATA -- DO NOT CHANGE
+// 13. GLOBAL DATA -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------------------
 
 //  StateMachine definition
@@ -898,7 +859,11 @@ void ESP_Communication( byte mode )
       SendPaket('F' + String(programName) + '#');
       break;
     case 6: // get temperature
+#ifdef TEMPERATUREPROBE
       SendPaket('Z' + String(readtemp(0), 3) + '#');
+#else
+      SendPaket("Z20.00#");
+#endif
       break;
     case 8: // get maxStep
       SendPaket('M' + String(mySetupData->get_maxstep()) + '#');
@@ -1373,27 +1338,47 @@ void setup()
 #ifdef OLEDGRAPHICS
   // TODO Holger to check for graphics OLED
   Wire.begin();
+  // should check chiptype here
   myoled = new SSD1306Wire(OLED_ADDR , I2CDATAPIN, I2CCLOCKPIN);
   myoled->init();
   myoled->flipScreenVertically();
   myoled->setFont(ArialMT_Plain_10);
   myoled->setTextAlignment(TEXT_ALIGN_LEFT);
   myoled.clear();
-#endif
+#endif // oledgraphics
 #ifdef OLEDTEXT
-  Wire.begin(I2CDATAPIN, I2CCLOCKPIN);
-  Wire.setClock(400000L);
-  // Setup the OLED, screen size is 128 x 64, so using characters at 6x8 this gives 21chars across and 8 lines down
-  myoled->begin(&Adafruit128x64, OLED_ADDR);
-  myoled->setFont(Adafruit5x7);               // Set font
-  myoled->clear();                            // clrscr OLED
+#if (CHIPMODEL == NODEMCUV1)
+  Wire.begin();
 #endif
+#if (CHIPMODEL == WEMOS)
+  Wire.begin();
+#endif
+#if (CHIPMODEL == ESP32WROOM)
+  Wire.begin();
+#endif
+  myoled = new SSD1306AsciiWire();
+  delay(5);
+  // Setup the OLED
+  myoled->begin(&Adafruit128x64, OLED_ADDR);
+  delay(5);
+  myoled->set400kHz();
+  myoled->setFont(Adafruit5x7);
+  myoled->clear();                                 // clrscr OLED
+  myoled->Display_Normal();                        // black on white
+  delay(5);
+  myoled->Display_On();                            // display ON
+  myoled->Display_Rotate(0);                       // portrait, not rotated
+  myoled->Display_Bright();
+  delay(5);
 #ifdef SHOWSTARTSCRN
   myoled->println(programName);               // print startup screen
   myoled->println(programVersion);
+  delay(5);
   myoled->println(ProgramAuthor);
-#endif
-#endif
+#endif // showstartscreen
+#endif // oledtext
+#endif // oleddisplay
+
   delay(250);                                 // keep delays small otherwise issue with ASCOM
 
   DebugPrint(F("fposition : "));              // Print Loaded Values from SPIFF
@@ -1665,15 +1650,26 @@ void setup()
 #endif
 
 #ifdef OLEDDISPLAY
+#ifdef OLEDGRAPHICS
+  // TODO Holger
+#endif
+#ifdef OLEDTEXT
   myoled->clear();
   myoled->println("End setup()");
+  if ( mySetupData->get_displayenabled() == 0 )
+  {
+    myoled->println("Display is disabled");
+  }
   delay(5);
+#endif
 #endif
 
   motorspeedchangethresholdsteps = MOTORSPEEDCHANGETHRESHOLD;
   motorspeedchangethresholdenabled = 0;
   isMoving = 0;
+#ifdef TEMPERATUREPROBE
   readtemp(1);
+#endif
 }
 
 //_____________________ loop()___________________________________________

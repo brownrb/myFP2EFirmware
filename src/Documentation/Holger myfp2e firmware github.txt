@@ -1,0 +1,95 @@
+main ino now has several sections 
+Basic steps to follow in configuring software are listed 
+// 1. Set your DRVBRD [section 1] in this file so the correct driver board is used
+// 2. Set your chipmodel in chipModels.h so that pins are mapped correctly
+// 3. Set your target CPU to match the chipModel you defined
+// 4. Set the correct hardware options [section 4] in this file to match your hardware
+// 5. Compile and upload to your controller
+
+Section1: 
+All esp8266 boards are PRO2Exxxxxx
+All esp32 boards are PRO2ESP32xxxxx
+Uncomment the correct one (see myBoards.h for the defines for pins used for driver board)
+
+Section3:
+Specify chip type - go into chipModel.h file and uncomment correct chip type
+Either WEMOS, NODEMCUV1 or ESP32
+
+Section 4:
+Defines for options like temperature probe etc
+
+Section 5: GRAPHICS OR TEXT OLED
+You can select OLEDGRAPHICS or OLEDTEXT. This means you are now free to do your own
+use of OLED without other changes - All you need to do is enclose code using
+#ifdef OLEDDISPLAY
+#ifdef OLEDGRAPHICS
+.... code here
+#endif
+#endif
+
+i have already added a bit for you - eg [look for TODO Holger]
+
+// OLED DISPLAY ROUTINES
+#ifdef OLEDDISPLAY
+#ifdef OLEDGRAPHICS
+// TODO Holger to fill in routines for graphics display
+// called by update_oledgraphics()
+
+void Update_OledGraphics(void)
+{
+  // TODO Holger
+}
+#endif // oledgraphics
+
+
+Section 6: Add bluetooth for ESP32
+
+
+EXTRA FILES
+
+generalDefinitions
+I have moved definitions for Debug, stepsize, stepmode, speed etc to this file. It helps unclutter the main file.
+If you need to add some definitions, this is the place for general ones especially those used in the main ino file. If they are specific to wemos best place would be hardwarePins.h for things linke temp probe and I2c. For Wemos pins used for driver board then do that in myBoards.h using #if(CHIPMODEL=WEMOS)
+
+ESPQueue
+required to handle Bluetooth commands. This means changes had to be made to ESP_Communication()
+to be able to detect a command origin from BT or TCPIP
+
+hardwarePins
+Contains definitions for pins used by i2c, temperature probe depending on chip model
+
+myBoards
+defines now for all supported driver boards, if you want to change a pin you can create a 
+define based on chipModel and change the pins
+eg
+#if( CHIPMODEL == WEMOS)            // ESP8266
+#define DRV8825DIR            10
+#define DRV8825STEP           14
+#define DRV8825ENABLE         12
+#define MOTORPULSETIME        2           // must be al least 2us, time in microseconds
+#define DRVFAST               1           // delays for motorspeed in microseconds
+#define DRVMED                2000
+#define DRVSLOW               10000
+#endif
+
+
+chipModels
+defines for wemos, nodemcuv1, esp32 already done
+additional could be added
+
+
+libaries - coded to work with esp8266 or esp32
+halfstepperesp32
+irremoteesp32
+myoled (text based oled)
+
+
+Other bug fizes
+FocuserSetupData.cpp changes
+I removed the Serial. commands and replaced these with Debug commands as its cleaner.
+
+case 6: // get temperature - now enclosed in #ifdef 
+
+in setup() moved readtemp() to end of setup to prevent delay incurred in reading temp first time
+
+changes had to be made to ESP_Communication() to handle bluetooth or tcpip

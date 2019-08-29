@@ -42,36 +42,4 @@
 #define PRO2ESP32L9110S       45         // uses PCB layout for ULN2003
 #endif
 
-// ----------------------------------------------------------------------------------------------
-// 2: GENERAL DEFINES -- DO NOT CHANGE
-// ----------------------------------------------------------------------------------------------
-#ifndef SLOW
-#define SLOW                  0           // motorspeeds
-#endif
-#ifndef MED
-#define MED                   1
-#endif
-#ifndef FAST
-#define FAST                  2
-#endif
-
-#ifndef STEP1
-#define STEP1                 1           // stepmodes
-#endif
-#ifndef STEP2
-#define STEP2                 2
-#endif
-#ifndef STEP4
-#define STEP4                 4
-#endif
-#ifndef STEP8
-#define STEP8                 8
-#endif
-#ifndef STEP16
-#define STEP16                16
-#endif
-#ifndef STEP32
-#define STEP32                32
-#endif
-
 #endif
