@@ -48,6 +48,7 @@ After specifying the target board type as NodeMCU v1, you will need to set the F
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
 - myOLED
 - IRREMOTEESP32
+- HalfStepperESP32
 
 Do not edit or replace any of these library files with others.
 
@@ -74,27 +75,31 @@ One firmware file supports all driver boards [a different file supports the L293
 The controller supports the modes ACCESSPOINT and STATION for ESP8266 with an additional BLUETOOTHMODE for the ESP32. 
 
 # Command Process Handler Routine
-At present a single command process handler manages received commands. This must handle each ontroller mode, so some variables had to be made global to do this.
+At present a single command process handler manages received commands for either Bluetooth [ESP32 only] of TCP/IP. This must handle each ontroller mode, so some variables had to be made global to do this.
 
 # FocuserSetupData.cpp and .h files
 At present these must be in the same folder as the .ino file, but will later migrate to a library. These files handle the SPIFFS data, saving, restoring and persistance of controller settings. For the ESP8266, there is a now shift away from the use of EEPROM to using a JSON file stored in the file system SPIFFS area.
 
 # myBoards.cpp and .h files
-This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There are two constructors for this class, the user should never have to change the main code within the firmware file which sets up the driver boards.
+This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There are two constructors for this class, the user should never have to change the main code within the firmware file which sets up the driver boards. Pins mappings between the controller chip and the driver board are specified here.
 
 #hardwarePins.h
-This file specifies the pin mappings for each driver board. Do not change unless you have made your own board and require the pins to be different.
+This file specifies the pin mappings for I2C, temperature probes, Push buttons etc for each driver board. Do not change unless you have made your own board and require the pins to be different.
 
 #chipModels.h
-This file specifies the chip type being used. The three main chips are WEMOS (ESP8266), NODEMCUV1 (ESP8266 12E) and ESP32VROOM (ESP32). You must set the CHIPMODEL to the correct chip in this file. When that is done the harware pins mappings are automatically assigned correctly.
+This file specifies the chip type being used. The three main chips are WEMOS (ESP8266), NODEMCUV1 (ESP8266 12E) and ESP32WROOM (ESP32). You must set the CHIPMODEL to the correct chip in this file. When that is done the harware pins mappings are automatically assigned correctly.
+
+#generalDefinitions.h
+This file contains general definitions for all controllers, such as motor speed, step modes, focuser limits etc.
 
 #ESPQueue.h
 This file manages the Bluetooth serial data for ESP32 chips. It is a modified version of the Queue.h file from Steven de Salas. DO NOT MODIFY THIS FILE. It has been modified to work with ESP8266 and ESP32 chips.
 
-#HalfStepperESP32.h and HalfStepperESP32.cpp
-This file manages the stepping modes for the ULN2003, L298N, L293DMINI and L9110S driver boards. It is a modified version of the HalfStepper library from Tom Biuso. DO NOT MODIFY THESE FILES. It has been modified to work with ESP8266 and ESP32 chips.
+#HalfStepperESP32 Library
+This library manages the stepping modes for the ULN2003, L298N, L293DMINI and L9110S driver boards. It is a modified version of the HalfStepper library from Tom Biuso. DO NOT MODIFY THESE FILES. It has been modified to work with ESP8266 and ESP32 chips.
 
 #IRRemoteESP32 Library
+This library manages communication with an Infra-Red controller. The Library is based on one created by Ken Shirriff but has been modified wto work with ESP8266 and ESP32 chips. DO NOT MODIFY THESE FILES.
 
 #myOLED Libary
 This is a special cut down version of the SSD1306AsciiWire library by Bill Greiman. The library has been reduced in size and a number of additional features added. DO NOT MODIFY THESE FILES.
