@@ -437,7 +437,13 @@ void releasesteppermotor(void)
 
 void steppermotormove(byte dir )           // direction move_in, move_out ^ reverse direction
 {
+#ifdef INOUTLEDS
+ ( dir == move_in ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
+#endif
   driverboard->movemotor(dir);
+#ifdef INOUTLEDS
+ ( dir == move_in ) ? digitalWrite(INLED, 0) : digitalWrite(OUTLED, 0);
+#endif
 }
 
 // TEMPERATURE PROBE ROUTINES
