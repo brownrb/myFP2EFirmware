@@ -17,9 +17,9 @@
 // 4. Set the correct hardware options [section 4] in this file to match your hardware
 // 5. Compile and upload to your controller
 //
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // PCB BOARDS
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // ESP8266
 //    ULN2003    https://aisler.net/p/QVXMBSWW
 //    DRV8825    https://aisler.net/p/QVXMBSWW
@@ -71,9 +71,9 @@
 
 // For ESP8266, remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 4: SPECIFY HARDWARE OPTIONS HERE
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // Caution: Do not enable a feature if you have not added the associated hardware circuits to support that feature
 // Enable or disable the specific hardware below
 
@@ -178,15 +178,15 @@
 
 #include <WiFiServer.h>
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 8. WIFI NETWORK SSID AND PASSWORD CONFIGURATION
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 1. For access point mode this is the network you connect to
 // 2. For station mode, change these to match your network details
 const char* mySSID = "myfp2eap";
 const char* myPASSWORD = "myfp2eap";
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 9. DUCKDNS DOMAIN AND TOKEN CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // To use DucksDNS, uncomment the next line - can only be used together with STATIONMODE
@@ -210,7 +210,7 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 #endif
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 10. STATIC IP ADDRESS CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // must use static IP if using duckdns or as an Access Point
@@ -236,9 +236,9 @@ IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 #endif
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 11. FIRMWARE CODE START - INCLUDES AND LIBRARIES
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // Compile this with Arduino IDE 1.8.9 with ESP8266 Core library installed v2.5.2 [for ESP8266]
 // Make sure target board is set to Node MCU 1.0 (ESP12-E Module) [for ESP8266]
 
@@ -269,9 +269,9 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 #endif
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 12. BLUETOOTH MODE - Do not change
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 #ifdef BLUETOOTHMODE
 #include "BluetoothSerial.h"                // needed for Bluetooth comms
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -285,9 +285,9 @@ String BLUETOOTHNAME = "MYFP3ESP32BT";      // default name for Bluetooth contro
 BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
 
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // 13. GLOBAL DATA -- DO NOT CHANGE
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
 #define State_Idle            0
@@ -398,9 +398,9 @@ int packetssent;
 
 SetupData *mySetupData;
 
-// ----------------------------------------------------------------------------------------------------------
-// 16. CODE START - CHANGE AT YOUR OWN PERIL
-// ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
+// 14. CODE START - CHANGE AT YOUR OWN PERIL
+// ----------------------------------------------------------------------------------------------
 
 void software_Reboot()
 {
@@ -1220,21 +1220,21 @@ void ESP_Communication( byte mode )
 void update_pushbuttons(void)
 {
   long newpos;
-  // as PB use their own input pins, using if else will only read INPB if both PB are pushed
-  if ( digitalRead(INPB == 0 ))       // is pushbutton pressed?
+  // PB are active high - pins float low if unconnected
+  if ( digitalRead(INPB) == 1 )       // is pushbutton pressed?
   {
     delay(20);                        // software debounce delay
-    if ( digitalRead(INPB == 0 ))     // if still pressed
+    if ( digitalRead(INPB) == 1 )     // if still pressed
     {
       newpos = ftargetPosition - 1;
       newpos = (newpos < 0 ) ? 0 : newpos;
       ftargetPosition = newpos;
     }
   }
-  else if ( digitalRead(OUTPB == 0 ))
+  if ( digitalRead(OUTPB) == 1 )
   {
     delay(20);
-    if ( digitalRead(OUTPB == 0 ))
+    if ( digitalRead(OUTPB) == 1 )
     {
       newpos = ftargetPosition + 1;
       // an unsigned long range is 0 to 4,294,967,295
@@ -1329,7 +1329,7 @@ void setup()
   digitalWrite(OUTLED, 1);
 #endif
 
-#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons
+#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
   pinMode(INPB, INPUT);
   pinMode(OUTPB, INPUT);
 #endif
@@ -1724,7 +1724,7 @@ void loop()
   }
 #endif // end Bluetoothmode
 
-#ifdef PUSHBUTTONS
+#ifdef INOUTPUSHBUTTONS
   update_pushbuttons();
 #endif
 
