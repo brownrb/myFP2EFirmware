@@ -34,8 +34,8 @@
 #define TEMPPIN             13            // ds18b20 temperature probe
 #define INLED               18            // IN direction LED, prewired
 #define OUTLED              19            // OUT direction LED, prewired
-#define INPB                34            // has 10K pullup resistor, so will be active low
-#define OUTPB               35            // has 10K pullup resistor, so will be active low
+#define INPB                34            // has 10K pulldown resistor, so will be active high
+#define OUTPB               35            // has 10K pulldown resistor, so will be active high
 #define IRPIN               15            // Infra-red remote controller 
 #define OLED_ADDR           0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address
 #endif // esp32wroom
