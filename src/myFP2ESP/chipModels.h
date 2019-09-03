@@ -9,8 +9,8 @@
 
 // Select the correct chip model, see hardwarePins.h for pin mapping
 //#define CHIPMODEL WEMOS
-#define CHIPMODEL NODEMCUV1
-//#define CHIPMODEL ESP32WROOM
+//#define CHIPMODEL NODEMCUV1
+#define CHIPMODEL ESP32WROOM
 
 
 #endif

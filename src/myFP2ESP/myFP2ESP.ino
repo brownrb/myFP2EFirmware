@@ -35,12 +35,12 @@
 
 //Set DRVBRD to the correct driver board above, ONLY ONE!!!!
 //#define DRVBRD PRO2EDRV8825
-#define DRVBRD PRO2EULN2003
+// #define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EL298N
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 //#define DRVBRD PRO2ESP32DRV8825
-//#define DRVBRD PRO2ESP32ULN2003
+#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
@@ -78,13 +78,13 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment the next line
-#define OLEDDISPLAY 1
+//#define OLEDDISPLAY 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
@@ -96,7 +96,7 @@
 //#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
-#define SHOWSTARTSCRN 1
+//#define SHOWSTARTSCRN 1
 
 // DO NOT CHANGE
 #if (DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N \
@@ -163,11 +163,9 @@
 // ----------------------------------------------------------------------------------------------
 // 7. INCLUDES FOR WIFI
 // ----------------------------------------------------------------------------------------------
+#include <WiFiServer.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-#include <SPI.h>
-#include "FocuserSetupData.h"
-// WIFI STUFF + SPIFFS => differed includes on differend boards
 #if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE automatic 
 #include <ESP8266WiFi.h>
 #include <FS.h>                             // Include the SPIFFS library  
@@ -175,8 +173,9 @@
 #include <WiFi.h>
 #include "SPIFFS.h"
 #endif
-
-#include <WiFiServer.h>
+#include <SPI.h>
+#include "FocuserSetupData.h"
+// WIFI STUFF + SPIFFS => differed includes on different boards
 
 // ----------------------------------------------------------------------------------------------
 // 8. WIFI NETWORK SSID AND PASSWORD CONFIGURATION
@@ -346,14 +345,15 @@ char offtxt[]         = "OFF";
 char coilpwrtxt[]     = "Coil power  =";
 char revdirtxt[]      = "Reverse Dir =";
 
-unsigned long fcurrentPosition;          // current focuser position
-unsigned long ftargetPosition;           // target position
+unsigned long fcurrentPosition;         // current focuser position
+unsigned long ftargetPosition;          // target position
 unsigned long tmppos;
 
 byte tprobe1;                           // indicate if there is a probe attached to myFocuserPro2
 byte isMoving;                          // is the motor currently moving
 byte motorspeedchangethresholdsteps;    // step number where when pos close to target motor speed changes
 byte motorspeedchangethresholdenabled;  // used to enable/disable motorspeedchange when close to target position
+String ipStr;                           // shared between BT mode and other modes
 
 #ifdef BLUETOOTHMODE
 Queue queue(QUEUELENGTH);               // receive serial queue of commands
@@ -379,12 +379,8 @@ DeviceAddress tpAddress;                // holds address of the temperature prob
 IPAddress ESP32IPAddress;
 String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
-int status = WL_IDLE_STATUS;
-boolean ClientConnected = 0;
-boolean LastClientConnected = 0;
 WiFiClient myclient;                    // only one client supported, multiple connections denied
 IPAddress myIP;
-String ipStr;
 long rssi;
 #endif // ifndef BLUETOOTHMODE
 
@@ -408,8 +404,12 @@ void software_Reboot()
   myoled->clear();
   myoled->print("Controller reboot");
 #endif
+#ifndef BLUETOOTHMODE
   if ( myclient.connected() )
+  {
     myclient.stop();
+  }
+#endif
   delay(1000);
   ESP.restart();
 }
@@ -438,11 +438,11 @@ void releasesteppermotor(void)
 void steppermotormove(byte dir )           // direction move_in, move_out ^ reverse direction
 {
 #ifdef INOUTLEDS
- ( dir == move_in ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
+  ( dir == move_in ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
 #endif
   driverboard->movemotor(dir);
 #ifdef INOUTLEDS
- ( dir == move_in ) ? digitalWrite(INLED, 0) : digitalWrite(OUTLED, 0);
+  ( dir == move_in ) ? digitalWrite(INLED, 0) : digitalWrite(OUTLED, 0);
 #endif
 }
 
@@ -452,15 +452,21 @@ float readtemp(byte new_measurement)
 {
   static float lasttemp = 20.0;                 // start temp value
   if (!new_measurement)
+  {
     return lasttemp;                            // return latest measurement
+  }
 
   float result = sensor1.getTempCByIndex(0);    // get channel 1 temperature, always in celsius
   DebugPrint(F("Temperature = "));
   DebugPrintln(result);
   if (result > -40.0 && result < 80.0)
+  {
     lasttemp = result;
+  }
   else
+  {
     result = lasttemp;
+  }
   return result;
 }
 
@@ -826,7 +832,9 @@ void ESP_Communication( byte mode )
     case ESPDATA:
       // for Accesspoint or Station mode
       packetsreceived++;
+#ifndef BLUETOOTHMODE
       receiveString = myclient.readStringUntil('#'); // read until terminator    break;
+#endif
 #ifdef BLUETOOTHMODE
     case BTDATA:
       // for bluetooth
@@ -844,8 +852,6 @@ void ESP_Communication( byte mode )
   DebugPrintln(cmdstr);
   DebugPrint(F("- cmdval="));
   DebugPrintln(cmdval);
-  DebugPrint(F("- WorkString="));
-  DebugPrintln(WorkString);
   switch (cmdval)
   {
     // all the get go first followed by set
@@ -862,7 +868,7 @@ void ESP_Communication( byte mode )
       SendPaket('F' + String(programVersion) + '#');
       break;
     case 4: // get firmware name
-      SendPaket('F' + String(programName) + '#');
+      SendPaket('F' + String(programName) + '\r' + '\n' + String(programVersion) + '#');
       break;
     case 6: // get temperature
 #ifdef TEMPERATUREPROBE
@@ -942,7 +948,7 @@ void ESP_Communication( byte mode )
       SendPaket('f' + String(packetsreceived) + '#');
       break;
     case 54: // gstr#  return ESP32 Controller SSID
-      SendPaket('g' + String(mySSID)+ '#');
+      SendPaket('g' + String(mySSID) + '#');
       break;
     case 62: // get update of position on lcd when moving (00=disable, 01=enable)
       SendPaket('L' + String(mySetupData->get_lcdupdateonmove()) + '#');
@@ -1257,59 +1263,56 @@ void update_pushbuttons(void)
 void update_irremote()
 {
   // check IR
-  if ( isMoving == 0 )                  // do not update if focuser is already moving - just wait
+  if (irrecv.decode(&results))
   {
-    if (irrecv.decode(&results))
+    int adjpos = 0;
+    static long lastcode;
+    if ( results.value == 4294967295 )
     {
-      int adjpos = 0;
-      static long lastcode;
-      if ( results.value == 4294967295 )
-      {
-        results.value = lastcode;       // repeat last code
-      }
-      else
-      {
-        lastcode = results.value;
-      }
-      switch ( lastcode )
-      {
-        case 16753245:                  // CH- IN -1 SLOW
-          adjpos = -1;
-          mySetupData->set_motorSpeed(SLOW);
-          break;
-        case 16769565:                  // CH+ OUT +1 SLOW
-          adjpos = 1;
-          mySetupData->set_motorSpeed(SLOW);
-          break;
-        case 16720605:                  // |<< IN -10 MEDIUM
-          adjpos = -10;
-          mySetupData->set_motorSpeed(MED);
-          break;
-        case 16761405:                  // >>| OUT +10 MEDIUM
-          adjpos = 10;
-          mySetupData->set_motorSpeed(MED);
-          break;
-        case 16769055:                  // '-' IN -50 FAST
-          adjpos = -50;
-          mySetupData->set_motorSpeed(FAST);
-          break;
-        case 16748655:                  // 'EQ' OUT +50 FAST
-          adjpos = 50;
-          mySetupData->set_motorSpeed(FAST);
-          break;
-        case 16738455 :                 // 0 RESET POSITION TO 0
-          adjpos = 0;
-          ftargetPosition = 0;
-          fcurrentPosition = 0;
-          break;
-      }
-      setstepperspeed(mySetupData->get_motorSpeed());      // set the correct delay based on motorSpeed
-      irrecv.resume();                                    // Receive the next value
-      long newPos = fcurrentPosition + adjpos;            // adjust the target position
-      newPos = (newPos < 0 ) ? 0 : newPos;
-      newPos = (newPos > (long) mySetupData->get_maxstep() ) ? (long) mySetupData->get_maxstep() : newPos;
-      ftargetPosition = newPos;
+      results.value = lastcode;       // repeat last code
     }
+    else
+    {
+      lastcode = results.value;
+    }
+    switch ( lastcode )
+    {
+      case 16753245:                  // CH- IN -1 SLOW
+        adjpos = -1;
+        mySetupData->set_motorSpeed(SLOW);
+        break;
+      case 16769565:                  // CH+ OUT +1 SLOW
+        adjpos = 1;
+        mySetupData->set_motorSpeed(SLOW);
+        break;
+      case 16720605:                  // |<< IN -10 MEDIUM
+        adjpos = -10;
+        mySetupData->set_motorSpeed(MED);
+        break;
+      case 16761405:                  // >>| OUT +10 MEDIUM
+        adjpos = 10;
+        mySetupData->set_motorSpeed(MED);
+        break;
+      case 16769055:                  // '-' IN -50 FAST
+        adjpos = -50;
+        mySetupData->set_motorSpeed(FAST);
+        break;
+      case 16748655:                  // 'EQ' OUT +50 FAST
+        adjpos = 50;
+        mySetupData->set_motorSpeed(FAST);
+        break;
+      case 16738455 :                 // 0 RESET POSITION TO 0
+        adjpos = 0;
+        ftargetPosition = 0;
+        fcurrentPosition = 0;
+        break;
+    }
+    setstepperspeed(mySetupData->get_motorSpeed());      // set the correct delay based on motorSpeed
+    irrecv.resume();                                    // Receive the next value
+    long newPos = fcurrentPosition + adjpos;            // adjust the target position
+    newPos = (newPos < 0 ) ? 0 : newPos;
+    newPos = (newPos > (long) mySetupData->get_maxstep() ) ? (long) mySetupData->get_maxstep() : newPos;
+    ftargetPosition = newPos;
   }
 }
 #endif
@@ -1326,6 +1329,7 @@ void setup()
   SerialBT.begin(BLUETOOTHNAME);            // Bluetooth device name
   btline = "";
   clearbtPort();
+  DebugPrintln(F("Bluetooth started."));
 #endif
 
 #ifdef INOUTLEDS                            // Setup IN and OUT LEDS, use as controller power up indicator
@@ -1387,7 +1391,7 @@ void setup()
 
   delay(250);                                 // keep delays small otherwise issue with ASCOM
 
-  DebugPrint(F("fposition : "));              // Print Loaded Values from SPIFF
+  DebugPrint(F(" fposition : "));             // Print Loaded Values from SPIFF
   DebugPrintln(mySetupData->get_fposition());
   DebugPrint(F(" focuserdirection : "));
   DebugPrintln(mySetupData->get_focuserdirection());
@@ -1474,18 +1478,20 @@ void setup()
 #endif // end TEMPERATUREPROBE
 
   // this is setup as an access point - your computer connects to this, cannot use DUCKDNS
-#ifdef ACCESSPOINTMODE
+#ifdef ACCESSPOINT
 #ifdef OLEDDISPLAY
   myoled->clear();
-  myoled->println("Setup Access Point");
+  myoled->println("Start Access Point");
 #endif
+  DebugPrintln(F("Start Access point"));
   WiFi.config(ip, dns, gateway, subnet);
   WiFi.mode(WIFI_AP);
   WiFi.softAP(mySSID, myPASSWORD);
-#endif // end ACCESSPOINTMODE
+#endif // end ACCESSPOINT
 
   // this is setup as a station connecting to an existing wifi network
 #ifdef STATIONMODE
+  DebugPrintln(F("Start Station mode"));
   if (staticip == STATICIPON)                       // if staticip then set this up before starting
   {
     DebugPrintln(F("Static IP defined. Setting up static ip now"));
@@ -1503,7 +1509,7 @@ void setup()
 #ifdef OLEDDISPLAY
   myoled->println(F("Setup Station Mode"));
 #endif
-  status = WiFi.begin(mySSID, myPASSWORD);          // attempt to start the WiFi
+  byte status = WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi
   delay(1000);                                      // wait 500ms
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -1543,12 +1549,16 @@ void setup()
 
 #ifndef BLUETOOTHMODE
   // Starting TCP Server
+  DebugPrintln(F("Start TCP Server"));
+#ifdef OLEDDISPLAY
+  myoled->println(F("Start TCP Server"));
+#endif
+
   myserver.begin();
+  DebugPrintln(F("Get local IP address"));
   ESP32IPAddress = WiFi.localIP();
   delay(100);                                       // keep delays small else issue with ASCOM
-#ifdef OLEDDISPLAY
-  myoled->println(F("Start Server"));
-#endif // end BLUETOOTHMODE
+  DebugPrintln(F("TCP Server started"));
 
   // set packet counts to 0
   packetsreceived = 0;
@@ -1626,9 +1636,12 @@ void setup()
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() < 0.0 ) ? 0 : mySetupData->get_stepsize());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > DEFAULTSTEPSIZE ) ? DEFAULTSTEPSIZE : mySetupData->get_stepsize());
 
+  DebugPrintln(F("Check coilpower."));
+
   if (mySetupData->get_coilpower() == 0)
   {
     driverboard->releasemotor();
+    DebugPrintln(F("Coil power released."));
   }
 
   delay(5);
@@ -1670,12 +1683,15 @@ void setup()
 #endif
 #endif
 
+  DebugPrintln(F("Set motorspeedchange."));
   motorspeedchangethresholdsteps = MOTORSPEEDCHANGETHRESHOLD;
   motorspeedchangethresholdenabled = 0;
   isMoving = 0;
+
 #ifdef TEMPERATUREPROBE
   readtemp(1);
 #endif
+  DebugPrintln(F("Setup end."));
 }
 
 //_____________________ loop()___________________________________________
@@ -1689,6 +1705,7 @@ void loop()
   static byte backlash_enabled = 0;
   static byte updatecount = 0;
 
+#ifndef BLUETOOTHMODE
   if (ConnectionStatus < 2)
   {
     myclient = myserver.available();
@@ -1721,8 +1738,12 @@ void loop()
     else
       ConnectionStatus = 1;
   }
-
+#endif
 #ifdef BLUETOOTHMODE
+  if ( SerialBT.available() )
+  {
+    processbt();
+  }
   // if there is a command from Bluetooth
   if ( queue.count() >= 1 )                 // check for serial command
   {
@@ -1731,11 +1752,17 @@ void loop()
 #endif // end Bluetoothmode
 
 #ifdef INOUTPUSHBUTTONS
-  update_pushbuttons();
+  if ( isMoving == 0 )
+  {
+    updatepushbuttons();
+  }
 #endif
 
 #ifdef INFRAREDREMOTE
-  update_irremote();
+  if ( isMoving == 0 )
+  {
+    updateirremote();
+  }
 #endif
 
   switch (MainStateMachine)
@@ -1908,9 +1935,9 @@ void clearbtPort()
   }
 }
 
-// btSerialEvent checks for bluetooth data
-void btserialEvent()
+void processbt()
 {
+  // SerialBT.read() only returns a single char so build a command line one char at a time
   // : starts the command, # ends the command, do not store these in the command buffer
   // read the command until the terminating # character
   while (SerialBT.available() )
