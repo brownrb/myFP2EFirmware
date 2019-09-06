@@ -17,6 +17,14 @@ DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd) : 
 // this is constructor for ULN2003, L298N, L9110S and L293DMINI driver boards
 DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd, byte pin1, byte pin2, byte pin3, byte pin4) : boardtype(brdtype), boardname(brdname)
 {
+  // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
+  this->inputPins[0] = pin1;
+  this->inputPins[1] = pin2;
+  this->inputPins[2] = pin3;
+  this->inputPins[3] = pin4;
+  for (int inputCount = 0; inputCount < 4; inputCount++) {
+    pinMode(this->inputPins[inputCount], OUTPUT);
+  }
   switch ( boardtype )
   {
     case PRO2EULN2003:
@@ -58,13 +66,6 @@ DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd, by
     default:
       // do nothing
       break;
-  }
-  this->inputPins[0] = pin1;
-  this->inputPins[1] = pin2;
-  this->inputPins[2] = pin3;
-  this->inputPins[3] = pin4;
-  for (int inputCount = 0; inputCount < 4; inputCount++) {
-    pinMode(this->inputPins[inputCount], OUTPUT);
   }
   Step = 0;
   setstepmode( smode );
@@ -185,9 +186,7 @@ void DriverBoard::releasemotor(void)
 
 void DriverBoard::movemotor(byte dir)
 {
-#ifdef INOUTLEDS
-  ( dir == 1 ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
-#endif
+  // handling of inout leds when moving done in main code
   switch (this->boardtype)
   {
     case PRO2EDRV8825:
@@ -235,9 +234,6 @@ void DriverBoard::movemotor(byte dir)
       delayMicroseconds(this->stepdelay);
       break;
   }
-#ifdef INOUTLEDS
-  ( dir == 1 ) ? digitalWrite(INLED, 0) : digitalWrite(OUTLED, 0);
-#endif
 }
 
 void DriverBoard::setstepdelay(int sdelay)

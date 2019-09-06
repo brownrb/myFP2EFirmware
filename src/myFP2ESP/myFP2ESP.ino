@@ -338,7 +338,7 @@ char programName[]  = "myFP2ESP32.L9110S";
 DriverBoard* driverboard;
 #endif
 
-char programVersion[] = "228";
+char programVersion[] = "100";
 char ProgramAuthor[]  = "(c) R BROWN 2018";
 char ontxt[]          = "ON ";
 char offtxt[]         = "OFF";
@@ -1437,7 +1437,7 @@ void setup()
   DebugPrintln(F("Start temperature sensor"));
 #ifdef OLEDDISPLAY
   myoled->clear();
-  myoled->println(F("Check for temp probe"));
+  myoled->println(F("Check for Tprobe"));
 #endif
   sensor1.begin();                            // start the temperature sensor1
   DebugPrintln(F("Get number of temperature sensors"));
@@ -1472,7 +1472,7 @@ void setup()
   {
     DebugPrintln(F("Temperature probe address not found"));
 #ifdef OLEDDISPLAY
-    myoled->println("TempProbe not found");
+    myoled->println("TProbe not found");
 #endif
   }
 #endif // end TEMPERATUREPROBE
@@ -1678,6 +1678,11 @@ void setup()
   if ( mySetupData->get_displayenabled() == 0 )
   {
     myoled->println("Display is disabled");
+  }
+  else
+  {
+    // make sure display if off!!!! now that setup is over
+    myoled->Display_Off(); 
   }
   delay(5);
 #endif

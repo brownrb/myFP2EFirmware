@@ -49,7 +49,7 @@ EXTRA FILES
 
 generalDefinitions
 I have moved definitions for Debug, stepsize, stepmode, speed etc to this file. It helps unclutter the main file.
-If you need to add some definitions, this is the place for general ones especially those used in the main ino file. If they are specific to wemos best place would be hardwarePins.h for things linke temp probe and I2c. For Wemos pins used for driver board then do that in myBoards.h using #if(CHIPMODEL=WEMOS)
+If you need to add some definitions, this is the place for general ones especially those used in the main ino file. If they are specific to wemos best place would be hardwarePins.h for things like temp probe and I2c. For Wemos pins used for driver board then do that in myBoards.h using #if(CHIPMODEL=WEMOS)
 
 ESPQueue
 required to handle Bluetooth commands. This means changes had to be made to ESP_Communication()
