@@ -16,23 +16,45 @@
 // 5. Compile and upload to your controller
 //
 // ----------------------------------------------------------------------------------------------
-// 1: SPECIFY DRIVER BOARD HERE
+// 1: DEFINE CHIP MODEL
+// ----------------------------------------------------------------------------------------------
+#include "generalDefinitions.h"
+#include "chipModels.h"             // include chip definitions and hardware mappings
+
+// GOTO FILE chipModels.h and select the correct chip model that matches your PCB
+
+// DO NOT CHANGE
+#ifndef CHIPMODEL                   // error checking, please do NOT change
+#halt // ERROR you must have CHIPMODEL defined in chipModels.h
+#endif
+
+// ----------------------------------------------------------------------------------------------
+// 2: SPECIFY DRIVER BOARD HERE
 // ----------------------------------------------------------------------------------------------
 // DRIVER BOARDS - Please specify your driver board here, only 1 can be defined, see DRVBRD line
 #include "myBoardTypes.h"
 
+//Set DRVBRD to the correct driver board above, ONLY ONE!!!!
+//#define DRVBRD PRO2EDRV8825
+//#define DRVBRD PRO2EULN2003
 #define DRVBRD PRO2EL298N
+//#define DRVBRD PRO2EL293DMINI
+//#define DRVBRD PRO2EL9110S
+//#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32ULN2003
+//#define DRVBRD PRO2ESP32L298N
+//#define DRVBRD PRO2ESP32L293DMINI
+//#define DRVBRD PRO2ESP32L9110S
+
+// FOR ESP8266 DRV8825 YOU MUST CHANGE DRV8825TEPMODE TO MATCH MS1/2/3 JUMPERS ON PCB
+// YOU DO THIS IN myBoards.h file
+
+#include "myBoards.h"
 
 // DO NOT CHANGE
 #ifndef DRVBRD    // error checking, please do NOT change
 #halt // ERROR you must have DRVBRD defined
 #endif
-
-// DO NOT CHANGE - Order is very important
-#include "generalDefinitions.h"
-#include "chipModels.h"             // include chip definitions
-#include "hardwarePins.h"           // include pin mappings for temp probe etc
-#include "myBoards.h"               // include mappings for driver boards and driver board routines
 
 // ----------------------------------------------------------------------------------------------
 // 2: SPECIFY STEPPER MOTOR HERE

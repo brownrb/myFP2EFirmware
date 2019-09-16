@@ -13,14 +13,27 @@
 // If you wish to make a small contribution in thanks for this project, please use PayPal and send the amount
 // to user rbb1brown@gmail.com (Robert Brown). All contributions are gratefully accepted.
 //
-// 1. Set your DRVBRD [section 1] in this file so the correct driver board is used
-// 2. Set your chipmodel in chipModels.h so that pins are mapped correctly
-// 3. Set your target CPU to match the chipModel you defined
+// 1. Set your CHIPMODEL [section 1] based on selected chipType matching your PCB
+// 2. Set your DRVBRD [section 2] in this file so the correct driver board is used
+// 3. Set your target CPU to esp32
 // 4. Set the correct hardware options [section 4] in this file to match your hardware
 // 5. Compile and upload to your controller
 //
 // ----------------------------------------------------------------------------------------------
-// 1: SPECIFY DRIVER BOARD HERE
+// 1: DEFINE CHIP MODEL
+// ----------------------------------------------------------------------------------------------
+#include "generalDefinitions.h"
+#include "chipModels.h"             // include chip definitions and hardware mappings
+
+// GOTO FILE chipModels.h and select the correct chip model that matches your PCB
+
+// DO NOT CHANGE
+#ifndef CHIPMODEL                   // error checking, please do NOT change
+#halt // ERROR you must have CHIPMODEL defined in chipModels.h
+#endif
+
+// ----------------------------------------------------------------------------------------------
+// 2: SPECIFY DRIVER BOARD HERE
 // ----------------------------------------------------------------------------------------------
 // DRIVER BOARDS - Please specify your driver board here, only 1 can be defined, see DRVBRD line
 #include "myBoardTypes.h"
@@ -32,16 +45,12 @@
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
 
+#include "myBoards.h"
+
 // DO NOT CHANGE
 #ifndef DRVBRD    // error checking, please do NOT change
 #halt // ERROR you must have DRVBRD defined
 #endif
-
-// DO NOT CHANGE - Order is very important
-#include "generalDefinitions.h"
-#include "chipModels.h"             // include chip definitions
-#include "hardwarePins.h"           // include pin mappings for temp probe etc
-#include "myBoards.h"               // include mappings for driver boards and driver board routines
 
 // ----------------------------------------------------------------------------------------------
 // 2: SPECIFY STEPPER MOTOR HERE

@@ -6,6 +6,10 @@
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
+#define WEMOS                 1             // ESP8266
+#define NODEMCUV1             2             // ESP8266 ESP-12E, 30P
+#define ESP32WROOM            3             // ESP32 Dev, 30P
+
 #define SERVERPORT            2020
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
@@ -58,7 +62,7 @@
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-//#define DEBUG     1
+#define DEBUG     1
 
 #ifdef DEBUG                                          //Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print

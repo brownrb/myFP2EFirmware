@@ -1,7 +1,9 @@
 #include <Arduino.h>
 
-#include "myBoards.h"
+#include "generalDefinitions.h"
+#include "chipModels.h"
 #include "myBoardTypes.h"
+#include "myBoards.h"
 
 // this is DRV8825 constructor
 DriverBoard::DriverBoard(byte brdtype, String brdname, byte smode, byte mspd) : boardtype(brdtype), boardname(brdname)

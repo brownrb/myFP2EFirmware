@@ -11,8 +11,8 @@
 // If you wish to make a small contribution in thanks for this project, please use PayPal and send the amount
 // to user rbb1brown@gmail.com (Robert Brown). All contributions are gratefully accepted.
 //
-// 1. Set your DRVBRD [section 1] in this file so the correct driver board is used
-// 2. Set your chipmodel in chipModels.h so that pins are mapped correctly
+// 1. Set your CHIPMODEL [section 1] based on selected chipType matching your PCB
+// 2. Set your DRVBRD [section 2] in this file so the correct driver board is used
 // 3. Set your target CPU to match the chipModel you defined
 // 4. Set the correct hardware options [section 4] in this file to match your hardware
 // 5. Compile and upload to your controller
@@ -27,20 +27,34 @@
 //    ULN2003
 //    DRV8825
 //
+
 // ----------------------------------------------------------------------------------------------
-// 1: SPECIFY DRIVER BOARD HERE
+// 1: DEFINE CHIP MODEL
+// ----------------------------------------------------------------------------------------------
+#include "generalDefinitions.h"
+#include "chipModels.h"             // include chip definitions and hardware mappings
+
+// GOTO FILE chipModels.h and select the correct chip model that matches your PCB
+
+// DO NOT CHANGE
+#ifndef CHIPMODEL                   // error checking, please do NOT change
+#halt // ERROR you must have CHIPMODEL defined in chipModels.h
+#endif
+
+// ----------------------------------------------------------------------------------------------
+// 2: SPECIFY DRIVER BOARD HERE
 // ----------------------------------------------------------------------------------------------
 // DRIVER BOARDS - Please specify your driver board here, only 1 can be defined, see DRVBRD line
 #include "myBoardTypes.h"
 
 //Set DRVBRD to the correct driver board above, ONLY ONE!!!!
-//#define DRVBRD PRO2EDRV8825
-// #define DRVBRD PRO2EULN2003
+#define DRVBRD PRO2EDRV8825
+//#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EL298N
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 //#define DRVBRD PRO2ESP32DRV8825
-#define DRVBRD PRO2ESP32ULN2003
+//#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
@@ -48,43 +62,38 @@
 // FOR ESP8266 DRV8825 YOU MUST CHANGE DRV8825TEPMODE TO MATCH MS1/2/3 JUMPERS ON PCB
 // YOU DO THIS IN myBoards.h file
 
+#include "myBoards.h"
+
 // DO NOT CHANGE
 #ifndef DRVBRD    // error checking, please do NOT change
 #halt // ERROR you must have DRVBRD defined
 #endif
 
-// DO NOT CHANGE - Order is very important
-#include "generalDefinitions.h"
-#include "chipModels.h"             // include chip definitions
-#include "hardwarePins.h"           // include pin mappings for temp probe etc
-#include "myBoards.h"               // include mappings for driver boards and driver board routines
-
 // ----------------------------------------------------------------------------------------------
-// 2: SPECIFY STEPPER MOTOR HERE
+// 3: SPECIFY STEPPER MOTOR HERE
 // ----------------------------------------------------------------------------------------------
 // ONLY NEEDED FOR L293D MOTOR SHIELD - ALL OTHER BOARDS PLEASE IGNORE
 
 // ----------------------------------------------------------------------------------------------
-// 3: SPECIFY ESP32/ESP8266 CHIP TYPE
+// 4: FOR ESP8266 BOARDS USNG DRV8825 SET DRV8825STEPMODE
 // ----------------------------------------------------------------------------------------------
-// Remember to set CHIPMODEL to the correct chip you using in chipModels.h
 
 // For ESP8266, remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
 // ----------------------------------------------------------------------------------------------
-// 4: SPECIFY HARDWARE OPTIONS HERE
+// 5: SPECIFY HARDWARE OPTIONS HERE
 // ----------------------------------------------------------------------------------------------
 // Caution: Do not enable a feature if you have not added the associated hardware circuits to support that feature
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-//#define TEMPERATUREPROBE 1
+#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment the next line
-//#define OLEDDISPLAY 1
+#define OLEDDISPLAY 1
 
 // To enable backlash in this firmware, uncomment the next line
-//#define BACKLASH 1
+#define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
@@ -96,7 +105,7 @@
 //#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
-//#define SHOWSTARTSCRN 1
+#define SHOWSTARTSCRN 1
 
 // DO NOT CHANGE
 #if (DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N \
@@ -114,7 +123,7 @@
 #endif // 
 
 // ----------------------------------------------------------------------------------------------
-// 5: SPECIFY THE TYPE OF OLED DISPLAY HERE
+// 6: SPECIFY THE TYPE OF OLED DISPLAY HERE
 // ----------------------------------------------------------------------------------------------
 
 //#define OLEDGRAPHICS 1
@@ -134,7 +143,7 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 6: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
+// 7: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
 // ----------------------------------------------------------------------------------------------
 
 // to enable Bluetooth mode, uncomment the next line [ESP32 only]
@@ -161,7 +170,7 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 7. INCLUDES FOR WIFI
+// 8: INCLUDES FOR WIFI
 // ----------------------------------------------------------------------------------------------
 #include <WiFiServer.h>
 #include <WiFiClient.h>
@@ -178,7 +187,7 @@
 // WIFI STUFF + SPIFFS => differed includes on different boards
 
 // ----------------------------------------------------------------------------------------------
-// 8. WIFI NETWORK SSID AND PASSWORD CONFIGURATION
+// 9: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // 1. For access point mode this is the network you connect to
 // 2. For station mode, change these to match your network details
@@ -186,7 +195,7 @@ const char* mySSID = "myfp2eap";
 const char* myPASSWORD = "myfp2eap";
 
 // ----------------------------------------------------------------------------------------------
-// 9. DUCKDNS DOMAIN AND TOKEN CONFIGURATION
+// 10: DUCKDNS DOMAIN AND TOKEN CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // To use DucksDNS, uncomment the next line - can only be used together with STATIONMODE
 //#define USEDUCKSDNS 1
@@ -210,7 +219,7 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 10. STATIC IP ADDRESS CONFIGURATION
+// 11: STATIC IP ADDRESS CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // must use static IP if using duckdns or as an Access Point
 #define STATICIPON    1
@@ -236,7 +245,7 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 11. FIRMWARE CODE START - INCLUDES AND LIBRARIES
+// 12: FIRMWARE CODE START - INCLUDES AND LIBRARIES
 // ----------------------------------------------------------------------------------------------
 // Compile this with Arduino IDE 1.8.9 with ESP8266 Core library installed v2.5.2 [for ESP8266]
 // Make sure target board is set to Node MCU 1.0 (ESP12-E Module) [for ESP8266]
@@ -269,7 +278,7 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 12. BLUETOOTH MODE - Do not change
+// 13: BLUETOOTH MODE - Do not change
 // ----------------------------------------------------------------------------------------------
 #ifdef BLUETOOTHMODE
 #include "BluetoothSerial.h"                // needed for Bluetooth comms
@@ -285,7 +294,7 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
 
 // ----------------------------------------------------------------------------------------------
-// 13. GLOBAL DATA -- DO NOT CHANGE
+// 14: GLOBAL DATA -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
@@ -355,6 +364,15 @@ byte motorspeedchangethresholdsteps;    // step number where when pos close to t
 byte motorspeedchangethresholdenabled;  // used to enable/disable motorspeedchange when close to target position
 String ipStr;                           // shared between BT mode and other modes
 
+#ifdef INOUTPUSHBUTTONS
+struct Button {
+  const uint8_t PIN;
+  bool pressed;
+};
+Button inpb  = { INPB , false };
+Button outpb = { OUTPB, false };
+#endif
+
 #ifdef BLUETOOTHMODE
 Queue queue(QUEUELENGTH);               // receive serial queue of commands
 String line;                            // buffer for serial data
@@ -395,7 +413,7 @@ int packetssent;
 SetupData *mySetupData;
 
 // ----------------------------------------------------------------------------------------------
-// 14. CODE START - CHANGE AT YOUR OWN PERIL
+// 15: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 
 void software_Reboot()
@@ -1055,8 +1073,7 @@ void ESP_Communication( byte mode )
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         float tempstepsize = (float)WorkString.toFloat();
-        if (tempstepsize < 0)
-          tempstepsize = 0; // set default maximum stepsize
+        tempstepsize = (tempstepsize < 0) ? 0 : tempstepsize;     // set default maximum stepsize
         mySetupData->set_stepsize(tempstepsize);
       }
       break;
@@ -1229,38 +1246,19 @@ void ESP_Communication( byte mode )
 
 // Push button code
 #ifdef INOUTPUSHBUTTONS
-void update_pushbuttons(void)
+void IRAM_ATTR inpb_isr()
 {
-  long newpos;
-  // PB are active high - pins float low if unconnected
-  if ( digitalRead(INPB) == 1 )       // is pushbutton pressed?
-  {
-    delay(20);                        // software debounce delay
-    if ( digitalRead(INPB) == 1 )     // if still pressed
-    {
-      newpos = ftargetPosition - 1;
-      newpos = (newpos < 0 ) ? 0 : newpos;
-      ftargetPosition = newpos;
-    }
-  }
-  if ( digitalRead(OUTPB) == 1 )
-  {
-    delay(20);
-    if ( digitalRead(OUTPB) == 1 )
-    {
-      newpos = ftargetPosition + 1;
-      // an unsigned long range is 0 to 4,294,967,295
-      // when an unsigned long decrements from 0-1 it goes to largest +ve value, ie 4,294,967,295
-      // which would in likely be much much greater than maxstep
-      newpos = (newpos > (long) mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : newpos;
-      ftargetPosition = newpos;
-    }
-  }
+  inpb.pressed = true;
+}
+
+void IRAM_ATTR outpb_isr()
+{
+  outpb.pressed = true;
 }
 #endif
 
 #ifdef INFRAREDREMOTE
-void update_irremote()
+void updateirremote()
 {
   // check IR
   if (irrecv.decode(&results))
@@ -1337,11 +1335,6 @@ void setup()
   pinMode(OUTLED, OUTPUT);
   digitalWrite(INLED, 1);
   digitalWrite(OUTLED, 1);
-#endif
-
-#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
-  pinMode(INPB, INPUT);
-  pinMode(OUTPB, INPUT);
 #endif
 
 #ifdef OLEDDISPLAY
@@ -1663,11 +1656,6 @@ void setup()
   irrecv.enableIRIn();                              // Start the IR
 #endif
 
-#ifdef INOUTLEDS
-  digitalWrite(INLED, 0);
-  digitalWrite(OUTLED, 0);
-#endif
-
 #ifdef OLEDDISPLAY
 #ifdef OLEDGRAPHICS
   // TODO Holger
@@ -1682,7 +1670,7 @@ void setup()
   else
   {
     // make sure display if off!!!! now that setup is over
-    myoled->Display_Off(); 
+    myoled->Display_Off();
   }
   delay(5);
 #endif
@@ -1696,6 +1684,19 @@ void setup()
 #ifdef TEMPERATUREPROBE
   readtemp(1);
 #endif
+
+#ifdef INOUTLEDS
+  digitalWrite(INLED, 0);
+  digitalWrite(OUTLED, 0);
+#endif
+
+#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
+  pinMode(inpb.PIN, INPUT);
+  pinMode(outpb.PIN, INPUT);
+  attachInterrupt(inpb.PIN, inpb_isr, RISING);
+  attachInterrupt(outpb.PIN, outpb_isr, RISING);
+#endif
+
   DebugPrintln(F("Setup end."));
 }
 
@@ -1708,7 +1709,9 @@ void loop()
   static byte ConnectionStatus = 0;
   static byte backlash_count = 0;
   static byte backlash_enabled = 0;
+#ifdef OLEDDISPLAY
   static byte updatecount = 0;
+#endif
 
 #ifndef BLUETOOTHMODE
   if (ConnectionStatus < 2)
@@ -1759,7 +1762,17 @@ void loop()
 #ifdef INOUTPUSHBUTTONS
   if ( isMoving == 0 )
   {
-    updatepushbuttons();
+    if (inpb.pressed == true)
+    {
+      inpb.pressed = false;
+      ftargetPosition--;
+    }
+    if (outpb.pressed == true)
+    {
+      outpb.pressed = false;
+      ftargetPosition++;
+      ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
+    }
   }
 #endif
 
