@@ -364,19 +364,10 @@ byte motorspeedchangethresholdsteps;    // step number where when pos close to t
 byte motorspeedchangethresholdenabled;  // used to enable/disable motorspeedchange when close to target position
 String ipStr;                           // shared between BT mode and other modes
 
-#ifdef INOUTPUSHBUTTONS
-struct Button {
-  const uint8_t PIN;
-  bool pressed;
-};
-Button inpb  = { INPB , false };
-Button outpb = { OUTPB, false };
-#endif
-
 #ifdef BLUETOOTHMODE
 Queue queue(QUEUELENGTH);               // receive serial queue of commands
 String line;                            // buffer for serial data
-#endif
+#endif // bluetoothmode
 
 #ifdef OLEDDISPLAY
 #ifdef OLEDGRAPHICS
@@ -385,13 +376,13 @@ SSD1306* myoled;
 #ifdef OLEDTEXT
 SSD1306AsciiWire* myoled;
 #endif
-#endif
+#endif // oleddisplay
 
 #ifdef TEMPERATUREPROBE
 OneWire oneWirech1(TEMPPIN);            // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                // holds address of the temperature probe
-#endif
+#endif // temperatureprobe
 
 #ifndef BLUETOOTHMODE                   // WiFi stuff
 IPAddress ESP32IPAddress;
@@ -405,7 +396,7 @@ long rssi;
 #ifdef INFRAREDREMOTE
 IRrecv irrecv(IRPIN);
 decode_results results;
-#endif
+#endif // infraredremote
 
 int packetsreceived;
 int packetssent;
@@ -1246,14 +1237,25 @@ void ESP_Communication( byte mode )
 
 // Push button code
 #ifdef INOUTPUSHBUTTONS
-void IRAM_ATTR inpb_isr()
+void update_pushbuttons(void)
 {
-  inpb.pressed = true;
-}
-
-void IRAM_ATTR outpb_isr()
-{
-  outpb.pressed = true;
+  long newpos;
+  // PB are active high - pins float low if unconnected
+  if ( digitalRead(INPB) == 1 )       // is pushbutton pressed?
+  {
+    newpos = ftargetPosition - 1;
+    newpos = (newpos < 0 ) ? 0 : newpos;
+    ftargetPosition = newpos;
+  }
+  if ( digitalRead(OUTPB) == 1 )
+  {
+    newpos = ftargetPosition + 1;
+    // an unsigned long range is 0 to 4,294,967,295
+    // when an unsigned long decrements from 0-1 it goes to largest +ve value, ie 4,294,967,295
+    // which would in likely be much much greater than maxstep
+    newpos = (newpos > (long) mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : newpos;
+    ftargetPosition = newpos;
+  }
 }
 #endif
 
@@ -1335,6 +1337,11 @@ void setup()
   pinMode(OUTLED, OUTPUT);
   digitalWrite(INLED, 1);
   digitalWrite(OUTLED, 1);
+#endif
+
+#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
+  pinMode(INPB, INPUT);
+  pinMode(OUTPB, INPUT);
 #endif
 
 #ifdef OLEDDISPLAY
@@ -1650,7 +1657,7 @@ void setup()
   delay(5);
   EasyDDNS.update(60000);                           // Check for New Ip Every 60 Seconds.
   delay(5);
-#endif
+#endif // useduckdns
 
 #ifdef INFRAREDREMOTE
   irrecv.enableIRIn();                              // Start the IR
@@ -1673,8 +1680,8 @@ void setup()
     myoled->Display_Off();
   }
   delay(5);
-#endif
-#endif
+#endif // oledtext
+#endif // oleddisplay
 
   DebugPrintln(F("Set motorspeedchange."));
   motorspeedchangethresholdsteps = MOTORSPEEDCHANGETHRESHOLD;
@@ -1688,13 +1695,6 @@ void setup()
 #ifdef INOUTLEDS
   digitalWrite(INLED, 0);
   digitalWrite(OUTLED, 0);
-#endif
-
-#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
-  pinMode(inpb.PIN, INPUT);
-  pinMode(outpb.PIN, INPUT);
-  attachInterrupt(inpb.PIN, inpb_isr, RISING);
-  attachInterrupt(outpb.PIN, outpb_isr, RISING);
 #endif
 
   DebugPrintln(F("Setup end."));
@@ -1746,7 +1746,7 @@ void loop()
     else
       ConnectionStatus = 1;
   }
-#endif
+#endif // ifndef BLUETOOTHMODE
 #ifdef BLUETOOTHMODE
   if ( SerialBT.available() )
   {
@@ -1757,31 +1757,7 @@ void loop()
   {
     ESP_Communication(BTDATA);
   }
-#endif // end Bluetoothmode
-
-#ifdef INOUTPUSHBUTTONS
-  if ( isMoving == 0 )
-  {
-    if (inpb.pressed == true)
-    {
-      inpb.pressed = false;
-      ftargetPosition--;
-    }
-    if (outpb.pressed == true)
-    {
-      outpb.pressed = false;
-      ftargetPosition++;
-      ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
-    }
-  }
-#endif
-
-#ifdef INFRAREDREMOTE
-  if ( isMoving == 0 )
-  {
-    updateirremote();
-  }
-#endif
+#endif // ifdef Bluetoothmode
 
   switch (MainStateMachine)
   {
@@ -1797,36 +1773,44 @@ void loop()
       }
       else
       {
+        // focuser stationary. isMoving is 0
+#ifdef INOUTPUSHBUTTONS
+        updatepushbuttons();
+#endif
+#ifdef INFRAREDREMOTE
+        updateirremote();
+#endif
 #ifdef OLEDDISPLAY
 #ifdef OLEDGRAPHICS
         if ( mySetupData->get_displayenabled() == 1)
         {
           oled_draw_main(oled_stay);
         }
-#endif
+#endif // oledgraphics
 #ifdef OLEDTEXT
         if ( mySetupData->get_displayenabled() == 1)
         {
           Update_OledText();
         }
-#endif
-#endif
+#endif // OLEDTEXT
+#endif // OLEDDISPLAY
+
 #ifdef TEMPERATUREPROBE
         Update_Temp();
-#endif
+#endif // temperatureprobe
         byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
         if ( status == true )
         {
 #ifdef OLEDDISPLAY
 #ifdef OLEDGRAPHICS
           oled_draw_main(oled_off);           // Display off after config saved
-#endif
-#endif
+#endif // oledgraphics
+#endif // oleddisplay
           DebugPrint("new Config saved: ");
           DebugPrintln(status);
         }
-        break;
       }
+      break;
 
     case State_InitMove:
       isMoving = 1;

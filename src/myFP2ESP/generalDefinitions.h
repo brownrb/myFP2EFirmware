@@ -62,9 +62,9 @@
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-#define DEBUG     1
+#define LDEBUG     1
 
-#ifdef DEBUG                                          //Macros are usually in all capital letters.
+#ifdef  LDEBUG                                        //Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
 #define DebugPrintln(...) Serial.println(__VA_ARGS__) //DPRINTLN is a macro, debug print with new line
 #else
