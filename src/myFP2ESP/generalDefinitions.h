@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-#define WEMOS                 1             // ESP8266
+#define WEMOS                 1             // ESP8266 Mini D1
 #define NODEMCUV1             2             // ESP8266 ESP-12E, 30P
 #define ESP32WROOM            3             // ESP32 Dev, 30P
 
