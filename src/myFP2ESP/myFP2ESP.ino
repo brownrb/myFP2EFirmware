@@ -11,8 +11,8 @@
 // If you wish to make a small contribution in thanks for this project, please use PayPal and send the amount
 // to user rbb1brown@gmail.com (Robert Brown). All contributions are gratefully accepted.
 //
-// 1. Set your CHIPMODEL [section 1] based on selected chipType matching your PCB
-// 2. Set your DRVBRD [section 2] in this file so the correct driver board is used
+// 1. Set your CHIPMODEL [section 1] in chipModels.h based on selected chipType matching your PCB
+// 2. Set your DRVBRD    [section 2] in myBoards.h so the correct driver board is used
 // 3. Set your target CPU to match the chipModel you defined
 // 4. Set the correct hardware options [section 4] in this file to match your hardware
 // 5. Compile and upload to your controller
@@ -34,7 +34,7 @@
 #include "generalDefinitions.h"
 #include "chipModels.h"             // include chip definitions and hardware mappings
 
-// GOTO FILE chipModels.h and select the correct chip model that matches your PCB
+// GOTO FILE chipModels.h AND SET THE CORRECT CHIP MODEL THAT MATCHES YOUR PCB/BOARD
 
 // DO NOT CHANGE
 #ifndef CHIPMODEL                   // error checking, please do NOT change
@@ -42,27 +42,16 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 2: SPECIFY DRIVER BOARD HERE
+// 2: SPECIFY DRIVER BOARD
 // ----------------------------------------------------------------------------------------------
 // DRIVER BOARDS - Please specify your driver board here, only 1 can be defined, see DRVBRD line
 #include "myBoardTypes.h"
-
-//Set DRVBRD to the correct driver board above, ONLY ONE!!!!
-#define DRVBRD PRO2EDRV8825
-//#define DRVBRD PRO2EULN2003
-//#define DRVBRD PRO2EL298N
-//#define DRVBRD PRO2EL293DMINI
-//#define DRVBRD PRO2EL9110S
-//#define DRVBRD PRO2ESP32DRV8825
-//#define DRVBRD PRO2ESP32ULN2003
-//#define DRVBRD PRO2ESP32L298N
-//#define DRVBRD PRO2ESP32L293DMINI
-//#define DRVBRD PRO2ESP32L9110S
-
-// FOR ESP8266 DRV8825 YOU MUST CHANGE DRV8825TEPMODE TO MATCH MS1/2/3 JUMPERS ON PCB
-// YOU DO THIS IN myBoards.h file
-
 #include "myBoards.h"
+
+// GOTO FILE myBoards.h AND SET THE CORRECT DRIVER BOARD
+
+// FOR DRIVERBOARD PRO2EDRV8825 YOU MUST CHANGE DRV8825TEPMODE TO MATCH MS1/2/3 JUMPERS ON PCB
+// YOU DO THIS IN myBoards.h file
 
 // DO NOT CHANGE
 #ifndef DRVBRD    // error checking, please do NOT change
@@ -70,9 +59,19 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 3: SPECIFY STEPPER MOTOR HERE
+// 3: SPECIFY STEPPER MOTOR HERE : L293D MOTOR SHIELD ONLY
 // ----------------------------------------------------------------------------------------------
 // ONLY NEEDED FOR L293D MOTOR SHIELD - ALL OTHER BOARDS PLEASE IGNORE
+// You need to set the motor type here, only one or the other, NOT both
+// See PRO2EL293D in chipModels.h for wiring details of stepper motors or refer to PDF
+
+//#define STEPPERMOTORTYPE  UNIPOLAR28BYJ48
+#define STEPPERMOTORTYPE  BIPOLARNEMA
+
+// DO NOT CHANGE
+#ifndef STEPPERMOTORTYPE            // error checking, please do NOT change
+#halt // ERROR you must have STEPPERMOTORTYPE defined
+#endif
 
 // ----------------------------------------------------------------------------------------------
 // 4: FOR ESP8266 BOARDS USNG DRV8825 SET DRV8825STEPMODE
@@ -109,7 +108,7 @@
 
 // DO NOT CHANGE
 #if (DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N \
-  || DRVBRD == PRO2EL293DMINI || DSRVBRD == PRO2EL9110S)
+  || DRVBRD == PRO2EL293DMINI || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D )
 // no support for pushbuttons, inout leds, irremote
 #ifdef INOUTPUSHBUTTONS
 #halt // ERROR - INOUTPUSHBUTTONS not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -162,7 +161,7 @@
 #endif
 #endif
 
-#if (CHIPMODEL == WEMOS || CHIPMODEL == NODEMCUV1)
+#if (CHIPMODEL == WEMOS || CHIPMODEL == NODEMCUV1 || CHIPMODEL == L293DMOTORSHIELD)
 // no support for bluetooth mode
 #ifdef BLUETOOTHMODE
 #halt // ERROR - BLUETOOTHMODE not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -343,6 +342,9 @@ char programName[]  = "myFP2E.L9110S";
 #endif
 #if( DRVBRD == PRO2ESP32L9110S)
 char programName[]  = "myFP2ESP32.L9110S";
+#endif
+#if( DRVBRD == PRO2EL293D)
+char programName[]  = "myFP2E.L293D";
 #endif
 DriverBoard* driverboard;
 #endif
@@ -1107,6 +1109,9 @@ void ESP_Communication( byte mode )
       paramval = (paramval < STEP1 ) ? STEP1 : paramval;
       paramval = (paramval > STEP32 ) ? STEP32 : paramval;
 #endif
+#if (DRVBRD == PRO2EL293D)
+      paramval = STEP1;
+#endif
       mySetupData->set_stepmode((byte)paramval);
       setsteppermode((byte) paramval);
       break;
@@ -1366,6 +1371,9 @@ void setup()
 #if (CHIPMODEL == ESP32WROOM)
   Wire.begin();
 #endif
+#if (CHIPMODEL == L293DMOTORSHIELD)
+  Wire.begin();
+#endif
   myoled = new SSD1306AsciiWire();
   delay(5);
   // Setup the OLED
@@ -1617,7 +1625,14 @@ void setup()
 #if( DRVBRD == PRO2ESP32L9110S)
   driverboard = new DriverBoard(PRO2ESP32L9110S, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S);
 #endif
-
+#if( DRVBRD == PRO2EL293D)
+#if (STEPPERMOTORTYPE == UNIPOLAR28BYJ48 )
+  driverboard = new DriverBoard(PRO2EL293D, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L293D, IN3L293D, IN2L293D, IN4L293D, SPEED28BYJ48);
+#endif
+#if (STEPPERMOTORTYPE == BIPOLARNEMA )
+  driverboard = new DriverBoard(PRO2EL293D, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN2L293D, IN3L293D, IN1L293D, IN4L293D, SPEEDNEMA);
+#endif
+#endif
   delay(5);
 
 #ifdef OLEDDISPLAY
