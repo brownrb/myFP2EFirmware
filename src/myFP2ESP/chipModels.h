@@ -8,10 +8,14 @@
 // ----------------------------------------------------------------------------------------------
 // YOU MUST SELECT (uncomment one) the correct chip model that matches your PCB
 //#define CHIPMODEL WEMOS
-//#define CHIPMODEL NODEMCUV1
-#define CHIPMODEL ESP32WROOM
+#define CHIPMODEL NODEMCUV1
+//#define CHIPMODEL L293DMOTORSHIELD
+//#define CHIPMODEL ESP32WROOM
 
-// Hardware Definitions of All Pins used byeach CPU board
+
+
+// ----------------------------------------------------------------------------------------------
+// Hardware Definitions of All Pins used by each CPU board
 // Option pins listed first (temperature etc), followed by driver board pins and definitions
 // ----------------------------------------------------------------------------------------------
 // WEMOS ESP8266
@@ -29,6 +33,63 @@
 #define DRVFAST               1           // delays for motorspeed in microseconds
 #define DRVMED                2000
 #define DRVSLOW               10000
+
+#elif ( CHIPMODEL == L293DMOTORSHIELD)
+#define CHIPESP8266           1
+#define TEMPPIN               10
+#define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address
+#define I2CDATAPIN            12
+#define I2CCLOCKPIN           14
+// IN1, IN3, IN2, IN4, PWMA-DIRA, DIRB-PWMB
+#define IN1L293D              5                 // PWM_A    
+#define IN2L293D              0                 // DIR B
+#define IN3L293D              4                 // DIR A
+#define IN4L293D              2                 // PWM_B               
+#define L293DFAST             250               // delays for motorspeed
+#define L293DMED              4000
+#define L293DSLOW             10000
+// do not change
+#define UNIPOLAR28BYJ48       1
+#define BIPOLARNEMA           2
+#define SPEED28BYJ48          48
+#define SPEEDNEMA             100
+// to keep compiler happy
+#define ULNFAST               1           // delays for motorspeed in microseconds [250-1000]
+#define ULNMED                1000
+#define ULNSLOW               8000        // do not use values > 15000 due to accuracy issues
+#define L298NFAST             1           // delays for motorspeed in microseconds [250-1000]
+#define L298NMED              1000
+#define L298NSLOW             8000        // do not use values > 15000 due to accuracy issues
+#define L293DMINIFAST         1           // delays for motorspeed in microseconds [250-1000]
+#define L293DMINIMED          1000
+#define L293DMINISLOW         8000        // do not use values > 15000 due to accuracy issues
+#define L9110SFAST            1           // delays for motorspeed in microseconds [250-1000]
+#define L9110SMED             1000
+#define L9110SSLOW            8000        // do not use values > 15000 due to accuracy issues
+// STEPPER CONNECTIONS
+// NEMA - Looking at board with ESP chip at top furthest away from you and screw terminals on left
+// Starting at top left- in order as follows
+// RS232-1 to NEMA14 GREEN
+// RS232-2 to NEMA14 BLACK
+// RS232-3 to NEMA14 BLUE
+// RS232-4 to NEMA14 RED
+// Not connected
+// Not connected
+// 9V+
+// GND
+// And white push button closed (ON)
+
+// 28BYJ-48 - Looking at board with ESP chip at top furthest away from you and screw terminals on left
+// Starting at top left- in order as follows
+// Blue
+// Pink
+// Yellow
+// Orange
+// Red
+// Not connected
+// 9V+
+// GND
+// And white push button closed (ON)
 
 // ----------------------------------------------------------------------------------------------
 // NODEMCUV1 ESP8266

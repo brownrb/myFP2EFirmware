@@ -15,7 +15,7 @@
 #define PRO2EULN2003          36
 #endif
 #ifndef PRO2EL293D
-#define PRO2EL293D            37
+#define PRO2EL293D            37        // Motor shield ESP8266
 #endif
 #ifndef PRO2EL298N
 #define PRO2EL298N            38         // uses PCB layout for ULN2003
