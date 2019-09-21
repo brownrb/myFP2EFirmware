@@ -8,38 +8,45 @@
 // ----------------------------------------------------------------------------------------------
 // 1: BOARD DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
+#ifndef WEMOSDRV8825
+#define WEMOSDRV8825          35         // if using a drv8825 you also need to set DRV8825STEPMODE in myBoards.h
+#endif
 #ifndef PRO2EDRV8825
-#define PRO2EDRV8825          35         // if using a drv8825 you also need to set DRV8825STEPMODE in myBoards.h
+#define PRO2EDRV8825          36         // if using a drv8825 you also need to set DRV8825STEPMODE in myBoards.h
 #endif
 #ifndef PRO2EULN2003
-#define PRO2EULN2003          36
+#define PRO2EULN2003          37
 #endif
-#ifndef PRO2EL293D
-#define PRO2EL293D            37        // Motor shield ESP8266
+#ifndef PRO2EL293DNEMA
+#define PRO2EL293DNEMA        38        // Motor shield ESP8266 with NEMA motor
+#endif
+#ifndef PRO2EL293D28BYJ48
+#define PRO2EL293D28BYJ48     39        // Motor shield ESP8266 with 28byj48 motor
 #endif
 #ifndef PRO2EL298N
-#define PRO2EL298N            38         // uses PCB layout for ULN2003
+#define PRO2EL298N            40         // uses PCB layout for ULN2003
 #endif
 #ifndef PRO2EL293DMINI
-#define PRO2EL293DMINI        39         // uses PCB layout for ULN2003
+#define PRO2EL293DMINI        41         // uses PCB layout for ULN2003
 #endif
 #ifndef PRO2EL9110S
-#define PRO2EL9110S           40         // uses PCB layout for ULN2003
+#define PRO2EL9110S           42         // uses PCB layout for ULN2003
 #endif
 #ifndef PRO2ESP32DRV8825
-#define PRO2ESP32DRV8825      41
+#define PRO2ESP32DRV8825      43
 #endif
 #ifndef PRO2ESP32ULN2003
-#define PRO2ESP32ULN2003      42
+#define PRO2ESP32ULN2003      44
 #endif
 #ifndef PRO2ESP32L298N
-#define PRO2ESP32L298N        43
+#define PRO2ESP32L298N        45
 #endif
 #ifndef PRO2ESP32L293DMINI
-#define PRO2ESP32L293DMINI    44         // uses PCB layout for ULN2003
+#define PRO2ESP32L293DMINI    46         // uses PCB layout for ULN2003
 #endif
 #ifndef PRO2ESP32L9110S
-#define PRO2ESP32L9110S       45         // uses PCB layout for ULN2003
+#define PRO2ESP32L9110S       47         // uses PCB layout for ULN2003
 #endif
+
 
 #endif

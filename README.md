@@ -14,7 +14,7 @@ You will need to add the JSON file for the ESP8266 library by using the File->Pr
 Arduino IDE and add the location for the library into the board manager
 http://arduino.esp8266.com/stable/package_esp8266com_index.json
 
-Once specified, open the board manager, scroll down to ESP8266 and install **v2.5.2** (*only this version*) 
+Once specified, open the board manager, scroll down to ESP8266 and install version **v2.4.0**.
 Then you can specify the target board as **Node MCU v1.0 (ESP-12E)** with Flash Size set to 4M (1MB SPIFFS) and upload speed of 115200.
 
 Note: Additional JSON files are separated in board manager by using a comma ,
@@ -37,12 +37,10 @@ make sure you install the library ArduinoJson-6.x.xip into the Arduino IDE else 
 You can do this within the Arduino IDE by
 - Open the Arduino Library Manager
 - Search for “ArduinoJson”
-- Select the version: 6.11.3
+- Select the version: 6.11.2
 - Click install
 
-The latest version is at https://github.com/bblanchon/ArduinoJson/releases
-
-After specifying the target board type as NodeMCU v1, you will need to set the Flashsize for SPIFFS, ie, Tools=>Flashsize space for the SPIFFS in ArduinoIDE (512K).
+This file is provided here in this repository. The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 
 # Libraries
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
@@ -69,7 +67,7 @@ After downloading the zip files, you then need to install these into the Arduino
 Once you have done this, you can start programming the controller.
 
 # Hardware Driver Boards
-One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the DRVBRD at the beginning of the firmware file to the correct driver board, eg, #define DRVBRD ULN2003 will set the driver board to an ULN2003, and set the chipModel in the chipModel.h file before compiling.
+One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the DRVBRD at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
 
 # Controller Modes
 The controller supports the modes ACCESSPOINT and STATION for ESP8266 with an additional BLUETOOTHMODE for the ESP32. 
@@ -81,13 +79,7 @@ At present a single command process handler manages received commands for either
 At present these must be in the same folder as the .ino file, but will later migrate to a library. These files handle the SPIFFS data, saving, restoring and persistance of controller settings. For the ESP8266, there is a now shift away from the use of EEPROM to using a JSON file stored in the file system SPIFFS area.
 
 # myBoards.cpp and .h files
-This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There are two constructors for this class, the user should never have to change the main code within the firmware file which sets up the driver boards. Pins mappings between the controller chip and the driver board are specified here.
-
-#hardwarePins.h
-This file specifies the pin mappings for I2C, temperature probes, Push buttons etc for each driver board. Do not change unless you have made your own board and require the pins to be different.
-
-#chipModels.h
-This file specifies the chip type being used. The three main chips are WEMOS (ESP8266), NODEMCUV1 (ESP8266 12E) and ESP32WROOM (ESP32). You must set the CHIPMODEL to the correct chip in this file. When that is done the harware pins mappings are automatically assigned correctly.
+This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There is one constructor for this class which accepts the boardtype, the user should never have to change the main code within the firmware file which sets up the driver boards. All pins mappings for the controller chip, hardware options and the driver board are specified here.
 
 #generalDefinitions.h
 This file contains general definitions for all controllers, such as motor speed, step modes, focuser limits etc.
@@ -104,5 +96,28 @@ This library manages communication with an Infra-Red controller. The Library is 
 #myOLED Libary
 This is a special cut down version of the SSD1306AsciiWire library by Bill Greiman. The library has been reduced in size and a number of additional features added. DO NOT MODIFY THESE FILES.
 
-
-
+// ----------------------------------------------------------------------------------------------
+// COMPILE ENVIRONMENT : Tested with 
+// Arduino IDE 1.8.9
+// ESP8266 Driver Board 2.4.0
+// Libraries 
+// Arduino JSON 6.11.2
+// myOLED as in myFP2ELibs
+// IRRemoteESP32 2.0.1 as in myFP2ELibs
+// HalfStepperESP32 as in myFP2ELibs
+// Dallas Temperature 3.80
+// Wire [as installed with Arduino 1.8.9
+// OneWire 2.3.3
+// EasyDDNS 1.5.2
+// Notes:
+// You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
+// remove the chip from PCB before re-programming new firmware. Remember to remove WIFI library
+// as instructed in PDF when programming ESP32.
+// ----------------------------------------------------------------------------------------------
+// ESP8266 ISSUES
+// One chip I have boots fine.
+// Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset 
+// then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this 
+// chip either.
+// TODO: Look at what need to be when chip starts up, do we need a delay reset circuit?
+// ----------------------------------------------------------------------------------------------

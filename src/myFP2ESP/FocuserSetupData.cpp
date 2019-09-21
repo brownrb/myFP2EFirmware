@@ -11,6 +11,14 @@
 #include "FocuserSetupData.h"
 #include "generalDefinitions.h"
 
+#define DEFAULTPOSITION 5000L
+#define DEFAULTMAXSTEPS 80000L
+#define DEFAULTOFF      0
+#define DEFAULTON       1
+#define DEFAULTCELSIUS  1
+#define DEFAULTFAHREN   0
+#define DEFAULTDOCSIZE  512
+
 SetupData::SetupData(byte set_mode)
 {
   DebugPrintln("Constructor Setupdata");
@@ -25,7 +33,7 @@ SetupData::SetupData(byte set_mode)
     DebugPrintln(F("Mode: SPIFFS"));
   }
 
-  this->DataAssign = 0;
+  this->DataAssign = DEFAULTOFF;
   this->SnapShotMillis = millis();
 
   // mount SPIFFS
@@ -89,31 +97,31 @@ void SetupData::SetFocuserDefaults(void)
 
 void SetupData::LoadDefaultPersistantData()
 {
-  this->maxstep = 80000L;
-  this->coilpower = 0;
-  this->reversedirection = 0;
-  this->stepsizeenabled = 0;                  // default state is step size OFF
-  this->stepsize = DEFAULTSTEPSIZE;
-  this->DelayAfterMove = 0;
-  this->backlashsteps_in = 88;
-  this->backlashsteps_out = 88;
-  this->backlash_in_enabled = 1;
-  this->backlash_out_enabled = 1;
-  this->tempcoefficient = 0;
-  this->tempprecision = TEMP_PRECISION;
-  this->stepmode = 1;                         // step mode 1=full, 2, 4, 8, 16, 32
-  this->tcdirection = 0;                      // temperature compensation direction 1
-  this->tempmode = 1;                         // default is celsius
-  this->tempcompenabled = 0;                  // temperature compensation disabled
-  this->lcdupdateonmove = 1;
-  this->lcdpagetime = 20;                     // 20, 25, 30, 35, 40
-  this->motorSpeed = FAST;
-  this->displayenabled = 0;
+  this->maxstep               = DEFAULTMAXSTEPS;
+  this->coilpower             = DEFAULTOFF;
+  this->reversedirection      = DEFAULTOFF;
+  this->stepsizeenabled       = DEFAULTOFF; 
+  this->stepsize              = DEFAULTSTEPSIZE;
+  this->DelayAfterMove        = DEFAULTOFF;
+  this->backlashsteps_in      = DEFAULTOFF;
+  this->backlashsteps_out     = DEFAULTOFF;
+  this->backlash_in_enabled   = DEFAULTON;
+  this->backlash_out_enabled  = DEFAULTON;
+  this->tempcoefficient       = DEFAULTOFF;
+  this->tempprecision         = TEMP_PRECISION;       // 0.25 degrees
+  this->stepmode              = STEP1;                // step mode 1=full, 2, 4, 8, 16, 32
+  this->tcdirection           = DEFAULTOFF;           // temperature compensation direction 1
+  this->tempmode              = DEFAULTCELSIUS;       // default is celsius
+  this->tempcompenabled       = DEFAULTOFF;           // temperature compensation disabled
+  this->lcdupdateonmove       = DEFAULTON;
+  this->lcdpagetime           = LCDPAGETIMEMIN;       // 2, 3, -- 10
+  this->motorSpeed            = FAST;
+  this->displayenabled        = DEFAULTOFF;
 }
 
 void SetupData::LoadDefaultVariableData()
 {
-  this->fposition = 5000L;                    // last focuser position
+  this->fposition = DEFAULTPOSITION;          // last focuser position
   this->focuserdirection = moving_in;         // keeps track of last focuser move direction
 }
 
@@ -131,7 +139,7 @@ byte SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTrave
   byte status = false;
   unsigned long x = millis();
 
-  if ((SnapShotMillis + 30000) < x || SnapShotMillis > x)    // 30s after snapshot
+  if ((SnapShotMillis + DEFAULTSAVETIME) < x || SnapShotMillis > x)    // 30s after snapshot
   {
     if (DataAssign & 1)
     {
@@ -169,7 +177,7 @@ byte SetupData::SavePersitantConfiguration()
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/assistant to compute the capacity.
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<DEFAULTDOCSIZE> doc;
 
   // Set the values in the document
   doc["maxstep"] = this->maxstep;                           // max steps

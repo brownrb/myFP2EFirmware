@@ -6,10 +6,9 @@
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-#define WEMOS                 1             // ESP8266
-#define NODEMCUV1             2             // ESP8266 ESP-12E, 30P
-#define ESP32WROOM            3             // ESP32 Dev, 30P
-#define L293DMOTORSHIELD      4             // ESP8266, ESP-12E, 30P with L293D MOTORSHIELD
+
+#define OLED_ADDR             0x3C        // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address#endif // wemos
+#define MOTORPULSETIME        2
 
 #define SERVERPORT            2020
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
@@ -25,9 +24,12 @@
 #define FOCUSERLOWERLIMIT     1024L         // lowest value that maxsteps can be
 #define LCDPAGETIMEMIN        2             // 2s minimum lcd page display time
 #define LCDPAGETIMEMAX        10            // 10s maximum lcd page display time
-#define MOTORSPEEDCHANGETHRESHOLD 200
+#define DEFAULTSAVETIME       30000         // default time to wait before saving data to SPIFFS
+
 // You can set the speed of the motor when performing backlash to SLOW, MED or FAST
 #define BACKLASHSPEED         SLOW
+#define MOTORSPEEDCHANGETHRESHOLD 200
+
 #define moving_in             false
 #define moving_out            !moving_in
 
@@ -60,23 +62,13 @@
 #define STEP32                32
 #endif
 
-// defaults for motorspeed delays for myBoards.cpp when nomodel is defined
-#ifndef MSFAST
-#define MSFAST               250                      // delays for motorspeed in microseconds [250-1000]
-#endif
-#ifndef MSMED
-#define MSMED                1500
-#endif
-#ifndef MSSLOW
-#define MSSLOW               8000                     // do not use values > 15000 due to accuracy issues
-#endif
-
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-//#define LDEBUG     1
+//#define DEBUG     1
+//#define LOOPTIMETEST 1
 
-#ifdef  LDEBUG                                        //Macros are usually in all capital letters.
+#ifdef  DEBUG                                         //Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
 #define DebugPrintln(...) Serial.println(__VA_ARGS__) //DPRINTLN is a macro, debug print with new line
 #else

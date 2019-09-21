@@ -11,11 +11,10 @@
 // If you wish to make a small contribution in thanks for this project, please use PayPal and send the amount
 // to user rbb1brown@gmail.com (Robert Brown). All contributions are gratefully accepted.
 //
-// 1. Set your CHIPMODEL [section 1] in chipModels.h based on selected chipType matching your PCB
-// 2. Set your DRVBRD    [section 2] in myBoards.h so the correct driver board is used
-// 3. Set your target CPU to match the chipModel you defined
-// 4. Set the correct hardware options [section 4] in this file to match your hardware
-// 5. Compile and upload to your controller
+// 1. Set your DRVBRD [section 1] in myBoards.h so the correct driver board is used
+// 2. Set your target CPU to match the correct CPU for your board
+// 3. Set the correct hardware options [section 3] in this file to match your hardware
+// 4. Compile and upload to your controller
 //
 // ----------------------------------------------------------------------------------------------
 // PCB BOARDS
@@ -27,72 +26,66 @@
 //    ULN2003
 //    DRV8825
 //
+// ----------------------------------------------------------------------------------------------
+// COMPILE ENVIRONMENT : Tested with 
+// Arduino IDE 1.8.9
+// ESP8266 Driver Board 2.4.0
+// Libraries 
+// Arduino JSON 6.11.2
+// myOLED as in myFP2ELibs
+// IRRemoteESP32 2.0.1 as in myFP2ELibs
+// HalfStepperESP32 as in myFP2ELibs
+// Dallas Temperature 3.80
+// Wire [as installed with Arduino 1.8.9
+// OneWire 2.3.3
+// EasyDDNS 1.5.2
+// Notes:
+// You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
+// remove the chip from PCB before re-programming new firmware. Remember to remove WIFI library
+// as instructed in PDF when programming ESP32.
+// ----------------------------------------------------------------------------------------------
+// ESP8266 ISSUES
+// One chip I have boots fine.
+// Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset 
+// then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this 
+// chip either.
+// TODO: Look at what need to be when chip starts up, do we need a delay reset circuit?
 
 // ----------------------------------------------------------------------------------------------
-// 1: DEFINE CHIP MODEL
+// 1: SPECIFY DRIVER BOARD in myBoards.h
 // ----------------------------------------------------------------------------------------------
+
+// Please specify your driver board in myBoards.h, only 1 can be defined, see DRVBRD line
+
 #include "generalDefinitions.h"
-#include "chipModels.h"             // include chip definitions and hardware mappings
-
-// GOTO FILE chipModels.h AND SET THE CORRECT CHIP MODEL THAT MATCHES YOUR PCB/BOARD
-
-// DO NOT CHANGE
-#ifndef CHIPMODEL                   // error checking, please do NOT change
-#halt // ERROR you must have CHIPMODEL defined in chipModels.h
-#endif
-
-// ----------------------------------------------------------------------------------------------
-// 2: SPECIFY DRIVER BOARD
-// ----------------------------------------------------------------------------------------------
-// DRIVER BOARDS - Please specify your driver board here, only 1 can be defined, see DRVBRD line
-#include "myBoardTypes.h"
 #include "myBoards.h"
 
-// GOTO FILE myBoards.h AND SET THE CORRECT DRIVER BOARD
-
-// FOR DRIVERBOARD PRO2EDRV8825 YOU MUST CHANGE DRV8825TEPMODE TO MATCH MS1/2/3 JUMPERS ON PCB
-// YOU DO THIS IN myBoards.h file
-
-// DO NOT CHANGE
-#ifndef DRVBRD    // error checking, please do NOT change
-#halt // ERROR you must have DRVBRD defined
-#endif
-
 // ----------------------------------------------------------------------------------------------
-// 3: SPECIFY STEPPER MOTOR HERE : L293D MOTOR SHIELD ONLY
-// ----------------------------------------------------------------------------------------------
-// ONLY NEEDED FOR L293D MOTOR SHIELD - ALL OTHER BOARDS PLEASE IGNORE
-// You need to set the motor type here, only one or the other, NOT both
-// See PRO2EL293D in chipModels.h for wiring details of stepper motors or refer to PDF
-
-//#define STEPPERMOTORTYPE  UNIPOLAR28BYJ48
-#define STEPPERMOTORTYPE  BIPOLARNEMA
-
-// DO NOT CHANGE
-#ifndef STEPPERMOTORTYPE            // error checking, please do NOT change
-#halt // ERROR you must have STEPPERMOTORTYPE defined
-#endif
-
-// ----------------------------------------------------------------------------------------------
-// 4: FOR ESP8266 BOARDS USNG DRV8825 SET DRV8825STEPMODE
+// 2: FOR ESP8266 BOARDS USNG DRV8825 SET DRV8825STEPMODE in myBoards.h
 // ----------------------------------------------------------------------------------------------
 
 // For ESP8266, remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
 // ----------------------------------------------------------------------------------------------
-// 5: SPECIFY HARDWARE OPTIONS HERE
+// 3: FOR ULN2003, L293D, L293DMINI, L298N, L9110S specify STEPSPERREVOLUTION in myBoards.h
+// ----------------------------------------------------------------------------------------------
+
+// For these driver boards you MUST set STEPSPERREVOLUTION to the correct value in myBoards.h
+
+// ----------------------------------------------------------------------------------------------
+// 4: SPECIFY HARDWARE OPTIONS HERE
 // ----------------------------------------------------------------------------------------------
 // Caution: Do not enable a feature if you have not added the associated hardware circuits to support that feature
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment the next line
 #define OLEDDISPLAY 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
@@ -122,7 +115,7 @@
 #endif // 
 
 // ----------------------------------------------------------------------------------------------
-// 6: SPECIFY THE TYPE OF OLED DISPLAY HERE
+// 5: SPECIFY THE TYPE OF OLED DISPLAY HERE
 // ----------------------------------------------------------------------------------------------
 
 //#define OLEDGRAPHICS 1
@@ -142,7 +135,7 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 7: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
+// 6: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
 // ----------------------------------------------------------------------------------------------
 
 // to enable Bluetooth mode, uncomment the next line [ESP32 only]
@@ -161,7 +154,8 @@
 #endif
 #endif
 
-#if (CHIPMODEL == WEMOS || CHIPMODEL == NODEMCUV1 || CHIPMODEL == L293DMOTORSHIELD)
+#if (DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
+  || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 // no support for bluetooth mode
 #ifdef BLUETOOTHMODE
 #halt // ERROR - BLUETOOTHMODE not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -169,7 +163,7 @@
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 8: INCLUDES FOR WIFI
+// 7: INCLUDES FOR WIFI
 // ----------------------------------------------------------------------------------------------
 #include <WiFiServer.h>
 #include <WiFiClient.h>
@@ -186,7 +180,7 @@
 // WIFI STUFF + SPIFFS => differed includes on different boards
 
 // ----------------------------------------------------------------------------------------------
-// 9: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
+// 8: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // 1. For access point mode this is the network you connect to
 // 2. For station mode, change these to match your network details
@@ -194,7 +188,7 @@ const char* mySSID = "myfp2eap";
 const char* myPASSWORD = "myfp2eap";
 
 // ----------------------------------------------------------------------------------------------
-// 10: DUCKDNS DOMAIN AND TOKEN CONFIGURATION
+// 9: DUCKDNS DOMAIN AND TOKEN CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // To use DucksDNS, uncomment the next line - can only be used together with STATIONMODE
 //#define USEDUCKSDNS 1
@@ -218,7 +212,7 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 11: STATIC IP ADDRESS CONFIGURATION
+// 10: STATIC IP ADDRESS CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // must use static IP if using duckdns or as an Access Point
 #define STATICIPON    1
@@ -244,7 +238,7 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 12: FIRMWARE CODE START - INCLUDES AND LIBRARIES
+// 11: FIRMWARE CODE START - INCLUDES AND LIBRARIES
 // ----------------------------------------------------------------------------------------------
 // Compile this with Arduino IDE 1.8.9 with ESP8266 Core library installed v2.5.2 [for ESP8266]
 // Make sure target board is set to Node MCU 1.0 (ESP12-E Module) [for ESP8266]
@@ -270,14 +264,15 @@ IPAddress subnet(255, 255, 255, 0);
 #include <mySSD1306AsciiWire.h>
 #endif
 #endif
-#if (CHIPMODEL == ESP32VROOM)
+#if (DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
+  || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #ifdef INFRAREDREMOTE
 #include <IRremoteESP32.h>
 #endif
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 13: BLUETOOTH MODE - Do not change
+// 12: BLUETOOTH MODE - Do not change
 // ----------------------------------------------------------------------------------------------
 #ifdef BLUETOOTHMODE
 #include "BluetoothSerial.h"                // needed for Bluetooth comms
@@ -293,7 +288,7 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
 
 // ----------------------------------------------------------------------------------------------
-// 14: GLOBAL DATA -- DO NOT CHANGE
+// 13: GLOBAL DATA -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
@@ -312,45 +307,11 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 //move_out  1||  1   |   0
 //move_in   0||  0   |   1
 
-#ifdef DRVBRD
-#if( DRVBRD == PRO2EDRV8825)
-char programName[]  = "myFP2E.DRV8825";
-#endif
-#if( DRVBRD == PRO2ESP32DRV8825)
-char programName[]  = "myFP2ESP32.DRV8825";
-#endif
-#if( DRVBRD == PRO2EULN2003)
-char programName[]  = "myFP2E.ULN2003";
-#endif
-#if( DRVBRD == PRO2ESP32ULN2003)
-char programName[]  = "myFP2ESP32.ULN2003";
-#endif
-#if( DRVBRD == PRO2EL298N)
-char programName[]  = "myFP2E.L298N";
-#endif
-#if( DRVBRD == PRO2ESP32L298N)
-char programName[]  = "myFP2ESP32.L298N";
-#endif
-#if( DRVBRD == PRO2EL293DMINI)
-char programName[]  = "myFP2E.L293DMINI";
-#endif
-#if( DRVBRD == PRO2ESP32L293DMINI)
-char programName[]  = "myFP2ESP32.L293DMINI";
-#endif
-#if( DRVBRD == PRO2EL9110S)
-char programName[]  = "myFP2E.L9110S";
-#endif
-#if( DRVBRD == PRO2ESP32L9110S)
-char programName[]  = "myFP2ESP32.L9110S";
-#endif
-#if( DRVBRD == PRO2EL293D)
-char programName[]  = "myFP2E.L293D";
-#endif
+String programName = "myFP2E.";
 DriverBoard* driverboard;
-#endif
 
 char programVersion[] = "100";
-char ProgramAuthor[]  = "(c) R BROWN 2018";
+char ProgramAuthor[]  = "(c) R BROWN 2019";
 char ontxt[]          = "ON ";
 char offtxt[]         = "OFF";
 char coilpwrtxt[]     = "Coil power  =";
@@ -406,7 +367,7 @@ int packetssent;
 SetupData *mySetupData;
 
 // ----------------------------------------------------------------------------------------------
-// 15: CODE START - CHANGE AT YOUR OWN PERIL
+// 14: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 
 void software_Reboot()
@@ -879,7 +840,7 @@ void ESP_Communication( byte mode )
       SendPaket('F' + String(programVersion) + '#');
       break;
     case 4: // get firmware name
-      SendPaket('F' + String(programName) + '\r' + '\n' + String(programVersion) + '#');
+      SendPaket('F' + programName + '\r' + '\n' + String(programVersion) + '#');
       break;
     case 6: // get temperature
 #ifdef TEMPERATUREPROBE
@@ -1109,7 +1070,7 @@ void ESP_Communication( byte mode )
       paramval = (paramval < STEP1 ) ? STEP1 : paramval;
       paramval = (paramval > STEP32 ) ? STEP32 : paramval;
 #endif
-#if (DRVBRD == PRO2EL293D)
+#if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
       paramval = STEP1;
 #endif
       mySetupData->set_stepmode((byte)paramval);
@@ -1207,30 +1168,22 @@ void ESP_Communication( byte mode )
       mySetupData->set_DelayAfterMove((byte)WorkString.toInt());
       break;
     case 73: // Disable/enable backlash IN (going to lower focuser position)
-#ifdef BACKLASH
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
       mySetupData->set_backlash_in_enabled((byte)(paramval & 1));
-#endif
       break;
     case 75: // Disable/enable backlash OUT (going to lower focuser position)
-#ifdef BACKLASH
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = (byte)WorkString.toInt();
       mySetupData->set_backlash_out_enabled((byte)(paramval & 1));
-#endif
       break;
     case 77: // set backlash in steps
-#ifdef BACKLASH
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_backlashsteps_in((byte)WorkString.toInt());
-#endif
       break;
     case 79: // set backlash OUT steps
-#ifdef BACKLASH
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_backlashsteps_out((byte)WorkString.toInt());
-#endif
       break;
     case 88: // set tc direction
       WorkString = receiveString.substring(3, receiveString.length() - 1);
@@ -1324,8 +1277,10 @@ void updateirremote()
 
 void setup()
 {
-#if defined DEBUG || defined LOCALSERIAL    // Open serial port if debugging or open serial port if LOCALSERIAL
+  //#if (defined LDEBUG || defined LOCALSERIAL)    // Open serial port if debugging or open serial port if LOCALSERIAL
+#if (defined DEBUG)
   Serial.begin(SERIALPORTSPEED);
+  DebugPrintln(F("Serial started."));
 #endif
 
   mySetupData = new SetupData(Mode_SPIFFS); //instantiate object SetUpData with SPIFFS file instead of using EEPROM, init SPIFFS
@@ -1362,18 +1317,8 @@ void setup()
   myoled.clear();
 #endif // oledgraphics
 #ifdef OLEDTEXT
-#if (CHIPMODEL == NODEMCUV1)
+  // Wire.begin(I2CDATAPIN, I2CCLKPIN);
   Wire.begin();
-#endif
-#if (CHIPMODEL == WEMOS)
-  Wire.begin();
-#endif
-#if (CHIPMODEL == ESP32WROOM)
-  Wire.begin();
-#endif
-#if (CHIPMODEL == L293DMOTORSHIELD)
-  Wire.begin();
-#endif
   myoled = new SSD1306AsciiWire();
   delay(5);
   // Setup the OLED
@@ -1442,23 +1387,23 @@ void setup()
 
 #ifdef TEMPERATUREPROBE                       // start temp probe
   pinMode(TEMPPIN, INPUT);                    // Configure GPIO pin for temperature probe
-  DebugPrintln(F("Start temperature sensor"));
+  DebugPrintln(F("Start Tsensor"));
 #ifdef OLEDDISPLAY
   myoled->clear();
   myoled->println(F("Check for Tprobe"));
 #endif
   sensor1.begin();                            // start the temperature sensor1
-  DebugPrintln(F("Get number of temperature sensors"));
+  DebugPrintln(F("Get # of Tsensors"));
   tprobe1 = sensor1.getDeviceCount();         // should return 1 if probe connected
-  DebugPrint(F("Sensors found: "));
+  DebugPrint(F("Sensors : "));
   DebugPrintln(tprobe1);
-  DebugPrintln(F("Find temperature probe address"));
+  DebugPrintln(F("Find Tprobe address"));
   if (findds18b20address() == 1)
   {
     settempprobeprecision(mySetupData->get_tempprecision()); // set probe resolution
     DebugPrint(F("- Sensors found: "));
     DebugPrintln(tprobe1);
-    DebugPrint(F("- Set temperature resolution to "));
+    DebugPrint(F("- Set Tprecision to "));
     switch (mySetupData->get_tempprecision())
     {
       case 9: DebugPrintln(F("0.5"));
@@ -1478,7 +1423,7 @@ void setup()
   }
   else
   {
-    DebugPrintln(F("Temperature probe address not found"));
+    DebugPrintln(F("TProbe address not found"));
 #ifdef OLEDDISPLAY
     myoled->println("TProbe not found");
 #endif
@@ -1595,44 +1540,10 @@ void setup()
   myoled->print("Setup drvbrd: ");
   myoled->println(DRVBRD);
 #endif
-#if( DRVBRD == PRO2EDRV8825)
-  driverboard = new DriverBoard(PRO2EDRV8825, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed());
-#endif
-#if( DRVBRD == PRO2ESP32DRV8825)
-  driverboard = new DriverBoard(PRO2ESP32DRV8825, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed());
-#endif
-#if( DRVBRD == PRO2EULN2003)
-  driverboard = new DriverBoard(PRO2EULN2003, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1ULN, IN3ULN, IN4ULN, IN2ULN);
-#endif
-#if( DRVBRD == PRO2ESP32ULN2003)
-  driverboard = new DriverBoard(PRO2ESP32ULN2003, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1ULN, IN3ULN, IN4ULN, IN2ULN);
-#endif
-#if( DRVBRD == PRO2EL298N)
-  driverboard = new DriverBoard(PRO2EL298N, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L298N, IN2L298N, IN3L298N, IN4L298N);
-#endif
-#if( DRVBRD == PRO2ESP32L298N)
-  driverboard = new DriverBoard(PRO2ESP32L298N, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L298N, IN2L298N, IN3L298N, IN4L298N);
-#endif
-#if( DRVBRD == PRO2EL293DMINI)
-  driverboard = new DriverBoard(PRO2EL293DMINI, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L293DMINI, IN2L293DMINI, IN3L293DMINI, IN4L293DMINI);
-#endif
-#if( DRVBRD == PRO2ESP32L293DMINI)
-  driverboard = new DriverBoard(PRO2ESP32L293DMINI, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L293DMINI, IN2L293DMINI, IN3L293DMINI, IN4L293DMINI);
-#endif
-#if( DRVBRD == PRO2EL9110S)
-  driverboard = new DriverBoard(PRO2EL9110S, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S);
-#endif
-#if( DRVBRD == PRO2ESP32L9110S)
-  driverboard = new DriverBoard(PRO2ESP32L9110S, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S);
-#endif
-#if( DRVBRD == PRO2EL293D)
-#if (STEPPERMOTORTYPE == UNIPOLAR28BYJ48 )
-  driverboard = new DriverBoard(PRO2EL293D, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN1L293D, IN3L293D, IN2L293D, IN4L293D, SPEED28BYJ48);
-#endif
-#if (STEPPERMOTORTYPE == BIPOLARNEMA )
-  driverboard = new DriverBoard(PRO2EL293D, String(programName), mySetupData->get_stepmode(), mySetupData->get_motorSpeed(), IN2L293D, IN3L293D, IN1L293D, IN4L293D, SPEEDNEMA);
-#endif
-#endif
+
+  driverboard = new DriverBoard(DRVBRD);
+  // setup firmware filename
+  programName = programName + driverboard->getboardname();
   delay(5);
 
 #ifdef OLEDDISPLAY
@@ -1642,14 +1553,18 @@ void setup()
   // range check focuser variables
   mySetupData->set_coilpower((mySetupData->get_coilpower() >= 1) ?  1 : 0);
   mySetupData->set_reversedirection((mySetupData->get_reversedirection() >= 1) ?  1 : 0);
-  mySetupData->set_lcdpagetime((mySetupData->get_lcdpagetime() < 2) ? mySetupData->get_lcdpagetime() : 2);
-  mySetupData->set_lcdpagetime((mySetupData->get_lcdpagetime() > 10) ? 10 : mySetupData->get_lcdpagetime());
-  mySetupData->set_displayenabled((mySetupData->get_displayenabled() & 1));
+  mySetupData->set_lcdpagetime((mySetupData->get_lcdpagetime() < LCDPAGETIMEMIN) ? mySetupData->get_lcdpagetime() : LCDPAGETIMEMIN);
+  mySetupData->set_lcdpagetime((mySetupData->get_lcdpagetime() > LCDPAGETIMEMAX) ? LCDPAGETIMEMAX : mySetupData->get_lcdpagetime());
   mySetupData->set_maxstep((mySetupData->get_maxstep() < FOCUSERLOWERLIMIT) ? FOCUSERLOWERLIMIT : mySetupData->get_maxstep());
   //mySetupData->set_fposition((mySetupData->get_fposition() < 0 ) ? 0 : mySetupData->get_fposition());
   //mySetupData->set_fposition((mySetupData->get_fposition() > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : mySetupData->get_fposition());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() < 0.0 ) ? 0 : mySetupData->get_stepsize());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > DEFAULTSTEPSIZE ) ? DEFAULTSTEPSIZE : mySetupData->get_stepsize());
+
+  // restore motorspeed
+  setstepperspeed(mySetupData->get_motorSpeed());
+  // restore stepmode
+  setsteppermode(mySetupData->get_stepmode());
 
   DebugPrintln(F("Check coilpower."));
 
@@ -1678,26 +1593,6 @@ void setup()
   irrecv.enableIRIn();                              // Start the IR
 #endif
 
-#ifdef OLEDDISPLAY
-#ifdef OLEDGRAPHICS
-  // TODO Holger
-#endif
-#ifdef OLEDTEXT
-  myoled->clear();
-  myoled->println("End setup()");
-  if ( mySetupData->get_displayenabled() == 0 )
-  {
-    myoled->println("Display is disabled");
-  }
-  else
-  {
-    // make sure display if off!!!! now that setup is over
-    myoled->Display_Off();
-  }
-  delay(5);
-#endif // oledtext
-#endif // oleddisplay
-
   DebugPrintln(F("Set motorspeedchange."));
   motorspeedchangethresholdsteps = MOTORSPEEDCHANGETHRESHOLD;
   motorspeedchangethresholdenabled = 0;
@@ -1712,6 +1607,15 @@ void setup()
   digitalWrite(OUTLED, 0);
 #endif
 
+  // TODO there is a bug which is not saving displayenabled state - seems to alwaus powerup disabled
+  mySetupData->set_displayenabled(1);
+
+  DebugPrint(F("Target  ="));
+  DebugPrint(ftargetPosition);
+  DebugPrint(F(", Current = "));
+  DebugPrintln(fcurrentPosition);
+  DebugPrint(F("Displayenabled : "));
+  DebugPrintln(mySetupData->get_displayenabled());
   DebugPrintln(F("Setup end."));
 }
 
@@ -1726,6 +1630,11 @@ void loop()
   static byte backlash_enabled = 0;
 #ifdef OLEDDISPLAY
   static byte updatecount = 0;
+#endif
+
+#ifdef LOOPTIMETEST
+  DebugPrint(F("- Loop Start ="));
+  DebugPrintln(millis());
 #endif
 
 #ifndef BLUETOOTHMODE
@@ -1756,10 +1665,14 @@ void loop()
     if (myclient.connected())
     {
       if (myclient.available())
+      {
         ESP_Communication(ESPDATA);
+      }
     }
     else
+    {
       ConnectionStatus = 1;
+    }
   }
 #endif // ifndef BLUETOOTHMODE
 #ifdef BLUETOOTHMODE
@@ -1830,7 +1743,6 @@ void loop()
     case State_InitMove:
       isMoving = 1;
       DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
-      //driverboard.setDirOfTravel(DirOfTravel ^ mySetupData->get_reversedirection());    // Dir and Enable motor driver
       enablesteppermotor();
       if (mySetupData->get_focuserdirection() == DirOfTravel)
       {
@@ -1853,12 +1765,15 @@ void loop()
           backlash_enabled = mySetupData->get_backlash_out_enabled();
         }
         // backlash needs to be applied, so get backlash values and states
+#ifdef BACKLASH
+        // if backlask was defined then follow the backlash rules
+        // if backlash has been enabled then apply it
         if ( backlash_enabled == 1 )
         {
           // apply backlash
           // save new direction of travel
           mySetupData->set_focuserdirection(DirOfTravel);
-          setstepperspeed(BACKLASHSPEED);
+          //setstepperspeed(BACKLASHSPEED);
           MainStateMachine = State_ApplyBacklash;
           DebugPrint(F("Idle => State_ApplyBacklash"));
         }
@@ -1868,6 +1783,11 @@ void loop()
           MainStateMachine = State_Moving;
           DebugPrint(F("Idle => State_Moving"));
         }
+#else
+        // ignore backlash
+        MainStateMachine = State_Moving;
+        DebugPrint(F("Idle => State_Moving"));
+#endif
       }
       break;
 
@@ -1879,7 +1799,7 @@ void loop()
       }
       else
       {
-        setstepperspeed(mySetupData->get_motorSpeed());
+        //setstepperspeed(mySetupData->get_motorSpeed());
         MainStateMachine = State_Moving;
         DebugPrintln(F("=> State_Moving"));
       }
@@ -1941,6 +1861,11 @@ void loop()
       MainStateMachine = State_Idle;
       break;
   }
+
+#ifdef LOOPTIMETEST
+  DebugPrint(F("- Loop End ="));
+  DebugPrintln(millis());
+#endif
 } // end Loop()
 
 #ifdef BLUETOOTHMODE
