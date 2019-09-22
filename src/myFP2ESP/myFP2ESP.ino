@@ -79,22 +79,22 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-//#define TEMPERATUREPROBE 1
+#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment the next line
 #define OLEDDISPLAY 1
 
 // To enable backlash in this firmware, uncomment the next line
-//#define BACKLASH 1
+#define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
-//#define INOUTPUSHBUTTONS 1
+#define INOUTPUSHBUTTONS 1
 
 // To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTLEDS 1
 
 // To enable the Infrared remote controller, uncomment the next line [ESP32 only]
-//#define INFRAREDREMOTE
+#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 #define SHOWSTARTSCRN 1
@@ -264,7 +264,7 @@ IPAddress subnet(255, 255, 255, 0);
 #include <mySSD1306AsciiWire.h>
 #endif
 #endif
-#if (DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
+#if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
   || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #ifdef INFRAREDREMOTE
 #include <IRremoteESP32.h>
@@ -410,11 +410,11 @@ void releasesteppermotor(void)
 void steppermotormove(byte dir )           // direction move_in, move_out ^ reverse direction
 {
 #ifdef INOUTLEDS
-  ( dir == move_in ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
+  ( dir == move_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
 #endif
   driverboard->movemotor(dir);
 #ifdef INOUTLEDS
-  ( dir == move_in ) ? digitalWrite(INLED, 0) : digitalWrite(OUTLED, 0);
+  ( dir == move_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
 #endif
 }
 
@@ -725,7 +725,7 @@ void displaylcdpage2(void)
 #endif
 }
 
-void UpdatePositionOledText(void)
+void update_positionOledtext(void)
 {
   myoled->setCursor(0, 0);
   myoled->print("Current Pos = ");
@@ -739,7 +739,7 @@ void UpdatePositionOledText(void)
   myoled->println();
 }
 
-void Update_OledText(void)
+void update_OledText(void)
 {
   static unsigned long currentMillis;
   static unsigned long olddisplaytimestampNotMoving = millis();
@@ -975,7 +975,7 @@ void ESP_Communication( byte mode )
         // TODO Holger
 #endif
 #ifdef OLEDTEXT
-        UpdatePositionOledText();
+        update_positionOledtext();
 #endif
 #endif // oleddisplay
       }
@@ -1199,13 +1199,13 @@ void update_pushbuttons(void)
 {
   long newpos;
   // PB are active high - pins float low if unconnected
-  if ( digitalRead(INPB) == 1 )       // is pushbutton pressed?
+  if ( digitalRead(INPBPIN) == 1 )       // is pushbutton pressed?
   {
     newpos = ftargetPosition - 1;
     newpos = (newpos < 0 ) ? 0 : newpos;
     ftargetPosition = newpos;
   }
-  if ( digitalRead(OUTPB) == 1 )
+  if ( digitalRead(OUTPBPIN) == 1 )
   {
     newpos = ftargetPosition + 1;
     // an unsigned long range is 0 to 4,294,967,295
@@ -1218,7 +1218,7 @@ void update_pushbuttons(void)
 #endif
 
 #ifdef INFRAREDREMOTE
-void updateirremote()
+void update_irremote()
 {
   // check IR
   if (irrecv.decode(&results))
@@ -1293,15 +1293,15 @@ void setup()
 #endif
 
 #ifdef INOUTLEDS                            // Setup IN and OUT LEDS, use as controller power up indicator
-  pinMode(INLED, OUTPUT);
-  pinMode(OUTLED, OUTPUT);
-  digitalWrite(INLED, 1);
-  digitalWrite(OUTLED, 1);
+  pinMode(INLEDPIN, OUTPUT);
+  pinMode(OUTLEDPIN, OUTPUT);
+  digitalWrite(INLEDPIN, 1);
+  digitalWrite(OUTLEDPIN, 1);
 #endif
 
 #ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
-  pinMode(INPB, INPUT);
-  pinMode(OUTPB, INPUT);
+  pinMode(INPBPIN, INPUT);
+  pinMode(OUTPBPIN, INPUT);
 #endif
 
 #ifdef OLEDDISPLAY
@@ -1603,8 +1603,8 @@ void setup()
 #endif
 
 #ifdef INOUTLEDS
-  digitalWrite(INLED, 0);
-  digitalWrite(OUTLED, 0);
+  digitalWrite(INLEDPIN, 0);
+  digitalWrite(OUTLEDPIN, 0);
 #endif
 
   // TODO there is a bug which is not saving displayenabled state - seems to alwaus powerup disabled
@@ -1703,10 +1703,10 @@ void loop()
       {
         // focuser stationary. isMoving is 0
 #ifdef INOUTPUSHBUTTONS
-        updatepushbuttons();
+        update_pushbuttons();
 #endif
 #ifdef INFRAREDREMOTE
-        updateirremote();
+        update_irremote();
 #endif
 #ifdef OLEDDISPLAY
 #ifdef OLEDGRAPHICS
@@ -1718,7 +1718,7 @@ void loop()
 #ifdef OLEDTEXT
         if ( mySetupData->get_displayenabled() == 1)
         {
-          Update_OledText();
+          update_OledText();
         }
 #endif // OLEDTEXT
 #endif // OLEDDISPLAY
@@ -1828,7 +1828,7 @@ void loop()
               // UpdatePositionOledGraphics();  // ????
 #endif
 #ifdef OLEDTEXT
-              UpdatePositionOledText();
+              update_positionOledtext();
 #endif
             }
           }
