@@ -1,14 +1,19 @@
-#include <Arduino.h>
+//#define Mode_EEPROM true
+//#define Mode_SPIFFS !Mode_EEPROM
 
-#include "generalDefinitions.h"
+#define DEFAULTPOSITION 5000L
+#define DEFAULTMAXSTEPS 80000L
+#define DEFAULTOFF      0
+#define DEFAULTON       1
+#define DEFAULTCELSIUS  1
+#define DEFAULTFAHREN   0
+#define DEFAULTDOCSIZE  512
 
-#define Mode_EEPROM true
-#define Mode_SPIFFS !Mode_EEPROM
 
 class SetupData
 {
   public:
-    SetupData(byte);
+    SetupData(void);
     byte LoadConfiguration(void);
     byte SaveConfiguration(unsigned long, byte);
     void SetFocuserDefaults(void);
@@ -38,7 +43,7 @@ class SetupData
     byte get_motorSpeed();
     byte get_displayenabled();
 
-    //__setter
+    //  setter
     void set_fposition(unsigned long);
     void set_focuserdirection(byte);
     void set_maxstep(unsigned long);
@@ -74,7 +79,7 @@ class SetupData
     void StartDelayedUpdate(byte &, byte);
 
     byte mode;                                          // store to EEPROM or SPIFFS
-    byte DataAssign;
+    byte DataAssign;                // control time to save changed Setupdata
     const String filename_persistant = "/data_per.jsn"; // persistant JSON setup data
     const String filename_vaiable = "/data_var.jsn";    // variable  JSON setup data
 
@@ -84,7 +89,7 @@ class SetupData
     byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
-    //dataset_persistant
+    // dataset_persistant
     unsigned long maxstep;          // max steps
     float stepsize;                 // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
     byte DelayAfterMove;            // delay after movement is finished (maxval=256)

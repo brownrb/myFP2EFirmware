@@ -1,15 +1,21 @@
 #include <Arduino.h>
-
+#include "generalDefinitions.h"
 #include "myBoards.h"
+
 
 DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 {
   switch ( brdtype )
   {
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825)
+
+    case PRO2ESP32DRV8825:
+      pinMode(MS1,OUTPUT);        // number of microsteps
+      pinMode(MS2,OUTPUT);
+      pinMode(MS3,OUTPUT);   
+      DriverBoard::setstepmode(DRV8825TEPMODE);
     case WEMOSDRV8825:
     case PRO2EDRV8825:
-    case PRO2ESP32DRV8825:
       pinMode(ENABLEPIN, OUTPUT);
       pinMode(DIRPIN, OUTPUT);
       pinMode(STEPPIN, OUTPUT);
@@ -160,7 +166,7 @@ String DriverBoard::getboardname(void)
 
 byte DriverBoard::getstepmode(void)
 {
-  return this->stepmode;
+    return this->stepmode;
 }
 
 void DriverBoard::setstepmode(byte smode)
@@ -176,8 +182,54 @@ void DriverBoard::setstepmode(byte smode)
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
     case PRO2ESP32DRV8825:
-      smode = (smode < STEP1 ) ? STEP1 : smode;
-      smode = (smode > STEP32 ) ? STEP32 : smode;
+      switch (smode)
+      {
+        case STEP1:
+        case STEP2:
+        case STEP4:
+        case STEP8:
+        case STEP16:
+        case STEP32:
+          break;
+        default:
+          smode = DRV8825TEPMODE;
+          break;
+      }
+
+      switch (smode)
+      {
+        case STEP1:
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 0);                                        
+          break;
+        case STEP2:
+          digitalWrite(MS1, 1);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 0);                                        
+          break;
+        case STEP4:
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 1);
+          digitalWrite(MS3, 0);                                        
+          break;
+        case STEP8:
+          digitalWrite(MS1, 1);
+          digitalWrite(MS2, 1);
+          digitalWrite(MS3, 0);                                        
+          break;
+        case STEP16:
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 1);                                        
+          break;
+        case STEP32:
+          digitalWrite(MS1, 1);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 1);                                        
+          break;
+      }
+
       this->stepmode = smode;
       break;
 #endif

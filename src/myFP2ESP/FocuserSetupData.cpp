@@ -10,19 +10,11 @@
 #include "FocuserSetupData.h"
 #include "generalDefinitions.h"
 
-#define DEFAULTPOSITION 5000L
-#define DEFAULTMAXSTEPS 80000L
-#define DEFAULTOFF      0
-#define DEFAULTON       1
-#define DEFAULTCELSIUS  1
-#define DEFAULTFAHREN   0
-#define DEFAULTDOCSIZE  512
-
-SetupData::SetupData(byte set_mode)
+SetupData::SetupData(void)
 {
   DebugPrintln("Constructor Setupdata");
 
-  this->mode = set_mode;
+/*  this->mode = set_mode;
   if (mode == Mode_EEPROM)
   {
     DebugPrintln(F("Mode: EEPROM"));
@@ -31,8 +23,8 @@ SetupData::SetupData(byte set_mode)
   {
     DebugPrintln(F("Mode: SPIFFS"));
   }
-
-  this->DataAssign = DEFAULTOFF;
+*/
+  this->DataAssign = 0;
   this->SnapShotMillis = millis();
 
   // mount SPIFFS
@@ -101,6 +93,7 @@ byte SetupData::LoadConfiguration()
       this->tempcompenabled = doc_per["tempcompenabled"];           // indicates if temperature compensation is enabled
       this->tcdirection = doc_per["tcdirection"];
       this->motorSpeed = doc_per["motorSpeed"];
+      this->displayenabled =  doc_per["displayenabled"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));

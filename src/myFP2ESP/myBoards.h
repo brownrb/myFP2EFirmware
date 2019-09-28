@@ -1,5 +1,5 @@
-#include <Arduino.h>
-#include "generalDefinitions.h"
+//#include <Arduino.h>
+//#include "generalDefinitions.h"
 #include "myBoardTypes.h"
 
 #ifndef myBoards_h
@@ -229,6 +229,7 @@ class DriverBoard
     int stepdelay;                                // time in milliseconds to wait between pulses when moving
     int Step;                                     // used to control step count
 
+    
     // Step sequences NO LONGER USED
     int ulnfull[4] = {B01100, B00110, B00011, B01001};                                    // confirmed
     int ulnhalf[8] = {B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001};    // confirmed
