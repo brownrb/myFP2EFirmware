@@ -1,4 +1,4 @@
-# myFP2E Firmware for ESP32 and ESP8266
+# myFP2E Firmware for ESP32 and ESP8266 myFP2 Controllers
 This is the firmware for the myFocuserPro2E ESP8266 and ESP32 focus controller projecta on Sourceforge.
 https://sourceforge.net/projects/arduinoascomfocuserpro2diy/files/myFocuserPro2E/
 https://sourceforge.net/projects/myfocuserpro2-esp32/
@@ -28,25 +28,26 @@ https://dl.espressif.com/dl/package_esp32_index.json
 Once specified, open the board manager, scroll down to ESP32 and install the latest version
 Then you can specify the target board as **ESP32 Dev** with Flash Size set t 4M (1MB SPIFFS) and upload speed of 115200.
 
-Note1: Additional JSON files are separated in board manager by using a comma ,
-Note2: When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to
-C:\Program Files (x86)\Arduino\libraries.old\WiFi
+###Note1: Additional JSON files are separated in board manager by using a comma ,
+###Note2: When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to C:\Program Files (x86)\Arduino\libraries.old\WiFi
 
 # Additional JSON library Needed
 make sure you install the library ArduinoJson-6.x.xip into the Arduino IDE else firmware will not compile.
 You can do this within the Arduino IDE by
-- Open the Arduino Library Manager
-- Search for “ArduinoJson”
-- Select the version: 6.11.2
-- Click install
+
+* Open the Arduino Library Manager
+* Search for “ArduinoJson”
+* Select the version: 6.11.2
+* Click install
 
 This file is provided here in this repository. The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 
 # Libraries
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
-- myOLED
-- IRREMOTEESP32
-- HalfStepperESP32
+
+* myOLED
+* IRREMOTEESP32
+* HalfStepperESP32
 
 Do not edit or replace any of these library files with others.
 
@@ -73,10 +74,10 @@ One firmware file supports all driver boards [a different file supports the L293
 The controller supports the modes ACCESSPOINT and STATION for ESP8266 with an additional BLUETOOTHMODE for the ESP32. 
 
 # Command Process Handler Routine
-At present a single command process handler manages received commands for either Bluetooth [ESP32 only] of TCP/IP. This must handle each ontroller mode, so some variables had to be made global to do this.
+At present a single command process handler manages received commands for either Bluetooth [ESP32 only] of TCP/IP. This must handle each controller mode, so some variables had to be made global to do this.
 
 # FocuserSetupData.cpp and .h files
-At present these must be in the same folder as the .ino file, but will later migrate to a library. These files handle the SPIFFS data, saving, restoring and persistance of controller settings. For the ESP8266, there is a now shift away from the use of EEPROM to using a JSON file stored in the file system SPIFFS area.
+At present these must be in the same folder as the .ino file, but will later migrate to a library. These files handle the SPIFFS data, saving, restoring and persistance of controller settings. A JSON file in file system SPIFFS area is used to store focuser data.
 
 # myBoards.cpp and .h files
 This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There is one constructor for this class which accepts the boardtype, the user should never have to change the main code within the firmware file which sets up the driver boards. All pins mappings for the controller chip, hardware options and the driver board are specified here.
@@ -96,28 +97,32 @@ This library manages communication with an Infra-Red controller. The Library is 
 #myOLED Libary
 This is a special cut down version of the SSD1306AsciiWire library by Bill Greiman. The library has been reduced in size and a number of additional features added. DO NOT MODIFY THESE FILES.
 
-// ----------------------------------------------------------------------------------------------
-// COMPILE ENVIRONMENT : Tested with 
-// Arduino IDE 1.8.9
-// ESP8266 Driver Board 2.4.0
-// Libraries 
-// Arduino JSON 6.11.2
-// myOLED as in myFP2ELibs
-// IRRemoteESP32 2.0.1 as in myFP2ELibs
-// HalfStepperESP32 as in myFP2ELibs
-// Dallas Temperature 3.80
-// Wire [as installed with Arduino 1.8.9
-// OneWire 2.3.3
-// EasyDDNS 1.5.2
-// Notes:
-// You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
-// remove the chip from PCB before re-programming new firmware. Remember to remove WIFI library
-// as instructed in PDF when programming ESP32.
-// ----------------------------------------------------------------------------------------------
-// ESP8266 ISSUES
-// One chip I have boots fine.
-// Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset 
-// then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this 
-// chip either.
-// TODO: Look at what need to be when chip starts up, do we need a delay reset circuit?
-// ----------------------------------------------------------------------------------------------
+#COMPILE ENVIRONMENT : Tested with 
+
+* Arduino IDE 1.8.9
+* ESP8266 Driver Board 2.4.0
+
+Libraries 
+
+* Arduino JSON 6.11.2
+* myOLED as in myFP2ELibs
+* IRRemoteESP32 2.0.1 as in myFP2ELibs
+* HalfStepperESP32 as in myFP2ELibs
+* Dallas Temperature 3.80
+* Wire [as installed with Arduino 1.8.9
+* OneWire 2.3.3
+* EasyDDNS 1.5.2
+
+#Notes:
+You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
+remove the chip from PCB before re-programming new firmware. Remember to remove WIFI library
+as instructed in PDF when programming ESP32.
+
+#ESP8266 ISSUES
+One chip I have boots fine.
+Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset 
+then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this 
+chip either.
+
+#TODO
+Look at what need to be when chip starts up, do we need a delay reset circuit?

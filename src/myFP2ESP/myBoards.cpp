@@ -6,9 +6,11 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 {
   switch ( brdtype )
   {
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825)
+#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825\
+  || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825)
     case WEMOSDRV8825:
     case PRO2EDRV8825:
+    case PRO2EDRV8825BIG:
     case PRO2ESP32DRV8825:
       pinMode(ENABLEPIN, OUTPUT);
       pinMode(DIRPIN, OUTPUT);
@@ -113,46 +115,49 @@ String DriverBoard::getboardname(void)
   switch ( boardtype )
   {
     case WEMOSDRV8825:
-      retstr  = "WEMOSDRV8825";
+      retstr  = F("WEMOSDRV8825");
       break;
     case PRO2EDRV8825:
-      retstr = "PRO2EDRV8825";
+      retstr = F("PRO2EDRV8825");
       break;
-    case PRO2EULN2003:
-      retstr  = "PRO2EULN2003";
+    case PRO2EDRV8825BIG:
+      retstr = F("PRO2EDRV8825BIG");
+      break;
+      case PRO2EULN2003:
+      retstr  = F("PRO2EULN2003");
       break;
     case PRO2EL293DNEMA:
-      retstr  = "PRO2EL293DNEMA";
+      retstr  = F("PRO2EL293DNEMA");
       break;
     case PRO2EL293D28BYJ48:
-      retstr = "PRO2EL293D28BYJ48";
+      retstr = F("PRO2EL293D28BYJ48");
       break;
     case PRO2EL298N:
-      retstr = "PRO2EL298N";
+      retstr = F("PRO2EL298N");
       break;
     case PRO2EL293DMINI:
-      retstr = "PRO2EL293DMINI";
+      retstr = F("PRO2EL293DMINI");
       break;
     case PRO2EL9110S:
-      retstr = "PRO2EL9110S";
+      retstr = F("PRO2EL9110S");
       break;
     case PRO2ESP32DRV8825:
-      retstr = "PRO2ESP32DRV8825";
+      retstr = F("PRO2ESP32DRV8825");
       break;
     case PRO2ESP32ULN2003:
-      retstr = "PRO2ESP32ULN2003";
+      retstr = F("PRO2ESP32ULN2003");
       break;
     case PRO2ESP32L298N:
-      retstr = "PRO2ESP32L298N";
+      retstr = F("PRO2ESP32L298N");
       break;
     case PRO2ESP32L293DMINI:
-      retstr = "PRO2ESP32L293DMINI";
+      retstr = F("PRO2ESP32L293DMINI");
       break;
     case PRO2ESP32L9110S:
-      retstr = "PRO2ESP32L9110S";
+      retstr = F("PRO2ESP32L9110S");
       break;
     default:
-      retstr = "UNKNOWN";
+      retstr = F("UNKNOWN");
       break;
   }
   return retstr;
@@ -167,8 +172,10 @@ void DriverBoard::setstepmode(byte smode)
 {
   switch (this->boardtype)
   {
-#if (DRVBRD == PRO2EDRV8825)
+#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG)
+    case WEMOSDRV8825:
     case PRO2EDRV8825:
+    case PRO2EDRV8825BIG:
       // for DRV8825 stepmode is set in hardware jumpers
       // cannot set by software
       smode = DRV8825TEPMODE;       // defined at beginning of myBoards.h
@@ -178,6 +185,7 @@ void DriverBoard::setstepmode(byte smode)
     case PRO2ESP32DRV8825:
       smode = (smode < STEP1 ) ? STEP1 : smode;
       smode = (smode > STEP32 ) ? STEP32 : smode;
+      this->stepmode = smode;
       break;
 #endif
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
@@ -226,9 +234,11 @@ void DriverBoard::enablemotor(void)
 {
   switch (this->boardtype)
   {
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 )
+#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825\
+  || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825)
     case WEMOSDRV8825:
     case PRO2EDRV8825:
+    case PRO2EDRV8825BIG:
     case PRO2ESP32DRV8825:
       digitalWrite(ENABLEPIN, 0);
       break;
@@ -244,9 +254,11 @@ void DriverBoard::releasemotor(void)
 {
   switch (this->boardtype)
   {
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825)
+#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825\
+  || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825)
     case WEMOSDRV8825:
     case PRO2EDRV8825:
+    case PRO2EDRV8825BIG:
     case PRO2ESP32DRV8825:
       digitalWrite(ENABLEPIN, 1);
       break;
@@ -281,9 +293,11 @@ void DriverBoard::movemotor(byte dir)
   // handling of inout leds when moving done in main code
   switch (this->boardtype)
   {
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825)
+#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825\
+  || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825)
     case WEMOSDRV8825:
     case PRO2EDRV8825:
+    case PRO2EDRV8825BIG:
     case PRO2ESP32DRV8825:
       digitalWrite(DIRPIN, dir);            // set Direction of travel
       digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver

@@ -1,6 +1,5 @@
-#include <Arduino.h>
 #include <ArduinoJson.h>
-#include <SPI.h>
+
 
 #if defined(ESP8266)
  #include <FS.h>
@@ -38,8 +37,10 @@ SetupData::SetupData(byte set_mode)
 
   // mount SPIFFS
   if (!SPIFFS.begin()) {
-    DebugPrintln("An Error has occurred while mounting SPIFFS");
-    return;
+    DebugPrintln(F("An Error has occurred while mounting SPIFFS"));
+    Serial.println(F("start to format SPIFFS, wait some seconds...."));  
+    SPIFFS.format();
+    Serial.println(F("SPIFFS format done"));      
   }
   else
   {
@@ -56,28 +57,86 @@ byte SetupData::LoadConfiguration()
 
   // Open file for reading
   File file = SPIFFS.open(filename_persistant, "r");
-  LoadDefaultPersistantData();
+
+
+  if (!file) 
+  {
+    DebugPrintln(F("no config file persistant data found, load default values"));
+    LoadDefaultPersistantData();
+  }
+  else 
+  {
+
+    String data = file.readString(); // read content of the text file
+    DebugPrint(F("SPIFFS: Persistant SetupData: "));   
+    DebugPrintln(data);           // ... and print on serial 
+
+  // Allocate a temporary JsonDocument
+    DynamicJsonDocument doc_per(800);
+
+  // Deserialize the JSON document
+    DeserializationError error = deserializeJson(doc_per, data);
+    if (error) {
+      DebugPrintln(F("Failed to read persistant data file, using default configuration"));
+      LoadDefaultPersistantData();
+    }
+    else
+    {
+      this->maxstep = doc_per["maxstep"];     // max steps
+      this->stepsize = doc_per["stepsize"];   // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
+      this->DelayAfterMove = doc_per["DelayAfterMove"];  // delay after movement is finished (maxval=256)
+      this->backlashsteps_in = doc_per["backlashsteps_in"];          // number of backlash steps to apply for IN moves
+      this->backlashsteps_out = doc_per["backlashsteps_out"];         // number of backlash steps to apply for OUT moves
+      this->backlash_in_enabled = doc_per["byte backlash_in_enabled"];
+      this->backlash_out_enabled = doc_per["backlash_out_enabled"];
+      this->tempcoefficient = doc_per["tempcoefficient"];           // steps per degree temperature coefficient value (maxval=256)
+      this->tempprecision = doc_per["tempprecision"];             // 9 -12
+      this->stepmode = doc_per["stepmode"];
+      this->coilpower = doc_per["coilpower"];
+      this->reversedirection = doc_per["reversedirection"];
+      this->stepsizeenabled = doc_per["stepsizeenabled"];           // if 1, controller returns step size
+      this->tempmode = doc_per["tempmode"];                  // temperature display mode, Celcius=1, Fahrenheit=0
+      this->lcdupdateonmove = doc_per["lcdupdateonmove"];           // update position on lcd when moving
+      this->lcdpagetime = doc_per["lcdpagetime"];
+      this->tempcompenabled = doc_per["tempcompenabled"];           // indicates if temperature compensation is enabled
+      this->tcdirection = doc_per["tcdirection"];
+      this->motorSpeed = doc_per["motorSpeed"];
+    }
+    file.close();
+    DebugPrintln(F("config file persistant data loaded"));
+  }
+
 
   file = SPIFFS.open(filename_vaiable, "r");
   if (!file) {
-    DebugPrintln("no config file variable data found, load default values");
+    DebugPrintln(F("no config file variable data found, load default values"));
     LoadDefaultVariableData();
     retval = 1;
   }
-  else {
+  else 
+  {
+
+    String data = file.readString(); // read content of the text file
+    DebugPrint(F("SPIFFS: Varibale SetupData: "));   
+    DebugPrintln(data);           // ... and print on serial 
+
+
     // Allocate a temporary JsonDocument
-    StaticJsonDocument<64> doc_var;
+    DynamicJsonDocument doc_var(63);
 
     // Deserialize the JSON document
-    DeserializationError error = deserializeJson(doc_var, file);
+    DeserializationError error = deserializeJson(doc_var, data);
     if (error) {
       DebugPrintln(F("Failed to read variable data file, using default configuration"));
       LoadDefaultVariableData();
       retval = 2;
     }
     else {
-      this->fposition = doc_var["fpos"];         // last focuser position
+      this->fposition = doc_var["fpos"];         // last focuser position  
       this->focuserdirection = doc_var["fdir"];  // keeps track of last focuser move direction
+
+      // round position to fullstep motor position 
+      this->fposition = (this->fposition + this->stepmode/2) / this->stepmode * this->stepmode;
       retval = 3;
     }
   }
