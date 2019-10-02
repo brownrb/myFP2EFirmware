@@ -26,6 +26,7 @@
 //    ULN2003   https://aisler.net/p/OTEGMJNE
 //    DRV8825   https://aisler.net/p/TYQHHGAI
 //
+// ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
 // ----------------------------------------------------------------------------------------------
 // COMPILE ENVIRONMENT : Tested with
 // Arduino IDE 1.8.9
@@ -60,9 +61,10 @@
 #include "myBoards.h"
 
 // ----------------------------------------------------------------------------------------------
-// 2: FOR ESP8266 BOARDS USNG DRV8825 SET DRV8825STEPMODE in myBoards.h
+// 2: FOR ESP8266 BOARDS USING DRV8825 SET DRV8825STEPMODE in myBoards.h
+//    FOR R3 WEMOS ESP32 USING DRV8825 SET DRV8825STEPMODE in myBoards.h
 // ----------------------------------------------------------------------------------------------
-// For ESP8266, remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
+// Remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
 // ----------------------------------------------------------------------------------------------
 // 3: FOR ULN2003, L293D, L293DMINI, L298N, L9110S specify STEPSPERREVOLUTION in myBoards.h
@@ -99,7 +101,7 @@
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
   || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
-  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D )
+  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D   || DRVBRD == PRO2ESP32R3WEMOS )
 // no support for pushbuttons, inout leds, irremote
 #ifdef INOUTPUSHBUTTONS
 #halt // ERROR - INOUTPUSHBUTTONS not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -156,7 +158,7 @@ enum OLED_Type {NO_OLED, TEXT_OLED, GRAPHIC_OLED};
 
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
   || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
-  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D )
+  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D   || DRVBRD == PRO2ESP32R3WEMOS )
 // no support for bluetooth mode
 #ifdef BLUETOOTHMODE
 #halt // ERROR - BLUETOOTHMODE not supported for WEMOS or NODEMCUV1 ESP8266 chips

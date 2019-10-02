@@ -21,11 +21,12 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
+#define DRVBRD PRO2ESP32R3WEMOS
 
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
 #define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266
@@ -201,6 +202,17 @@
 #define MSFAST        1
 #define MSMED         1000
 #define MSSLOW        8000
+#endif
+#if (DRVBRD == PRO2ESP32R3WEMOS )
+#define TEMPPIN       13
+#define I2CDATAPIN    21
+#define I2CCLKPIN     22
+#define DIRPIN        26
+#define STEPPIN       27
+#define ENABLEPIN     14
+#define MSFAST        500
+#define MSMED         1000
+#define MSSLOW        2000
 #endif
 
 // ----------------------------------------------------------------------------------------------
