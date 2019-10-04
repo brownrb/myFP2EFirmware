@@ -154,7 +154,7 @@ void SetupData::LoadDefaultPersistantData()
   this->reversedirection      = DEFAULTOFF;
   this->stepsizeenabled       = DEFAULTOFF; 
   this->stepsize              = DEFAULTSTEPSIZE;
-  this->DelayAfterMove        = DEFAULTOFF;
+  this->DelayAfterMove        = 100;                  // 100ms delay after move
   this->backlashsteps_in      = DEFAULTOFF;
   this->backlashsteps_out     = DEFAULTOFF;
   this->backlash_in_enabled   = DEFAULTON;

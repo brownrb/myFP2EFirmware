@@ -83,7 +83,7 @@
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
 //#define  OLEDTEXT 
-//#define  OLEDGRAPHICS 
+#define  OLEDGRAPHICS 
 
 // To enable backlash in this firmware, uncomment the next line
 #define BACKLASH 1
@@ -179,6 +179,8 @@
 #halt // ERROR - BLUETOOTHMODE not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
 #endif
+
+#define MotorReleaseDelay 120     // motor release power after 120s
 
 // ----------------------------------------------------------------------------------------------
 // 7: INCLUDES FOR WIFI
@@ -381,6 +383,21 @@ SetupData *mySetupData;
 // 14: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 
+
+byte TimeCheck(unsigned long x, unsigned long Delay)
+{
+  unsigned long y = x + Delay;    // 
+  unsigned long z = millis();     // pick current time
+
+  if ((x > y) && (x < z))
+    return 0;                 // overflow y
+  if ((x < y) && ( x > z))
+    return 1;                 // overflow z
+
+  return (y < z);             // no or (z and y) overflow
+}
+
+
 void software_Reboot(int Reboot_delay)
 {
 #ifdef OLEDDISPLAY
@@ -439,34 +456,11 @@ float readtemp(byte new_measurement)
   }
   return result;
 }
-
-/*
-void settempprobeprecision(byte precision)
-{
-  sensor1.setResolution(tpAddress, precision); // set probe resolution, tpAddress must be global
-}
-
-// find the address of the DS18B20 sensor probe
-byte findds18b20address()
-{
-  // look for probes, search the wire for address
-  DebugPrintln(F("Searching for temperature probe"));
-  if (sensor1.getAddress(tpAddress, 0))
-  {
-    DebugPrint(F("Temperature probe address found"));
-    tprobe1 = 1;
-  }
-  else
-  {
-    DebugPrintln(F("Temperature probe NOT found"));
-    tprobe1 = 0;
-  }
-  return tprobe1;
-}
-*/
+#endif
 
 void Update_Temp(void)
 {
+#ifdef TEMPERATUREPROBE  
   static byte tcchanged = mySetupData->get_tempcompenabled();  // keeps track if tempcompenabled changes
 
   if (tprobe1 == 1)
@@ -476,7 +470,7 @@ void Update_Temp(void)
     unsigned long tempnow = millis();
 
     // see if the temperature needs updating - done automatically every 1.5s
-    if (((tempnow - lasttempconversion) > TEMPREFRESHRATE) || (tempnow < lasttempconversion))
+    if(TimeCheck(lasttempconversion , TEMPREFRESHRATE))
     {
       static float tempval;
       static float starttemp;                     // start temperature to use when temperature compensation is enabled
@@ -543,8 +537,9 @@ void Update_Temp(void)
       } // end of check for tempcomp enabled
     } // end of check for temperature needs updating
   } // end of if tprobe
+#endif // TEMPERATUREPROBE  
 }
-#endif // TEMPERATUREPROBE
+
 
 
 //______________OLED______________________________________
@@ -1786,6 +1781,13 @@ void loop()
   static byte ConnectionStatus = 0;
   static byte backlash_count = 0;
   static byte backlash_enabled = 0;
+
+  static unsigned long TimeStampDelayAfterMove = 0;
+  static unsigned long TimeStampPark = millis();
+  static byte Parked = false;
+  static byte msteps;                                 // backlash compensation
+
+
 #ifdef OLEDDISPLAY
   static byte updatecount = 0;
 #endif
@@ -1824,7 +1826,7 @@ void loop()
     {
       if (myclient.available())
       {
-        ESP_Communication(ESPDATA);
+        ESP_Communication(ESPDATA);     // Wifi communication
       }
     }
     else
@@ -1854,7 +1856,7 @@ void loop()
     case State_Idle:
       if (fcurrentPosition != ftargetPosition)
       {
-        driverboard->enablemotor();
+//        driverboard->enablemotor();       // is in State_InitMove
         MainStateMachine = State_InitMove;
         DebugPrint(F("Idle => InitMove Target "));
         DebugPrint(ftargetPosition);
@@ -1870,14 +1872,29 @@ void loop()
 #ifdef INFRAREDREMOTE
         updateirremote();
 #endif
-        if ( mySetupData->get_displayenabled() == 1)
+        if (mySetupData->get_displayenabled() == 1)
         { 
           Update_OledGraphics(oled_stay);
           Update_OledText();
         }
-#ifdef TEMPERATUREPROBE
+        else
+        {
+          Update_OledGraphics(oled_off);
+        }
+        
         Update_Temp();
-#endif // temperatureprobe
+
+        if (Parked == false)
+        {
+          if(TimeCheck(TimeStampPark, MotorReleaseDelay * 1000))    // 
+          {
+            driverboard->releasemotor();
+            DebugPrintln(F("Idle: release motor"));
+            Parked = true;
+          }
+        }
+
+
         byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
         if ( status == true )
         {
@@ -1891,7 +1908,7 @@ void loop()
     case State_InitMove:
       isMoving = 1;
       DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
-      driverboard->enablemotor();
+      driverboard->enablemotor(); 
       if (mySetupData->get_focuserdirection() == DirOfTravel)
       {
         // move is in same direction, ignore backlash
@@ -1992,20 +2009,19 @@ void loop()
 
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
-      delay(mySetupData->get_DelayAfterMove());
-      MainStateMachine = State_FinishedMove;
-      DebugPrintln(F("=> State_FinishedMove"));
+      if(TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
+      {
+      //__FinishedMove
+        Update_OledGraphics(oled_on);              // display on after move
+        TimeStampPark  = millis();            // catch current time
+        Parked = false;                       // mark to park the motor in State_Idle    
+        isMoving = 0;        
+        MainStateMachine = State_Idle;
+        DebugPrintln(F("=> State_Idle"));
+      }
       break;
-
-    case State_FinishedMove:
-      isMoving = 0;
-      if ( mySetupData->get_coilpower() == 0 )
-        driverboard->releasemotor();
-      MainStateMachine = State_Idle;
-      DebugPrintln(F("=> State_Idle"));
-      break;
-
     default:
+      DebugPrintln(F("Error: wrong State => State_Idle"));
       MainStateMachine = State_Idle;
       break;
   }
