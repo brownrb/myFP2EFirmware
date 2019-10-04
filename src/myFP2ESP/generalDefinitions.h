@@ -9,8 +9,8 @@
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-#define OLED_ADDR             0x3C        // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address#endif // wemos
-#define MOTORPULSETIME        2
+#define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address#endif // wemos
+#define MOTORPULSETIME        2             // DO NOT CHANGE
 
 #define SERVERPORT            2020
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
@@ -30,6 +30,7 @@
 
 // You can set the speed of the motor when performing backlash to SLOW, MED or FAST
 #define BACKLASHSPEED         SLOW
+// Motor speed change threshold not yet implemented
 #define MOTORSPEEDCHANGETHRESHOLD 200
 
 #define moving_in             false

@@ -20,17 +20,18 @@
 // PCB BOARDS
 // ----------------------------------------------------------------------------------------------
 // ESP8266
-//    ULN2003    https://aisler.net/p/QVXMBSWW
-//    DRV8825    https://aisler.net/p/QVXMBSWW
+//    ULN2003   https://aisler.net/p/UAAKPUTS
+//    DRV8825   https://aisler.net/p/EKDGHUYW
 // ESP32
-//    ULN2003
-//    DRV8825
+//    ULN2003   https://aisler.net/p/OTEGMJNE
+//    DRV8825   https://aisler.net/p/TYQHHGAI
 //
+// ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
 // ----------------------------------------------------------------------------------------------
-// COMPILE ENVIRONMENT : Tested with 
+// COMPILE ENVIRONMENT : Tested with
 // Arduino IDE 1.8.9
 // ESP8266 Driver Board 2.4.0
-// Libraries 
+// Libraries
 // Arduino JSON 6.11.2
 // myOLED as in myFP2ELibs
 // IRRemoteESP32 2.0.1 as in myFP2ELibs
@@ -46,30 +47,28 @@
 // ----------------------------------------------------------------------------------------------
 // ESP8266 ISSUES
 // One chip I have boots fine.
-// Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset 
-// then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this 
+// Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset
+// then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this
 // chip either.
 // TODO: Look at what need to be when chip starts up, do we need a delay reset circuit?
 
 // ----------------------------------------------------------------------------------------------
 // 1: SPECIFY DRIVER BOARD in myBoards.h
 // ----------------------------------------------------------------------------------------------
-
 // Please specify your driver board in myBoards.h, only 1 can be defined, see DRVBRD line
 
 #include "generalDefinitions.h"
 #include "myBoards.h"
 //#include "myOLED.h"
 // ----------------------------------------------------------------------------------------------
-// 2: FOR ESP8266 BOARDS USNG DRV8825 SET DRV8825STEPMODE in myBoards.h
+// 2: FOR ESP8266 BOARDS USING DRV8825 SET DRV8825STEPMODE in myBoards.h
+//    FOR R3 WEMOS ESP32 USING DRV8825 SET DRV8825STEPMODE in myBoards.h
 // ----------------------------------------------------------------------------------------------
-
-// For ESP8266, remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
+// Remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
 // ----------------------------------------------------------------------------------------------
 // 3: FOR ULN2003, L293D, L293DMINI, L298N, L9110S specify STEPSPERREVOLUTION in myBoards.h
 // ----------------------------------------------------------------------------------------------
-
 // For these driver boards you MUST set STEPSPERREVOLUTION to the correct value in myBoards.h
 
 // ----------------------------------------------------------------------------------------------
@@ -101,8 +100,9 @@
 #define SHOWSTARTSCRN 1
 
 // DO NOT CHANGE
-#if (DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N \
-  || DRVBRD == PRO2EL293DMINI || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D )
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
+  || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
+  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D   || DRVBRD == PRO2ESP32R3WEMOS )
 // no support for pushbuttons, inout leds, irremote
 #ifdef INOUTPUSHBUTTONS
 #halt // ERROR - INOUTPUSHBUTTONS not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -172,8 +172,9 @@
 #endif
 #endif
 
-#if (DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
-  || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
+  || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
+  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D   || DRVBRD == PRO2ESP32R3WEMOS )
 // no support for bluetooth mode
 #ifdef BLUETOOTHMODE
 #halt // ERROR - BLUETOOTHMODE not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -278,7 +279,8 @@ IPAddress subnet(255, 255, 255, 0);
 #include <DallasTemperature.h>              // https://github.com/milesburton/Arduino-Temperature-Control-Library
 #endif
 
-#if (DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
+
+#if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
   || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #ifdef INFRAREDREMOTE
 #include <IRremoteESP32.h>
@@ -401,6 +403,7 @@ byte TimeCheck(unsigned long x, unsigned long Delay)
 void software_Reboot(int Reboot_delay)
 {
 #ifdef OLEDDISPLAY
+#ifdef OLEDTEXT
   myoled->clear();
   myoled->print("Controller reboot");
 #endif
@@ -421,7 +424,7 @@ void software_Reboot(int Reboot_delay)
   ESP.restart();
 }
 
-
+// STEPPER MOTOR ROUTINES
 void steppermotormove(byte dir )           // direction move_in, move_out ^ reverse direction
 {
 #ifdef INOUTLEDS
@@ -1202,7 +1205,7 @@ void ESP_Communication( byte mode )
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
       paramval = (byte)(paramval & 3);      // STEP1 - STEP2
 #endif
-#if (DRVBRD == PRO2EDRV8825)
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG)
       paramval = DRV8825TEPMODE;            // stepmopde set by jumpers
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825)
@@ -1259,7 +1262,7 @@ void ESP_Communication( byte mode )
         myoled->Display_Off();
 #endif
       }
-#endif
+#endif // ifdef OLEDDISPLAY
       break;
     case 40: // reset Arduino myFocuserPro2E controller
       software_Reboot(2000);      // reboot with 2s delay
@@ -1447,11 +1450,79 @@ void Read_WIFI_config_SPIFFS(void)
 }
 
 
-
+/*
 void setup()
 {
   //#if (defined LDEBUG || defined LOCALSERIAL)    // Open serial port if debugging or open serial port if LOCALSERIAL
 #ifdef DEBUG
+#ifdef OLEDDISPLAY
+#ifdef OLEDGRAPHICS
+
+void oled_draw_Wifi(int j)
+{
+  myoled->clear();
+  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
+  myoled->setFont(ArialMT_Plain_10);
+  myoled->drawString(64, 0, "SSID: " + mySSID);
+  myoled->drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits); // draw wifi logo
+
+  for (int i = 1; i < 10; i++)
+  {
+    myoled->drawXbm(12 * i, 56, 8, 8, (i == j) ? activeSymbol : inactiveSymbol);
+  }
+
+  myoled->display();
+}
+
+void oled_draw_main_update(void)
+{
+  myoled->clear();
+  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
+  myoled->setFont(ArialMT_Plain_10);
+  myoled->drawString(64, 0, driverboard->getboardname());
+  myoled->drawString(64, 12, "IP= " + ipStr);
+
+  myoled->setTextAlignment(TEXT_ALIGN_LEFT);
+  myoled->drawString(54, 54, "TEMP:" + String(readtemp(0), 2) + " C");
+  myoled->drawString(0, 54, "BL:" + String(mySetupData->get_backlashsteps_out()));
+  //myoled->drawString(24, 54, "SM:" + String(driverboard->getstepmode()));
+
+  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
+  myoled->setFont(ArialMT_Plain_24);
+  myoled->drawString(64, 28, String(fcurrentPosition, DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(), DEC)); // Print currentPosition
+
+  myoled->display();
+}
+
+void oled_draw_main(byte new_status)
+{
+  static byte current_status = oled_on;
+
+  switch (new_status)
+  {
+    case oled_off:
+      current_status = new_status;
+      myoled->clear();
+      myoled->display();
+      break;
+    case oled_stay:
+      if (current_status == oled_on)
+        oled_draw_main_update();
+      break;
+    case oled_on:
+    default:
+      oled_draw_main_update();
+      current_status = new_status;
+      break;
+  }
+}
+#endif  // ifdef OLEDGRAPHICS
+#endif  // ifdef OLEDDISPLAY
+*/
+
+void setup()
+{
+#if (defined DEBUG)
   Serial.begin(SERIALPORTSPEED);
   DebugPrintln(F("Serial started. Debug on."));
 #endif
@@ -1529,14 +1600,14 @@ void setup()
   myoled->clear();
   myoled->println(F("Check for Tprobe"));
 #endif
+#endif
   sensor1.begin();                            // start the temperature sensor1
   DebugPrintln(F("Get # of Tsensors"));
   tprobe1 = sensor1.getDeviceCount();         // should return 1 if probe connected
   DebugPrint(F("Sensors : "));
   DebugPrintln(tprobe1);
   DebugPrintln(F("Find Tprobe address"));
-
-  if (sensor1.getAddress(tpAddress, 0))
+  if (sensor1.getAddress(tpAddress, 0) == true)
   {
     sensor1.setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
     DebugPrint(F("- Sensors found: "));
@@ -1576,8 +1647,10 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
 
 #ifdef ACCESSPOINT
 #ifdef OLEDDISPLAY
+#ifdef OLEDTEXT
   myoled->clear();
   myoled->println("Start Access Point");
+#endif
 #endif
   DebugPrintln(F("Start Access point"));
   WiFi.config(ip, dns, gateway, subnet);
@@ -1656,12 +1729,14 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
   delay(100);                                       // keep delays small else issue with ASCOM
 #endif
 
+
 #ifndef BLUETOOTHMODE
   // Starting TCP Server
   DebugPrintln(F("Start TCP Server"));
 #if defined(OLEDDISPLAY) && defined(OLEDTEXT)
   myoled->println(F("Start TCP Server"));
 #endif
+
 
   myserver.begin();
   DebugPrintln(F("Get local IP address"));
@@ -1697,6 +1772,7 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
   myoled->println(DRVBRD);
 #endif
 
+
   driverboard = new DriverBoard(DRVBRD);
   // setup firmware filename
   programName = programName + driverboard->getboardname();
@@ -1705,6 +1781,7 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
 #if defined(OLEDDISPLAY) && defined(OLEDTEXT)
   myoled->println("Driver board done");
 #endif
+
 
   // range check focuser variables
   mySetupData->set_coilpower((mySetupData->get_coilpower() >= 1) ?  1 : 0);
@@ -1734,8 +1811,9 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
 
 #ifdef USEDUCKSDNS
 #ifdef OLEDDISPLAY
+#ifdef OLEDTEXT
   myoled->println("Setup DuckDNS");
-  delay(1000);
+#endif
 #endif
   EasyDDNS.service("duckdns");                      // Enter your DDNS Service Name - "duckdns" / "noip"
   delay(5);
@@ -1770,6 +1848,11 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
 //  DebugPrint(F("Displayenabled : "));
 //  DebugPrintln(mySetupData->get_displayenabled());
   DebugPrintln(F("Setup end."));
+#ifdef OLEDDISPLAY
+#ifdef OLEDTEXT
+  myoled->println("Setup end.");
+#endif
+#endif
 }
 
 //_____________________ loop()___________________________________________

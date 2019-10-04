@@ -13,7 +13,8 @@
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
 //#define DRVBRD PRO2EULN2003           // DONE
-//#define DRVBRD PRO2EDRV8825             // DONE
+//#define DRVBRD PRO2EDRV8825           // DONE
+//#define DRVBRD PRO2EDRV8825BIG
 //#define DRVBRD PRO2EL293DNEMA         // DONE, FULL STEPPING ONLY
 //#define DRVBRD PRO2EL293D28BYJ48      // DONE, FULL STEPPING ONLY
 //#define DRVBRD PRO2EL298N             // DONE
@@ -25,6 +26,7 @@
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
+//#define DRVBRD PRO2ESP32R3WEMOS
 
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
 #define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266
@@ -42,8 +44,8 @@
 // do not change, required for L293D motor shield
 #define UNIPOLAR28BYJ48   1
 #define BIPOLARNEMA       2
-#define SPEEDBIPOLAR      48            // DONE
-#define SPEEDNEMA         100           // DONE
+#define SPEEDBIPOLAR      48            // RPM speed of 28BYJ48 is max of 48 rpm
+#define SPEEDNEMA         100           // RPM speed for NEMA motor
 
 // ----------------------------------------------------------------------------------------------
 // DEFINITIONS FOR BOARDS: DO NOT CHANGE
@@ -57,22 +59,33 @@
 #endif
 
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-#include <Stepper.h>                // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
+#include <Stepper.h>                    // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
 #define TEMPPIN       4
 #define I2CDATAPIN    2
 #define I2CCLKPIN     1
-#define DIRPIN        13            // D7 GPIOP13
-#define STEPPIN       12            // D6 GPIO12
-#define ENABLEPIN     14            // D5 GPIO14
+#define DIRPIN        13                // D7 GPIOP13
+#define STEPPIN       12                // D6 GPIO12
+#define ENABLEPIN     14                // D5 GPIO14
 #define MSFAST        1
 #define MSMED         2000
 #define MSSLOW        10000
 #endif
 #if (DRVBRD == PRO2EDRV8825 )           // DONE, TESTED WITH NEMA14 STEPPER MOTOR
 #define TEMPPIN       10
+#define I2CDATAPIN    5
+#define I2CCLKPIN     4
+#define DIRPIN        13                // D7 GPIOP13
+#define STEPPIN       12                // D6 GPIO12
+#define ENABLEPIN     14                // D5 GPIO14
+#define MSFAST        2000              // These values can be adjusted to alter speed of motor
+#define MSMED         7000              // do not use values > 14000
+#define MSSLOW        12000             // lower values = motor moves faster, higher values = slower
+#endif
+#if (DRVBRD == PRO2EDRV8825BIG )        // DONE, TESTED WITH NEMA14 STEPPER MOTOR
+#define TEMPPIN       2                 // temp probe does not work on SD3 for BigChip
 #define I2CDATAPIN    5
 #define I2CCLKPIN     4
 #define DIRPIN        13                // D7 GPIOP13
@@ -118,7 +131,7 @@
 #define MSMED         9000
 #define MSSLOW        13000
 #endif
-#if (DRVBRD == PRO2EL298N)      // DONE, TESTED FULL/HALF STEPPING WITH NEMA 17 200 STEPPER MOTOR
+#if (DRVBRD == PRO2EL298N)              // DONE, TESTED FULL/HALF STEPPING WITH NEMA 17 200 STEPPER MOTOR
 #define TEMPPIN       10
 #define I2CDATAPIN    5
 #define I2CCLKPIN     4
@@ -190,6 +203,17 @@
 #define MSMED         1000
 #define MSSLOW        8000
 #endif
+#if (DRVBRD == PRO2ESP32R3WEMOS )
+#define TEMPPIN       13
+#define I2CDATAPIN    21
+#define I2CCLKPIN     22
+#define DIRPIN        26
+#define STEPPIN       27
+#define ENABLEPIN     14
+#define MSFAST        500
+#define MSMED         1000
+#define MSSLOW        2000
+#endif
 
 // ----------------------------------------------------------------------------------------------
 // DRIVER BOARD CLASS : DO NOT CHANGE
@@ -227,21 +251,5 @@ class DriverBoard
     byte boardtype;
     byte stepmode;
     int stepdelay;                                // time in milliseconds to wait between pulses when moving
-    int Step;                                     // used to control step count
-
-    
-    // Step sequences NO LONGER USED
-    int ulnfull[4] = {B01100, B00110, B00011, B01001};                                    // confirmed
-    int ulnhalf[8] = {B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001};    // confirmed
-
-    int l298nfull[4] = {B01100, B00110, B00011, B01001};                                   // confirmed
-    int l298nhalf[8] = {B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001};   // confirmed
-
-    int l293dminifull[4] = {B01100, B00110, B00011, B01001};                                  // to test
-    int l293dminihalf[8] = {B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001};  // to test
-
-    // A-1A, A1B, B-1A, B-1B
-    int l9110sfull[4] = {B00101, B00110, B01010, B01001};                                 // to test
-    int l9110shalf[8] = {B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001}; // to test
 };
 #endif
