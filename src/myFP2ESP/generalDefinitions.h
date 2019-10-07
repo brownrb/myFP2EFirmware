@@ -11,12 +11,14 @@
 
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address#endif // wemos
 #define MOTORPULSETIME        2             // DO NOT CHANGE
+#define MOTORRELEASEDELAY     120           // motor release power after 120s
 
 #define SERVERPORT            2020
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
 #define ESPDATA               0
 #define BTDATA                1
+#define SERIALDATA            2
 #define QUEUELENGTH           20            // number of commands that can be saved in the serial queue
 
 #define DEFAULTSTEPSIZE       50.0          // This is the default setting for the step size in microns
@@ -68,7 +70,7 @@
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-#define DEBUG     1
+//#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

@@ -9,7 +9,6 @@
 #define DEFAULTFAHREN   0
 #define DEFAULTDOCSIZE  512
 
-
 class SetupData
 {
   public:

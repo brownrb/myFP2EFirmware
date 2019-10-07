@@ -12,7 +12,7 @@
 
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
-//#define DRVBRD PRO2EULN2003           // DONE
+#define DRVBRD PRO2EULN2003           // DONE
 //#define DRVBRD PRO2EDRV8825           // DONE
 //#define DRVBRD PRO2EDRV8825BIG
 //#define DRVBRD PRO2EL293DNEMA         // DONE, FULL STEPPING ONLY
@@ -21,7 +21,7 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -33,8 +33,8 @@
 
 // stepper motor steps per full revolution using full steps
 // WARNING: USE THE CORRECT ONE - IF YOU THEN CHANGE STEPMODE THE STEPS MOVED WILL BE INVALID
-//#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
-#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
+#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
+//#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
 //#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
 //#define STEPSPERREVOLUTION 1028        // 17HS13-0404S-PG5
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
@@ -103,7 +103,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSFAST        2000
+#define MSFAST        4000
 #define MSMED         8000
 #define MSSLOW        12000
 #endif
@@ -139,7 +139,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSFAST        2000
+#define MSFAST        3000
 #define MSMED         8000
 #define MSSLOW        12000
 #endif
@@ -151,7 +151,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSFAST        2000
+#define MSFAST        3000
 #define MSMED         8000
 #define MSSLOW        12000
 #endif
@@ -163,7 +163,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSFAST        2000
+#define MSFAST        3000
 #define MSMED         8000
 #define MSSLOW        12000
 #endif

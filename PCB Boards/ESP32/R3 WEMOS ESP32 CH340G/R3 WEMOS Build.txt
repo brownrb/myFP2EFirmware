@@ -1,0 +1,62 @@
+TempProbe	13
+DIR		26
+STEP		27
+ENABLE		14
+OLED		SDA/SCL
+
+R3 Wemos UNO D1 R32 ESP32 WIFI Bluetooth CH340 Devolopment Board For Arduino
+https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
+Deepenmind
+$9.01
+
+About
+Specifics:
+Type: Voltage Regulator
+Condition: New
+Supply Voltage: DC 5V-12V
+Dissipation Power: other
+Operating Temperature: other
+Model Number: ESP32
+Application: ESP32
+Input:1 analog input(3.2V max input)
+USB B connection
+Compatible with For Arduino
+D1 R32=WiFi+Bluetooth+UNO
+
+OR
+ESP32 WiFi+Bluetooth+UNO WeMos D1 R32 4MB Flash CH340 Board 
+https://www.ebay.com/itm/ESP32-WiFi-Bluetooth-UNO-WeMos-D1-R32-4MB-Flash-CH340-Board-for-Arduino-K/283029894328
+Micro USB
+
+DRV8825/A4988 42 CH Stepper Motor Driver Expansion Board For UNO R3 3D Printer
+https://www.ebay.com/itm/DRV8825-A4988-42-CH-Stepper-Motor-Driver-Expansion-Board-For-UNO-R3-3D-Printer/332441054084
+worldchips
+$2.25
+
+About
+On-board DIP switch, you can easily adjust the drive segments
+Terminal power connector for easy connection drive power
+Compatible with 12 / 24V drive scheme
+Suitable for 42 stepper motor drive, 3D printers and DIY
+
+Specification:
+Size: 42 x 42 x 15mm
+Fixed: 3mm
+Pitch: 1400 x 1400mil (35.56 x 35.56mm)
+Logic voltage: 5V
+Input voltage: 12-30V
+Ports: Digital
+Interface: Direction, enable, speed
+Applicable module: A4988, DRV8825
+Note: Please note the direction when installing the drive module, otherwise it will burn module
+
+DB9 RS232 Serial to Terminal Female Adapter Connector Breakout Board 9Pin WF
+https://www.ebay.com/itm/DB9-RS232-Serial-to-Terminal-Female-Adapter-Connector-Breakout-Board-9Pin-WF/182993780710
+wishfly2future
+$2.26
+
+DS18B20 Temperature Sensor Probe WaterProof Plugable Terminal Adapter Module
+https://www.ebay.com/itm/DS18B20-Temperature-Sensor-Probe-WaterProof-Plugable-Terminal-Adapter-Module/401665092329
+survy2014 
+$0.99
+
