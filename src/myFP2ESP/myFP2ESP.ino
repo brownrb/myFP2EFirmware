@@ -6,9 +6,10 @@
 //
 // (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
 // (c) Copyright Holger M, 2019, who wrote large portions of code for state machine and esp comms
+// (c) Copyright Pieter P - OTA code based on example from Pieter  P.
 //
 // CONTRIBUTIONS
-// If you wish to make a small contribution in thanks for this project, please use PayPal and send the amount
+// If you wish to make a contribution in thanks for this project, please use PayPal and send the amount
 // to user rbb1brown@gmail.com (Robert Brown). All contributions are gratefully accepted.
 //
 // 1. Set your DRVBRD [section 1] in myBoards.h so the correct driver board is used
@@ -20,13 +21,14 @@
 // PCB BOARDS
 // ----------------------------------------------------------------------------------------------
 // ESP8266
-//    ULN2003   https://aisler.net/p/UAAKPUTS
-//    DRV8825   https://aisler.net/p/EKDGHUYW
+//  ULN2003       https://aisler.net/p/UAAKPUTS
+//  DRV8825       https://aisler.net/p/EKDGHUYW
+//  L293D Shield  https://www.ebay.com/itm/L293D-Motor-Drive-Shield-Wifi-Module-For-Arduino-NodeMcu-Lua-ESP8266-ESP-12E/292619874436
 // ESP32
-//    ULN2003   https://aisler.net/p/OTEGMJNE
-//    DRV8825   https://aisler.net/p/TYQHHGAI
+//  ULN2003       https://aisler.net/p/OTEGMJNE
+//  DRV8825       https://aisler.net/p/TYQHHGAI
 //
-// ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
+//  ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
 // ----------------------------------------------------------------------------------------------
 // COMPILE ENVIRONMENT : Tested with
 // Arduino IDE 1.8.9
@@ -177,6 +179,12 @@
 #endif
 #endif
 
+#if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
+#ifdef defined(LOCALSERIAL)
+#halt // ERROR - LOCALSERIAL not supported L293D Motor Shield [ESP8266] boards
+#endif
+#endif
+
 // ----------------------------------------------------------------------------------------------
 // 6: INCLUDES FOR WIFI
 // ----------------------------------------------------------------------------------------------
@@ -210,7 +218,7 @@ const char* myPASSWORD = "myfp2eap";
 // ----------------------------------------------------------------------------------------------
 // You can change the values for OTANAME and OTAPassword if required
 #if defined(OTAUPDATES)
-const char *OTAName = "ESP8266";           // the username and password for the OTA service
+const char *OTAName = "ESP8266";            // the username and password for the OTA service
 const char *OTAPassword = "esp8266";
 #endif
 
@@ -229,7 +237,7 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 
 // DO NOT CHANGE
 #if defined(USEDUCKSDNS)
-#include <EasyDDNS.h>             // https://github.com/ayushsharma82/EasyDDNS
+#include <EasyDDNS.h>                       // https://github.com/ayushsharma82/EasyDDNS
 #endif
 
 #if defined(ACCESSPOINT)
@@ -244,23 +252,23 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 // must use static IP if using duckdns or as an Access Point
 #define STATICIPON    1
 #define STATICIPOFF   0
-//int staticip = STATICIPON;                    // if set to STATICIPON then the IP address must be defined
-int staticip = STATICIPOFF;                    // if set to STATICIPON then the IP address must be defined
+//int staticip = STATICIPON;                // if set to STATICIPON then the IP address must be defined
+int staticip = STATICIPOFF;                 // if set to STATICIPON then the IP address must be defined
 
 #if defined(STATIONMODE)
 // These need to reflect your current network settings - 192.168.x.21 - change x
 // This has to be within the range for dynamic ip allocation in the router
 // No effect if staticip = STATICIPOFF
-IPAddress ip(192, 168, 2, 21);                // station static IP - you can change these values to change the IP
-IPAddress dns(192, 168, 2, 1);                // just set it to the same IP as the gateway
+IPAddress ip(192, 168, 2, 21);              // station static IP - you can change these values to change the IP
+IPAddress dns(192, 168, 2, 1);              // just set it to the same IP as the gateway
 IPAddress gateway(192, 168, 2, 1);
 IPAddress subnet(255, 255, 255, 0);
 #endif
 
 #if defined(ACCESSPOINT)
 // By default the Access point should be 192.168.4.1 - DO NOT CHANGE
-IPAddress ip(192, 168, 4, 1);                 // AP static IP - you can change these values to change the IP
-IPAddress dns(192, 168, 4, 1);                // just set it to the same IP as the gateway
+IPAddress ip(192, 168, 4, 1);               // AP static IP - you can change these values to change the IP
+IPAddress dns(192, 168, 4, 1);              // just set it to the same IP as the gateway
 IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 #endif
@@ -351,38 +359,38 @@ char offtxt[]         = "OFF";
 char coilpwrtxt[]     = "Coil power  =";
 char revdirtxt[]      = "Reverse Dir =";
 
-unsigned long fcurrentPosition;         // current focuser position
-unsigned long ftargetPosition;          // target position
+unsigned long fcurrentPosition;                         // current focuser position
+unsigned long ftargetPosition;                          // target position
 unsigned long tmppos;
 
-byte tprobe1;                           // indicate if there is a probe attached to myFocuserPro2
-byte isMoving;                          // is the motor currently moving
-byte motorspeedchangethresholdsteps;    // step number where when pos close to target motor speed changes
-byte motorspeedchangethresholdenabled;  // used to enable/disable motorspeedchange when close to target position
-String ipStr;                           // shared between BT mode and other modes
+byte tprobe1;                                           // indicate if there is a probe attached to myFocuserPro2
+byte isMoving;                                          // is the motor currently moving
+byte motorspeedchangethresholdsteps;                    // step number where when pos close to target motor speed changes
+byte motorspeedchangethresholdenabled;                  // used to enable/disable motorspeedchange when close to target position
+String ipStr;                                           // shared between BT mode and other modes
 boolean displayfound;
 
 #if defined(BLUETOOTHMODE)
-Queue queue(QUEUELENGTH);               // receive serial queue of commands
-String line;                            // buffer for serial data
+Queue queue(QUEUELENGTH);                               // receive serial queue of commands
+String line;                                            // buffer for serial data
 #endif
 
 #if defined(LOCALSERIAL)
-Queue queue(QUEUELENGTH);               // receive serial queue of commands
-String serialline;                      // buffer for serial data
+Queue queue(QUEUELENGTH);                               // receive serial queue of commands
+String serialline;                                      // buffer for serial data
 #endif // localserial
 
 #if defined(TEMPERATUREPROBE)
-OneWire oneWirech1(TEMPPIN);            // setup temperature probe
+OneWire oneWirech1(TEMPPIN);                            // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
-DeviceAddress tpAddress;                // holds address of the temperature probe
+DeviceAddress tpAddress;                                // holds address of the temperature probe
 #endif
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE) // WiFi stuff
+#if defined(ACCESSPOINT) || defined(STATIONMODE)        // WiFi stuff
 IPAddress ESP32IPAddress;
 String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
-WiFiClient myclient;                    // only one client supported, multiple connections denied
+WiFiClient myclient;                                    // only one client supported, multiple connections denied
 IPAddress myIP;
 long rssi;
 #endif
@@ -403,15 +411,15 @@ SetupData *mySetupData;
 
 byte TimeCheck(unsigned long x, unsigned long Delay)
 {
-  unsigned long y = x + Delay;    //
-  unsigned long z = millis();     // pick current time
+  unsigned long y = x + Delay;
+  unsigned long z = millis();                           // pick current time
 
   if ((x > y) && (x < z))
-    return 0;                 // overflow y
+    return 0;                                           // overflow y
   if ((x < y) && ( x > z))
-    return 1;                 // overflow z
+    return 1;                                           // overflow z
 
-  return (y < z);             // no or (z and y) overflow
+  return (y < z);                                       // no or (z and y) overflow
 }
 
 void software_Reboot(int Reboot_delay)
@@ -421,7 +429,7 @@ void software_Reboot(int Reboot_delay)
   myoled->clear();
   myoled->setTextAlignment(TEXT_ALIGN_CENTER);
   myoled->setFont(ArialMT_Plain_24);
-  myoled->drawString(64, 28, "REBOOT");  // Print currentPosition
+  myoled->drawString(64, 28, "REBOOT");                 // Print currentPosition
   myoled->display();
 #endif
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
@@ -435,7 +443,7 @@ void software_Reboot(int Reboot_delay)
 }
 
 // STEPPER MOTOR ROUTINES
-void steppermotormove(byte dir )           // direction move_in, move_out ^ reverse direction
+void steppermotormove(byte dir )                        // direction move_in, move_out ^ reverse direction
 {
 #if defined(INOUTLEDS)
   ( dir == move_in ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
@@ -452,13 +460,13 @@ void steppermotormove(byte dir )           // direction move_in, move_out ^ reve
 #if defined(TEMPERATUREPROBE)
 float readtemp(byte new_measurement)
 {
-  static float lasttemp = 20.0;                 // start temp value
+  static float lasttemp = 20.0;                         // start temp value
   if (!new_measurement)
   {
-    return lasttemp;                            // return latest measurement
+    return lasttemp;                                    // return latest measurement
   }
 
-  float result = sensor1.getTempCByIndex(0);    // get channel 1 temperature, always in celsius
+  float result = sensor1.getTempCByIndex(0);            // get channel 1 temperature, always in celsius
   DebugPrint(F("Temperature = "));
   DebugPrintln(result);
   if (result > -40.0 && result < 80.0)
@@ -479,14 +487,14 @@ void Update_Temp(void)
   if (tprobe1 == 1)
   {
     static unsigned long lasttempconversion = 0;
-    static byte requesttempflag = 0;              // start with request
+    static byte requesttempflag = 0;                    // start with request
     unsigned long tempnow = millis();
 
     // see if the temperature needs updating - done automatically every 1.5s
     if (TimeCheck(lasttempconversion , TEMPREFRESHRATE))
     {
       static float tempval;
-      static float starttemp;                     // start temperature to use when temperature compensation is enabled
+      static float starttemp;                           // start temperature to use when temperature compensation is enabled
 
       if ( tcchanged != mySetupData->get_tempcompenabled() )
       {
@@ -497,7 +505,7 @@ void Update_Temp(void)
         }
       }
 
-      lasttempconversion = tempnow;               // update time stamp
+      lasttempconversion = tempnow;                     // update time stamp
 
       if (requesttempflag)
       {
@@ -510,17 +518,17 @@ void Update_Temp(void)
 
       requesttempflag ^= 1; // toggle flag
 
-      if (mySetupData->get_tempcompenabled() == 1)     // check for temperature compensation
+      if (mySetupData->get_tempcompenabled() == 1)      // check for temperature compensation
       {
-        if ((abs)(starttemp - tempval) >= 1)          // calculate if temp has moved by more than 1 degree
+        if ((abs)(starttemp - tempval) >= 1)            // calculate if temp has moved by more than 1 degree
         {
           unsigned long newPos;
-          byte temperaturedirection;                  // did temperature fall (1) or rise (0)?
+          byte temperaturedirection;                    // did temperature fall (1) or rise (0)?
           temperaturedirection = (tempval < starttemp) ? 1 : 0;
-          if (mySetupData->get_tcdirection() == 0)     // check if tc direction for compensation is inwards
+          if (mySetupData->get_tcdirection() == 0)      // check if tc direction for compensation is inwards
           {
             // temperature compensation direction is in, if a fall then move in else move out
-            if ( temperaturedirection == 1 )          // check if temperature is falling
+            if ( temperaturedirection == 1 )            // check if temperature is falling
             { // then move inwards
               newPos = ftargetPosition - mySetupData->get_tempcoefficient();
             }
@@ -545,7 +553,7 @@ void Update_Temp(void)
           // newPos should be checked for < 0 but cannot due to unsigned
           // newPos = (newPos < 0 ) ? 0 : newPos;
           ftargetPosition = newPos;
-          starttemp = tempval;                        // save this current temp point for future reference
+          starttemp = tempval;                          // save this current temp point for future reference
         } // end of check for tempchange >=1
       } // end of check for tempcomp enabled
     } // end of check for temperature needs updating
@@ -651,7 +659,7 @@ void oled_draw_main_update(void)
 boolean Init_OLED(void)
 {
   Wire.begin();
-  Wire.beginTransmission(OLED_ADDR);        //check if OLED display is present
+  Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
     DebugPrintln(F("no I2C device found"));
@@ -690,13 +698,13 @@ void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
     return;
   }
 #if defined(OLEDTEXT)
-  if ( clrscr == true)
+  if ( clrscr == true)                                  // clear the screen?
   {
     myoled->clear();
   }
-  if ( nl == true )
+  if ( nl == true )                                     // need to print a new line?
   {
-    if ( val != -1)
+    if ( val != -1)                                     // need to print a value?
     {
       myoled->print(str);
       myoled->println(val);
@@ -728,11 +736,11 @@ void Update_OledText(void)
   static unsigned long olddisplaytimestampNotMoving = millis();
   static byte displaypage = 0;
 
-  currentMillis = millis();                       // see if the display needs updating
+  currentMillis = millis();                             // see if the display needs updating
   if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
   {
-    olddisplaytimestampNotMoving = currentMillis; // update the timestamp
-    myoled->clear();                              // clrscr OLED
+    olddisplaytimestampNotMoving = currentMillis;       // update the timestamp
+    myoled->clear();                                    // clrscr OLED
     switch (displaypage)
     {
       case 0:   displaylcdpage0();
@@ -946,11 +954,17 @@ void displaylcdpage2(void)
   myoled->print(ipStr);
   myoled->clearToEOL();
   myoled->println();
-#else
+#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
+#if defined(BLUETOOTHMODE)
   myoled->print("Bluetooth Mode");
   myoled->clearToEOL();
   myoled->println();
-#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
+#endif
+#if defined(LOCALSERIAL)
+  myoled->print("Local Serial Mode");
+  myoled->clearToEOL();
+  myoled->println();
+#endif  
 #endif // if defined(OLEDTEXT)
 }
 
@@ -958,7 +972,7 @@ void displaylcdpage2(void)
 boolean Init_OLED(void)
 {
   Wire.begin();
-  Wire.beginTransmission(OLED_ADDR);        //check if OLED display is present
+  Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
     DebugPrintln(F("no I2C device found"));
@@ -976,15 +990,15 @@ boolean Init_OLED(void)
     delay(5);
     myoled->set400kHz();
     myoled->setFont(Adafruit5x7);
-    myoled->clear();                                 // clrscr OLED
-    myoled->Display_Normal();                        // black on white
+    myoled->clear();                                    // clrscr OLED
+    myoled->Display_Normal();                           // black on white
     delay(5);
-    myoled->Display_On();                            // display ON
-    myoled->Display_Rotate(0);                       // portrait, not rotated
+    myoled->Display_On();                               // display ON
+    myoled->Display_Rotate(0);                          // portrait, not rotated
     myoled->Display_Bright();
     delay(5);
 #if defined(SHOWSTARTSCRN)
-    myoled->println(programName);               // print startup screen
+    myoled->println(programName);                       // print startup screen
     myoled->println(programVersion);
     delay(5);
     myoled->println(ProgramAuthor);
@@ -1028,7 +1042,7 @@ void ESP_Communication( byte mode )
       // for Accesspoint or Station mode
       packetsreceived++;
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-      receiveString = myclient.readStringUntil('#'); // read until terminator    break;
+      receiveString = myclient.readStringUntil('#');    // read until terminator    break;
 #endif
 #if defined(BLUETOOTHMODE)
     case BTDATA:
@@ -1036,15 +1050,15 @@ void ESP_Communication( byte mode )
       break;
 #endif
 #if defined(LOCALSERIAL)
-    case SERIALDATA:                              // for Serial
+    case SERIALDATA:                                    // for Serial
       receiveString = ':' + queue.pop();
       break;
 #endif
   }
 
-  receiveString += '#';                          // put back terminator
+  receiveString += '#';                                 // put back terminator
   String cmdstr = receiveString.substring(1, 3);
-  cmdval = cmdstr.toInt();                       // convert command to an integer
+  cmdval = cmdstr.toInt();                              // convert command to an integer
   DebugPrint(F("- receive string="));
   DebugPrintln(receiveString);
   DebugPrint(F("- cmdstr="));
@@ -1415,7 +1429,7 @@ void update_pushbuttons(void)
 {
   long newpos;
   // PB are active high - pins float low if unconnected
-  if ( digitalRead(INPB) == 1 )       // is pushbutton pressed?
+  if ( digitalRead(INPB) == 1 )                         // is pushbutton pressed?
   {
     newpos = ftargetPosition - 1;
     newpos = (newpos < 0 ) ? 0 : newpos;
@@ -1443,7 +1457,7 @@ void update_irremote()
     static long lastcode;
     if ( results.value == KEY_REPEAT )
     {
-      results.value = lastcode;       // repeat last code
+      results.value = lastcode;                         // repeat last code
     }
     else
     {
@@ -1487,7 +1501,7 @@ void update_irremote()
       case IR_OUT100:
         adjpos = 100;
         break;
-      case IR_SETPOSZERO :                  // 0 RESET POSITION TO 0
+      case IR_SETPOSZERO :                              // 0 RESET POSITION TO 0
         adjpos = 0;
         ftargetPosition = 0;
         fcurrentPosition = 0;
@@ -1497,8 +1511,7 @@ void update_irremote()
     unsigned long newpos;
     if ( adjpos < 0 )
     {
-      newpos = fcurrentPosition + adjpos;
-      // since it is unsigned it will wrap around to highest value possible
+      newpos = fcurrentPosition + adjpos;               // since it is unsigned it will wrap around to highest value possible
       newpos = (newpos > mySetupData->get_maxstep() ) ? 0 : newpos;
       ftargetPosition = newpos;
     }
@@ -1513,8 +1526,9 @@ void update_irremote()
 #endif // if defined(INFRAREDREMOTE)
 
 #if defined(OTAUPDATES)
-void startOTA() { // Start the OTA service
-  ArduinoOTA.setHostname(OTAName);
+void startOTA() 
+{ 
+  ArduinoOTA.setHostname(OTAName);                      // Start the OTA service
   ArduinoOTA.setPassword(OTAPassword);
 
   ArduinoOTA.onStart([]()
@@ -1550,19 +1564,19 @@ void Read_WIFI_config_SPIFFS(void)
   const String filename = "/wifi.json";
 
   DebugPrintln(F("check for Wifi setup data on SPIFFS"));
-  File f = SPIFFS.open(filename, "r");                        // file open to read
+  File f = SPIFFS.open(filename, "r");                          // file open to read
   if (!f)
   {
     DebugPrintln(F("no SPIFFS Wifi Setupdata found => use default settings"));
   }
   else
   {
-    String data = f.readString();                             // read content of the text file
+    String data = f.readString();                               // read content of the text file
     DebugPrint(F("SPIFFS Wifi Setupdata: "));
-    DebugPrintln(data);                                       // ... and print on serial
+    DebugPrintln(data);                                         // ... and print on serial
 
     DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(2) + 120));  // allocate json buffer
-    DeserializationError error = deserializeJson(doc, data);  // Parse JSON object
+    DeserializationError error = deserializeJson(doc, data);    // Parse JSON object
     if (error)
     {
       DebugPrintln("Deserialization failed! => use default settings");
@@ -1583,28 +1597,28 @@ void setup()
   DebugPrintln(F("Serial started. Debug on."));
 #endif
 
-  mySetupData = new SetupData();            // instantiate object SetUpData with SPIFFS
+  mySetupData = new SetupData();                        // instantiate object SetUpData with SPIFFS
 
 #if defined(LOCALSERIAL)
   serialline = "";
   clearSerialPort();
 #endif // if defined(LOCALSERIAL)
 
-#if defined(BLUETOOTHMODE)                  // open Bluetooth port and set bluetooth device name if defined
-  SerialBT.begin(BLUETOOTHNAME);            // Bluetooth device name
+#if defined(BLUETOOTHMODE)                              // open Bluetooth port and set bluetooth device name if defined
+  SerialBT.begin(BLUETOOTHNAME);                        // Bluetooth device name
   btline = "";
   clearbtPort();
   DebugPrintln(F("Bluetooth started."));
 #endif
 
-#if defined(INOUTLEDS)                      // Setup IN and OUT LEDS, use as controller power up indicator
+#if defined(INOUTLEDS)                                  // Setup IN and OUT LEDS, use as controller power up indicator
   pinMode(INLED, OUTPUT);
   pinMode(OUTLED, OUTPUT);
   digitalWrite(INLED, 1);
   digitalWrite(OUTLED, 1);
 #endif
 
-#if defined(INOUTPUSHBUTTONS)               // Setup IN and OUT Pushbuttons, active high when pressed
+#if defined(INOUTPUSHBUTTONS)                           // Setup IN and OUT Pushbuttons, active high when pressed
   pinMode(INPB, INPUT);
   pinMode(OUTPB, INPUT);
 #endif
@@ -1614,9 +1628,9 @@ void setup()
   displayfound = Init_OLED();
 #endif
 
-  delay(250);                                 // keep delays small otherwise issue with ASCOM
+  delay(250);                                           // keep delays small otherwise issue with ASCOM
 
-  DebugPrint(F(" fposition : "));             // Print Loaded Values from SPIFF
+  DebugPrint(F(" fposition : "));                       // Print Loaded Values from SPIFF
   DebugPrintln(mySetupData->get_fposition());
   DebugPrint(F(" focuserdirection : "));
   DebugPrintln(mySetupData->get_focuserdirection());
@@ -1657,13 +1671,13 @@ void setup()
   DebugPrint(F(" displayenabled : "));
   DebugPrintln(mySetupData->get_displayenabled());
 
-#if defined(TEMPERATUREPROBE)                 // start temp probe
-  pinMode(TEMPPIN, INPUT);                    // Configure GPIO pin for temperature probe
+#if defined(TEMPERATUREPROBE)                           // start temp probe
+  pinMode(TEMPPIN, INPUT);                              // Configure GPIO pin for temperature probe
   DebugPrintln(F("Start Tsensor"));
   oledtextmsg("Check for Tprobe", -1, true, true);
-  sensor1.begin();                            // start the temperature sensor1
+  sensor1.begin();                                      // start the temperature sensor1
   DebugPrintln(F("Get # of Tsensors"));
-  tprobe1 = sensor1.getDeviceCount();         // should return 1 if probe connected
+  tprobe1 = sensor1.getDeviceCount();                   // should return 1 if probe connected
   DebugPrint(F("Sensors : "));
   DebugPrintln(tprobe1);
   DebugPrintln(F("Find Tprobe address"));
@@ -1711,7 +1725,7 @@ void setup()
 #if defined(STATIONMODE)
   // this is setup as a station connecting to an existing wifi network
   DebugPrintln(F("Start Station mode"));
-  if (staticip == STATICIPON)                       // if staticip then set this up before starting
+  if (staticip == STATICIPON)                           // if staticip then set this up before starting
   {
     DebugPrintln(F("Static IP defined. Setting up static ip now"));
     oledtextmsg("Setup Static IP", -1, false, true);
@@ -1732,10 +1746,10 @@ void setup()
   //mySSID.toCharArray(xSSID, mySSID.length() + 1);
   //myPASSWORD.toCharArray(xPASSWORD, myPASSWORD.length() + 1);
 
-  byte status = WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi
-  delay(1000);                                      // wait 500ms
+  byte status = WiFi.begin(mySSID, myPASSWORD);         // attempt to start the WiFi
+  delay(1000);                                          // wait 500ms
 
-  int attempts = 0;                                 // holds the number of attempts/tries
+  int attempts = 0;                                     // holds the number of attempts/tries
   while (WiFi.status() != WL_CONNECTED)
   {
     DebugPrint(F("Attempting to connect to SSID : "));
@@ -1743,13 +1757,13 @@ void setup()
     DebugPrint(F("Attempting : "));
     DebugPrint(attempts);
     DebugPrintln(F(" to start WiFi"));
-    delay(1000);                                    // wait 1s
-    attempts++;                                     // add 1 to attempt counter to start WiFi
+    delay(1000);                                        // wait 1s
+    attempts++;                                         // add 1 to attempt counter to start WiFi
 
     oled_draw_Wifi(attempts);
     oledtextmsg("Attempts: ", attempts, false, true);
 
-    if (attempts > 10)                              // if this attempt is 11 or more tries
+    if (attempts > 10)                                  // if this attempt is 11 or more tries
     {
       DebugPrint(F("Attempt to start Wifi failed after "));
       DebugPrint(attempts);
@@ -1758,13 +1772,13 @@ void setup()
       oledtextmsg("Did not connect to AP", -1, true, true);
       oledgraphicmsg("Did not connect to AP", -1, true, false, 0, 0)
       delay(2000);
-      software_Reboot(2000);                       // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
+      software_Reboot(2000);                          // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
   }
 #endif // end STATIONMODE
 
   oledtextmsg("Connected", -1, true, true);
-  delay(100);                                       // keep delays small else issue with ASCOM
+  delay(100);                                           // keep delays small else issue with ASCOM
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
@@ -1774,7 +1788,7 @@ void setup()
   myserver.begin();
   DebugPrintln(F("Get local IP address"));
   ESP32IPAddress = WiFi.localIP();
-  delay(100);                                       // keep delays small else issue with ASCOM
+  delay(100);                                           // keep delays small else issue with ASCOM
   DebugPrintln(F("TCP Server started"));
 
   // set packet counts to 0
@@ -1792,7 +1806,7 @@ void setup()
   myIP = WiFi.localIP();
   ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
 #else
-  // it is Bluetooth so set some globals
+  // it is Bluetooth or Local Serial so set some globals
   ipStr = "0.0.0.0";
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
@@ -1835,16 +1849,16 @@ void setup()
 
 #if defined(USEDUCKSDNS)
   oledtextmsg("Setup DuckDNS", -1, false, true);
-  EasyDDNS.service("duckdns");                      // Enter your DDNS Service Name - "duckdns" / "noip"
+  EasyDDNS.service("duckdns");                          // Enter your DDNS Service Name - "duckdns" / "noip"
   delay(5);
-  EasyDDNS.client(duckdnsdomain, duckdnstoken);     // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
+  EasyDDNS.client(duckdnsdomain, duckdnstoken);         // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
   delay(5);
-  EasyDDNS.update(60000);                           // Check for New Ip Every 60 Seconds.
+  EasyDDNS.update(60000);                               // Check for New Ip Every 60 Seconds.
   delay(5);
 #endif // useduckdns
 
 #if defined(INFRAREDREMOTE)
-  irrecv.enableIRIn();                              // Start the IR
+  irrecv.enableIRIn();                                  // Start the IR
 #endif
 
   DebugPrintln(F("Set motorspeedchange."));
@@ -1889,7 +1903,7 @@ void loop()
   static unsigned long TimeStampDelayAfterMove = 0;
   static unsigned long TimeStampPark = millis();
   static byte Parked = false;
-  static byte msteps;                                 // backlash compensation
+  static byte msteps;                                   // backlash compensation
   static byte updatecount = 0;
 
 #if defined(LOOPTIMETEST)
@@ -1926,7 +1940,7 @@ void loop()
     {
       if (myclient.available())
       {
-        ESP_Communication(ESPDATA);     // Wifi communication
+        ESP_Communication(ESPDATA);                     // Wifi communication
       }
     }
     else
@@ -1941,26 +1955,25 @@ void loop()
     processbt();
   }
   // if there is a command from Bluetooth
-  if ( queue.count() >= 1 )                 // check for serial command
+  if ( queue.count() >= 1 )                             // check for serial command
   {
     ESP_Communication(BTDATA);
   }
 #endif // if defined(BLUETOOTHMODE)
-
 #if defined(LOCALSERIAL)
   // if there is a command from Serial port
   if ( Serial.available() )
   {
     processserial();
   }
-  if ( queue.count() >= 1 )                 // check for serial command
+  if ( queue.count() >= 1 )                             // check for serial command
   {
     ESP_Communication(SERIALDATA);
   }
 #endif // if defined(LOCALSERIAL)
 
 #if defined(OTAUPDATES)
-  ArduinoOTA.handle();                        // listen for OTA events
+  ArduinoOTA.handle();                                  // listen for OTA events
 #endif // if defined(OTAUPDATES)
 
   //_____________________________MainMachine _____________________________
@@ -1970,7 +1983,6 @@ void loop()
     case State_Idle:
       if (fcurrentPosition != ftargetPosition)
       {
-        //        driverboard->enablemotor();       // is in State_InitMove
         MainStateMachine = State_InitMove;
         DebugPrint(F("Idle => InitMove Target "));
         DebugPrint(ftargetPosition);
@@ -2002,7 +2014,7 @@ void loop()
 
         if (Parked == false)
         {
-          if (TimeCheck(TimeStampPark, MOTORRELEASEDELAY * 1000))   //
+          if (TimeCheck(TimeStampPark, MOTORRELEASEDELAY * 1000))
           {
             driverboard->releasemotor();
             DebugPrintln(F("Idle: release motor"));
@@ -2013,7 +2025,7 @@ void loop()
         byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
         if ( status == true )
         {
-          Update_OledGraphics(oled_off);           // Display off after config saved
+          Update_OledGraphics(oled_off);                // Display off after config saved
           DebugPrint("new Config saved: ");
           DebugPrintln(status);
         }
@@ -2086,7 +2098,7 @@ void loop()
       break;
 
     case State_Moving:
-      if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
+      if ( fcurrentPosition != ftargetPosition )        // must come first else cannot halt
       {
         (DirOfTravel == move_out ) ? fcurrentPosition++ : fcurrentPosition--;
         steppermotormove(DirOfTravel);
@@ -2116,9 +2128,9 @@ void loop()
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
         //__FinishedMove
-        Update_OledGraphics(oled_on);             // display on after move
-        TimeStampPark  = millis();                // catch current time
-        Parked = false;                           // mark to park the motor in State_Idle
+        Update_OledGraphics(oled_on);                   // display on after move
+        TimeStampPark  = millis();                      // catch current time
+        Parked = false;                                 // mark to park the motor in State_Idle
         isMoving = 0;
         MainStateMachine = State_Idle;
         DebugPrintln(F("=> State_Idle"));
