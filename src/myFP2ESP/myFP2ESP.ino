@@ -80,23 +80,23 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
 #define OLEDTEXT 1
 //#define OLEDGRAPHICS 2
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
-#define INOUTPUSHBUTTONS 1
+//#define INOUTPUSHBUTTONS 1
 
 // To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
-#define INOUTLEDPINS 1
+//#define INOUTLEDPINS 1
 
 // To enable the Infrared remote controller, uncomment the next line [ESP32 only]
-#define INFRAREDREMOTE
+//#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 #define SHOWSTARTSCRN 1
@@ -704,6 +704,7 @@ void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
   if ( clrscr == true)                                  // clear the screen?
   {
     myoled->clearDisplay();
+    myoled->setCursor(0,0);
   }
   if ( nl == true )                                     // need to print a new line?
   {
@@ -940,7 +941,11 @@ void displaylcdpage2(void)
 #if defined(OLEDTEXT)
 boolean Init_OLED(void)
 {
+#if defined(ESP8266)
   Wire.begin();
+#else
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);      // esp32
+#endif
   Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
