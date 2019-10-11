@@ -10,6 +10,8 @@
 // ----------------------------------------------------------------------------------------------
 
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address#endif // wemos
+#define SCREEN_WIDTH          128           // OLED display width, in pixels
+#define SCREEN_HEIGHT         64            // OLED display height, in pixels
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define MOTORRELEASEDELAY     120           // motor release power after 120s
 
@@ -66,6 +68,11 @@
 #ifndef STEP32
 #define STEP32                32
 #endif
+
+#define onstr                 "On"
+#define offstr                "Off"
+#define instr                 "In"
+#define outstr                "Out"
 
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out

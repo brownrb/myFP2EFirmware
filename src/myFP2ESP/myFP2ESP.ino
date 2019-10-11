@@ -40,7 +40,7 @@
 // HalfStepperESP32 as in myFP2ELibs
 // Dallas Temperature 3.80
 // Wire [as installed with Arduino 1.8.9
-// OneWire 2.3.3
+// OneWire 2.3.5
 // EasyDDNS 1.5.2
 // Notes:
 // You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
@@ -90,16 +90,19 @@
 #define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
-//#define INOUTPUSHBUTTONS 1
+#define INOUTPUSHBUTTONS 1
 
 // To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
-//#define INOUTLEDS 1
+#define INOUTLEDPINS 1
 
 // To enable the Infrared remote controller, uncomment the next line [ESP32 only]
-//#define INFRAREDREMOTE
+#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 #define SHOWSTARTSCRN 1
+
+// To display Spash screen graphic, uncomment the next line
+#define SPLASHSCREEN 1
 
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
@@ -109,8 +112,8 @@
 #ifdef INOUTPUSHBUTTONS
 #halt // ERROR - INOUTPUSHBUTTONS not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
-#ifdef INOUTLEDS
-#halt // ERROR - INOUTLEDS not supported for WEMOS or NODEMCUV1 ESP8266 chips
+#ifdef INOUTLEDPINS
+#halt // ERROR - INOUTLEDPINS not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
 #ifdef INFRAREDREMOTE
 #halt // ERROR - INFRAREDREMOTE not supported for WEMOS or NODEMCUV1 ESP8266 chips
@@ -297,9 +300,9 @@ IPAddress subnet(255, 255, 255, 0);
 SSD1306Wire *myoled;
 #endif
 #if defined(OLEDTEXT)
-#include <mySSD1306Ascii.h>
-#include <mySSD1306AsciiWire.h>
-SSD1306AsciiWire *myoled;
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+Adafruit_SSD1306 *myoled;
 #endif
 
 #if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
@@ -349,13 +352,13 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 //move_out  1||  1   |   0
 //move_in   0||  0   |   1
 
-String programName = "myFP2E.";
+String programName;                                     // will become driverboard name
 DriverBoard* driverboard;
 
-char programVersion[] = "100";
+char programVersion[] = "102";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 char ontxt[]          = "ON ";
-char offtxt[]         = "OFF";
+char offtxt[]         = offstr;
 char coilpwrtxt[]     = "Coil power  =";
 char revdirtxt[]      = "Reverse Dir =";
 
@@ -445,12 +448,12 @@ void software_Reboot(int Reboot_delay)
 // STEPPER MOTOR ROUTINES
 void steppermotormove(byte dir )                        // direction move_in, move_out ^ reverse direction
 {
-#if defined(INOUTLEDS)
-  ( dir == move_in ) ? digitalWrite(INLED, 1) : digitalWrite(OUTLED, 1);
+#if defined(INOUTLEDPINS)
+  ( dir == move_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
 #endif
   driverboard->movemotor(dir);
-#if defined(INOUTLEDS)
-  ( dir == move_in ) ? digitalWrite(INLED, 0) : digitalWrite(OUTLED, 0);
+#if defined(INOUTLEDPINS)
+  ( dir == move_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
 #endif
 }
 
@@ -700,7 +703,7 @@ void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
 #if defined(OLEDTEXT)
   if ( clrscr == true)                                  // clear the screen?
   {
-    myoled->clear();
+    myoled->clearDisplay();
   }
   if ( nl == true )                                     // need to print a new line?
   {
@@ -722,6 +725,7 @@ void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
       myoled->print(val);
     }
   }
+  myoled->display();
 #endif // if defined(OLEDTEXT)
 }
 
@@ -740,7 +744,7 @@ void Update_OledText(void)
   if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
   {
     olddisplaytimestampNotMoving = currentMillis;       // update the timestamp
-    myoled->clear();                                    // clrscr OLED
+    myoled->clearDisplay();                             // clrscr OLED
     switch (displaypage)
     {
       case 0:   displaylcdpage0();
@@ -767,14 +771,11 @@ void UpdatePositionOledText(void)
 #if defined(OLEDTEXT)
   myoled->setCursor(0, 0);
   myoled->print("Current Pos = ");
-  myoled->print(fcurrentPosition);
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(fcurrentPosition);
 
   myoled->print("Target Pos  = ");
-  myoled->print(ftargetPosition);
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(ftargetPosition);
+  myoled->display();
 #endif // if defined(OLEDTEXT)
 }
 
@@ -786,46 +787,35 @@ void displaylcdpage0(void)      // displaylcd screen
   }
 #if defined(OLEDTEXT)
   char tempString[20];
-  myoled->home();
+  myoled->setCursor(0, 0);
   myoled->print("Current Pos = ");
-  myoled->print(fcurrentPosition);
-  myoled->clearToEOL();
-
-  myoled->println();
+  myoled->println(fcurrentPosition);
   myoled->print("Target Pos  = ");
-  myoled->print(ftargetPosition);
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(ftargetPosition);
 
   myoled->print(coilpwrtxt);
   if ( mySetupData->get_coilpower() == 1 )
   {
-    myoled->print(ontxt);
+    myoled->println(ontxt);
   }
   else
   {
-    myoled->print(offtxt);
+    myoled->println(offtxt);
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   myoled->print(revdirtxt);
   if ( mySetupData->get_reversedirection() == 1 )
   {
-    myoled->print(ontxt);
+    myoled->println(ontxt);
   }
   else
   {
-    myoled->print(offtxt);
+    myoled->println(offtxt);
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   // stepmode setting
   myoled->print("Step Mode   = ");
-  myoled->print(mySetupData->get_stepmode());
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(mySetupData->get_stepmode());
 
   //Temperature
   myoled->print("Temperature = ");
@@ -834,33 +824,28 @@ void displaylcdpage0(void)      // displaylcd screen
 #else
   myoled->print("20.0");
 #endif
-  myoled->print(" c");
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(" c");
 
   //Motor Speed
   myoled->print("Motor Speed = ");
   switch ( mySetupData->get_motorSpeed() )
   {
     case SLOW:
-      myoled->print("Slow");
+      myoled->println("Slow");
       break;
     case MED:
-      myoled->print("Med");
+      myoled->println("Med");
       break;
     case FAST:
-      myoled->print("Fast");
+      myoled->println("Fast");
       break;
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   //MaxSteps
   myoled->print("MaxSteps    = ");
   ltoa(mySetupData->get_maxstep(), tempString, 10);
-  myoled->print(tempString);
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(tempString);
+  myoled->display();
 #endif // if defined(OLEDTEXT)
 }
 
@@ -871,69 +856,57 @@ void displaylcdpage1(void)
     return;
   }
 #if defined(OLEDTEXT)
+  myoled->setCursor(0, 0);
   // temperature compensation
   myoled->print("TComp Steps = ");
-  myoled->print(mySetupData->get_tempcoefficient());
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(mySetupData->get_tempcoefficient());
 
   myoled->print("TComp State = ");
   if ( mySetupData->get_tempcompenabled() == 0 )
   {
-    myoled->print("Off");
+    myoled->println(offstr);
   }
   else
   {
-    myoled->print("On");
+    myoled->println(onstr);
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   myoled->print("TComp Dir   = ");
   if ( mySetupData->get_tcdirection() == 0 )
   {
-    myoled->print("In");
+    myoled->println(instr);
   }
   else
   {
-    myoled->print("Out");
+    myoled->println(outstr);
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   myoled->print("Backlash In = ");
   if ( mySetupData->get_backlash_in_enabled() == 0 )
   {
-    myoled->print("Off");
+    myoled->println(offstr);
   }
   else
   {
-    myoled->print("On");
+    myoled->println(onstr);
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   myoled->print("Backlash Out = ");
   if ( mySetupData->get_backlash_out_enabled() == 0 )
   {
-    myoled->print("Off");
+    myoled->println(offstr);
   }
   else
   {
-    myoled->print("On");
+    myoled->println(onstr);
   }
-  myoled->clearToEOL();
-  myoled->println();
 
   myoled->print("Backlash In#= ");
-  myoled->print(mySetupData->get_backlashsteps_in());
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(mySetupData->get_backlashsteps_in());
 
   myoled->print("Backlash Ou#= ");
-  myoled->print(mySetupData->get_backlashsteps_out());
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(mySetupData->get_backlashsteps_out());
+  myoled->display();
 #endif // if defined(OLEDTEXT)
 }
 
@@ -945,26 +918,22 @@ void displaylcdpage2(void)
   }
 #if defined(OLEDTEXT)
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
+  myoled->setCursor(0, 0);
   myoled->print("SSID = ");
-  myoled->print(mySSID);
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(mySSID);
 
   myoled->print("IP   = ");
-  myoled->print(ipStr);
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->println(ipStr);;
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 #if defined(BLUETOOTHMODE)
-  myoled->print("Bluetooth Mode");
-  myoled->clearToEOL();
-  myoled->println();
+  myoled->setCursor(0, 0);
+  myoled->println("Bluetooth Mode");
 #endif
 #if defined(LOCALSERIAL)
-  myoled->print("Local Serial Mode");
-  myoled->clearToEOL();
-  myoled->println();
-#endif  
+  myoled->setCursor(0, 0);
+  myoled->println("Local Serial Mode");
+#endif
+  myoled->display();
 #endif // if defined(OLEDTEXT)
 }
 
@@ -983,25 +952,33 @@ boolean Init_OLED(void)
     DebugPrint(F("I2C device found at address "));
     DebugPrintln(OLED_ADDR, HEX);
     displayfound = true;
-    myoled = new SSD1306AsciiWire();
-    delay(5);
-    // Setup the OLED
-    myoled->begin(&Adafruit128x64, OLED_ADDR);
-    delay(5);
-    myoled->set400kHz();
-    myoled->setFont(Adafruit5x7);
-    myoled->clear();                                    // clrscr OLED
-    myoled->Display_Normal();                           // black on white
-    delay(5);
-    myoled->Display_On();                               // display ON
-    myoled->Display_Rotate(0);                          // portrait, not rotated
-    myoled->Display_Bright();
+    myoled = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
+    if (!myoled->begin(SSD1306_SWITCHCAPVCC, OLED_ADDR))
+    {
+      // Address 0x3C for 128x64
+      DebugPrintln(F("SSD1306 allocation failed"));
+      for (;;)
+      {
+        ;                                               // Don't proceed, loop forever=
+      }
+    }
+#if defined(SPLASHSCRN)
+    myoled->display();                                  // display splash screen
+    delay(500);
+#endif
+    myoled->clearDisplay();
+    myoled->setTextSize(1);                             // Normal 1:1 pixel scale
+    myoled->setTextColor(WHITE);                        // Draw white text
+    myoled->setCursor(0, 0);                            // Start at top-left corner
+    myoled->dim(false);
     delay(5);
 #if defined(SHOWSTARTSCRN)
     myoled->println(programName);                       // print startup screen
     myoled->println(programVersion);
-    delay(5);
+    myoled->println(programName);                       // print startup screen
+    myoled->println(programVersion);;
     myoled->println(ProgramAuthor);
+    myoled->display();
 #endif // showstartscreen
   }
   return displayfound;
@@ -1339,7 +1316,7 @@ void ESP_Communication( byte mode )
 #if defined(OLEDTEXT)
         if ( displayfound == true )
         {
-          myoled->Display_On();
+          myoled->dim(false);
         }
 #endif
       }
@@ -1348,7 +1325,10 @@ void ESP_Communication( byte mode )
 #if defined(OLEDTEXT)
         if ( displayfound == true )
         {
-          myoled->Display_Off();
+          // clear display buffer
+          // set dim
+          myoled->clearDisplay();
+          myoled->dim(true);
         }
 #endif
       }
@@ -1429,13 +1409,13 @@ void update_pushbuttons(void)
 {
   long newpos;
   // PB are active high - pins float low if unconnected
-  if ( digitalRead(INPB) == 1 )                         // is pushbutton pressed?
+  if ( digitalRead(INPBPIN) == 1 )                         // is pushbutton pressed?
   {
     newpos = ftargetPosition - 1;
     newpos = (newpos < 0 ) ? 0 : newpos;
     ftargetPosition = newpos;
   }
-  if ( digitalRead(OUTPB) == 1 )
+  if ( digitalRead(OUTPBPIN) == 1 )
   {
     newpos = ftargetPosition + 1;
     // an unsigned long range is 0 to 4,294,967,295
@@ -1526,8 +1506,8 @@ void update_irremote()
 #endif // if defined(INFRAREDREMOTE)
 
 #if defined(OTAUPDATES)
-void startOTA() 
-{ 
+void startOTA()
+{
   ArduinoOTA.setHostname(OTAName);                      // Start the OTA service
   ArduinoOTA.setPassword(OTAPassword);
 
@@ -1611,16 +1591,16 @@ void setup()
   DebugPrintln(F("Bluetooth started."));
 #endif
 
-#if defined(INOUTLEDS)                                  // Setup IN and OUT LEDS, use as controller power up indicator
-  pinMode(INLED, OUTPUT);
-  pinMode(OUTLED, OUTPUT);
-  digitalWrite(INLED, 1);
-  digitalWrite(OUTLED, 1);
+#if defined(INOUTLEDPINS)                                  // Setup IN and OUT LEDS, use as controller power up indicator
+  pinMode(INLEDPIN, OUTPUT);
+  pinMode(OUTLEDPIN, OUTPUT);
+  digitalWrite(INLEDPIN, 1);
+  digitalWrite(OUTLEDPIN, 1);
 #endif
 
 #if defined(INOUTPUSHBUTTONS)                           // Setup IN and OUT Pushbuttons, active high when pressed
-  pinMode(INPB, INPUT);
-  pinMode(OUTPB, INPUT);
+  pinMode(INPBPIN, INPUT);
+  pinMode(OUTPBPIN, INPUT);
 #endif
 
   displayfound = false;
@@ -1870,9 +1850,9 @@ void setup()
   readtemp(1);
 #endif
 
-#if defined(INOUTLEDS)
-  digitalWrite(INLED, 0);
-  digitalWrite(OUTLED, 0);
+#if defined(INOUTLEDPINS)
+  digitalWrite(INLEDPIN, 0);
+  digitalWrite(OUTLEDPIN, 0);
 #endif
 
 #if defined(OTAUPDATES)
@@ -1884,8 +1864,7 @@ void setup()
   DebugPrint(ftargetPosition);
   DebugPrint(F(", Current = "));
   DebugPrintln(fcurrentPosition);
-  //  DebugPrint(F("Displayenabled : "));
-  //  DebugPrintln(mySetupData->get_displayenabled());
+  mySetupData->set_displayenabled(1);
   DebugPrintln(F("Setup end."));
   oledtextmsg("Setup end.", -1, false, true);
 }
@@ -1993,10 +1972,10 @@ void loop()
       {
         // focuser stationary. isMoving is 0
 #if defined(INOUTPUSHBUTTONS)
-        updatepushbuttons();
+        update_pushbuttons();
 #endif
 #if defined(INFRAREDREMOTE)
-        updateirremote();
+        update_irremote();
 #endif
         if (mySetupData->get_displayenabled() == 1)
         {
