@@ -85,7 +85,8 @@
 #define  OLEDGRAPHICS 
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
+#define BACKLASH 2    // alternative BACKLASH
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
@@ -181,7 +182,7 @@
 #endif
 #endif
 
-#define MotorReleaseDelay 120     // motor release power after 120s
+#define MotorReleaseDelay 120*1000     // motor release power after 120s
 
 // ----------------------------------------------------------------------------------------------
 // 7: INCLUDES FOR WIFI
@@ -287,6 +288,8 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 #endif
 
+//__HM  temporary => should go in setup section   
+#define MotorRealesDelay 120    // Delay 120s
 
 
 // ----------------------------------------------------------------------------------------------
@@ -310,15 +313,11 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
-#define State_Idle            0
-#define State_InitMove        1
-#define State_ApplyBacklash   2
-#define State_Moving          3
-#define State_DelayAfterMove  4
-#define State_FinishedMove    5
+enum  StateMachineStates {State_Idle, State_ApplyBacklash, State_ApplyBacklash2, State_Moving, State_DelayAfterMove, State_FinishedMove};
 
 #define move_in               0
 #define move_out              1
+#define move_main    move_in      //__needed for Backlash 2 
 #define oled_off              0
 #define oled_on               1
 #define oled_stay             2
@@ -609,7 +608,10 @@ void oled_draw_main_update(void)
 
   myoled->setTextAlignment(TEXT_ALIGN_CENTER);
   myoled->setFont(ArialMT_Plain_24);
-  myoled->drawString(64, 28, String(fcurrentPosition,DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(),DEC));  // Print currentPosition
+
+
+  char dir =(mySetupData->get_focuserdirection() == move_in ) ? '<' : '>';
+  myoled->drawString(64, 28, String(fcurrentPosition,DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(),DEC) + ' ' + dir);  // Print currentPosition
 
   myoled->display();
 }
@@ -1450,75 +1452,6 @@ void Read_WIFI_config_SPIFFS(void)
 }
 
 
-/*
-void setup()
-{
-  //#if (defined LDEBUG || defined LOCALSERIAL)    // Open serial port if debugging or open serial port if LOCALSERIAL
-#ifdef DEBUG
-#ifdef OLEDDISPLAY
-#ifdef OLEDGRAPHICS
-
-void oled_draw_Wifi(int j)
-{
-  myoled->clear();
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_10);
-  myoled->drawString(64, 0, "SSID: " + mySSID);
-  myoled->drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits); // draw wifi logo
-
-  for (int i = 1; i < 10; i++)
-  {
-    myoled->drawXbm(12 * i, 56, 8, 8, (i == j) ? activeSymbol : inactiveSymbol);
-  }
-
-  myoled->display();
-}
-
-void oled_draw_main_update(void)
-{
-  myoled->clear();
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_10);
-  myoled->drawString(64, 0, driverboard->getboardname());
-  myoled->drawString(64, 12, "IP= " + ipStr);
-
-  myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-  myoled->drawString(54, 54, "TEMP:" + String(readtemp(0), 2) + " C");
-  myoled->drawString(0, 54, "BL:" + String(mySetupData->get_backlashsteps_out()));
-  //myoled->drawString(24, 54, "SM:" + String(driverboard->getstepmode()));
-
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_24);
-  myoled->drawString(64, 28, String(fcurrentPosition, DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(), DEC)); // Print currentPosition
-
-  myoled->display();
-}
-
-void oled_draw_main(byte new_status)
-{
-  static byte current_status = oled_on;
-
-  switch (new_status)
-  {
-    case oled_off:
-      current_status = new_status;
-      myoled->clear();
-      myoled->display();
-      break;
-    case oled_stay:
-      if (current_status == oled_on)
-        oled_draw_main_update();
-      break;
-    case oled_on:
-    default:
-      oled_draw_main_update();
-      current_status = new_status;
-      break;
-  }
-}
-#endif  // ifdef OLEDGRAPHICS
-#endif  // ifdef OLEDDISPLAY
-*/
 
 void setup()
 {
@@ -1681,27 +1614,32 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
   char xSSID[mySSID.length()+1];
   char xPASSWORD[myPASSWORD.length()+1];  
 
-  mySSID.toCharArray(xSSID, mySSID.length()+1);
-  myPASSWORD.toCharArray(xPASSWORD, myPASSWORD.length()+1);
+  mySSID.toCharArray(xSSID, mySSID.length()+1);               // convert String to char array
+  myPASSWORD.toCharArray(xPASSWORD, myPASSWORD.length()+1);   // convert String to char array
 
-  byte status = WiFi.begin(xSSID, xPASSWORD);     // attempt to start the WiFi
+//  byte status = WiFi.begin(xSSID, xPASSWORD);     // attempt to start the WiFi
+  WiFi.begin(xSSID, xPASSWORD);     // attempt to start the WiFi  
   delay(1000);                                      // wait 500ms
 
-  int attempts = 0;                                 // holds the number of attempts/tries
-  while (WiFi.status() != WL_CONNECTED)
+
+  DebugPrint(F("Attempting to connect to SSID : "));
+  DebugPrint(mySSID);
+  DebugPrint(F(" Attempting : "));
+
+  for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
   {
-    DebugPrint(F("Attempting to connect to SSID : "));
-    DebugPrintln(mySSID);
-    DebugPrint(F("Attempting : "));
-    DebugPrint(attempts);
-    DebugPrintln(F(" to start WiFi"));
+    DebugPrint(F("*"));
     delay(1000);                                    // wait 1s
-    attempts++;                                     // add 1 to attempt counter to start WiFi
-
-
     oled_draw_Wifi(attempts);
+    
+#if defined(ESP32)    
+    if (attempts % 3 == 2) {            // every 3 rounds new init for ESP32
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(xSSID, xPASSWORD);
+    }
+#endif
 
-    if (attempts > 10)                              // if this attempt is 11 or more tries
+    if (attempts > 9)                              // if this attempt is 10 or more tries
     {
       DebugPrint(F("Attempt to start Wifi failed after "));
       DebugPrint(attempts);
@@ -1714,7 +1652,9 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
 #endif
 #ifdef OLEDGRAPHICS
       myoled->clear();
+      myoled->setTextAlignment(TEXT_ALIGN_LEFT);      
       myoled->drawString(0, 0, F("Did not connect to AP"));
+      myoled->display();
 #endif
       delay(2000);
 #endif // end OLEDDISPLAY
@@ -1859,16 +1799,17 @@ Read_WIFI_config_SPIFFS();  //__ Read mySSID,myPASSWORD from SPIFFS if exist, ot
 
 void loop()
 {
-  static byte MainStateMachine = State_Idle;
+  static StateMachineStates MainStateMachine = State_Idle;
   static byte DirOfTravel = mySetupData->get_focuserdirection();
   static byte ConnectionStatus = 0;
   static byte backlash_count = 0;
+  static byte m_bl;
   static byte backlash_enabled = 0;
 
   static unsigned long TimeStampDelayAfterMove = 0;
   static unsigned long TimeStampPark = millis();
   static byte Parked = false;
-  static byte msteps;                                 // backlash compensation
+  
 
 
 #ifdef OLEDDISPLAY
@@ -1936,15 +1877,93 @@ void loop()
 
   switch (MainStateMachine)
   {
+//___Idle________________________________________________________________
     case State_Idle:
       if (fcurrentPosition != ftargetPosition)
       {
-//        driverboard->enablemotor();       // is in State_InitMove
-        MainStateMachine = State_InitMove;
-        DebugPrint(F("Idle => InitMove Target "));
+
+    //__init move _____________________________
+        DebugPrint(F("Idle: InitMove  Target "));
         DebugPrint(ftargetPosition);
         DebugPrint(F(" Current "));
         DebugPrintln(fcurrentPosition);
+
+        isMoving = 1;
+        DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
+        driverboard->enablemotor(); 
+        if (mySetupData->get_focuserdirection() == DirOfTravel)
+        {
+          // move is in same direction, ignore backlash
+          MainStateMachine = State_Moving;
+          DebugPrintln(F("=> State_Moving"));
+        }
+        else
+        {
+          // move is in opposite direction, check for backlash enabled
+          // get backlash settings
+          mySetupData->set_focuserdirection(DirOfTravel);
+#if (BACKLASH == 1)   // go for standard backlash
+          if ( DirOfTravel == move_in)
+          {
+            backlash_count = mySetupData->get_backlashsteps_in();
+            backlash_enabled = mySetupData->get_backlash_in_enabled();
+          }
+          else
+          {
+            backlash_count = mySetupData->get_backlashsteps_out();
+            backlash_enabled = mySetupData->get_backlash_out_enabled();
+          }
+          // backlash needs to be applied, so get backlash values and states
+
+          // if backlask was defined then follow the backlash rules
+          // if backlash has been enabled then apply it
+          if ( backlash_enabled == 1 )
+          {
+            // apply backlash
+            // save new direction of travel
+            // mySetupData->set_focuserdirection(DirOfTravel);
+            //driverboard->setmotorspeed(BACKLASHSPEED);
+            MainStateMachine = State_ApplyBacklash;
+            DebugPrint(F("Idle => State_ApplyBacklash"));
+          }
+          else
+          {
+            // do not apply backlash, go straight to moving
+            MainStateMachine = State_Moving;
+            DebugPrint(F("Idle => State_Moving"));
+          }
+
+#elif (BACKLASH == 2)          
+
+          if ( DirOfTravel == move_main)  
+          {
+            // do not apply backlash, go straight to moving
+            MainStateMachine = State_Moving;
+            DebugPrint(F("Idle => State_Moving"));          
+          }
+          else
+          {
+            unsigned long bl = mySetupData->get_backlashsteps_in();
+            unsigned long sm = mySetupData->get_stepmode();
+
+            if (DirOfTravel == move_out) 
+            {
+              backlash_count = bl + sm - ((ftargetPosition + bl) % sm);   // Trip to tuning point should be a fullstep position
+            }
+            else
+            {
+              backlash_count = bl + sm - ((ftargetPosition - bl) % sm);   // Trip to tuning point should be a fullstep position
+            }
+            m_bl =  backlash_count;  
+            MainStateMachine = State_ApplyBacklash;
+            DebugPrint(F("Idle => State_ApplyBacklash"));
+          }
+#else
+          // ignore backlash
+          MainStateMachine = State_Moving;
+          DebugPrint(F("Idle => State_Moving"));
+#endif
+        }
       }
       else
       {
@@ -1969,14 +1988,13 @@ void loop()
 
         if (Parked == false)
         {
-          if(TimeCheck(TimeStampPark, MotorReleaseDelay * 1000))    // 
+          if(TimeCheck(TimeStampPark, MotorReleaseDelay))    //Power off after MotorReleaseDelay
           {
             driverboard->releasemotor();
             DebugPrintln(F("Idle: release motor"));
             Parked = true;
           }
         }
-
 
         byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
         if ( status == true )
@@ -1988,57 +2006,8 @@ void loop()
       }
       break;
 
-    case State_InitMove:
-      isMoving = 1;
-      DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
-      driverboard->enablemotor(); 
-      if (mySetupData->get_focuserdirection() == DirOfTravel)
-      {
-        // move is in same direction, ignore backlash
-        MainStateMachine = State_Moving;
-        DebugPrintln(F("=> State_Moving"));
-      }
-      else
-      {
-        // move is in opposite direction, check for backlash enabled
-        // get backlash settings
-        if ( DirOfTravel == move_in)
-        {
-          backlash_count = mySetupData->get_backlashsteps_in();
-          backlash_enabled = mySetupData->get_backlash_in_enabled();
-        }
-        else
-        {
-          backlash_count = mySetupData->get_backlashsteps_out();
-          backlash_enabled = mySetupData->get_backlash_out_enabled();
-        }
-        // backlash needs to be applied, so get backlash values and states
-#ifdef BACKLASH
-        // if backlask was defined then follow the backlash rules
-        // if backlash has been enabled then apply it
-        if ( backlash_enabled == 1 )
-        {
-          // apply backlash
-          // save new direction of travel
-          mySetupData->set_focuserdirection(DirOfTravel);
-          //driverboard->setmotorspeed(BACKLASHSPEED);
-          MainStateMachine = State_ApplyBacklash;
-          DebugPrint(F("Idle => State_ApplyBacklash"));
-        }
-        else
-        {
-          // do not apply backlash, go straight to moving
-          MainStateMachine = State_Moving;
-          DebugPrint(F("Idle => State_Moving"));
-        }
-#else
-        // ignore backlash
-        MainStateMachine = State_Moving;
-        DebugPrint(F("Idle => State_Moving"));
-#endif
-      }
-      break;
 
+//__ApplyBacklash ____________________________________________________________________ 
     case State_ApplyBacklash:
       if ( backlash_count )
       {
@@ -2053,6 +2022,7 @@ void loop()
       }
       break;
 
+//__ Moving _________________________________________________________________________
     case State_Moving:
       if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
       {
@@ -2060,47 +2030,81 @@ void loop()
           fcurrentPosition++;
         else
           fcurrentPosition--;
+
         steppermotormove(DirOfTravel);
 #ifdef OLEDDISPLAY
-        if ( mySetupData->get_displayenabled() == 1)
+        if ((mySetupData->get_displayenabled() == 1) && ( mySetupData->get_lcdupdateonmove() == 1))
         {
-          if ( mySetupData->get_lcdupdateonmove() == 1 )
+          updatecount++;
+          if ( updatecount > LCDUPDATEONMOVE )
           {
-            updatecount++;
-            if ( updatecount > LCDUPDATEONMOVE )
-            {
-              delay(5);
-              updatecount = 0;
+//            delay(5);
+            updatecount = 0;
 #ifdef OLEDGRAPHICS
-              // TODO Holger - updates position and target values on OLED when moving
-              // UpdatePositionOledGraphics();  // ????
+            // UpdatePositionOledGraphics();  // scip this due to disturbance of motor movement
 #endif
 #ifdef OLEDTEXT
-              UpdatePositionOledText();
+            UpdatePositionOledText();
 #endif
-            }
           }
         }
 #endif
       }
       else
       {
+#if (BACKLASH == 2) 
+        if ( DirOfTravel != move_main)
+        {
+          DirOfTravel ^= 1;
+          mySetupData->set_focuserdirection(DirOfTravel);
+          backlash_count = m_bl;        // Backlash retour
+          TimeStampDelayAfterMove = millis();
+          MainStateMachine = State_ApplyBacklash2;
+          DebugPrintln(F("State_Moving => State_ApplyBacklash2"));
+        }
+        else
+        {
+          MainStateMachine = State_DelayAfterMove;
+          DebugPrintln(F("State_Moving => State_DelayAfterMove"));
+        }      
+#else
         MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(F("=> State_DelayAfterMove"));
+        DebugPrintln(F("State_Moving => State_DelayAfterMove"));
+#endif        
       }
       break;
 
+
+//__ ApplyBacklash2 ___________________________________________________________________
+    case State_ApplyBacklash2:
+      if(TimeCheck(TimeStampDelayAfterMove , 250))
+      {
+        if (backlash_count)
+        {
+          driverboard->movemotor(DirOfTravel);
+          backlash_count--;
+        }     
+        else
+        {   
+          TimeStampDelayAfterMove = millis();
+          MainStateMachine = State_DelayAfterMove;
+          DebugPrintln(F("=> State_DelayAfterMove"));
+        }
+      } 
+      break;
+
+//__ DelayAfterMove _________________________________________________________________________
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if(TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
       //__FinishedMove
-        Update_OledGraphics(oled_on);              // display on after move
+        Update_OledGraphics(oled_on);         // display on after move
         TimeStampPark  = millis();            // catch current time
         Parked = false;                       // mark to park the motor in State_Idle    
         isMoving = 0;        
         MainStateMachine = State_Idle;
-        DebugPrintln(F("=> State_Idle"));
+        DebugPrintln(F("State_DelayAfterMove => State_Idle"));
       }
       break;
     default:

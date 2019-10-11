@@ -1,6 +1,3 @@
-//#define Mode_EEPROM true
-//#define Mode_SPIFFS !Mode_EEPROM
-
 #define DEFAULTPOSITION 5000L
 #define DEFAULTMAXSTEPS 80000L
 #define DEFAULTOFF      0
