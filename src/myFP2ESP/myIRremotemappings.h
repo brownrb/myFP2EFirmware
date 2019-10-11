@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #ifndef myIRremotemappings_h
 #define myIRremotemappings_h
 

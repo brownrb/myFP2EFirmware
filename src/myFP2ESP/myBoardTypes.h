@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #ifndef myBoardTypes_h
 #define myBoardTypes_h
 
