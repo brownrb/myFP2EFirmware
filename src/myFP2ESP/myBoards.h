@@ -167,8 +167,8 @@
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
 #define TEMPPIN       13
-#define I2CDATAPIN    22
-#define I2CCLKPIN     21
+#define I2CDATAPIN    21
+#define I2CCLKPIN     22
 #define DIRPIN        32
 #define STEPPIN       33
 #define ENABLEPIN     14
@@ -186,8 +186,8 @@
 #endif
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #define TEMPPIN       13
-#define I2CDATAPIN    22
-#define I2CCLKPIN     21
+#define I2CDATAPIN    21
+#define I2CCLKPIN     22
 #define IN1           14
 #define IN2           27
 #define IN3           26
@@ -203,8 +203,8 @@
 #endif
 #if (DRVBRD == PRO2ESP32R3WEMOS )
 #define TEMPPIN       13
-#define I2CDATAPIN    22          // unsure
-#define I2CCLKPIN     21          // unsure
+#define I2CDATAPIN    21          // unsure
+#define I2CCLKPIN     22          // unsure
 #define DIRPIN        26
 #define STEPPIN       27
 #define ENABLEPIN     14

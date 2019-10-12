@@ -83,8 +83,8 @@
 #define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
-#define OLEDTEXT 1
-//#define OLEDGRAPHICS 2
+//#define OLEDTEXT 1
+#define OLEDGRAPHICS 2
 
 // To enable backlash in this firmware, uncomment the next line
 //#define BACKLASH 1
@@ -569,99 +569,99 @@ void Update_Temp(void)
 
 void Update_OledGraphics(byte new_status)
 {
-  if ( displayfound == false)
-  {
-    return;
-  }
-#if defined(OLEDGRAPHICS)
+#if defined(OLEDGRAPHICS)  
   static byte current_status = oled_on;
-  switch (new_status)
+
+  if ( displayfound)
   {
-    case oled_off:
-      current_status = new_status;
-      myoled->clear();
-      myoled->display();
-      break;
-    case oled_stay:
-      if (current_status == oled_on)
+    switch (new_status)
+    {
+      case oled_off:
+        current_status = new_status;
+        myoled->clear();
+        myoled->display();
+        break;
+      case oled_stay:
+        if (current_status == oled_on)
+          oled_draw_main_update();
+        break;
+      case oled_on:
+      default:
         oled_draw_main_update();
-      break;
-    case oled_on:
-    default:
-      oled_draw_main_update();
-      current_status = new_status;
-      break;
+        current_status = new_status;
+        break;
+    }
   }
 #endif
 }
 
 #if defined(OLEDGRAPHICS)
-void oledgraphicmsg(String str, int val, boolean clrscr, int xpos, int ypos)
+
+void oledgraphicmsg(String str, int val, boolean clrscr)
 {
-  if ( displayfound == false)
+  static byte linecount = 0;
+
+  myoled->setTextAlignment(TEXT_ALIGN_LEFT);
+  myoled->setFont(ArialMT_Plain_10);
+
+  if (displayfound)
   {
-    return;
-  }
-  if ( clrscr == true)
-  {
-    myoled->clear();
-  }
-  if ( val != -1)
-  {
-    myoled->drawString(xpos, ypos, str + String(val));
-  }
-  else
-  {
-    myoled->drawString(xpos, ypos, str);
+    if (clrscr == true)
+    {
+      myoled->clear();
+      linecount = 0;
+    }
+    if (val != -1)
+    {
+      str += String(val);
+    }
+    myoled->drawString(0, linecount *12, str);
+    myoled->display();    
+    linecount++;
   }
 }
 
 void oled_draw_Wifi(int j)
 {
-  if ( displayfound == false)
+  if ( displayfound == true)
   {
-    return;
+    myoled->clear();
+    myoled->setTextAlignment(TEXT_ALIGN_CENTER);
+    myoled->setFont(ArialMT_Plain_10);
+    myoled->drawString(64, 0, "SSID: " + String(mySSID));
+    myoled->drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits); // draw wifi logo
+
+    for (int i = 1; i < 10; i++)
+      myoled->drawXbm(12 * i, 56, 8, 8, (i == j) ? activeSymbol : inactiveSymbol);
+
+    myoled->display();
   }
-  myoled->clear();
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_10);
-  myoled->drawString(64, 0, "SSID: " + String(mySSID));
-  myoled->drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits); // draw wifi logo
-
-  for (int i = 1; i < 10; i++)
-    myoled->drawXbm(12 * i, 56, 8, 8, (i == j) ? activeSymbol : inactiveSymbol);
-
-  myoled->display();
 }
 
 void oled_draw_main_update(void)
 {
-  if ( displayfound == false)
+  if (displayfound == true) 
   {
-    return;
+    myoled->clear();
+    myoled->setTextAlignment(TEXT_ALIGN_CENTER);
+    myoled->setFont(ArialMT_Plain_10);
+    myoled->drawString(64, 0, driverboard->getboardname());
+    myoled->drawString(64, 12, "IP= " + ipStr);
+
+    myoled->setTextAlignment(TEXT_ALIGN_LEFT);
+    myoled->drawString(54, 54, "TEMP:" + String(readtemp(0), 2) + " C");
+    myoled->drawString(0, 54, "BL:" + String(mySetupData->get_backlashsteps_out()));
+    //myoled->drawString(24, 54, "SM:" + String(driverboard->getstepmode()));
+
+    myoled->setTextAlignment(TEXT_ALIGN_CENTER);
+    myoled->setFont(ArialMT_Plain_24);
+
+    char dir =(mySetupData->get_focuserdirection() == move_in ) ? '<' : '>';
+    myoled->drawString(64, 28, String(fcurrentPosition,DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(),DEC) + ' ' + dir);  // Print currentPosition
+    myoled->display();
   }
-  myoled->clear();
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_10);
-  myoled->drawString(64, 0, driverboard->getboardname());
-  myoled->drawString(64, 12, "IP= " + ipStr);
-
-  myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-  myoled->drawString(54, 54, "TEMP:" + String(readtemp(0), 2) + " C");
-  myoled->drawString(0, 54, "BL:" + String(mySetupData->get_backlashsteps_out()));
-  //myoled->drawString(24, 54, "SM:" + String(driverboard->getstepmode()));
-
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_24);
-
-
-  char dir =(mySetupData->get_focuserdirection() == move_in ) ? '<' : '>';
-  myoled->drawString(64, 28, String(fcurrentPosition,DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(),DEC) + ' ' + dir);  // Print currentPosition
-
-  myoled->display();
 }
 
-/*
 boolean Init_OLED(void)
 {
   Wire.begin();
@@ -687,53 +687,15 @@ boolean Init_OLED(void)
 #if defined(SHOWSTARTSCRN)
     myoled->drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
     myoled->drawString(0, 12, ProgramAuthor);
-    myoled->display();
 #endif
+    myoled->display();
   }
   return displayfound;
 }
-*/
 
-boolean Init_OLED(void)
-{
-  Wire.begin();
-/*  
 #else
-  Wire.begin(I2CDATAPIN, I2CCLKPIN);      // esp32
-#endif
-
-  Wire.beginTransmission(OLED_ADDR);        //check if OLED display is present
-  if (Wire.endTransmission(true) == 0)
-  {
-    Serial.print(F("I2C device found at address "));
-    Serial.println(OLED_ADDR, HEX);
-  }
-  else
-  {
-    Serial.println(F("no I2C device found"));
-  }
-  */
-  myoled = new SSD1306Wire(OLED_ADDR , I2CDATAPIN, I2CCLKPIN);
-  myoled->init();
-  myoled->flipScreenVertically();
-  myoled->setFont(ArialMT_Plain_10);
-  myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-  myoled->clear();
-
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_10);
-  myoled->drawString(64, 0, driverboard->getboardname());
-  myoled->display();
-/*
-#ifdef SHOWSTARTSCRN
-  myoled->drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
-  myoled->drawString(0, 12, ProgramAuthor);
-  myoled->display();
-#endif
-*/
-  return true;
-}
-
+  void oledgraphicmsg(String str, int val, boolean clrscr){}
+  void oled_draw_Wifi(int j){}
 #endif // if defined(OLEDGRAPHICS)
 
 // ----------------------------------------------------------------------------------------------
@@ -1790,12 +1752,12 @@ void setup()
     DebugPrint(F("*"));
     delay(1000);            // wait 1s
 
-//    oled_draw_Wifi(attempts);
-    //oledtextmsg("Attempts: ", attempts, false, true);
+    oled_draw_Wifi(attempts);
+    oledtextmsg("Attempts: ", attempts, false, true);
  
 #if defined(ESP32)    
     if (attempts % 3 == 2) 
-    {            // every 3 rounds new init for ESP32 => faster connection without reboot
+    {            // every 3 attempts new init for ESP32 => faster connection without reboot
       WiFi.mode(WIFI_STA);
       WiFi.begin(mySSID, myPASSWORD);
     }
@@ -1809,20 +1771,8 @@ void setup()
       DebugPrintln(F("Will attempt to restart the ESP module."));
       
       oledtextmsg("Did not connect to AP", -1, true, true);
-//      oledgraphicmsg("Did not connect to AP", -1, true, false, 0, 0);
-/*
-#ifdef OLEDDISPLAY
-#ifdef OLEDTEXT
-      myoled->clear();
-      myoled->print(F("Did not connect to AP"));
-#endif
-#ifdef OLEDGRAPHICS
-      myoled->clear();
-      myoled->setTextAlignment(TEXT_ALIGN_LEFT);      
-      myoled->drawString(0, 0, F("Did not connect to AP"));
-      myoled->display();
-#endif
-*/
+      oledgraphicmsg("Did not connect to AP", -1, true);
+
       delay(2000);
       software_Reboot(2000);                          // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
