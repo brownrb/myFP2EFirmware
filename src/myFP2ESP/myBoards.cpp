@@ -13,17 +13,21 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
     case WEMOSDRV8825:
     case PRO2EDRV8825:
     case PRO2EDRV8825BIG:
-    case PRO2ESP32DRV8825:
-      pinMode(MS1,OUTPUT);        // number of microsteps
-      pinMode(MS2,OUTPUT);
-      pinMode(MS3,OUTPUT);   
-      DriverBoard::setstepmode(DRV8825TEPMODE);
-
     case PRO2ESP32R3WEMOS:
       pinMode(ENABLEPIN, OUTPUT);
       pinMode(DIRPIN, OUTPUT);
       pinMode(STEPPIN, OUTPUT);
       digitalWrite(ENABLEPIN, 1);
+      DriverBoard::setstepmode(DRV8825TEPMODE);
+      break;
+    case PRO2ESP32DRV8825:
+      pinMode(ENABLEPIN, OUTPUT);
+      pinMode(DIRPIN, OUTPUT);
+      pinMode(STEPPIN, OUTPUT);
+      digitalWrite(ENABLEPIN, 1);
+      pinMode(MS1, OUTPUT);
+      pinMode(MS2, OUTPUT);
+      pinMode(MS3, OUTPUT);
       break;
 #endif
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
@@ -176,7 +180,7 @@ String DriverBoard::getboardname(void)
 
 byte DriverBoard::getstepmode(void)
 {
-    return this->stepmode;
+  return this->stepmode;
 }
 
 void DriverBoard::setstepmode(byte smode)
@@ -196,55 +200,49 @@ void DriverBoard::setstepmode(byte smode)
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
     case PRO2ESP32DRV8825:
+      smode = (smode < STEP1 ) ? STEP1 : smode;
+      smode = (smode > STEP32 ) ? STEP32 : smode;
+      this->stepmode = smode;
       switch (smode)
       {
         case STEP1:
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 0);
+          break;
         case STEP2:
+          digitalWrite(MS1, 1);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 0);
+          break;
         case STEP4:
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 1);
+          digitalWrite(MS3, 0);
+          break;
         case STEP8:
+          digitalWrite(MS1, 1);
+          digitalWrite(MS2, 1);
+          digitalWrite(MS3, 0);
+          break;
         case STEP16:
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 1);
+          break;
         case STEP32:
+          digitalWrite(MS1, 1);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 1);
           break;
         default:
-          smode = DRV8825TEPMODE;
+          digitalWrite(MS1, 0);
+          digitalWrite(MS2, 0);
+          digitalWrite(MS3, 0);
+          smode = STEP1;
+          this->stepmode = smode;
           break;
       }
-
-      switch (smode)
-      {
-        case STEP1:
-          digitalWrite(MS1, 0);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 0);                                        
-          break;
-        case STEP2:
-          digitalWrite(MS1, 1);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 0);                                        
-          break;
-        case STEP4:
-          digitalWrite(MS1, 0);
-          digitalWrite(MS2, 1);
-          digitalWrite(MS3, 0);                                        
-          break;
-        case STEP8:
-          digitalWrite(MS1, 1);
-          digitalWrite(MS2, 1);
-          digitalWrite(MS3, 0);                                        
-          break;
-        case STEP16:
-          digitalWrite(MS1, 0);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 1);                                        
-          break;
-        case STEP32:
-          digitalWrite(MS1, 1);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 1);                                        
-          break;
-      }
-
-      this->stepmode = smode;
       break;
 #endif
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
@@ -358,7 +356,7 @@ void DriverBoard::movemotor(byte dir)
   {
 #if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
   || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
-  || DRVBRD == PRO2ESP32R3WEMOS ) 
+  || DRVBRD == PRO2ESP32R3WEMOS )
     case WEMOSDRV8825:
     case PRO2EDRV8825:
     case PRO2EDRV8825BIG:
@@ -369,28 +367,7 @@ void DriverBoard::movemotor(byte dir)
       digitalWrite(STEPPIN, 1);             // Step pin on
       delayMicroseconds(MOTORPULSETIME);
       digitalWrite(STEPPIN, 0);
-/*      switch ( this->stepmode )
-      {
-        case STEP1:
-          delayMicroseconds(this->stepdelay);
-          break;
-        case STEP2:
-          delayMicroseconds(this->stepdelay / 2);
-          break;
-        case STEP4:
-          delayMicroseconds(this->stepdelay / 4);
-          break;
-        case STEP8:
-        case STEP16:
-        case STEP32:
-          delayMicroseconds(this->stepdelay / 8);
-          break;
-        default:
-          delayMicroseconds(this->stepdelay);
-          break;
-      }*/
-
-      delay(2);     // HM: 23.09.19  Test debug
+      delayMicroseconds(this->stepdelay);   // this controls speed of motor
       break;
 #endif
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI \
@@ -418,6 +395,11 @@ void DriverBoard::movemotor(byte dir)
       // do nothing
       break;
   }
+}
+
+int DriverBoard::getstepdelay(void)
+{
+  return this->stepdelay;
 }
 
 void DriverBoard::setstepdelay(int sdelay)

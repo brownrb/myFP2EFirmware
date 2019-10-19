@@ -48,6 +48,7 @@ To compile you will also need to import these libraries in the folder src/myFP2E
 * myOLED
 * IRREMOTEESP32
 * HalfStepperESP32
+* myTemperatureProbe
 
 Do not edit or replace any of these library files with others.
 
@@ -59,9 +60,6 @@ https://github.com/PaulStoffregen/OneWire
 
 DuckDNS
 https://github.com/ayushsharma82/EasyDDNS
-
-Temperature Probe
-https://github.com/milesburton/Arduino-Temperature-Control-Library
 
 After downloading the zip files, you then need to install these into the Arduino IDE environment. To do that, start the Arduino IDE, select Sketch, Include Library, Add .Zip library, then navigate to where the ZIP files are stored and select them (you can only load 1 zip file at a time so please repeat this for all ZIP files).
 
