@@ -83,12 +83,12 @@
 #define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
-//#define OLEDTEXT 1
-#define OLEDGRAPHICS 2
+#define OLEDTEXT 1
+//#define OLEDGRAPHICS 2
 
 // To enable backlash in this firmware, uncomment the next line
-//#define BACKLASH 1
-#define BACKLASH 2    // alternative BACKLASH
+#define BACKLASH 1
+//#define BACKLASH 2    // alternative BACKLASH
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
@@ -146,7 +146,17 @@
 // To enable OTA updates, uncomment the next line [can only be used with stationmode]
 //#define OTAUPDATES 1
 
+// to enable Webserver interface, uncomment the next line
+#define WEBSERVER 1
+
 // DO NOT CHANGE
+// DO NOT CHANGE
+#if defined(WEBSERVER)
+#if !defined(ACCESSPOINT) && !defined(STATIONMODE)
+#halt //ERROR you must use ACCESSPOINT or STATIONMODE with WEBSERVER
+#endif
+#endif
+
 #if defined(OTAUPDATES)
 #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 #halt //ERROR you cannot have both OTAUPDATES with either BLUETOOTHMODE or LOCALSERIAL enabled at the same time
@@ -210,6 +220,14 @@
 #endif
 #include "FocuserSetupData.h"
 
+#ifdef WEBSERVER
+#if defined(ESP8266)
+#include <ESP8266WebServer.h>
+#else
+#include <WebServer.h>
+#endif // if defined(esp8266)
+#endif // webserver
+
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -218,7 +236,7 @@
 char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 
-  
+
 // ----------------------------------------------------------------------------------------------
 // 8: OTA (OVER THE AIR UPDATING) SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -229,7 +247,26 @@ const char *OTAPassword = "esp8266";
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 9: DUCKDNS DOMAIN AND TOKEN CONFIGURATION
+// 9: ASCOMREMOTE: DO NOT CHANGE
+// ----------------------------------------------------------------------------------------------
+// coming in 104
+
+// ----------------------------------------------------------------------------------------------
+// 10: WEBSERVER: DO NOT CHANGE
+// ----------------------------------------------------------------------------------------------
+#ifdef WEBSERVER
+//WiFiClient webserverclient;
+String HomePage;
+String NotConnectedPage;
+#if defined(ESP8266)
+ESP8266WebServer webserver(WEBSERVERPORT);
+#else
+WebServer webserver(WEBSERVERPORT);
+#endif // if defined(esp8266)
+#endif
+
+// ----------------------------------------------------------------------------------------------
+// 11: DUCKDNS DOMAIN AND TOKEN CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // To use DucksDNS, uncomment the next line - can only be used together with STATIONMODE
 //#define USEDUCKSDNS 1
@@ -253,7 +290,7 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 10: STATIC IP ADDRESS CONFIGURATION
+// 12: STATIC IP ADDRESS CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // must use static IP if using duckdns or as an Access Point
 #define STATICIPON    1
@@ -280,7 +317,7 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 11: FIRMWARE CODE START - INCLUDES AND LIBRARIES
+// 13: FIRMWARE CODE START - INCLUDES AND LIBRARIES
 // ----------------------------------------------------------------------------------------------
 // Compile this with Arduino IDE 1.8.9 with ESP8266 Core library installed v2.5.2 [for ESP8266]
 // Make sure target board is set to Node MCU 1.0 (ESP12-E Module) [for ESP8266]
@@ -317,7 +354,7 @@ Adafruit_SSD1306 *myoled;
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 12: BLUETOOTH MODE - Do not change
+// 14: BLUETOOTH MODE - Do not change
 // ----------------------------------------------------------------------------------------------
 #if defined(BLUETOOTHMODE)
 #include "BluetoothSerial.h"                // needed for Bluetooth comms
@@ -331,7 +368,7 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
 
 // ----------------------------------------------------------------------------------------------
-// 13: GLOBAL DATA -- DO NOT CHANGE
+// 15: GLOBAL DATA -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
@@ -354,12 +391,8 @@ enum  StateMachineStates {State_Idle, State_ApplyBacklash, State_ApplyBacklash2,
 String programName;                                     // will become driverboard name
 DriverBoard* driverboard;
 
-char programVersion[] = "102";
+char programVersion[] = "103";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
-char ontxt[]          = "ON ";
-char offtxt[]         = offstr;
-char coilpwrtxt[]     = "Coil power  =";
-char revdirtxt[]      = "Reverse Dir =";
 
 unsigned long fcurrentPosition;                         // current focuser position
 unsigned long ftargetPosition;                          // target position
@@ -408,8 +441,371 @@ int packetssent;
 SetupData *mySetupData;
 
 // ----------------------------------------------------------------------------------------------
-// 14: CODE START - CHANGE AT YOUR OWN PERIL
+// 15: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
+
+// WEBSERVER START ----------------------------------------------------------------------------------
+#ifdef WEBSERVER
+void setNoConnectionPage()
+{
+  NotConnectedPage = "<head><meta http-equiv=\"refresh\" content=\"5\"></head><body>";
+  NotConnectedPage = NotConnectedPage + "<body><p><h3>ESPWifi Controller</h3>The Wifi Controller got NO RESPONSE ";
+  NotConnectedPage = NotConnectedPage + "This page will self refresh in 5 seconds</body>";
+  delay(10);                     // small pause so background ESP8266 tasks can run
+}
+
+void WEBSERVER_handleNotFound()
+{
+  webserver.send(404, "text/plain", NotConnectedPage);
+}
+
+// constructs home page of web server
+void SetHomePage()
+{
+  // Convert IP address to a string;
+  // already in ipStr
+
+  // convert current values of focuserposition and focusermaxsteps to string types
+  String fpbuffer = String(mySetupData->get_fposition());
+  String mxbuffer = String(mySetupData->get_maxstep());
+  String smbuffer = String(mySetupData->get_stepmode());
+  String imbuffer = String(isMoving);
+
+  switch ( mySetupData->get_stepmode() )
+  {
+    case 1:
+      smbuffer = "<input type = \"radio\" name=\"sm\" value=\"1\" Checked > Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
+      break;
+    case 2 :
+      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\"> Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" Checked > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
+      break;
+    case 4 :
+      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" Checked > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
+      break;
+    case 8 :
+      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" Checked > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
+      break;
+    case 16 :
+      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" Checked > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
+      break;
+    case 32 :
+      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" Checked > 1/32 ";
+      break;
+    default :
+      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" Checked> Full";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
+      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
+      break;
+  }
+
+  String msbuffer = String(mySetupData->get_motorSpeed());
+  switch ( mySetupData->get_motorSpeed() )
+  {
+    case 0:
+      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" > Medium";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" > Fast ";
+      break;
+    case 1:
+      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" > Slow";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" Checked> Medium";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" > Fast ";
+      break;
+    case 2:
+      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" > Slow";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" > Medium";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast ";
+      break;
+    default:
+      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" > Medium";
+      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" > Fast ";
+      break;
+  }
+
+  String cpbuffer;
+  if ( !mySetupData->get_coilpower() )
+  {
+    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" >";
+  }
+  else
+  {
+    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked>";
+  }
+
+  String rdbuffer;
+  if ( !mySetupData->get_reversedirection() )
+  {
+    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" >";
+  }
+  else
+  {
+    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked>";
+  }
+
+#ifdef TEMPERATUREPROBE
+  String tmbuffer = String(readtemp(0));
+#else
+  String tmbuffer = "20.0";
+#endif
+  String trbuffer = String(mySetupData->get_tempprecision());
+
+  String stbuffer;    // stepstomove
+  stbuffer = "<input type=\"radio\" name=\"mv\" value=\"-500\" > -500 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-100\" > -100 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-10\" > -10 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-1\" > -1 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"0\" Checked > 0 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"1\" > 1 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"10\" > 10 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"100\" > 100 ";
+  stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"500\" > 500 ";
+
+  // construct home page of webserver
+  HomePage = "<head><meta http-equiv=\"refresh\" content=\"10\"></head><body><p><h3>" + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion);
+  HomePage = HomePage + "<br>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" value=" + fpbuffer + ">";
+  HomePage = HomePage + "<input type=\"submit\" name=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>MaxSteps</b><input type=\"text\" name=\"fm\" value=" + mxbuffer + ">";
+  HomePage = HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "IsMoving = " + imbuffer + "<br><br>";
+
+  HomePage = HomePage + "<b>Temperature</b> = " + tmbuffer + "<br><br>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Coil Power </b>" + cpbuffer ;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Step Mode </b>" + smbuffer;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Motor Speed: </b>" + msbuffer;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Move: </b>" + stbuffer;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"mv\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Temperature Resolution</b><input type=\"text\" name=\"tr\" value=" + trbuffer + "> ";
+  HomePage = HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
+
+  HomePage = HomePage + "<br></body></html>";
+}
+
+// handles root page of webserver
+// this is called whenever a client requests home page of sebserver
+void WEBSERVER_handleRoot()
+{
+  // if the root page was an update of focuser position via Submit button
+  String fpos_str = webserver.arg("fp");
+  if ( fpos_str != "" )
+  {
+    unsigned long temp = 0;
+    DebugPrintln( "WPU: was an update of focuser position" );
+    temp = fpos_str.toInt();                  // get the value for target focuser position
+    if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+    {
+      temp = mySetupData->get_maxstep();
+    }
+    ftargetPosition = temp;
+  }
+  else
+  {
+    DebugPrintln( "WPU: was an REFRESH of focuser position" );
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if the root page was an update of focusermaxsteps via Submit button
+  String fmax_str = webserver.arg("fm");
+  if ( fmax_str != "" )
+  {
+    unsigned long temp = 0;
+    DebugPrintln( "WPU: was an update of maxsteps" );
+    temp = fmax_str.toInt();
+    if ( temp < fcurrentPosition )                    // if maxstep is less than focuser position
+    {
+      temp = fcurrentPosition + 1;
+    }
+    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
+    {
+      temp = FOCUSERLOWERLIMIT;
+    }
+    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    {
+      temp = mySetupData->get_maxstep();
+    }
+    mySetupData->set_maxstep(temp);
+  }
+
+  delay(10);                                          // small pause so background ESP8266 tasks can run
+
+  // if the root page was an update of motorspeed via Submit button
+  String fms_str = webserver.arg("ms");
+  if ( fms_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrintln( "handle_root() -was an update of motor speed" );
+    DebugPrint("Motorspeed from webpage = ");
+    DebugPrintln(fms_str);
+    temp1 = fms_str.toInt();
+    if ( temp1 < SLOW )
+    {
+      temp1 = SLOW;
+    }
+    if ( temp1 > FAST )
+    {
+      temp1 = FAST;
+    }
+    mySetupData->set_motorSpeed(temp1);
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if the root page was an update of coilpower via Submit button
+  String fcp_str = webserver.arg("cp");
+  if ( fcp_str != "" )
+  {
+    DebugPrintln( "handle_root() -was an update of coil power" );
+    if ( fcp_str == "cp" )
+    {
+      mySetupData->set_coilpower(1);
+    }
+    else
+    {
+      mySetupData->set_coilpower(0);
+    }
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if the root page was an update of reversedirection via Submit button
+  String frd_str = webserver.arg("rd");
+  if ( frd_str != "" )
+  {
+    DebugPrintln( "handle_root() -was an update of reverse direction" );
+    if ( frd_str == "rd" )
+    {
+      mySetupData->set_reversedirection(1);
+    }
+    else
+    {
+      mySetupData->set_reversedirection(0);
+    }
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if the root page was an update of stepmode via Submit button
+  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
+  String fsm_str = webserver.arg("sm");
+  if ( fsm_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrintln( "handle_root() -was an update of stepmode" );
+    temp1 = fsm_str.toInt();
+    if ( temp1 < STEP1 )
+    {
+      temp1 = STEP1;
+    }
+    if ( temp1 > STEP32 )
+    {
+      temp1 = STEP32;
+    }
+    mySetupData->set_stepmode(temp1);
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if the root page was an update of temperature resolution via Submit button
+  String tres_str = webserver.arg("tr");
+  if ( tres_str != "" )
+  {
+    int temp = 0;
+    DebugPrintln( "handle_root() -was an update of temperature resolution" );
+    temp = tres_str.toInt();
+    if ( temp < 9 )
+    {
+      // error, do not change
+      temp = 9;
+    }
+    if ( temp > 12 )
+    {
+      temp = 12;
+    }
+    mySetupData->set_tempprecision(temp);
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if the root page was a move
+  String fmv_str = webserver.arg("mv");
+  if ( fmv_str != "" )
+  {
+    DebugPrintln( "handle_root() -was a move" );
+    unsigned long temp = 0;
+    temp = fmv_str.toInt();
+    ftargetPosition = fcurrentPosition + temp;
+    DebugPrint("Move = "); DebugPrintln(fmv_str);
+    DebugPrint("Current = "); DebugPrint(fcurrentPosition);
+    DebugPrint(", Target = "); DebugPrintln(ftargetPosition);
+    if ( ftargetPosition > mySetupData->get_maxstep() )
+    {
+      ftargetPosition = mySetupData->get_maxstep();
+    }
+  }
+
+  DebugPrintln( "handle_root() -construct homepage" );
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // construct the homepage now
+  SetHomePage();
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // send the homepage to a connected client
+  DebugPrintln("Handleroot() - sending homepage");
+  webserver.send(200, "text/html", HomePage );
+}
+#endif // ifdef WEBSERVER
+// WEBSERVER END ------------------------------------------------------------------------------------
 
 byte TimeCheck(unsigned long x, unsigned long Delay)
 {
@@ -569,7 +965,7 @@ void Update_Temp(void)
 
 void Update_OledGraphics(byte new_status)
 {
-#if defined(OLEDGRAPHICS)  
+#if defined(OLEDGRAPHICS)
   static byte current_status = oled_on;
 
   if ( displayfound)
@@ -615,8 +1011,8 @@ void oledgraphicmsg(String str, int val, boolean clrscr)
     {
       str += String(val);
     }
-    myoled->drawString(0, linecount *12, str);
-    myoled->display();    
+    myoled->drawString(0, linecount * 12, str);
+    myoled->display();
     linecount++;
   }
 }
@@ -640,7 +1036,7 @@ void oled_draw_Wifi(int j)
 
 void oled_draw_main_update(void)
 {
-  if (displayfound == true) 
+  if (displayfound == true)
   {
     myoled->clear();
     myoled->setTextAlignment(TEXT_ALIGN_CENTER);
@@ -656,8 +1052,8 @@ void oled_draw_main_update(void)
     myoled->setTextAlignment(TEXT_ALIGN_CENTER);
     myoled->setFont(ArialMT_Plain_24);
 
-    char dir =(mySetupData->get_focuserdirection() == move_in ) ? '<' : '>';
-    myoled->drawString(64, 28, String(fcurrentPosition,DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(),DEC) + ' ' + dir);  // Print currentPosition
+    char dir = (mySetupData->get_focuserdirection() == move_in ) ? '<' : '>';
+    myoled->drawString(64, 28, String(fcurrentPosition, DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(), DEC) + ' ' + dir); // Print currentPosition
     myoled->display();
   }
 }
@@ -694,8 +1090,8 @@ boolean Init_OLED(void)
 }
 
 #else
-  void oledgraphicmsg(String str, int val, boolean clrscr){}
-  void oled_draw_Wifi(int j){}
+void oledgraphicmsg(String str, int val, boolean clrscr) {}
+void oled_draw_Wifi(int j) {}
 #endif // if defined(OLEDGRAPHICS)
 
 // ----------------------------------------------------------------------------------------------
@@ -711,7 +1107,7 @@ void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
   if ( clrscr == true)                                  // clear the screen?
   {
     myoled->clearDisplay();
-    myoled->setCursor(0,0);
+    myoled->setCursor(0, 0);
   }
   if ( nl == true )                                     // need to print a new line?
   {
@@ -778,10 +1174,10 @@ void UpdatePositionOledText(void)
   }
 #if defined(OLEDTEXT)
   myoled->setCursor(0, 0);
-  myoled->print("Current Pos = ");
+  myoled->print(currentposstr);
   myoled->println(fcurrentPosition);
 
-  myoled->print("Target Pos  = ");
+  myoled->print(targetposstr);
   myoled->println(ftargetPosition);
   myoled->display();
 #endif // if defined(OLEDTEXT)
@@ -796,37 +1192,37 @@ void displaylcdpage0(void)      // displaylcd screen
 #if defined(OLEDTEXT)
   char tempString[20];
   myoled->setCursor(0, 0);
-  myoled->print("Current Pos = ");
+  myoled->print(currentposstr);
   myoled->println(fcurrentPosition);
-  myoled->print("Target Pos  = ");
+  myoled->print(targetposstr);
   myoled->println(ftargetPosition);
 
-  myoled->print(coilpwrtxt);
+  myoled->print(coilpwrstr);
   if ( mySetupData->get_coilpower() == 1 )
   {
-    myoled->println(ontxt);
+    myoled->println(onstr);
   }
   else
   {
-    myoled->println(offtxt);
+    myoled->println(offstr);
   }
 
-  myoled->print(revdirtxt);
+  myoled->print(revdirstr);
   if ( mySetupData->get_reversedirection() == 1 )
   {
-    myoled->println(ontxt);
+    myoled->println(onstr);
   }
   else
   {
-    myoled->println(offtxt);
+    myoled->println(offstr);
   }
 
   // stepmode setting
-  myoled->print("Step Mode   = ");
+  myoled->print(stepmodestr);
   myoled->println(mySetupData->get_stepmode());
 
   //Temperature
-  myoled->print("Temperature = ");
+  myoled->print(tempstr);
 #if defined(TEMPERATUREPROBE)
   myoled->print(String(readtemp(0)));
 #else
@@ -835,22 +1231,22 @@ void displaylcdpage0(void)      // displaylcd screen
   myoled->println(" c");
 
   //Motor Speed
-  myoled->print("Motor Speed = ");
+  myoled->print(motorspeedstr);
   switch ( mySetupData->get_motorSpeed() )
   {
     case SLOW:
-      myoled->println("Slow");
+      myoled->print(slowstr);
       break;
     case MED:
-      myoled->println("Med");
+      myoled->print(medstr);
       break;
     case FAST:
-      myoled->println("Fast");
+      myoled->print(faststr);
       break;
   }
 
   //MaxSteps
-  myoled->print("MaxSteps    = ");
+  myoled->print(maxstepsstr);
   ltoa(mySetupData->get_maxstep(), tempString, 10);
   myoled->println(tempString);
   myoled->display();
@@ -866,10 +1262,10 @@ void displaylcdpage1(void)
 #if defined(OLEDTEXT)
   myoled->setCursor(0, 0);
   // temperature compensation
-  myoled->print("TComp Steps = ");
+  myoled->print(tcompstepsstr);
   myoled->println(mySetupData->get_tempcoefficient());
 
-  myoled->print("TComp State = ");
+  myoled->print(tcompstatestr);
   if ( mySetupData->get_tempcompenabled() == 0 )
   {
     myoled->println(offstr);
@@ -879,7 +1275,7 @@ void displaylcdpage1(void)
     myoled->println(onstr);
   }
 
-  myoled->print("TComp Dir   = ");
+  myoled->print(tcompdirstr);
   if ( mySetupData->get_tcdirection() == 0 )
   {
     myoled->println(instr);
@@ -889,7 +1285,7 @@ void displaylcdpage1(void)
     myoled->println(outstr);
   }
 
-  myoled->print("Backlash In = ");
+  myoled->print(backlashinstr);
   if ( mySetupData->get_backlash_in_enabled() == 0 )
   {
     myoled->println(offstr);
@@ -899,7 +1295,7 @@ void displaylcdpage1(void)
     myoled->println(onstr);
   }
 
-  myoled->print("Backlash Out = ");
+  myoled->print(backlashoutstr);
   if ( mySetupData->get_backlash_out_enabled() == 0 )
   {
     myoled->println(offstr);
@@ -909,10 +1305,10 @@ void displaylcdpage1(void)
     myoled->println(onstr);
   }
 
-  myoled->print("Backlash In#= ");
+  myoled->print(backlashinstepsstr);
   myoled->println(mySetupData->get_backlashsteps_in());
 
-  myoled->print("Backlash Ou#= ");
+  myoled->print(backlashoutstepsstr);
   myoled->println(mySetupData->get_backlashsteps_out());
   myoled->display();
 #endif // if defined(OLEDTEXT)
@@ -927,19 +1323,29 @@ void displaylcdpage2(void)
 #if defined(OLEDTEXT)
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   myoled->setCursor(0, 0);
-  myoled->print("SSID = ");
-  myoled->println(mySSID);
+  myoled->print(ssidstr);
+  myoled->print(mySSID);
+  myoled->println();
 
-  myoled->print("IP   = ");
-  myoled->println(ipStr);;
+  myoled->print(ipaddressstr);
+  myoled->print(ipStr);
+  myoled->println();
+
+  myoled->print(webserverstr);
+#ifdef WEBSERVER
+  myoled->println(onstr);
+#else
+  myoled->println(offstr);
+#endif
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 #if defined(BLUETOOTHMODE)
   myoled->setCursor(0, 0);
-  myoled->println("Bluetooth Mode");
+  myoled->print(bluetoothstr);
+  myoled->println();
 #endif
 #if defined(LOCALSERIAL)
   myoled->setCursor(0, 0);
-  myoled->println("Local Serial Mode");
+  myoled->println(localserialstr);
 #endif
   myoled->display();
 #endif // if defined(OLEDTEXT)
@@ -1002,7 +1408,7 @@ boolean Init_OLED(void)
 // ----------------------------------------------------------------------------------------------
 void SendPaket(String str)
 {
-  DebugPrint(F("Send: "));
+  DebugPrint(sendstr);
   DebugPrintln(str);
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // for Accesspoint or Station mode
@@ -1031,21 +1437,22 @@ void ESP_Communication( byte mode )
       // for Accesspoint or Station mode
       packetsreceived++;
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-      receiveString = myclient.readStringUntil('#');    // read until terminator    break;
+      receiveString = myclient.readStringUntil(EOFSTR);    // read until terminator
 #endif
+      break;
 #if defined(BLUETOOTHMODE)
     case BTDATA:
-      receiveString = ':' + queue.pop();
+      receiveString = STARTSTR + queue.pop();
       break;
 #endif
 #if defined(LOCALSERIAL)
     case SERIALDATA:                                    // for Serial
-      receiveString = ':' + queue.pop();
+      receiveString = STARTSTR + queue.pop();
       break;
 #endif
   }
 
-  receiveString += '#';                                 // put back terminator
+  receiveString += EOFSTR;                                 // put back terminator
   String cmdstr = receiveString.substring(1, 3);
   cmdval = cmdstr.toInt();                              // convert command to an integer
   DebugPrint(F("- receive string="));
@@ -1058,44 +1465,44 @@ void ESP_Communication( byte mode )
   {
     // all the get go first followed by set
     case 0: // get focuser position
-      SendPaket('P' + String(fcurrentPosition) + '#');
+      SendPaket('P' + String(fcurrentPosition) + EOFSTR);
       break;
     case 1: // ismoving
-      SendPaket('I' + String(isMoving) + '#');
+      SendPaket('I' + String(isMoving) + EOFSTR);
       break;
     case 2: // get controller status
       SendPaket("EOK#");
       break;
     case 3: // get firmware version
-      SendPaket('F' + String(programVersion) + '#');
+      SendPaket('F' + String(programVersion) + EOFSTR);
       break;
     case 4: // get firmware name
-      SendPaket('F' + programName + '\r' + '\n' + String(programVersion) + '#');
+      SendPaket('F' + programName + '\r' + '\n' + String(programVersion) + EOFSTR);
       break;
     case 6: // get temperature
 #if defined(TEMPERATUREPROBE)
-      SendPaket('Z' + String(readtemp(0), 3) + '#');
+      SendPaket('Z' + String(readtemp(0), 3) + EOFSTR);
 #else
       SendPaket("Z20.00#");
 #endif
       break;
     case 8: // get maxStep
-      SendPaket('M' + String(mySetupData->get_maxstep()) + '#');
+      SendPaket('M' + String(mySetupData->get_maxstep()) + EOFSTR);
       break;
     case 10: // get maxIncrement
-      SendPaket('Y' + String(mySetupData->get_maxstep()) + '#');
+      SendPaket('Y' + String(mySetupData->get_maxstep()) + EOFSTR);
       break;
     case 11: // get coilpower
-      SendPaket('O' + String(mySetupData->get_coilpower()) + '#');
+      SendPaket('O' + String(mySetupData->get_coilpower()) + EOFSTR);
       break;
     case 13: // get reverse direction setting, 00 off, 01 on
-      SendPaket('R' + String(mySetupData->get_reversedirection()) + '#');
+      SendPaket('R' + String(mySetupData->get_reversedirection()) + EOFSTR);
       break;
     case 21: // get temp probe resolution
-      SendPaket('Q' + String(mySetupData->get_tempprecision()) + '#');
+      SendPaket('Q' + String(mySetupData->get_tempprecision()) + EOFSTR);
       break;
     case 24: // get status of temperature compensation (enabled | disabled)
-      SendPaket('1' + String(mySetupData->get_tempcompenabled()) + '#');
+      SendPaket('1' + String(mySetupData->get_tempcompenabled()) + EOFSTR);
       break;
     case 25: // get IF temperature compensation is available
 #if defined(TEMPERATUREPROBE)
@@ -1105,67 +1512,55 @@ void ESP_Communication( byte mode )
 #endif
       break;
     case 26: // get temperature coefficient steps/degree
-      SendPaket('B' + String(mySetupData->get_tempcoefficient()) + '#');
+      SendPaket('B' + String(mySetupData->get_tempcoefficient()) + EOFSTR);
       break;
     case 29: // get stepmode
-      SendPaket('S' + String(mySetupData->get_stepmode()) + '#');
+      SendPaket('S' + String(mySetupData->get_stepmode()) + EOFSTR);
       break;
     case 32: // get if stepsize is enabled
-      SendPaket('U' + String(mySetupData->get_stepsizeenabled()) + '#');
+      SendPaket('U' + String(mySetupData->get_stepsizeenabled()) + EOFSTR);
       break;
     case 33: // get stepsize
-      SendPaket('T' + String(mySetupData->get_stepsize()) + '#');
+      SendPaket('T' + String(mySetupData->get_stepsize()) + EOFSTR);
       break;
     case 34: // get the time that an LCD screen is displayed for
-      SendPaket('X' + String(mySetupData->get_lcdpagetime()) + '#');
+      SendPaket('X' + String(mySetupData->get_lcdpagetime()) + EOFSTR);
       break;
     case 37: // get displaystatus
-      SendPaket('D' + String(mySetupData->get_displayenabled()) + '#');
+      SendPaket('D' + String(mySetupData->get_displayenabled()) + EOFSTR);
       break;
     case 38: // :38#   Dxx#      Get Temperature mode 1=Celsius, 0=Fahrenheight
-      SendPaket('b' + String(mySetupData->get_tempmode()) + '#');
+      SendPaket('b' + String(mySetupData->get_tempmode()) + EOFSTR);
       break;
     case 39: // get the new motor position (target) XXXXXX
-      SendPaket('N' + String(ftargetPosition) + '#');
+      SendPaket('N' + String(ftargetPosition) + EOFSTR);
       break;
     case 43: // get motorspeed
-      SendPaket('C' + String(mySetupData->get_motorSpeed()) + '#');
-      break;
-    case 45: // get motorspeedchange threshold value
-      SendPaket('G' + String(motorspeedchangethresholdsteps) + '#');
-      break;
-    case 47: // get motorspeedchange enabled? on/off
-      SendPaket('J' + String(motorspeedchangethresholdenabled) + '#');
+      SendPaket('C' + String(mySetupData->get_motorSpeed()) + EOFSTR);
       break;
     case 49: // aXXXXX
       SendPaket("ab552efd25e454b36b35795029f3a9ba7#");
       break;
     case 51: // return ESP8266Wifi Controller IP Address
-      SendPaket('d' + ipStr + '#');
+      SendPaket('d' + ipStr + EOFSTR);
       break;
     case 52: // return ESP32 Controller number of TCP packets sent
-      SendPaket('e' + String(packetssent) + '#');
+      SendPaket('e' + String(packetssent) + EOFSTR);
       break;
     case 53: // return ESP32 Controller number of TCP packets received
-      SendPaket('f' + String(packetsreceived) + '#');
+      SendPaket('f' + String(packetsreceived) + EOFSTR);
       break;
     case 54: // gstr#  return ESP32 Controller SSID
-      SendPaket('g' + String(mySSID) + '#');
+      SendPaket('g' + String(mySSID) + EOFSTR);
+      break;
+    case 55: // get motorspeed delay for current speed setting
+      SendPaket('0' + String(driverboard->getstepdelay()) + EOFSTR);
       break;
     case 62: // get update of position on lcd when moving (00=disable, 01=enable)
-      SendPaket('L' + String(mySetupData->get_lcdupdateonmove()) + '#');
-      break;
-    case 63: // get status of home position switch (0=off, 1=closed, position 0)
-      SendPaket("H0#");
-      break;
-    case 66: // Get jogging state enabled/disabled
-      SendPaket("K0#");
-      break;
-    case 68: // Get jogging direction, 0=IN, 1=OUT
-      SendPaket("V0#");
+      SendPaket('L' + String(mySetupData->get_lcdupdateonmove()) + EOFSTR);
       break;
     case 72: // get DelayAfterMove
-      SendPaket('3' + String(mySetupData->get_DelayAfterMove()) + '#');
+      SendPaket('3' + String(mySetupData->get_DelayAfterMove()) + EOFSTR);
       break;
     case 74: // get backlash in enabled status
       SendPaket((mySetupData->get_backlash_in_enabled() == 0) ? "40#" : "41#");
@@ -1174,19 +1569,16 @@ void ESP_Communication( byte mode )
       SendPaket((mySetupData->get_backlash_out_enabled() == 0) ? "50#" : "51#");
       break;
     case 78: // return number of backlash steps IN
-      SendPaket('6' + String(mySetupData->get_backlashsteps_in()) + '#');
+      SendPaket('6' + String(mySetupData->get_backlashsteps_in()) + EOFSTR);
       break;
     case 80: // return number of backlash steps OUT
-      SendPaket('7' + String(mySetupData->get_backlashsteps_out()) + '#');
+      SendPaket('7' + String(mySetupData->get_backlashsteps_out()) + EOFSTR);
       break;
     case 83: // get if there is a temperature probe
-      SendPaket('c' + String(tprobe1) + '#');
+      SendPaket('c' + String(tprobe1) + EOFSTR);
       break;
     case 87: // get tc direction
-      SendPaket('k' + String(mySetupData->get_tcdirection()) + '#');
-      break;
-    case 89:
-      SendPaket("91#");
+      SendPaket('k' + String(mySetupData->get_tcdirection()) + EOFSTR);
       break;
     // only the set commands are listed here as they do not require a response
     case 28:              // :28#       None    home the motor to position 0
@@ -1249,7 +1641,8 @@ void ESP_Communication( byte mode )
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         float tempstepsize = (float)WorkString.toFloat();
-        tempstepsize = (tempstepsize < 0) ? 0 : tempstepsize;     // set default maximum stepsize
+        tempstepsize = (tempstepsize < MINIMUMSTEPSIZE ) ? MINIMUMSTEPSIZE : tempstepsize;
+        tempstepsize = (tempstepsize > MAXIMUMSTEPSIZE ) ? MAXIMUMSTEPSIZE : tempstepsize;
         mySetupData->set_stepsize(tempstepsize);
       }
       break;
@@ -1348,17 +1741,19 @@ void ESP_Communication( byte mode )
     case 40: // reset Arduino myFocuserPro2E controller
       software_Reboot(2000);      // reboot with 2s delay
       break;
-    case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
-      WorkString = receiveString.substring(3, receiveString.length() - 1);
-      motorspeedchangethresholdsteps  = (byte) (WorkString.toInt() & 255);
-      break;
-    case 46: // enable/Disable motorspeed change when moving
-      WorkString = receiveString.substring(3, receiveString.length() - 1);
-      delay(5);
-      motorspeedchangethresholdenabled = (byte) (WorkString.toInt() & 1);
+    case 42: // reset focuser defaults
+      if ( isMoving == 0 )
+      {
+        mySetupData->SetFocuserDefaults();
+        ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
+      }
       break;
     case 48: // save settings to EEPROM
       mySetupData->set_fposition(fcurrentPosition); // need to forth save setting????????
+      break;
+    case 56: // set motorspeed delay for current speed setting
+      WorkString = receiveString.substring(3, receiveString.length() - 1);
+      driverboard->setstepdelay(WorkString.toInt());
       break;
     case 61: // set update of position on lcd when moving (00=disable, 01=enable)
       WorkString = receiveString.substring(3, receiveString.length() - 1);
@@ -1370,19 +1765,6 @@ void ESP_Communication( byte mode )
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         tmppos = (unsigned long)WorkString.toInt() + fcurrentPosition;
         ftargetPosition = ( tmppos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : tmppos;
-      }
-      break;
-    case 65: // set jogging state enable/disable
-      // ignore
-      break;
-    case 67: // set jogging direction, 0=IN, 1=OUT
-      // ignore
-      break;
-    case 42: // reset focuser defaults
-      if ( isMoving == 0 )
-      {
-        mySetupData->SetFocuserDefaults();
-        ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
       }
       break;
     case 71: // set DelayAfterMove in milliseconds
@@ -1411,6 +1793,46 @@ void ESP_Communication( byte mode )
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
       mySetupData->set_tcdirection((byte)paramval & 1);
+      break;
+
+    // compatibilty with myFocuserpro2 in LOCALSERIAL mode
+    case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
+      //WorkString = receiveString.substring(3, receiveString.length() - 1);
+      //motorspeedchangethresholdsteps  = (byte) (WorkString.toInt() & 255);
+      break;
+    case 45: // get motorspeedchange threshold value
+      SendPaket("G200#");
+      break;
+    case 46: // enable/Disable motorspeed change when moving
+      //WorkString = receiveString.substring(3, receiveString.length() - 1);
+      //motorspeedchangethresholdenabled = (byte) (WorkString.toInt() & 1);
+      break;
+    case 47: // get motorspeedchange enabled? on/off
+      SendPaket("J0#");
+      break;
+    case 57: // set Super Slow Jogging Speed
+      // ignore
+      break;
+    case 60: // set MotorSpeed when jogging
+      // ignore
+      break;
+    case 63: // get status of home position switch (0=off, 1=closed, position 0)
+      SendPaket("H0#");
+      break;
+    case 65: // set jogging state enable/disable
+      // ignore
+      break;
+    case 66: // get jogging state enabled/disabled
+      SendPaket("K0#");
+      break;
+    case 67: // set jogging direction, 0=IN, 1=OUT
+      // ignore
+      break;
+    case 68: // get jogging direction, 0=IN, 1=OUT
+      SendPaket("V0#");
+      break;
+    case 89:
+      SendPaket("91#");
       break;
   }
 }
@@ -1555,7 +1977,7 @@ bool Read_WIFI_config_SPIFFS( char* xSSID, char* xPASSWORD)
 {
   const String filename = "/wifi.json";
   String SSID;
-  String PASSWORD; 
+  String PASSWORD;
   boolean status = false;
 
   DebugPrintln(F("check for Wifi setup data on SPIFFS"));
@@ -1582,8 +2004,8 @@ bool Read_WIFI_config_SPIFFS( char* xSSID, char* xPASSWORD)
       SSID     =  doc["mySSID"].as<char*>();
       PASSWORD =  doc["myPASSWORD"].as<char*>();
 
-      SSID.toCharArray(xSSID, SSID.length()+1);
-      PASSWORD.toCharArray(xPASSWORD, PASSWORD.length()+1);
+      SSID.toCharArray(xSSID, SSID.length() + 1);
+      PASSWORD.toCharArray(xPASSWORD, PASSWORD.length() + 1);
 
       status = true;
     }
@@ -1609,7 +2031,7 @@ void setup()
   SerialBT.begin(BLUETOOTHNAME);                        // Bluetooth device name
   btline = "";
   clearbtPort();
-  DebugPrintln(F("Bluetooth started."));
+  DebugPrintln(bluetoothstartstr);
 #endif
 
 #if defined(INOUTLEDPINS)                                  // Setup IN and OUT LEDS, use as controller power up indicator
@@ -1674,20 +2096,19 @@ void setup()
 
 #if defined(TEMPERATUREPROBE)                           // start temp probe
   pinMode(TEMPPIN, INPUT);                              // Configure GPIO pin for temperature probe
-  DebugPrintln(F("Start Tsensor"));
-  oledtextmsg("Check for Tprobe", -1, true, true);
+  DebugPrintln(checkfortprobestr);
+  oledtextmsg(checkfortprobestr, -1, true, true);
   sensor1.begin();                                      // start the temperature sensor1
   DebugPrintln(F("Get # of Tsensors"));
   tprobe1 = sensor1.getDeviceCount();                   // should return 1 if probe connected
-  DebugPrint(F("Sensors : "));
+  DebugPrint(F("TSensors= "));
   DebugPrintln(tprobe1);
-  DebugPrintln(F("Find Tprobe address"));
   if (sensor1.getAddress(tpAddress, 0) == true)
   {
     sensor1.setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
-    DebugPrint(F("- Sensors found: "));
+    DebugPrint(F("Tsensors= "));
     DebugPrintln(tprobe1);
-    DebugPrint(F("- Set Tprecision to "));
+    DebugPrint(F("Set Tprecision to "));
     switch (mySetupData->get_tempprecision())
     {
       case 9: DebugPrintln(F("0.5"));
@@ -1706,19 +2127,18 @@ void setup()
   }
   else
   {
-    DebugPrintln(F("Temperature probe address not found"));
-    oledtextmsg("TempProbe not found", -1, false, true);
+    DebugPrintln(tprobenotfoundstr);
+    oledtextmsg(tprobenotfoundstr, -1, false, true);
   }
 #endif // end TEMPERATUREPROBE
 
   //_____Start WIFI config________________________
-  
-  Read_WIFI_config_SPIFFS(mySSID,myPASSWORD);  //__ Read mySSID,myPASSWORD from SPIFFS if exist, otherwise use defaults
+
+  Read_WIFI_config_SPIFFS(mySSID, myPASSWORD); //__ Read mySSID,myPASSWORD from SPIFFS if exist, otherwise use defaults
 
 #if defined(ACCESSPOINT)
-  oledtextmsg("Start Access Point", -1, true, true);
-  // this is setup as an access point - your computer connects to this, cannot use DUCKDNS
-  DebugPrintln(F("Start Access point"));
+  oledtextmsg(startapstr, -1, true, true);
+  DebugPrintln(startapstr);
   WiFi.config(ip, dns, gateway, subnet);
   WiFi.mode(WIFI_AP);
   WiFi.softAP(mySSID, myPASSWORD);
@@ -1726,11 +2146,12 @@ void setup()
 
 #if defined(STATIONMODE)
   // this is setup as a station connecting to an existing wifi network
-  DebugPrintln(F("Start Station mode"));
+  DebugPrintln(startsmstr);
+  oledtextmsg(startsmstr, -1, false, true);
   if (staticip == STATICIPON)                           // if staticip then set this up before starting
   {
-    DebugPrintln(F("Static IP defined. Setting up static ip now"));
-    oledtextmsg("Setup Static IP", -1, false, true);
+    DebugPrintln(setstaticipstr);
+    oledtextmsg(setstaticipstr, -1, false, true);
     WiFi.config(ip, dns, gateway, subnet);
     delay(5);
   }
@@ -1738,26 +2159,23 @@ void setup()
   /* Log NodeMCU on to LAN. Provide IP Address over Serial port */
 
   WiFi.mode(WIFI_STA);
-  oledtextmsg("Setup Station Mode", -1, false, true);
-
-  WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi  
+  WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi
   delay(1000);                                      // wait 500ms
-
-  DebugPrint(F("Attempting to connect to SSID : "));
-  DebugPrint(mySSID);
-  DebugPrint(F(" Attempting : "));
 
   for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
   {
-    DebugPrint(F("*"));
+    DebugPrint(attemptconnstr);
+    DebugPrintln(mySSID);
+    DebugPrint(attemptsstr);
+    DebugPrint(attempts);
     delay(1000);            // wait 1s
 
     oled_draw_Wifi(attempts);
-    oledtextmsg("Attempts: ", attempts, false, true);
- 
-#if defined(ESP32)    
-    if (attempts % 3 == 2) 
-    {            // every 3 attempts new init for ESP32 => faster connection without reboot
+    oledtextmsg(attemptsstr, attempts, false, true);
+
+#if defined(ESP32)
+    if (attempts % 3 == 2)
+    { // every 3 attempts new init for ESP32 => faster connection without reboot
       WiFi.mode(WIFI_STA);
       WiFi.begin(mySSID, myPASSWORD);
     }
@@ -1765,14 +2183,11 @@ void setup()
 
     if (attempts > 9)                              // if this attempt is 10 or more tries
     {
-      DebugPrint(F("Attempt to start Wifi failed after "));
-      DebugPrint(attempts);
-      DebugPrintln(F(" attempts"));
-      DebugPrintln(F("Will attempt to restart the ESP module."));
-      
-      oledtextmsg("Did not connect to AP", -1, true, true);
+      DebugPrintln(wifistartfailstr);
+      DebugPrintln(wifirestartstr);
+      oledtextmsg(didnotconnectstr, -1, true, false);
+      oledtextmsg(mySSID, -1, false, true);
       oledgraphicmsg("Did not connect to AP", -1, true);
-
       delay(2000);
       software_Reboot(2000);                          // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
@@ -1784,27 +2199,28 @@ void setup()
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
-  DebugPrintln(F("Start TCP Server"));
-  oledtextmsg("Start TCP Server", -1, false, true);
+  DebugPrintln(starttcpserverstr);
+  oledtextmsg(starttcpserverstr, -1, false, true);
 
   myserver.begin();
   DebugPrintln(F("Get local IP address"));
   ESP32IPAddress = WiFi.localIP();
   delay(100);                                           // keep delays small else issue with ASCOM
-  DebugPrintln(F("TCP Server started"));
+  DebugPrintln(tcpserverstartedstr);
+  oledtextmsg(tcpserverstartedstr, -1, false, true);
 
   // set packet counts to 0
   packetsreceived = 0;
   packetssent = 0;
 
   // connection established
-  DebugPrint(F("SSID "));
+  DebugPrint(ssidstr);
   DebugPrintln(mySSID);
-  DebugPrint(F("IP address : "));
+  DebugPrint(ipaddressstr);
   DebugPrintln(WiFi.localIP());
-  DebugPrint(F("Starting TCP server on port : "));
+  DebugPrint(tcpserverportstr);
   DebugPrintln(SERVERPORT);
-  DebugPrintln(F("Server Ready"));
+  DebugPrintln(F(serverreadystr));
   myIP = WiFi.localIP();
   ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
 #else
@@ -1815,12 +2231,15 @@ void setup()
   // assign to current working values
   ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
 
-  oledtextmsg("Setup drvbrd: ", DRVBRD, true, true);
+  DebugPrint(setupdrvbrdstr);
+  DebugPrintln(DRVBRD);
+  oledtextmsg(setupdrvbrdstr, DRVBRD, true, true);
 
   driverboard = new DriverBoard(DRVBRD);
   // setup firmware filename
   programName = programName + driverboard->getboardname();
-  oledtextmsg("Driver board done", -1, false, true);
+  DebugPrintln(drvbrddonestr);
+  oledtextmsg(drvbrddonestr, -1, false, true);
   delay(5);
 
   // range check focuser variables
@@ -1834,13 +2253,10 @@ void setup()
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() < 0.0 ) ? 0 : mySetupData->get_stepsize());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > DEFAULTSTEPSIZE ) ? DEFAULTSTEPSIZE : mySetupData->get_stepsize());
 
-  // restore motorspeed
   driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-  // restore stepmode
   driverboard->setstepmode(mySetupData->get_stepmode());
 
   DebugPrintln(F("Check coilpower."));
-
   if (mySetupData->get_coilpower() == 0)
   {
     driverboard->releasemotor();
@@ -1850,7 +2266,8 @@ void setup()
   delay(5);
 
 #if defined(USEDUCKSDNS)
-  oledtextmsg("Setup DuckDNS", -1, false, true);
+  DebugPrintln(setupduckdnsstr);
+  oledtextmsg(setupduckdnsstr, -1, false, true);
   EasyDDNS.service("duckdns");                          // Enter your DDNS Service Name - "duckdns" / "noip"
   delay(5);
   EasyDDNS.client(duckdnsdomain, duckdnstoken);         // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
@@ -1863,13 +2280,25 @@ void setup()
   irrecv.enableIRIn();                                  // Start the IR
 #endif
 
-  DebugPrintln(F("Set motorspeedchange."));
-  motorspeedchangethresholdsteps = MOTORSPEEDCHANGETHRESHOLD;
-  motorspeedchangethresholdenabled = 0;
   isMoving = 0;
 
 #if defined(TEMPERATUREPROBE)
   readtemp(1);
+#endif
+
+#if defined(OTAUPDATES)
+  DebugPrintln(startotaservicestr);
+  oledtextmsg(startotaservicestr, -1, false, true);
+  startOTA();                  // Start the OTA service
+#endif // if defined(OTAUPDATES)
+
+#ifdef WEBSERVER
+  setNoConnectionPage();            // set up webserver page for no connection to a myFocuserPro2 controller
+  // construct the homepage now
+  SetHomePage();
+  webserver.on("/", WEBSERVER_handleRoot);
+  webserver.onNotFound(WEBSERVER_handleNotFound);
+  webserver.begin();
 #endif
 
 #if defined(INOUTLEDPINS)
@@ -1877,18 +2306,12 @@ void setup()
   digitalWrite(OUTLEDPIN, 0);
 #endif
 
-#if defined(OTAUPDATES)
-  oledtextmsg("Starting OTA service.", -1, false, true);
-  startOTA();                  // Start the OTA service
-#endif // if defined(OTAUPDATES)
-
-  DebugPrint(F("Target  ="));
-  DebugPrint(ftargetPosition);
-  DebugPrint(F(", Current = "));
+  DebugPrint(currentposstr);
   DebugPrintln(fcurrentPosition);
-  mySetupData->set_displayenabled(1);
-  DebugPrintln(F("Setup end."));
-  oledtextmsg("Setup end.", -1, false, true);
+  DebugPrint(targetposstr);
+  DebugPrintln(ftargetPosition);
+  DebugPrintln(setupendstr);
+  oledtextmsg(setupendstr, -1, false, true);
 }
 
 //_____________________ loop()___________________________________________
@@ -1978,29 +2401,33 @@ void loop()
   ArduinoOTA.handle();                                  // listen for OTA events
 #endif // if defined(OTAUPDATES)
 
+#ifdef WEBSERVER
+  webserver.handleClient();
+#endif
+
   //_____________________________MainMachine _____________________________
 
   switch (MainStateMachine)
   {
-//___Idle________________________________________________________________
+    //___Idle________________________________________________________________
     case State_Idle:
       if (fcurrentPosition != ftargetPosition)
       {
-
-    //__init move _____________________________
-        DebugPrint(F("Idle: InitMove  Target "));
-        DebugPrint(ftargetPosition);
-        DebugPrint(F(" Current "));
-        DebugPrintln(fcurrentPosition);
-
+        //__init move _____________________________
         isMoving = 1;
+        DebugPrint(F("Idle=>InitMove"));
+        DebugPrint(currentposstr);
+        DebugPrintln(fcurrentPosition);
+        DebugPrint(targetposstr);
+        DebugPrintln(ftargetPosition);
+
         DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
-        driverboard->enablemotor(); 
+        driverboard->enablemotor();
         if (mySetupData->get_focuserdirection() == DirOfTravel)
         {
           // move is in same direction, ignore backlash
           MainStateMachine = State_Moving;
-          DebugPrintln(F("=> State_Moving"));
+          DebugPrintln(STATEMOVINGSTR);
         }
         else
         {
@@ -2029,29 +2456,29 @@ void loop()
             // mySetupData->set_focuserdirection(DirOfTravel);
             //driverboard->setmotorspeed(BACKLASHSPEED);
             MainStateMachine = State_ApplyBacklash;
-            DebugPrint(F("Idle => State_ApplyBacklash"));
+            DebugPrint(STATEAPPLYBACKLASH);
           }
           else
           {
             // do not apply backlash, go straight to moving
             MainStateMachine = State_Moving;
-            DebugPrint(F("Idle => State_Moving"));
+            DebugPrint(STATEMOVINGSTR);
           }
 
-#elif (BACKLASH == 2)          
+#elif (BACKLASH == 2)
 
-          if ( DirOfTravel == move_main)  
+          if ( DirOfTravel == move_main)
           {
             // do not apply backlash, go straight to moving
             MainStateMachine = State_Moving;
-            DebugPrint(F("Idle => State_Moving"));          
+            DebugPrint(STATEMOVINGSTR);
           }
           else
           {
             unsigned long bl = mySetupData->get_backlashsteps_in();
             unsigned long sm = mySetupData->get_stepmode();
 
-            if (DirOfTravel == move_out) 
+            if (DirOfTravel == move_out)
             {
               backlash_count = bl + sm - ((ftargetPosition + bl) % sm);   // Trip to tuning point should be a fullstep position
             }
@@ -2059,14 +2486,14 @@ void loop()
             {
               backlash_count = bl + sm - ((ftargetPosition - bl) % sm);   // Trip to tuning point should be a fullstep position
             }
-            m_bl =  backlash_count;  
+            m_bl =  backlash_count;
             MainStateMachine = State_ApplyBacklash;
-            DebugPrint(F("Idle => State_ApplyBacklash"));
+            DebugPrint(STATEAPPLYBACKLASH);
           }
 #else
           // ignore backlash
           MainStateMachine = State_Moving;
-          DebugPrint(F("Idle => State_Moving"));
+          DebugPrint(STATEMOVINGSTR);;
 #endif
         }
       }
@@ -2095,7 +2522,7 @@ void loop()
 
         if (Parked == false)
         {
-          if(TimeCheck(TimeStampPark, MotorReleaseDelay))    //Power off after MotorReleaseDelay
+          if (TimeCheck(TimeStampPark, MotorReleaseDelay))   //Power off after MotorReleaseDelay
           {
             driverboard->releasemotor();
             DebugPrintln(F("Idle: release motor"));
@@ -2114,7 +2541,7 @@ void loop()
       break;
 
 
-//__ApplyBacklash ____________________________________________________________________ 
+    //__ApplyBacklash ____________________________________________________________________
     case State_ApplyBacklash:
       if ( backlash_count )
       {
@@ -2125,11 +2552,11 @@ void loop()
       {
         driverboard->setmotorspeed(mySetupData->get_motorSpeed());
         MainStateMachine = State_Moving;
-        DebugPrintln(F("=> State_Moving"));
+          DebugPrint(STATEMOVINGSTR);
       }
       break;
 
-//__ Moving _________________________________________________________________________
+    //__ Moving _________________________________________________________________________
     case State_Moving:
       if ( fcurrentPosition != ftargetPosition )        // must come first else cannot halt
       {
@@ -2152,7 +2579,7 @@ void loop()
       }
       else
       {
-#if (BACKLASH == 2) 
+#if (BACKLASH == 2)
         if ( DirOfTravel != move_main)
         {
           DirOfTravel ^= 1;
@@ -2166,34 +2593,34 @@ void loop()
         {
           MainStateMachine = State_DelayAfterMove;
           DebugPrintln(F("State_Moving => State_DelayAfterMove"));
-        }      
+        }
 #else
         MainStateMachine = State_DelayAfterMove;
         DebugPrintln(F("State_Moving => State_DelayAfterMove"));
-#endif        
+#endif
       }
       break;
 
 
-//__ ApplyBacklash2 ___________________________________________________________________
+    //__ ApplyBacklash2 ___________________________________________________________________
     case State_ApplyBacklash2:
-      if(TimeCheck(TimeStampDelayAfterMove , 250))
+      if (TimeCheck(TimeStampDelayAfterMove , 250))
       {
         if (backlash_count)
         {
           driverboard->movemotor(DirOfTravel);
           backlash_count--;
-        }     
+        }
         else
-        {   
+        {
           TimeStampDelayAfterMove = millis();
           MainStateMachine = State_DelayAfterMove;
           DebugPrintln(F("=> State_DelayAfterMove"));
         }
-      } 
+      }
       break;
 
-//__ DelayAfterMove _________________________________________________________________________
+    //__ DelayAfterMove _________________________________________________________________________
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
@@ -2238,14 +2665,14 @@ void processserial()
     char inChar = Serial.read();
     switch ( inChar )
     {
-      case ':' :     // start
+      case STARTSTR :     // start
         serialline = "";
         break;
       case '\r' :
       case '\n' :
         // ignore
         break;
-      case '#' :     // eoc
+      case EOFSTR :     // eoc
         queue.push(serialline);
         break;
       default :      // anything else
@@ -2275,14 +2702,14 @@ void processbt()
     char inChar = SerialBT.read();
     switch ( inChar )
     {
-      case ':' :     // start
+      case STARTSTR :     // start
         btline = "";
         break;
       case '\r' :
       case '\n' :
         // ignore
         break;
-      case '#' :     // eoc
+      case EOFSTR :     // eoc
         queue.push(btline);
         break;
       default :      // anything else
