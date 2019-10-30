@@ -2,14 +2,11 @@
 #include "generalDefinitions.h"
 #include "myBoards.h"
 
-
 DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 {
   switch ( brdtype )
   {
-#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
-  || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
-  || DRVBRD == PRO2ESP32R3WEMOS )
+#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS )
     case WEMOSDRV8825:
     case PRO2EDRV8825:
     case PRO2EDRV8825BIG:
@@ -20,6 +17,8 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
       digitalWrite(ENABLEPIN, 1);
       DriverBoard::setstepmode(DRV8825TEPMODE);
       break;
+#endif
+#if( DRVBRD == PRO2ESP32DRV8825 )
     case PRO2ESP32DRV8825:
       pinMode(ENABLEPIN, OUTPUT);
       pinMode(DIRPIN, OUTPUT);
@@ -66,7 +65,7 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
         pinMode(this->inputPins[inputCount], OUTPUT);
       }
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
-      mystepper->setSpeed(5);       // DONE
+      mystepper->setSpeed(48);      // DONE
 #endif
 #if (DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N)
       mystepper->setSpeed(20);      // DONE
