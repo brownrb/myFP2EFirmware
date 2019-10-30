@@ -1,0 +1,20 @@
+// 29102019 105
+// remove motorspeedchange
+// fix error in stepmode for PRO2ESP32DRV8825 DONE
+// fix setstepperspeed in DriverBoard constructor for PRO2EULN2003 DONE
+// fix error in oled display I2C begin, use DRVBRD == instead of defined() DONE
+// improve stepper motor speed on webserver DONE
+// remove .handleclient and server.on() DONE
+// implement server code to process requests DONE
+// add buildhomepage and update_webserver() to process requests DONE
+// add motorspeed DONE
+// add url redirect to / in refresh header for page notfound DONE
+// add url redirect to / in refresh header for all requests/posts DONE
+// fix error in case 30 as there is potential issue DONE
+// add stepmode DONE
+// add goto DONE
+// esp_comms() now disabled if using ascom remote or webserver DONE
+// bracket connection of myfocuserpro2 client on 2020 so not used with webserver or ascom remote DONE
+// bracket ConnectionStatus in loop() if using ascom remote or webserver DONE
+// add requirement to have either ACCESSPOINT or STATIONMODE defined DONE
+// add requirement to have either ACCESSPOINT or STATIONMODE or BLUETOOTHMODE or LOCALSERIAL defined DONE

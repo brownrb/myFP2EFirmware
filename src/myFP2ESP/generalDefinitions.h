@@ -13,8 +13,9 @@
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define MOTORRELEASEDELAY     120           // motor release power after 120s
 
-#define SERVERPORT            2020
-#define ALPACAPORT            80            // ASCOM Remote server port
+#define SERVERPORT            2020          // TCPIP port for myFP2ESP
+#define ALPACAPORT            4040          // ASCOM Remote server port
+#define ASCOMMAXIMUMARGS      10
 #define WEBSERVERPORT         80            // Web server port
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
@@ -129,6 +130,16 @@
 #define jsonstring            "jsonstr = "
 #define webserverstr          "Webserver: "
 #define didnotconnectstr      "Did not connect to "
+#define accesspointstr        "Access point: "
+#define stationmodestr        "Station mode: "
+#define ascomremotestr        "ASCOM Remote: "
+
+#define NORMALWEBPAGE             200
+#define BADREQUESTWEBPAGE         400
+#define NOTFOUNDWEBPAGE           404
+#define ASCOMINTERNALSERVERERROR  500
+#define TEXTPAGETYPE              "text/html"
+#define JSONPAGETYPE              "application/json"
 
 #define ASCOMSUCCESS              0
 #define ASCOMNOTIMPLEMENTED       0x400
@@ -137,11 +148,37 @@
 #define ASCOMNOTCONNECTED         0x407
 #define ASCOMINVALIDOPERATION     0x40B
 #define ASCOMACTIONNOTIMPLEMENTED 0x40C
+#define ASCOMERRORMSGERROR        "Error"
+#define ASCOMERRORMSGNULL         ""
+#define ASCOMERRORNOTIMPLEMENTED  "Not implemented"
+#define ASCOMERRORMSGINVALID      "Invalid operation"
+
+#define WS_TURNON                 "<input type=\"submit\" value=\"TURN ON\"></form></p>"
+#define WS_TURNOFF                "<input type=\"submit\" value=\"TURN OFF\"></form></p>"
+#define WS_SM1CHECKED             "<input type=\"radio\" name=\"sm\" value=\"1\" Checked> Full"
+#define WS_SM1UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"1\"> Full"
+#define WS_SM2CHECKED             "<input type=\"radio\" name=\"sm\" value=\"2\" Checked> 1/2"
+#define WS_SM2UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"2\"> 1/2"
+#define WS_SM4CHECKED             "<input type=\"radio\" name=\"sm\" value=\"4\" Checked> 1/4"
+#define WS_SM4UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"4\"> 1/4"
+#define WS_SM8CHECKED             "<input type=\"radio\" name=\"sm\" value=\"8\" Checked> 1/8"
+#define WS_SM8UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"8\"> 1/8"
+#define WS_SM16CHECKED            "<input type=\"radio\" name=\"sm\" value=\"16\" Checked> 1/16"
+#define WS_SM16UNCHECKED          "<input type=\"radio\" name=\"sm\" value=\"16\"> 1/16"
+#define WS_SM32CHECKED            "<input type=\"radio\" name=\"sm\" value=\"32\" Checked> 1/32"
+#define WS_SM32UNCHECKED          "<input type=\"radio\" name=\"sm\" value=\"32\"> 1/32"
+
+#define WS_MSSLOWCHECKED          "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow"
+#define WS_MSSLOWUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"0\"> Slow"
+#define WS_MSMEDCHECKED           "<input type=\"radio\" name=\"ms\" value=\"1\" Checked> Medium"
+#define WS_MSMEDUNCHECKED         "<input type=\"radio\" name=\"ms\" value=\"1\"> Medium"
+#define WS_MSFASTCHECKED          "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast"
+#define WS_MSFASTUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"2\"> Fast"
 
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-#define DEBUG     1
+//#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

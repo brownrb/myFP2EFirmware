@@ -135,25 +135,67 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-// #define ACCESSPOINT 2
+#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-#define STATIONMODE 3
+//#define STATIONMODE 3
 
 // to work only via USB cable as Serial port, uncomment the next line
 //#define LOCALSERIAL 4
 
 // To enable OTA updates, uncomment the next line [can only be used with stationmode]
-//#define OTAUPDATES 1
+//#define OTAUPDATES 5
+
+// to enable this focuser for ASCOM ALPACA REMOTE support, uncomment the next line
+//#define ASCOMREMOTE 6
 
 // to enable Webserver interface, uncomment the next line
-#define WEBSERVER 1
+#define WEBSERVER 7
 
 // DO NOT CHANGE
-// DO NOT CHANGE
+#if !defined(ACCESSPOINT) && !defined(STATIONMODE) && !defined(BLUETOOTHMODE) && !defined(LOCALSERIAL) && !defined(WEBSERVER) && !defined(ASCOMREMOTE)
+#halt //ERROR you must use ACCESSPOINT or STATIONMODE or BLUETOOTHMODE or LOCALSERIAL or WEBSERVER or ASCOMREMOTE
+#endif
+
 #if defined(WEBSERVER)
 #if !defined(ACCESSPOINT) && !defined(STATIONMODE)
 #halt //ERROR you must use ACCESSPOINT or STATIONMODE with WEBSERVER
+#endif
+#endif
+
+#if defined(ASCOMREMOTE)
+#if !defined(ACCESSPOINT) && !defined(STATIONMODE)
+#halt //ERROR you must use ACCESSPOINT or STATIONMODE with ASCOMREMOTE
+#endif
+#endif
+
+#if defined(ASCOMREMOTE)
+#if defined(WEBSERVER)
+#halt //ERROR you cannot have both ASCOMREMOTE and WEBSERVER enabled at the same time
+#endif
+#endif
+
+#if defined(ASCOMREMOTE)
+#if defined(LOCALSERIAL)
+#halt //ERROR you cannot have both ASCOMREMOTE and LOCALSERIAL enabled at the same time
+#endif
+#endif
+
+#if defined(ASCOMREMOTE)
+#if defined(BLUETOOTH)
+#halt //ERROR you cannot have both ASCOMREMOTE and BLUETOOTH enabled at the same time
+#endif
+#endif
+
+#if defined(WEBSERVER)
+#if defined(LOCALSERIAL)
+#halt //ERROR you cannot have both WEBSERVER and LOCALSERIAL enabled at the same time
+#endif
+#endif
+
+#if defined(WEBSERVER)
+#if defined(BLUETOOTH)
+#halt //ERROR you cannot have both WEBSERVER and BLUETOOTH enabled at the same time
 #endif
 #endif
 
@@ -166,9 +208,9 @@
 #endif
 #endif
 
-#if defined(ACCESSPOINT)
-#if defined(STATIONMODE)
-#halt //ERROR you cannot have both ACCESSPOINT and STATIONMODE enabled at the same time
+#ifdef ACCESSPOINT
+#ifdef STATIONMODE
+#halt // ERROR - Cannot have both ACCESSPOINT and STATIONMODE defined at the same time
 #endif
 #endif
 
@@ -188,13 +230,13 @@
   || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
   || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D   || DRVBRD == PRO2ESP32R3WEMOS )
 // no support for bluetooth mode
-#if defined(BLUETOOTHMODE)
+#ifdef BLUETOOTHMODE
 #halt // ERROR - BLUETOOTHMODE not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
 #endif
 
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
-#ifdef defined(LOCALSERIAL)
+#ifdef LOCALSERIAL
 #halt // ERROR - LOCALSERIAL not supported L293D Motor Shield [ESP8266] boards
 #endif
 #endif
@@ -236,7 +278,6 @@
 char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 
-
 // ----------------------------------------------------------------------------------------------
 // 8: OTA (OVER THE AIR UPDATING) SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -249,19 +290,36 @@ const char *OTAPassword = "esp8266";
 // ----------------------------------------------------------------------------------------------
 // 9: ASCOMREMOTE: DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-// coming in 104
+#ifdef ASCOMREMOTE
+unsigned int ASCOMClientID;
+unsigned int ASCOMClientTransactionID;
+unsigned int ASCOMServerTransactionID = 0;
+int ASCOMErrorNumber = 0;
+String ASCOMErrorMessage = "";
+long ASCOMpos = 0L;
+byte ASCOMTempCompState = 0;
+byte ASCOMConnectedState = 0;
+WiFiClient ascomclient;
+#if defined(ESP8266)
+ESP8266WebServer ascomserver(ALPACAPORT);
+#else
+WebServer ascomserver(ALPACAPORT);
+#endif // if defined(esp8266)
+#endif // ifdef ASCOMREMOTE
 
 // ----------------------------------------------------------------------------------------------
 // 10: WEBSERVER: DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 #ifdef WEBSERVER
-//WiFiClient webserverclient;
 String HomePage;
-String NotConnectedPage;
+String NotFoundPage;
+int wspagelength;
 #if defined(ESP8266)
-ESP8266WebServer webserver(WEBSERVERPORT);
+WiFiServer webserver(WEBSERVERPORT);
+WiFiClient wsclient;
 #else
-WebServer webserver(WEBSERVERPORT);
+WiFiServer webserver(WEBSERVERPORT);
+WiFiClient wsclient;
 #endif // if defined(esp8266)
 #endif
 
@@ -391,7 +449,7 @@ enum  StateMachineStates {State_Idle, State_ApplyBacklash, State_ApplyBacklash2,
 String programName;                                     // will become driverboard name
 DriverBoard* driverboard;
 
-char programVersion[] = "103";
+char programVersion[] = "105";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
 unsigned long fcurrentPosition;                         // current focuser position
@@ -400,8 +458,6 @@ unsigned long tmppos;
 
 byte tprobe1;                                           // indicate if there is a probe attached to myFocuserPro2
 byte isMoving;                                          // is the motor currently moving
-byte motorspeedchangethresholdsteps;                    // step number where when pos close to target motor speed changes
-byte motorspeedchangethresholdenabled;                  // used to enable/disable motorspeedchange when close to target position
 String ipStr;                                           // shared between BT mode and other modes
 boolean displayfound;
 
@@ -421,7 +477,7 @@ DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                                // holds address of the temperature probe
 #endif
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE)        // WiFi stuff
+#if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTH)
 IPAddress ESP32IPAddress;
 String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
@@ -446,144 +502,136 @@ SetupData *mySetupData;
 
 // WEBSERVER START ----------------------------------------------------------------------------------
 #ifdef WEBSERVER
-void setNoConnectionPage()
+void SendNotFoundPage(WiFiClient ws)
 {
-  NotConnectedPage = "<head><meta http-equiv=\"refresh\" content=\"5\"></head><body>";
-  NotConnectedPage = NotConnectedPage + "<body><p><h3>ESPWifi Controller</h3>The Wifi Controller got NO RESPONSE ";
-  NotConnectedPage = NotConnectedPage + "This page will self refresh in 5 seconds</body>";
-  delay(10);                     // small pause so background ESP8266 tasks can run
+  ws.println("HTTP/1.1 400 OK");
+  ws.println("Content-type:text/html");
+  ws.println("Connection: close");
+  ws.println();
+  ws.println("<!DOCTYPE html><html>");
+  ws.println("<html><head><meta http-equiv=\"refresh\" content=\"5, http://" + ipStr  + "\"></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP WEB SERVER</h3>");
+  ws.println("<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>");
+  ws.println("<p>IP Address: " + ipStr + ": Port: " + String(WEBSERVERPORT) + ", Firmware Version=" + String(programVersion) + "</p>");
+  ws.println("<p>Driverboard = myFP2ESP." + programName + "</p>");
+  ws.println("<p>The requested URL was not found</p>");
+  // add HOME button
+  ws.println("<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p>");
+  ws.println("</body></html>");
+  delay(10);                     // small pause so background tasks can run
 }
 
-void WEBSERVER_handleNotFound()
+void SendHTTPHeader(WiFiClient ws)
 {
-  webserver.send(404, "text/plain", NotConnectedPage);
+  ws.println("HTTP/1.1 200 OK");
+  ws.println("Content-Type:text/html");
+  //ws.println("Content-Length:" + String(wspagelength));
+  ws.println("Connection: close");
+  //ws.println("Connection: keep-alive");
+  ws.println();
+  ws.print("<!DOCTYPE html><html>");
+  ws.print("<html><head><meta http-equiv=\"refresh\" content=\"10, http://" + ipStr  + "\"></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP WEB SERVER</h3>");
+  ws.print("<p>(c) R. Brown, Holger M, 2019. All rights reserved.<br>");
+  ws.println("IP Address: " + ipStr + ": Port: " + String(WEBSERVERPORT) + ", Firmware Version=" + String(programVersion) + "<br>");
+  ws.println("Driverboard = myFP2ESP." + programName + "</p>");
 }
-
-// constructs home page of web server
-void SetHomePage()
+void BuildHomePage()
 {
-  // Convert IP address to a string;
-  // already in ipStr
-
+  String cpbuffer;
+  String rdbuffer;
   // convert current values of focuserposition and focusermaxsteps to string types
-  String fpbuffer = String(mySetupData->get_fposition());
+  String fpbuffer = String(fcurrentPosition);
   String mxbuffer = String(mySetupData->get_maxstep());
   String smbuffer = String(mySetupData->get_stepmode());
-  String imbuffer = String(isMoving);
 
-  switch ( mySetupData->get_stepmode() )
-  {
-    case 1:
-      smbuffer = "<input type = \"radio\" name=\"sm\" value=\"1\" Checked > Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
-      break;
-    case 2 :
-      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\"> Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" Checked > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
-      break;
-    case 4 :
-      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" Checked > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
-      break;
-    case 8 :
-      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" Checked > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
-      break;
-    case 16 :
-      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" Checked > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
-      break;
-    case 32 :
-      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" > Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" Checked > 1/32 ";
-      break;
-    default :
-      smbuffer = "<input type=\"radio\" name=\"sm\" value=\"1\" Checked> Full";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"2\" > 1/2";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"4\" > 1/4";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"8\" > 1/8";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"16\" > 1/16";
-      smbuffer = smbuffer + "<input type=\"radio\" name=\"sm\" value=\"32\" > 1/32 ";
-      break;
-  }
-
+  // build motorspeed string
   String msbuffer = String(mySetupData->get_motorSpeed());
   switch ( mySetupData->get_motorSpeed() )
   {
     case 0:
-      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" > Medium";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" > Fast ";
+      msbuffer = WS_MSSLOWCHECKED;
+      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + WS_MSFASTUNCHECKED;
       break;
     case 1:
-      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" > Slow";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" Checked> Medium";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" > Fast ";
+      msbuffer = WS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + WS_MSMEDCHECKED;
+      msbuffer = msbuffer + WS_MSFASTUNCHECKED;
       break;
     case 2:
-      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" > Slow";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" > Medium";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast ";
+      msbuffer = WS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + WS_MSFASTCHECKED;
       break;
     default:
-      msbuffer = "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"1\" > Medium";
-      msbuffer = msbuffer + "<input type=\"radio\" name=\"ms\" value=\"2\" > Fast ";
+      msbuffer = WS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + WS_MSFASTCHECKED;
       break;
   }
 
-  String cpbuffer;
-  if ( !mySetupData->get_coilpower() )
+  // build stepmode
+  switch ( mySetupData->get_stepmode() )
   {
-    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" >";
-  }
-  else
-  {
-    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked>";
+    case 1:
+      smbuffer = WS_SM1CHECKED;
+      smbuffer = smbuffer + WS_SM2UNCHECKED;
+      smbuffer = smbuffer + WS_SM4UNCHECKED;
+      smbuffer = smbuffer + WS_SM8UNCHECKED;
+      smbuffer = smbuffer + WS_SM16UNCHECKED;
+      smbuffer = smbuffer + WS_SM32UNCHECKED;
+      break;
+    case 2 :
+      smbuffer = WS_SM1UNCHECKED;
+      smbuffer = smbuffer + WS_SM2CHECKED;
+      smbuffer = smbuffer + WS_SM4UNCHECKED;
+      smbuffer = smbuffer + WS_SM8UNCHECKED;
+      smbuffer = smbuffer + WS_SM16UNCHECKED;
+      smbuffer = smbuffer + WS_SM32UNCHECKED;
+      break;
+    case 4 :
+      smbuffer = WS_SM1UNCHECKED;
+      smbuffer = smbuffer + WS_SM2UNCHECKED;
+      smbuffer = smbuffer + WS_SM4CHECKED;
+      smbuffer = smbuffer + WS_SM8UNCHECKED;
+      smbuffer = smbuffer + WS_SM16UNCHECKED;
+      smbuffer = smbuffer + WS_SM32UNCHECKED;
+      break;
+    case 8 :
+      smbuffer = WS_SM1UNCHECKED;
+      smbuffer = smbuffer + WS_SM2UNCHECKED;
+      smbuffer = smbuffer + WS_SM4UNCHECKED;
+      smbuffer = smbuffer + WS_SM8CHECKED;
+      smbuffer = smbuffer + WS_SM16UNCHECKED;
+      smbuffer = smbuffer + WS_SM32UNCHECKED;
+      break;
+    case 16 :
+      smbuffer = WS_SM1UNCHECKED;
+      smbuffer = smbuffer + WS_SM2UNCHECKED;
+      smbuffer = smbuffer + WS_SM4UNCHECKED;
+      smbuffer = smbuffer + WS_SM8UNCHECKED;
+      smbuffer = smbuffer + WS_SM16CHECKED;
+      smbuffer = smbuffer + WS_SM32UNCHECKED;
+      break;
+    case 32 :
+      smbuffer = WS_SM1UNCHECKED;
+      smbuffer = smbuffer + WS_SM2UNCHECKED;
+      smbuffer = smbuffer + WS_SM4UNCHECKED;
+      smbuffer = smbuffer + WS_SM8UNCHECKED;
+      smbuffer = smbuffer + WS_SM16UNCHECKED;
+      smbuffer = smbuffer + WS_SM32CHECKED;
+      break;
+    default :
+      smbuffer = WS_SM1CHECKED;
+      smbuffer = smbuffer + WS_SM2UNCHECKED;
+      smbuffer = smbuffer + WS_SM4UNCHECKED;
+      smbuffer = smbuffer + WS_SM8UNCHECKED;
+      smbuffer = smbuffer + WS_SM16UNCHECKED;
+      smbuffer = smbuffer + WS_SM32UNCHECKED;
+      break;
   }
 
-  String rdbuffer;
-  if ( !mySetupData->get_reversedirection() )
-  {
-    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" >";
-  }
-  else
-  {
-    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked>";
-  }
-
-#ifdef TEMPERATUREPROBE
-  String tmbuffer = String(readtemp(0));
-#else
-  String tmbuffer = "20.0";
-#endif
-  String trbuffer = String(mySetupData->get_tempprecision());
-
-  String stbuffer;    // stepstomove
+  // build move buttons
+  String stbuffer;    // steps to move
   stbuffer = "<input type=\"radio\" name=\"mv\" value=\"-500\" > -500 ";
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-100\" > -100 ";
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-10\" > -10 ";
@@ -594,218 +642,381 @@ void SetHomePage()
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"100\" > 100 ";
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"500\" > 500 ";
 
-  // construct home page of webserver
-  HomePage = "<head><meta http-equiv=\"refresh\" content=\"10\"></head><body><p><h3>" + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion);
-  HomePage = HomePage + "<br>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" value=" + fpbuffer + ">";
-  HomePage = HomePage + "<input type=\"submit\" name=\"submit\" value=\"Submit\"></form>";
+  // build content of webpage now
 
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>MaxSteps</b><input type=\"text\" name=\"fm\" value=" + mxbuffer + ">";
-  HomePage = HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
+  // position
+  HomePage = "<p><form action=\"/pos\" method=\"POST\" ><b>Position: </b>" + fpbuffer + "</b> ";
+  HomePage = HomePage + "<input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> <input type=\"submit\" name=\"setpos\" value=\"Set Pos\"> <input type=\"submit\" name=\"gotopos\" value=\"Goto Pos\"></form></p>";
 
-  HomePage = HomePage + "IsMoving = " + imbuffer + "<br><br>";
+  // goto
+  //HomePage = HomePage + "<form action=\"/go\" method=\"POST\" >";
+  //HomePage = HomePage + "<input type=\"text\" name=\"go\" size =\"15\" value=" + fpbuffer + "> <input type=\"submit\" value=\"Goto Pos\"></form></p>";
 
-  HomePage = HomePage + "<b>Temperature</b> = " + tmbuffer + "<br><br>";
+  // maxstep
+  HomePage = HomePage + "<p><form action=\"/mx\" method=\"POST\" ><b>Maxstep: </b>" + mxbuffer + "</b> ";
+  HomePage = HomePage + "<input type=\"text\" name=\"fm\" size =\"15\" value=" + mxbuffer + "> <input type=\"submit\" value=\"Set MaxStep\"></form>";
 
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Coil Power </b>" + cpbuffer ;
-  HomePage = HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
-
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
-  HomePage = HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
-
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Step Mode </b>" + smbuffer;
-  HomePage = HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
-
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Motor Speed: </b>" + msbuffer;
-  HomePage = HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
-
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Move: </b>" + stbuffer;
-  HomePage = HomePage + "<input type=\"hidden\" name=\"mv\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
-
-  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Temperature Resolution</b><input type=\"text\" name=\"tr\" value=" + trbuffer + "> ";
-  HomePage = HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
-
-  HomePage = HomePage + "<br></body></html>";
-}
-
-// handles root page of webserver
-// this is called whenever a client requests home page of sebserver
-void WEBSERVER_handleRoot()
-{
-  // if the root page was an update of focuser position via Submit button
-  String fpos_str = webserver.arg("fp");
-  if ( fpos_str != "" )
+  // coilpower
+  if ( !mySetupData->get_coilpower() )
   {
-    unsigned long temp = 0;
-    DebugPrintln( "WPU: was an update of focuser position" );
-    temp = fpos_str.toInt();                  // get the value for target focuser position
-    if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-    {
-      temp = mySetupData->get_maxstep();
-    }
-    ftargetPosition = temp;
+    // add button for turn on
+    HomePage = HomePage + "<p><form action=\"/cp1\" method=\"GET\"><b>Coilpower:</b> OFF ";
+    HomePage = HomePage + WS_TURNON;
   }
   else
   {
-    DebugPrintln( "WPU: was an REFRESH of focuser position" );
+    // add button for turn off
+    HomePage = HomePage + "<p><form action=\"/cp0\" method=\"GET\"><b>Coilpower:</b> ON ";
+    HomePage = HomePage + WS_TURNOFF;
   }
 
-  delay(10);                     // small pause so background ESP8266 tasks can run
-
-  // if the root page was an update of focusermaxsteps via Submit button
-  String fmax_str = webserver.arg("fm");
-  if ( fmax_str != "" )
+  // reverse direction
+  if ( !mySetupData->get_reversedirection() )
   {
-    unsigned long temp = 0;
-    DebugPrintln( "WPU: was an update of maxsteps" );
-    temp = fmax_str.toInt();
-    if ( temp < fcurrentPosition )                    // if maxstep is less than focuser position
-    {
-      temp = fcurrentPosition + 1;
-    }
-    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
-    {
-      temp = FOCUSERLOWERLIMIT;
-    }
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
-    {
-      temp = mySetupData->get_maxstep();
-    }
-    mySetupData->set_maxstep(temp);
+    // add button for turn on
+    HomePage = HomePage + "<p><form action=\"/rd1\" method=\"GET\"><b>Reverse direction:</b> OFF ";
+    HomePage = HomePage + WS_TURNON;
   }
-
-  delay(10);                                          // small pause so background ESP8266 tasks can run
-
-  // if the root page was an update of motorspeed via Submit button
-  String fms_str = webserver.arg("ms");
-  if ( fms_str != "" )
+  else
   {
-    int temp1 = 0;
-    DebugPrintln( "handle_root() -was an update of motor speed" );
-    DebugPrint("Motorspeed from webpage = ");
-    DebugPrintln(fms_str);
-    temp1 = fms_str.toInt();
-    if ( temp1 < SLOW )
-    {
-      temp1 = SLOW;
-    }
-    if ( temp1 > FAST )
-    {
-      temp1 = FAST;
-    }
-    mySetupData->set_motorSpeed(temp1);
+    // add button for turn off
+    HomePage = HomePage + "<p><form action=\"/rd0\" method=\"GET\"><b>Reverse direction:</b> ON ";
+    HomePage = HomePage + WS_TURNOFF;
   }
 
-  delay(10);                     // small pause so background ESP8266 tasks can run
+  // temperature
+#ifdef TEMPERATUREPROBE
+  HomePage = HomePage + "<p><b>Temperature: </b>" + String(readtemp(0), 3) + ", ";
+#else
+  HomePage = HomePage + "<p><b>Temperature: </b>20.00, ";
+#endif
+  // add temperature precision
+  HomePage = HomePage + "<b>Precision: </b>" + String(mySetupData->get_tempprecision()) + "</p>";
 
-  // if the root page was an update of coilpower via Submit button
-  String fcp_str = webserver.arg("cp");
-  if ( fcp_str != "" )
-  {
-    DebugPrintln( "handle_root() -was an update of coil power" );
-    if ( fcp_str == "cp" )
-    {
-      mySetupData->set_coilpower(1);
-    }
-    else
-    {
-      mySetupData->set_coilpower(0);
-    }
-  }
+  // ismoving and halt
+  HomePage = HomePage + "<p><form action=\"/ha\" method=\"GET\"><b>isMoving: </b>" + String(isMoving) + " ";
+  HomePage = HomePage + "<input type=\"submit\" value=\"HALT\"></form></p>";
 
-  delay(10);                     // small pause so background ESP8266 tasks can run
+  // add motorspeed
+  HomePage = HomePage + "<p><form action=\"/ms\" method=\"POST\" ><b>Motorspeed: </b>" + msbuffer + " ";
+  HomePage = HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"SET MOTORSPEED\"></form></p>";
 
-  // if the root page was an update of reversedirection via Submit button
-  String frd_str = webserver.arg("rd");
-  if ( frd_str != "" )
-  {
-    DebugPrintln( "handle_root() -was an update of reverse direction" );
-    if ( frd_str == "rd" )
-    {
-      mySetupData->set_reversedirection(1);
-    }
-    else
-    {
-      mySetupData->set_reversedirection(0);
-    }
-  }
+  // move buttons
+  HomePage = HomePage + "<p><form action=\"/mv\" method=\"POST\" ><b>Move: </b>" + stbuffer;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"mv\" value=\"true\"><input type=\"submit\" value=\"MOVE\"></form></p>";
 
-  delay(10);                     // small pause so background ESP8266 tasks can run
+  // add stepmode
+  HomePage = HomePage + "<p><form action=\"/sm\" method=\"POST\" ><b>Stepmode </b>" + smbuffer + " ";
+  HomePage = HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"SET STEPMODE\"></form>";
 
-  // if the root page was an update of stepmode via Submit button
-  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
-  String fsm_str = webserver.arg("sm");
-  if ( fsm_str != "" )
-  {
-    int temp1 = 0;
-    DebugPrintln( "handle_root() -was an update of stepmode" );
-    temp1 = fsm_str.toInt();
-    if ( temp1 < STEP1 )
-    {
-      temp1 = STEP1;
-    }
-    if ( temp1 > STEP32 )
-    {
-      temp1 = STEP32;
-    }
-    mySetupData->set_stepmode(temp1);
-  }
-
-  delay(10);                     // small pause so background ESP8266 tasks can run
-
-  // if the root page was an update of temperature resolution via Submit button
-  String tres_str = webserver.arg("tr");
-  if ( tres_str != "" )
-  {
-    int temp = 0;
-    DebugPrintln( "handle_root() -was an update of temperature resolution" );
-    temp = tres_str.toInt();
-    if ( temp < 9 )
-    {
-      // error, do not change
-      temp = 9;
-    }
-    if ( temp > 12 )
-    {
-      temp = 12;
-    }
-    mySetupData->set_tempprecision(temp);
-  }
-
-  delay(10);                     // small pause so background ESP8266 tasks can run
-
-  // if the root page was a move
-  String fmv_str = webserver.arg("mv");
-  if ( fmv_str != "" )
-  {
-    DebugPrintln( "handle_root() -was a move" );
-    unsigned long temp = 0;
-    temp = fmv_str.toInt();
-    ftargetPosition = fcurrentPosition + temp;
-    DebugPrint("Move = "); DebugPrintln(fmv_str);
-    DebugPrint("Current = "); DebugPrint(fcurrentPosition);
-    DebugPrint(", Target = "); DebugPrintln(ftargetPosition);
-    if ( ftargetPosition > mySetupData->get_maxstep() )
-    {
-      ftargetPosition = mySetupData->get_maxstep();
-    }
-  }
-
-  DebugPrintln( "handle_root() -construct homepage" );
-
-  delay(10);                     // small pause so background ESP8266 tasks can run
-
-  // construct the homepage now
-  SetHomePage();
-
-  delay(10);                     // small pause so background ESP8266 tasks can run
-
-  // send the homepage to a connected client
-  DebugPrintln("Handleroot() - sending homepage");
-  webserver.send(200, "text/html", HomePage );
+  // add HOME button
+  HomePage = HomePage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p>";
+  HomePage = HomePage + "</body></html>\r\n";
 }
-#endif // ifdef WEBSERVER
+
+void update_webserver()
+{
+  DebugPrint(F("Webserver Start = "));
+  DebugPrintln(millis());
+  wsclient = webserver.available();                 // see if there is a client connected
+  if ( wsclient.connected() )                       // if there is a client connected
+  {
+    DebugPrintln("Webserver: Client has connected");
+    String req = wsclient.readStringUntil('\r');    // read the header request
+    DebugPrint("Websrv: Client request: ");         // echo request to serial port
+    DebugPrintln(req);
+
+    // on a get homepage, 192.168.xxx.xxx it looks like GET / HTTP/1.1
+    if ( req.startsWith("GET / HTTP/1.1"))          // homepage request
+    {
+      DebugPrintln("Webserver: GET /");
+      DebugPrintln("Websrv: GET / ");
+      BuildHomePage();
+      //wspagelength = HomePage.length() + 380;
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      //delay(100);
+      wsclient.stop();
+    }
+    else if (req.startsWith("GET /favicon.ico"))    // stupid mozilla
+    {
+      DebugPrintln("Websrv: GET /favicon.ico");
+      wsclient.println("HTTP/1.1 400 OK");          // send http header
+      wsclient.println("Content-type:text/html");
+      wsclient.println("Connection: close");
+      wsclient.println();
+      wsclient.stop();
+    }
+    else if (req.startsWith("GET /cp1"))
+    {
+      DebugPrintln("Websrv: GET /cp1");
+      mySetupData->set_coilpower(1);                // turn on coilpower
+      driverboard->enablemotor();
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("GET /cp0"))
+    {
+      DebugPrintln("Websrv: GET /cp0");
+      mySetupData->set_coilpower(0);                // turn off coilpower
+      driverboard->releasemotor();
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("GET /rdo1"))
+    {
+      DebugPrintln("Websrv: GET /rd1");
+      mySetupData->set_reversedirection(1);         // turn on reverse direction
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("GET /rd0"))
+    {
+      DebugPrintln("Websrv: GET /rd0");
+      mySetupData->set_reversedirection(0);         // turn off reverse direction
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("GET /ha"))
+    {
+      DebugPrintln("Websrv: GET /ha");
+      ftargetPosition = fcurrentPosition;
+      isMoving = 0;
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("POST /pos" ))
+    {
+      // this handles &setpos= and &gotopos=
+      DebugPrintln("Websrv: POST /pos");
+      DebugPrint("req:");
+      DebugPrintln(req);
+      String parm = "";
+      while ( wsclient.available() )                // process the args associated with the request
+      {
+        char c = wsclient.read();
+        parm = parm + c;
+      }
+      DebugPrint("parm:");
+      DebugPrintln(parm);
+      int sidx = parm.indexOf("fp=");               // look for fp=xxxxx in the return parm string
+      DebugPrint("sidx:");
+      DebugPrintln(sidx);
+      if ( sidx > 0 )
+      {
+        int eidx = sidx + 3;                        // start past the =
+        String str = parm.substring(eidx, parm.length());
+        DebugPrint("str:");
+        DebugPrintln(str);
+        long newpos = str.toInt();                  // .toInt() returns long type but is signed
+        unsigned long np;
+        newpos = (newpos < 0) ? 0 : newpos;         // make sure received position is not negative
+        np = newpos;
+        np = (np > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : np;
+        // decide if it is &setpos= or &gotopos=
+        if (parm.indexOf("&setpos=") > 0)
+        {
+          fcurrentPosition = ftargetPosition = np;   // setposition
+        }
+        else if ( parm.indexOf("&gotopos=") > 0)
+        {
+          ftargetPosition = np;                     // move
+        }
+      }
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("POST /mx" ))
+    {
+      DebugPrint("Websrv: POST /mx");
+      String parm = "";
+      while ( wsclient.available() )                // process the args associated with the request
+      {
+        char c = wsclient.read();
+        parm = parm + c;
+      }
+      DebugPrint("parm:");
+      DebugPrintln(parm);
+      int sidx = parm.indexOf("fm=");               // look for fm=xxxxx in the return parm string
+      DebugPrint("sidx:");
+      DebugPrintln(sidx);
+      if ( sidx > 0 )
+      {
+        int eidx = sidx + 3;                        // start past the =
+        String str = parm.substring(eidx, parm.length());
+        DebugPrint("str:");
+        DebugPrintln(str);
+        mySetupData->set_maxstep(str.toInt());      // convert to unsigned long and assign to maxstep
+      }
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("POST /ms" ))
+    {
+      DebugPrintln("Websrv: POST /ms");
+      String parm = "";
+      while ( wsclient.available() )                // process the args associated with the request
+      {
+        char c = wsclient.read();
+        parm = parm + c;
+      }
+      DebugPrint("parm:");
+      DebugPrintln(parm);
+      int sidx = parm.indexOf("ms=");               // look for ms=xxxxx in the return parm string
+      DebugPrint("sidx:");
+      DebugPrintln(sidx);
+      if ( sidx > 0 )
+      {
+        int eidx = sidx + 3;                        // start past the =
+        String str = parm.substring(eidx, eidx + 1);
+        DebugPrint("str:");
+        DebugPrintln(str);
+        mySetupData->set_motorSpeed(str.toInt());   // convert to int and assign to motorspeed
+      }
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("POST /mv" ))
+    {
+      DebugPrintln("Websrv: POST /mv");
+      String parm = "";
+      while ( wsclient.available() )                // process the args associated with the request
+      {
+        char c = wsclient.read();
+        parm = parm + c;
+      }
+      DebugPrint("parm:");
+      DebugPrintln(parm);
+      unsigned int sidx = parm.indexOf("mv=");               // look for mv=xxx in the return parm string
+      DebugPrint("sidx:");
+      DebugPrintln(sidx);
+      if ( sidx > 0 )
+      {
+        // response = mv=-500&mv=true
+        // search forward from sidx to look for &
+        unsigned int lp;
+        for ( lp = sidx; lp < parm.length(); lp++)
+        {
+          if ( parm[lp] == '&')
+          {
+            break;
+          }
+        }
+        if ( lp < parm.length() )
+        {
+          String str = parm.substring(sidx + 3, lp);
+          DebugPrint("str:");
+          DebugPrintln(str);
+          long newpos = str.toInt();                // toInt() returns signed long
+          unsigned long np;
+          np = fcurrentPosition + (unsigned long) newpos; // calculate new position
+          np = (np > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : np;
+          ftargetPosition = np;
+        }
+        else
+        {
+          DebugPrintln("mv: value not found");
+        }
+      }
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else if (req.startsWith("POST /sm" ))
+    {
+      DebugPrintln("Websrv: POST /sm");
+      String parm = "";
+      while ( wsclient.available() )                // process the args associated with the request
+      {
+        char c = wsclient.read();
+        parm = parm + c;
+      }
+      DebugPrint("parm:");
+      DebugPrintln(parm);
+      unsigned int sidx = parm.indexOf("sm=");      // look for sm=xx in the return parm string
+      DebugPrint("sidx:");
+      DebugPrintln(sidx);
+      if ( sidx > 0 )
+      {
+        // response sm=32&sm=true
+        // search forward from sidx to look for &
+        unsigned int lp;
+        for ( lp = sidx; lp < parm.length(); lp++)
+        {
+          if ( parm[lp] == '&')
+          {
+            break;
+          }
+        }
+        if ( lp < parm.length() )
+        {
+          String str = parm.substring(sidx + 3, lp);  // start past the =
+          DebugPrint("str:");
+          DebugPrintln(str);
+          int newsm = str.toInt();                    // convert to int
+          newsm = (newsm < STEP1)  ? STEP1  : newsm;
+          newsm = (newsm > STEP32) ? STEP32 : newsm;
+          driverboard->setstepmode(newsm);
+          // this is the proper way to do this
+          driverboard->setstepmode((byte) newsm);
+          mySetupData->set_stepmode(driverboard->getstepmode());
+        }
+        else
+        {
+          DebugPrintln("sm: value not found");
+        }
+      }
+      BuildHomePage();
+      SendHTTPHeader(wsclient);
+      wsclient.println(HomePage);
+      wsclient.stop();
+    }
+    else
+    {
+      DebugPrintln("invalid request");
+      SendNotFoundPage(wsclient);
+      wsclient.stop();
+    }
+  }
+  DebugPrint(F("Webserver End = "));
+  DebugPrintln(millis());
+}
+#endif
 // WEBSERVER END ------------------------------------------------------------------------------------
+
+// ASCOM REMOTE START -------------------------------------------------------------------------------
+// The Alpaca device must return the clienttransactionid number, or zero if no value was supplied by the client
+// The server transaction id should be returned by the Alpaca device with every response
+// URLs are case sensitive and all elements must be in lower case. This means that both the device type and
+// command name must always be in lower case. Parameter names are not case sensitive, so clients and drivers
+// should be prepared for parameter names to be supplied and returned with any casing. Parameter values can
+// be in mixed case as required.
+// For GET operations, parameters should be placed in the URL query string
+// For PUT operations they should be placed in the body of the message.
+// If the transaction completes successfully, the ErrorMessage field will be an empty string and the
+// ErrorNumber field will be zero.
+
+#ifdef ASCOMREMOTE
+
+#endif
+// ASCOM REMOTE END ---------------------------------------------------------------------------------
 
 byte TimeCheck(unsigned long x, unsigned long Delay)
 {
@@ -1323,6 +1534,12 @@ void displaylcdpage2(void)
 #if defined(OLEDTEXT)
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   myoled->setCursor(0, 0);
+#if defined(ACCESSPOINT)
+  myoled->println(accesspointstr);
+#endif
+#if defined(STATIONMODE)
+  myoled->println(stationmodestr);
+#endif
   myoled->print(ssidstr);
   myoled->print(mySSID);
   myoled->println();
@@ -1330,14 +1547,31 @@ void displaylcdpage2(void)
   myoled->print(ipaddressstr);
   myoled->print(ipStr);
   myoled->println();
-
-  myoled->print(webserverstr);
-#ifdef WEBSERVER
-  myoled->println(onstr);
-#else
-  myoled->println(offstr);
-#endif
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
+
+#if defined(WEBSERVER)
+  myoled->setCursor(0, 0);
+  myoled->println(webserverstr);
+#if defined(ACCESSPOINT)
+  myoled->println(accesspointstr);
+#endif
+#if defined(STATIONMODE)
+  myoled->println(stationmodestr);
+#endif
+  myoled->print(ipaddressstr);
+  myoled->print(ipStr);
+  myoled->print(STARTSTR);
+  myoled->println(SERVERPORT);
+#endif // webserver
+#if defined(ASCOMREMOTE)
+  myoled->setCursor(0, 0);
+  myoled->println(ascomremotestr);
+  myoled->print(ipaddressstr);
+  myoled->print(ipStr);
+  myoled->print(STARTSTR);
+  myoled->println(ALPACAPORT);
+#endif  
+
 #if defined(BLUETOOTHMODE)
   myoled->setCursor(0, 0);
   myoled->print(bluetoothstr);
@@ -1355,8 +1589,16 @@ void displaylcdpage2(void)
 boolean Init_OLED(void)
 {
 #if defined(ESP8266)
-  Wire.begin();
+#if (DRVBRD == PRO2EL293DNEMA) || (DRVBRD == PRO2EL293D28BYJ48)
+  DebugPrintln("Setup esp8266 PRO2EL293D SHIELD I2C");
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);              // l293d esp8266 shield
+  DebugPrintln("Setup PRO2EL293DNEMA / PRO2EL293D28BYJ48 I2C");
 #else
+  DebugPrintln("Setup esp8266 I2C");
+  Wire.begin();
+#endif
+#else
+  DebugPrintln("Setup esp32 I2C");
   Wire.begin(I2CDATAPIN, I2CCLKPIN);      // esp32
 #endif
   Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
@@ -1406,6 +1648,7 @@ boolean Init_OLED(void)
 // ----------------------------------------------------------------------------------------------
 // Section COMMUNICATIONS
 // ----------------------------------------------------------------------------------------------
+#if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 void SendPaket(String str)
 {
   DebugPrint(sendstr);
@@ -1688,8 +1931,9 @@ void ESP_Communication( byte mode )
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
       paramval = STEP1;
 #endif
-      mySetupData->set_stepmode((byte)paramval);
+      // this is the proper way to do this
       driverboard->setstepmode((byte) paramval);
+      mySetupData->set_stepmode(driverboard->getstepmode());
       break;
     case 31: // set focuser position
       if ( isMoving == 0 )
@@ -1836,6 +2080,7 @@ void ESP_Communication( byte mode )
       break;
   }
 }
+#endif // if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 
 // Push button code
 #if defined(INOUTPUSHBUTTONS)
@@ -2018,6 +2263,9 @@ void setup()
 #if defined(DEBUG) || defined(LOCALSEARIAL)
   Serial.begin(SERIALPORTSPEED);
   DebugPrintln(F("Serial started. Debug on."));
+#if defined(DEBUG)
+  DebugPrintln(debugonstr);
+#endif
 #endif
 
   mySetupData = new SetupData();                        // instantiate object SetUpData with SPIFFS
@@ -2293,12 +2541,13 @@ void setup()
 #endif // if defined(OTAUPDATES)
 
 #ifdef WEBSERVER
-  setNoConnectionPage();            // set up webserver page for no connection to a myFocuserPro2 controller
-  // construct the homepage now
-  SetHomePage();
-  webserver.on("/", WEBSERVER_handleRoot);
-  webserver.onNotFound(WEBSERVER_handleNotFound);
-  webserver.begin();
+  BuildHomePage();                // construct the homepage now
+  webserver.begin();              // start webserver
+  DebugPrintln("Webserver started, open " + ipStr + " in a browser");
+#endif
+
+#ifdef ASCOMREMOTE
+
 #endif
 
 #if defined(INOUTLEDPINS)
@@ -2336,7 +2585,13 @@ void loop()
   DebugPrintln(millis());
 #endif
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
+#ifdef WEBSERVER
+  update_webserver();
+#endif
+
+  // we want this to run if using an accesspoint or stationmode
+  // we do not want to run for bluetooth, local serial, webserver or ascomserver
+#if !defined(ASCOMREMOTE) && !defined(WEBSERVER) && !defined(BLUETOOTHMODE) && !defined(LOCALSERIAL)
   if (ConnectionStatus < 2)
   {
     myclient = myserver.available();
@@ -2373,7 +2628,8 @@ void loop()
       ConnectionStatus = 1;
     }
   }
-#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
+#endif // !defined(ASCOMREMOTE) && !defined(WEBSERVER) && !defined(BLUETOOTHMODE) && !defined(LOCALSERIAL)
+
 #if defined(BLUETOOTHMODE)
   if ( SerialBT.available() )
   {
@@ -2401,8 +2657,8 @@ void loop()
   ArduinoOTA.handle();                                  // listen for OTA events
 #endif // if defined(OTAUPDATES)
 
-#ifdef WEBSERVER
-  webserver.handleClient();
+#ifdef ASCOMREMOTE
+  
 #endif
 
   //_____________________________MainMachine _____________________________
@@ -2552,7 +2808,7 @@ void loop()
       {
         driverboard->setmotorspeed(mySetupData->get_motorSpeed());
         MainStateMachine = State_Moving;
-          DebugPrint(STATEMOVINGSTR);
+        DebugPrint(STATEMOVINGSTR);
       }
       break;
 
