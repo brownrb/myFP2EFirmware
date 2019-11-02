@@ -87,7 +87,7 @@
 //#define OLEDGRAPHICS 2
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
 //#define BACKLASH 2    // alternative BACKLASH
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
@@ -149,7 +149,7 @@
 // to enable this focuser for ASCOM ALPACA REMOTE support, uncomment the next line
 //#define ASCOMREMOTE 6
 
-// to enable Webserver interface, uncomment the next line
+// to enable Webserver interface, uncomment the next line [recommed use Internet Explorer or Microsoft Edge Browser]
 #define WEBSERVER 7
 
 // DO NOT CHANGE
@@ -262,6 +262,14 @@
 #endif
 #include "FocuserSetupData.h"
 
+#ifdef ASCOMREMOTE
+#if defined(ESP8266)
+#include <ESP8266WebServer.h>
+#else
+#include <WebServer.h>
+#endif // if defined(esp8266)
+#endif // ascomremote
+
 #ifdef WEBSERVER
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
@@ -311,15 +319,12 @@ WebServer ascomserver(ALPACAPORT);
 // 10: WEBSERVER: DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 #ifdef WEBSERVER
-String HomePage;
+//WiFiClient webserverclient;
 String NotFoundPage;
-int wspagelength;
 #if defined(ESP8266)
-WiFiServer webserver(WEBSERVERPORT);
-WiFiClient wsclient;
+ESP8266WebServer webserver(WEBSERVERPORT);
 #else
-WiFiServer webserver(WEBSERVERPORT);
-WiFiClient wsclient;
+WebServer webserver(WEBSERVERPORT);
 #endif // if defined(esp8266)
 #endif
 
@@ -426,7 +431,83 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
 
 // ----------------------------------------------------------------------------------------------
-// 15: GLOBAL DATA -- DO NOT CHANGE
+// 15: CONTROLLER FEATURES -- DO NOT CHANGE
+// ----------------------------------------------------------------------------------------------
+
+unsigned long Features = 0L;
+
+void setFeatures()
+{
+#ifdef LCDDISPLAY
+  Features = Features + ENABLEDLCD;
+#endif
+#ifdef OLEDDISPLAY
+  Features = Features + ENABLEDOLED;
+#endif
+#ifdef TEMPERATUREPROBE
+  Features = Features + ENABLEDTEMPPROBE;
+#endif
+#ifdef HOMEPOSITIONSWITCH
+  Features = Features + ENABLEDHPSW;
+#endif
+#ifdef BLUETOOTHMODE
+  Features = Features + ENABLEDBLUETOOTH;
+#endif
+#ifdef STEPPERPWRDETECT
+  Features = Features + ENABLEDSTEPPERPWR;
+#endif
+#ifdef PUSHBUTTONS
+  Features = Features + ENABLEDPUSHBUTTONS;
+#endif
+#ifdef ROTARYENCODER
+  Features = Features + ENABLEDROTARYENCODER;
+#endif
+#ifdef INFRARED
+  Features = Features + ENABLEDINFRARED;
+#endif
+#ifdef BACKLASH
+  Features = Features + ENABLEDBACKLASH;
+#endif
+#ifdef TFTDISPLAY
+  Features = Features + ENABLEDTFT;
+#endif
+#ifdef NOKIADISPLAY
+  Features = Features + ENABLENOKIA;
+#endif
+#if (DRVBRD == DRV8825HW203KEYPAD)
+  Features = Features + ENABLEKEYPAD;
+#endif
+#ifdef INOUTLEDS
+  Features = Features + ENABLEDINOUTLEDS;
+#endif
+#ifdef BUZZER
+  Features = Features + ENABLEDBUZZER;
+#endif
+#ifdef ACCESSPOINT
+  Features = Features + ENABLEDACCESSPOINT;
+#endif
+#ifdef STATIONMODE
+  Features = Features + ENABLEDSTATIONMODE;
+#endif
+#ifdef LOCALSERIAL
+  Features = Features + ENABLEDLOCALSERIAL;
+#endif
+#ifdef OTAUPDATES
+  Features = Features + ENABLEDOTAUPDATES;
+#endif
+#ifdef WEBSERVER
+  Features = Features + ENABLEDWEBSERVER;
+#endif
+#ifdef ASCOMREMOTE
+  Features = Features + ENABLEDASCOMREMOTE;
+#endif
+#ifdef STATICIP
+  Features = Features + ENABLEDSTATICIP;
+#endif
+}
+
+// ----------------------------------------------------------------------------------------------
+// 16: GLOBAL DATA -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
@@ -497,80 +578,44 @@ int packetssent;
 SetupData *mySetupData;
 
 // ----------------------------------------------------------------------------------------------
-// 15: CODE START - CHANGE AT YOUR OWN PERIL
+// 17: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 
-// WEBSERVER START ----------------------------------------------------------------------------------
 #ifdef WEBSERVER
-void SendNotFoundPage(WiFiClient ws)
+void setNotFoundPage()
 {
-  ws.println("HTTP/1.1 400 OK");
-  ws.println("Content-type:text/html");
-  ws.println("Connection: close");
-  ws.println();
-  ws.println("<!DOCTYPE html><html>");
-  ws.println("<html><head><meta http-equiv=\"refresh\" content=\"5, http://" + ipStr  + "\"></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP WEB SERVER</h3>");
-  ws.println("<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>");
-  ws.println("<p>IP Address: " + ipStr + ": Port: " + String(WEBSERVERPORT) + ", Firmware Version=" + String(programVersion) + "</p>");
-  ws.println("<p>Driverboard = myFP2ESP." + programName + "</p>");
-  ws.println("<p>The requested URL was not found</p>");
-  // add HOME button
-  ws.println("<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p>");
-  ws.println("</body></html>");
+  NotFoundPage = "<html><head></head>";
+  NotFoundPage = NotFoundPage + String(WS_PAGETITLE) + "</head>";
+  NotFoundPage = NotFoundPage + "<body>" + String(WS_TITLE);
+  NotFoundPage = NotFoundPage + String(WS_COPYRIGHT);
+  NotFoundPage = NotFoundPage + "<p>IP Address: " + ipStr + ": Port: " + String(WEBSERVERPORT) + ", Firmware Version=" + String(programVersion) + "</p>";
+  NotFoundPage = NotFoundPage + "<p>Driverboard = myFP2ESP." + programName + "</p>";
+  NotFoundPage = NotFoundPage + "<p>The requested URL was not found</p>";
+  NotFoundPage = NotFoundPage + "</body></html>";
   delay(10);                     // small pause so background tasks can run
 }
 
-void SendHTTPHeader(WiFiClient ws)
+void WEBSERVER_handleNotFound()
 {
-  ws.println("HTTP/1.1 200 OK");
-  ws.println("Content-Type:text/html");
-  //ws.println("Content-Length:" + String(wspagelength));
-  ws.println("Connection: close");
-  //ws.println("Connection: keep-alive");
-  ws.println();
-  ws.print("<!DOCTYPE html><html>");
-  ws.print("<html><head><meta http-equiv=\"refresh\" content=\"10, http://" + ipStr  + "\"></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP WEB SERVER</h3>");
-  ws.print("<p>(c) R. Brown, Holger M, 2019. All rights reserved.<br>");
-  ws.println("IP Address: " + ipStr + ": Port: " + String(WEBSERVERPORT) + ", Firmware Version=" + String(programVersion) + "<br>");
-  ws.println("Driverboard = myFP2ESP." + programName + "</p>");
+  delay(10);                     // small pause so background tasks can run
+  webserver.send(NOTFOUNDWEBPAGE, TEXTPAGETYPE, NotFoundPage);
 }
-void BuildHomePage()
+
+// constructs home page of web server
+String SetHomePage()
 {
-  String cpbuffer;
-  String rdbuffer;
+  String HomePage;
+  
   // convert current values of focuserposition and focusermaxsteps to string types
   String fpbuffer = String(fcurrentPosition);
   String mxbuffer = String(mySetupData->get_maxstep());
   String smbuffer = String(mySetupData->get_stepmode());
+  String imbuffer = String(isMoving);
 
-  // build motorspeed string
-  String msbuffer = String(mySetupData->get_motorSpeed());
-  switch ( mySetupData->get_motorSpeed() )
-  {
-    case 0:
-      msbuffer = WS_MSSLOWCHECKED;
-      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
-      msbuffer = msbuffer + WS_MSFASTUNCHECKED;
-      break;
-    case 1:
-      msbuffer = WS_MSSLOWUNCHECKED;
-      msbuffer = msbuffer + WS_MSMEDCHECKED;
-      msbuffer = msbuffer + WS_MSFASTUNCHECKED;
-      break;
-    case 2:
-      msbuffer = WS_MSSLOWUNCHECKED;
-      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
-      msbuffer = msbuffer + WS_MSFASTCHECKED;
-      break;
-    default:
-      msbuffer = WS_MSSLOWUNCHECKED;
-      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
-      msbuffer = msbuffer + WS_MSFASTCHECKED;
-      break;
-  }
+  HomePage = "";
 
-  // build stepmode
-  switch ( mySetupData->get_stepmode() )
+  volatile byte sm = mySetupData->get_stepmode();
+  switch ( sm )
   {
     case 1:
       smbuffer = WS_SM1CHECKED;
@@ -630,8 +675,60 @@ void BuildHomePage()
       break;
   }
 
-  // build move buttons
-  String stbuffer;    // steps to move
+  String msbuffer = "";
+  volatile byte mspd = driverboard->getmotorspeed();
+  switch ( mspd )
+  {
+    case 0:
+      msbuffer = WS_MSSLOWCHECKED;
+      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + WS_MSFASTUNCHECKED;
+      break;
+    case 1:
+      msbuffer = WS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + WS_MSMEDCHECKED;
+      msbuffer = msbuffer + WS_MSFASTUNCHECKED;
+      break;
+    case 2:
+      msbuffer = WS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + WS_MSFASTCHECKED;
+      break;
+    default:
+      msbuffer = WS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + WS_MSFASTCHECKED;
+      break;
+  }
+
+  String cpbuffer;
+  if ( !mySetupData->get_coilpower() )
+  {
+    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" > ";
+  }
+  else
+  {
+    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked> ";
+  }
+
+  String rdbuffer;
+  if ( !mySetupData->get_reversedirection() )
+  {
+    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" > ";
+  }
+  else
+  {
+    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
+  }
+
+#ifdef TEMPERATUREPROBE
+  String tmbuffer = String(readtemp(0));
+#else
+  String tmbuffer = "20.0";
+#endif
+  String trbuffer = String(mySetupData->get_tempprecision());
+
+  String stbuffer;    // stepstomove
   stbuffer = "<input type=\"radio\" name=\"mv\" value=\"-500\" > -500 ";
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-100\" > -100 ";
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"-10\" > -10 ";
@@ -642,363 +739,279 @@ void BuildHomePage()
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"100\" > 100 ";
   stbuffer = stbuffer + "<input type=\"radio\" name=\"mv\" value=\"500\" > 500 ";
 
-  // build content of webpage now
+  // construct home page of webserver
+  // header
+  HomePage = "<head><meta http-equiv=\"refresh\" content=\"" + String(WS_REFRESHRATE) + "\"; url=http://" + ipStr +">";
+  // TODO Add serverport
+  
+  HomePage = HomePage + String(WS_PAGETITLE) + "</head><body>";
+  HomePage = HomePage + String(WS_TITLE) + String(WS_COPYRIGHT);
+  HomePage = HomePage + "<p>Driverboard = myFP2ESP." + programName + "<br>";
+  HomePage = HomePage + "<myFP2ESP." + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion) + "</br>";
 
-  // position
-  HomePage = "<p><form action=\"/pos\" method=\"POST\" ><b>Position: </b>" + fpbuffer + "</b> ";
-  HomePage = HomePage + "<input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> <input type=\"submit\" name=\"setpos\" value=\"Set Pos\"> <input type=\"submit\" name=\"gotopos\" value=\"Goto Pos\"></form></p>";
-
-  // goto
-  //HomePage = HomePage + "<form action=\"/go\" method=\"POST\" >";
-  //HomePage = HomePage + "<input type=\"text\" name=\"go\" size =\"15\" value=" + fpbuffer + "> <input type=\"submit\" value=\"Goto Pos\"></form></p>";
+  // position. set position. goto position
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> ";
+  HomePage = HomePage + "<input type=\"submit\" name=\"setpos\" value=\"Set Pos\"> <input type=\"submit\" name=\"gotopos\" value=\"Goto Pos\">"; \
+  HomePage = HomePage + " (Target = " + String(ftargetPosition) + ")</form></p>";
 
   // maxstep
-  HomePage = HomePage + "<p><form action=\"/mx\" method=\"POST\" ><b>Maxstep: </b>" + mxbuffer + "</b> ";
-  HomePage = HomePage + "<input type=\"text\" name=\"fm\" size =\"15\" value=" + mxbuffer + "> <input type=\"submit\" value=\"Set MaxStep\"></form>";
-
-  // coilpower
-  if ( !mySetupData->get_coilpower() )
-  {
-    // add button for turn on
-    HomePage = HomePage + "<p><form action=\"/cp1\" method=\"GET\"><b>Coilpower:</b> OFF ";
-    HomePage = HomePage + WS_TURNON;
-  }
-  else
-  {
-    // add button for turn off
-    HomePage = HomePage + "<p><form action=\"/cp0\" method=\"GET\"><b>Coilpower:</b> ON ";
-    HomePage = HomePage + WS_TURNOFF;
-  }
-
-  // reverse direction
-  if ( !mySetupData->get_reversedirection() )
-  {
-    // add button for turn on
-    HomePage = HomePage + "<p><form action=\"/rd1\" method=\"GET\"><b>Reverse direction:</b> OFF ";
-    HomePage = HomePage + WS_TURNON;
-  }
-  else
-  {
-    // add button for turn off
-    HomePage = HomePage + "<p><form action=\"/rd0\" method=\"GET\"><b>Reverse direction:</b> ON ";
-    HomePage = HomePage + WS_TURNOFF;
-  }
-
-  // temperature
-#ifdef TEMPERATUREPROBE
-  HomePage = HomePage + "<p><b>Temperature: </b>" + String(readtemp(0), 3) + ", ";
-#else
-  HomePage = HomePage + "<p><b>Temperature: </b>20.00, ";
-#endif
-  // add temperature precision
-  HomePage = HomePage + "<b>Precision: </b>" + String(mySetupData->get_tempprecision()) + "</p>";
-
-  // ismoving and halt
-  HomePage = HomePage + "<p><form action=\"/ha\" method=\"GET\"><b>isMoving: </b>" + String(isMoving) + " ";
-  HomePage = HomePage + "<input type=\"submit\" value=\"HALT\"></form></p>";
-
-  // add motorspeed
-  HomePage = HomePage + "<p><form action=\"/ms\" method=\"POST\" ><b>Motorspeed: </b>" + msbuffer + " ";
-  HomePage = HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"SET MOTORSPEED\"></form></p>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>MaxSteps</b> <input type=\"text\" name=\"fm\" size =\"15\" value=" + mxbuffer + "> ";
+  HomePage = HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
 
   // move buttons
-  HomePage = HomePage + "<p><form action=\"/mv\" method=\"POST\" ><b>Move: </b>" + stbuffer;
-  HomePage = HomePage + "<input type=\"hidden\" name=\"mv\" value=\"true\"><input type=\"submit\" value=\"MOVE\"></form></p>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Move: </b>" + stbuffer;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"mv\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
 
-  // add stepmode
-  HomePage = HomePage + "<p><form action=\"/sm\" method=\"POST\" ><b>Stepmode </b>" + smbuffer + " ";
-  HomePage = HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"SET STEPMODE\"></form>";
+  // Halt button and isMoving
+  HomePage = HomePage + "<form action=\"/\" method=\"post\">";
+  HomePage = HomePage + "IsMoving = " + imbuffer + " ";
+  HomePage = HomePage + "<input type=\"hidden\" name=\"ha\" value=\"true\"><input type=\"submit\" value=\"HALT\"></form>";
+
+  // temperature and temperature resolution
+  HomePage = HomePage + "<p><b>Temperature</b> = " + tmbuffer + "</p>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\">";
+  HomePage = HomePage + "<b>Temperature Resolution </b><input type=\"text\" name=\"tr\" size =\"3\" value=" + trbuffer + "> ";
+  HomePage = HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
+
+  // coilpower
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Coil Power </b>" + cpbuffer ;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  // reverse direction
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
+  HomePage = HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  // stepmode
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Step Mode </b>" + smbuffer + " ";
+  HomePage = HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  // motor speed
+  HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Motor Speed: </b>" + msbuffer + " ";
+  HomePage = HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
 
   // add HOME button
-  HomePage = HomePage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p>";
+  HomePage = HomePage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"REFRESH\"></form></p>";
   HomePage = HomePage + "</body></html>\r\n";
+  return HomePage;
 }
 
-void update_webserver()
+// handles root page of webserver
+// this is called whenever a client requests home page of sebserver
+void WEBSERVER_handleRoot()
 {
-  DebugPrint(F("Webserver Start = "));
-  DebugPrintln(millis());
-  wsclient = webserver.available();                 // see if there is a client connected
-  if ( wsclient.connected() )                       // if there is a client connected
-  {
-    DebugPrintln("Webserver: Client has connected");
-    String req = wsclient.readStringUntil('\r');    // read the header request
-    DebugPrint("Websrv: Client request: ");         // echo request to serial port
-    DebugPrintln(req);
+  // if the root page was a HALT request via Submit button
 
-    // on a get homepage, 192.168.xxx.xxx it looks like GET / HTTP/1.1
-    if ( req.startsWith("GET / HTTP/1.1"))          // homepage request
+  String halt_str = webserver.arg("ha");
+  if ( halt_str != "" )
+  {
+    DebugPrint( "ws: halt:" );
+    DebugPrintln(halt_str);
+    ftargetPosition = fcurrentPosition;
+  }
+
+  // if set focuser position
+  String fpos_str = webserver.arg("setpos");
+  if ( fpos_str != "" )
+  {
+    DebugPrint( "ws: setpos:" );
+    DebugPrintln(fpos_str);
+    String fp = webserver.arg("fp");
+    if ( fp != "" )
     {
-      DebugPrintln("Webserver: GET /");
-      DebugPrintln("Websrv: GET / ");
-      BuildHomePage();
-      //wspagelength = HomePage.length() + 380;
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      //delay(100);
-      wsclient.stop();
-    }
-    else if (req.startsWith("GET /favicon.ico"))    // stupid mozilla
-    {
-      DebugPrintln("Websrv: GET /favicon.ico");
-      wsclient.println("HTTP/1.1 400 OK");          // send http header
-      wsclient.println("Content-type:text/html");
-      wsclient.println("Connection: close");
-      wsclient.println();
-      wsclient.stop();
-    }
-    else if (req.startsWith("GET /cp1"))
-    {
-      DebugPrintln("Websrv: GET /cp1");
-      mySetupData->set_coilpower(1);                // turn on coilpower
-      driverboard->enablemotor();
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
-    }
-    else if (req.startsWith("GET /cp0"))
-    {
-      DebugPrintln("Websrv: GET /cp0");
-      mySetupData->set_coilpower(0);                // turn off coilpower
-      driverboard->releasemotor();
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
-    }
-    else if (req.startsWith("GET /rdo1"))
-    {
-      DebugPrintln("Websrv: GET /rd1");
-      mySetupData->set_reversedirection(1);         // turn on reverse direction
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
-    }
-    else if (req.startsWith("GET /rd0"))
-    {
-      DebugPrintln("Websrv: GET /rd0");
-      mySetupData->set_reversedirection(0);         // turn off reverse direction
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
-    }
-    else if (req.startsWith("GET /ha"))
-    {
-      DebugPrintln("Websrv: GET /ha");
-      ftargetPosition = fcurrentPosition;
-      isMoving = 0;
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
-    }
-    else if (req.startsWith("POST /pos" ))
-    {
-      // this handles &setpos= and &gotopos=
-      DebugPrintln("Websrv: POST /pos");
-      DebugPrint("req:");
-      DebugPrintln(req);
-      String parm = "";
-      while ( wsclient.available() )                // process the args associated with the request
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
       {
-        char c = wsclient.read();
-        parm = parm + c;
+        temp = mySetupData->get_maxstep();
       }
-      DebugPrint("parm:");
-      DebugPrintln(parm);
-      int sidx = parm.indexOf("fp=");               // look for fp=xxxxx in the return parm string
-      DebugPrint("sidx:");
-      DebugPrintln(sidx);
-      if ( sidx > 0 )
-      {
-        int eidx = sidx + 3;                        // start past the =
-        String str = parm.substring(eidx, parm.length());
-        DebugPrint("str:");
-        DebugPrintln(str);
-        long newpos = str.toInt();                  // .toInt() returns long type but is signed
-        unsigned long np;
-        newpos = (newpos < 0) ? 0 : newpos;         // make sure received position is not negative
-        np = newpos;
-        np = (np > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : np;
-        // decide if it is &setpos= or &gotopos=
-        if (parm.indexOf("&setpos=") > 0)
-        {
-          fcurrentPosition = ftargetPosition = np;   // setposition
-        }
-        else if ( parm.indexOf("&gotopos=") > 0)
-        {
-          ftargetPosition = np;                     // move
-        }
-      }
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
+      fcurrentPosition = ftargetPosition = temp;
     }
-    else if (req.startsWith("POST /mx" ))
+  }
+
+  // if goto focuser position
+  fpos_str = webserver.arg("gotopos");
+  if ( fpos_str != "" )
+  {
+    DebugPrint( "ws: gotopos:" );
+    DebugPrintln(fpos_str);
+    String fp = webserver.arg("fp");
+    if ( fp != "" )
     {
-      DebugPrint("Websrv: POST /mx");
-      String parm = "";
-      while ( wsclient.available() )                // process the args associated with the request
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
       {
-        char c = wsclient.read();
-        parm = parm + c;
+        temp = mySetupData->get_maxstep();
       }
-      DebugPrint("parm:");
-      DebugPrintln(parm);
-      int sidx = parm.indexOf("fm=");               // look for fm=xxxxx in the return parm string
-      DebugPrint("sidx:");
-      DebugPrintln(sidx);
-      if ( sidx > 0 )
-      {
-        int eidx = sidx + 3;                        // start past the =
-        String str = parm.substring(eidx, parm.length());
-        DebugPrint("str:");
-        DebugPrintln(str);
-        mySetupData->set_maxstep(str.toInt());      // convert to unsigned long and assign to maxstep
-      }
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
+      ftargetPosition = temp;
     }
-    else if (req.startsWith("POST /ms" ))
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if update of maxsteps
+  String fmax_str = webserver.arg("fm");
+  if ( fmax_str != "" )
+  {
+    unsigned long temp = 0;
+    DebugPrint( "ws: maxsteps:" );
+    DebugPrintln(fmax_str);
+    temp = fmax_str.toInt();
+    if ( temp < fcurrentPosition )                    // if maxstep is less than focuser position
     {
-      DebugPrintln("Websrv: POST /ms");
-      String parm = "";
-      while ( wsclient.available() )                // process the args associated with the request
-      {
-        char c = wsclient.read();
-        parm = parm + c;
-      }
-      DebugPrint("parm:");
-      DebugPrintln(parm);
-      int sidx = parm.indexOf("ms=");               // look for ms=xxxxx in the return parm string
-      DebugPrint("sidx:");
-      DebugPrintln(sidx);
-      if ( sidx > 0 )
-      {
-        int eidx = sidx + 3;                        // start past the =
-        String str = parm.substring(eidx, eidx + 1);
-        DebugPrint("str:");
-        DebugPrintln(str);
-        mySetupData->set_motorSpeed(str.toInt());   // convert to int and assign to motorspeed
-      }
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
+      temp = fcurrentPosition + 1;
     }
-    else if (req.startsWith("POST /mv" ))
+    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
     {
-      DebugPrintln("Websrv: POST /mv");
-      String parm = "";
-      while ( wsclient.available() )                // process the args associated with the request
-      {
-        char c = wsclient.read();
-        parm = parm + c;
-      }
-      DebugPrint("parm:");
-      DebugPrintln(parm);
-      unsigned int sidx = parm.indexOf("mv=");               // look for mv=xxx in the return parm string
-      DebugPrint("sidx:");
-      DebugPrintln(sidx);
-      if ( sidx > 0 )
-      {
-        // response = mv=-500&mv=true
-        // search forward from sidx to look for &
-        unsigned int lp;
-        for ( lp = sidx; lp < parm.length(); lp++)
-        {
-          if ( parm[lp] == '&')
-          {
-            break;
-          }
-        }
-        if ( lp < parm.length() )
-        {
-          String str = parm.substring(sidx + 3, lp);
-          DebugPrint("str:");
-          DebugPrintln(str);
-          long newpos = str.toInt();                // toInt() returns signed long
-          unsigned long np;
-          np = fcurrentPosition + (unsigned long) newpos; // calculate new position
-          np = (np > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : np;
-          ftargetPosition = np;
-        }
-        else
-        {
-          DebugPrintln("mv: value not found");
-        }
-      }
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
+      temp = FOCUSERLOWERLIMIT;
     }
-    else if (req.startsWith("POST /sm" ))
+    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
     {
-      DebugPrintln("Websrv: POST /sm");
-      String parm = "";
-      while ( wsclient.available() )                // process the args associated with the request
-      {
-        char c = wsclient.read();
-        parm = parm + c;
-      }
-      DebugPrint("parm:");
-      DebugPrintln(parm);
-      unsigned int sidx = parm.indexOf("sm=");      // look for sm=xx in the return parm string
-      DebugPrint("sidx:");
-      DebugPrintln(sidx);
-      if ( sidx > 0 )
-      {
-        // response sm=32&sm=true
-        // search forward from sidx to look for &
-        unsigned int lp;
-        for ( lp = sidx; lp < parm.length(); lp++)
-        {
-          if ( parm[lp] == '&')
-          {
-            break;
-          }
-        }
-        if ( lp < parm.length() )
-        {
-          String str = parm.substring(sidx + 3, lp);  // start past the =
-          DebugPrint("str:");
-          DebugPrintln(str);
-          int newsm = str.toInt();                    // convert to int
-          newsm = (newsm < STEP1)  ? STEP1  : newsm;
-          newsm = (newsm > STEP32) ? STEP32 : newsm;
-          driverboard->setstepmode(newsm);
-          // this is the proper way to do this
-          driverboard->setstepmode((byte) newsm);
-          mySetupData->set_stepmode(driverboard->getstepmode());
-        }
-        else
-        {
-          DebugPrintln("sm: value not found");
-        }
-      }
-      BuildHomePage();
-      SendHTTPHeader(wsclient);
-      wsclient.println(HomePage);
-      wsclient.stop();
+      temp = mySetupData->get_maxstep();
+    }
+    mySetupData->set_maxstep(temp);
+  }
+
+  delay(10);                                          // small pause so background ESP8266 tasks can run
+
+  // if update motorspeed
+  String fms_str = webserver.arg("ms");
+  if ( fms_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint( "ws: -motorspeed:" );
+    DebugPrintln(fms_str);
+    temp1 = fms_str.toInt();
+    if ( temp1 < SLOW )
+    {
+      temp1 = SLOW;
+    }
+    if ( temp1 > FAST )
+    {
+      temp1 = FAST;
+    }
+    mySetupData->set_motorSpeed(temp1);
+    driverboard->setmotorspeed(temp1);
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if update coilpower
+  String fcp_str = webserver.arg("cp");
+  if ( fcp_str != "" )
+  {
+    DebugPrint( "ws: coil power:" );
+    DebugPrintln(fcp_str);
+    if ( fcp_str == "cp" )
+    {
+      mySetupData->set_coilpower(1);
     }
     else
     {
-      DebugPrintln("invalid request");
-      SendNotFoundPage(wsclient);
-      wsclient.stop();
+      mySetupData->set_coilpower(0);
     }
   }
-  DebugPrint(F("Webserver End = "));
-  DebugPrintln(millis());
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if update reversedirection
+  String frd_str = webserver.arg("rd");
+  if ( frd_str != "" )
+  {
+    DebugPrint( "ws: reverse direction:" );
+    DebugPrintln(frd_str);
+    if ( frd_str == "rd" )
+    {
+      mySetupData->set_reversedirection(1);
+    }
+    else
+    {
+      mySetupData->set_reversedirection(0);
+    }
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if update stepmode
+  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
+  String fsm_str = webserver.arg("sm");
+  if ( fsm_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint( "ws: stepmode:" );
+    DebugPrintln(fsm_str);
+    temp1 = fsm_str.toInt();
+    if ( temp1 < STEP1 )
+    {
+      temp1 = STEP1;
+    }
+    if ( temp1 > STEP32 )
+    {
+      temp1 = STEP32;
+    }
+    mySetupData->set_stepmode(temp1);
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if update temperature resolution
+  String tres_str = webserver.arg("tr");
+  if ( tres_str != "" )
+  {
+    int temp = 0;
+    DebugPrint( "ws: temperature resolution:" );
+    DebugPrintln(tres_str);
+    temp = tres_str.toInt();
+    if ( temp < 9 )
+    {
+      // error, do not change
+      temp = 9;
+    }
+    if ( temp > 12 )
+    {
+      temp = 12;
+    }
+    mySetupData->set_tempprecision(temp);
+  }
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // if move
+  String fmv_str = webserver.arg("mv");
+  if ( fmv_str != "" )
+  {
+    unsigned long temp = 0;
+    DebugPrint("ws: move:" );
+    DebugPrintln(fmv_str);
+    temp = fmv_str.toInt();
+    ftargetPosition = fcurrentPosition + temp;
+    DebugPrint("Move = "); DebugPrintln(fmv_str);
+    DebugPrint("Current = "); DebugPrint(fcurrentPosition);
+    DebugPrint(", Target = "); DebugPrintln(ftargetPosition);
+    if ( ftargetPosition > mySetupData->get_maxstep() )
+    {
+      ftargetPosition = mySetupData->get_maxstep();
+    }
+  }
+
+  DebugPrintln( "ws: build homepage" );
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // construct the homepage now
+  String htmlpage = SetHomePage();
+
+  delay(10);                     // small pause so background ESP8266 tasks can run
+
+  // send the homepage to a connected client
+  DebugPrintln("ws: send homepage");
+  webserver.send(NORMALWEBPAGE, TEXTPAGETYPE, htmlpage );
 }
-#endif
+#endif // ifdef WEBSERVER
 // WEBSERVER END ------------------------------------------------------------------------------------
 
 // ASCOM REMOTE START -------------------------------------------------------------------------------
@@ -1014,7 +1027,573 @@ void update_webserver()
 // ErrorNumber field will be zero.
 
 #ifdef ASCOMREMOTE
+// generic ASCOM send reply
+void ASCOM_sendreply( int replycode, String contenttype, String jsonstr)
+{
+  DebugPrint("ASCOM_sendreply: replycode:");
+  DebugPrint(replycode);
+  DebugPrint(" , content-type:");
+  DebugPrint(contenttype);
+  DebugPrint(", \njson:");
+  DebugPrintln(jsonstr);
+  // ascomserver.send builds the http header, jsonstr will be in the body?
+  ascomserver.send(replycode, contenttype, jsonstr );
+}
 
+void ASCOM_getURLParameters()
+{
+  String str;
+  // get server args, translate server args to lowercase, they can be mixed case
+  DebugPrintln("ASCOM_getURLParameters START");
+  DebugPrint("Number of args:");
+  DebugPrintln(ascomserver.args());
+  for (int i = 0; i < ascomserver.args(); i++)
+  {
+    if ( i >= ASCOMMAXIMUMARGS )
+    {
+      break;
+    }
+    str = ascomserver.argName(i);
+    str.toLowerCase();
+    DebugPrint("Paramter Found: ");
+    DebugPrintln(str);
+    if ( str.equals("clientid") )
+    {
+      ASCOMClientID = (unsigned int) ascomserver.arg(i).toInt();
+      DebugPrint("clientID:");
+      DebugPrintln(ASCOMClientID);
+    }
+    if ( str.equals("clienttransactionid") )
+    {
+      ASCOMClientTransactionID = (unsigned int) ascomserver.arg(i).toInt();
+      DebugPrint("clienttransactionid:");
+      DebugPrintln(ASCOMClientTransactionID);
+    }
+    if ( str.equals("tempcomp") )
+    {
+      String strtmp = ascomserver.arg(i);
+      strtmp.toLowerCase();
+      if ( strtmp.equals("true") )
+      {
+        ASCOMTempCompState = 1;
+      }
+      else
+      {
+        ASCOMTempCompState = 0;
+      }
+      DebugPrint("ASCOMTempCompState:");
+      DebugPrintln(ASCOMTempCompState);
+    }
+    if ( str.equals("position") )
+    {
+      String str = ascomserver.arg(i);
+      DebugPrint("ASCOMpos RAW:");
+      DebugPrintln(str);
+      ASCOMpos = ascomserver.arg(i).toInt();      // this returns a long data type
+      DebugPrint("ASCOMpos:");
+      DebugPrintln(ASCOMpos);
+    }
+    if ( str.equals("connected") )
+    {
+      String strtmp = ascomserver.arg(i);
+      strtmp.toLowerCase();
+      DebugPrint("conneded RAW:");
+      DebugPrintln(str);
+      if ( strtmp.equals("true") )
+      {
+        ASCOMConnectedState = 1;
+      }
+      else
+      {
+        ASCOMConnectedState = 0;
+      }
+      DebugPrint("ASCOMConnectedState:");
+      DebugPrintln(ASCOMConnectedState);
+    }
+    // todo
+  }
+  DebugPrintln("ASCOM_getURLParameters END");
+}
+
+String ASCOM_addclientinfo(String str )
+{
+  String str1 = str;
+  // add clientid
+  str1 = str1 +  "\"ClientID\":" + String(ASCOMClientID) + ",";
+  // add clienttransactionid
+  str1 = str1 + "\"ClientTransactionID\":" + String(ASCOMClientTransactionID) + ",";
+  // add ServerTransactionID
+  str1 = str1 + "\"ServerTransactionID\":" + String(ASCOMServerTransactionID) + ",";
+  // add errornumber
+  str1 = str1 + "\"ErrorNumber\":\"" + String(ASCOMErrorNumber) + "\",";
+  // add errormessage
+  if ( ASCOMErrorMessage == "" )
+  {
+    str1 = str1 + "\"ErrorMessage\":\"\"}";
+  }
+  else
+  {
+    str1 = str1 + "\"ErrorMessage\":\"" + ASCOMErrorMessage + "\"}";
+  }
+  return str1;
+}
+
+void ASCOM_handleinterfaceversionget()
+{
+  // curl -X GET "/api/v1/focuser/0/interfaceversion?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {"Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string"}
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleinterfaceversionget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":3," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleconnectedput()
+{
+  // PUT "/api/v1/focuser/0/connected" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "Connected=true&ClientID=1&ClientTransactionID=2"
+  // response { "ErrorNumber": 0, "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleconnectedput:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"ErrorNumber\":0,";
+  //jsonretstr = jsonretstr + "\"ErrorMessage\":\"\"}";
+  jsonretstr = jsonretstr + "\"ErrorMessage\":\"\"}";
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleconnectedget()
+{
+  // GET "/api/v1/focuser/0/connected?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true, "ErrorNumber": 0, "ErrorMessage": "string"}
+
+  // Should we just return the value of ASCOMConnectedState?
+  String jsonretstr = "";
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":1," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handlenameget()
+{
+  // curl -X GET "/api/v1/focuser/0/name?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlenameget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":\"myFP2ESPASCOMR\"," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handledescriptionget()
+{
+  // GET "/api/v1/focuser/0/description?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handledescriptionget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":\"ASCOM driver for myFP2ESP controllers\"," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handledriverinfoget()
+{
+  // curl -X GET "/api/v1/focuser/0/driverinfo?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handledescriptionget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":\"myFP2ESP ASCOM Driver (c) R. Brown. 2019\"," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handledriverversionget()
+{
+  // curl -X GET "/api/v1/focuser/0/driverversion?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handledriverversionget");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":\"104\"," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleabsoluteget()
+{
+  // curl -X GET "/api/v1/focuser/0/absolute?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleabsoluteget");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  // should this be 1? - yes
+  jsonretstr = "{\"Value\":1," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handlemaxstepget()
+{
+  // curl -X GET "/api/v1/focuser/0/maxstep?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlemaxstepget");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":" + String(mySetupData->get_maxstep()) + "," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handlemaxincrementget()
+{
+  // curl -X GET "/api/v1/focuser/0/maxincrement?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlemaxincrementget");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":" + String(mySetupData->get_maxstep()) + "," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handletemperatureget()
+{
+  // curl -X GET "/api/v1/focuser/0/temperature?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 1.100000023841858,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handletemperatureget");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+#ifdef TEMPERATUREPROBE
+  jsonretstr = "{\"Value\":" + String(readtemp(0)) + "," + ASCOM_addclientinfo( jsonretstr );
+#else
+  jsonretstr = "{\"Value\":20.0," + ASCOM_addclientinfo( jsonretstr );
+#endif
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void  ASCOM_handlepositionget()
+{
+  // curl -X GET "/api/v1/focuser/0/position?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlepositionget");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":" + String(fcurrentPosition) + "," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void  ASCOM_handlehaltput()
+{
+  // curl -X PUT "/api/v1/focuser/0/halt" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "ClientID=22&ClientTransactionID=33"
+  // { "ErrorNumber": 0, "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlehaltput");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  ftargetPosition = fcurrentPosition;
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleismovingget()
+{
+  // curl -X GET "/api/v1/focuser/0/ismoving?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleismovingget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  if ( isMoving == 1 )
+  {
+    jsonretstr = "{\"Value\":1,"  + ASCOM_addclientinfo( jsonretstr );
+  }
+  else
+  {
+    jsonretstr = "{\"Value\":0," + ASCOM_addclientinfo( jsonretstr );
+  }
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handlestepsizeget()
+{
+  // curl -X GET "/api/v1/focuser/0/stepsize?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 1.100000023841858,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlestepsizeget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":" + String(mySetupData->get_stepsize()) + "," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handletempcompget()
+{
+  // curl -X GET "/api/v1/focuser/0/tempcomp?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handletempcompget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // The state of temperature compensation mode (if available), else always False.
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  if ( mySetupData->get_tempcompenabled() == 0 )
+  {
+    jsonretstr = "{\"Value\":0," + ASCOM_addclientinfo( jsonretstr );
+  }
+  else
+  {
+    jsonretstr = "{\"Value\":1," + ASCOM_addclientinfo( jsonretstr );
+  }
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handletempcompput()
+{
+  // curl -X PUT "/api/v1/focuser/0/tempcomp" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "TempComp=true&Client=1&ClientTransactionIDForm=12"
+  // {  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  // look for parameter tempcomp=true or tempcomp=false
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handletempcompput:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+#ifdef TEMPERATUREPROBE
+  if ( ASCOMTempCompState == 1 )
+  {
+    // turn on temperature compensation
+    mySetupData->set_tempcompenabled(1);
+  }
+  else
+  {
+    // turn off temperature compensation
+    mySetupData->set_tempcompenabled(0);
+  }
+  jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+#else
+  ASCOMErrorNumber = ASCOMNOTIMPLEMENTED;
+  ASCOMErrorMessage = ASCOMERRORNOTIMPLEMENTED;
+  jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+#endif
+}
+
+void ASCOM_handletempcompavailableget()
+{
+  // curl -X GET "/api/v1/focuser/0/tempcompavailable?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handletempcompavailableget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+#ifdef TEMPERATUREPROBE
+  jsonretstr = "{\"Value\":1," + ASCOM_addclientinfo( jsonretstr );
+#else
+  jsonretstr = "{\"Value\":0," + ASCOM_addclientinfo( jsonretstr );
+#endif
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void  ASCOM_handlemoveput()
+{
+  // curl -X PUT "/api/v1/focuser/0/move" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "Position=1000&ClientID=22&ClientTransactionID=33"
+  // {  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  // extract new value
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlemoveput:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();         // get clientID and clienttransactionID
+
+  // destination is in ASCOMpos
+  // this is interfaceversion = 3, so moves are allowed when temperature compensation is on
+  unsigned long newpos;
+  DebugPrint("ASCOMpos: ");
+  DebugPrintln(ASCOMpos);
+  if ( ASCOMpos <= 0 )
+  {
+    newpos = 0;
+    DebugPrint("new position: ");
+    DebugPrintln(newpos);
+    ftargetPosition = newpos;
+    jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+    ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+  }
+  else
+  {
+    newpos = (unsigned long) ASCOMpos;
+    if (newpos > mySetupData->get_maxstep() )
+    {
+      newpos = mySetupData->get_maxstep();
+      ftargetPosition = newpos;
+      DebugPrint("new position: ");
+      DebugPrintln(newpos);
+      jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+      ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+    }
+    else
+    {
+      ftargetPosition = newpos;
+      DebugPrint("new position: ");
+      DebugPrintln(newpos);
+      jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+      ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+    }
+  }
+}
+
+void ASCOM_handlesupportedactionsget()
+{
+  // curl -X GET "/api/v1/focuser/0/supportedactions?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": [    "string"  ],  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handlesupportedactionsget:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  // get clientID and clienttransactionID
+  ASCOM_getURLParameters();
+  jsonretstr = "{\"Value\": [\"isMoving\",\"MaxStep\",\"Temperature\",\"Position\",\"Absolute\",\"MaxIncrement\",\"StepSize\",\"TempComp\",\"TempCompAvailable\", ]," + ASCOM_addclientinfo( jsonretstr );
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleNotFound()
+{
+  String message = "Not Found: ";
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleNotFound:");
+  message += "URI: ";
+  message += ascomserver.uri();
+  message += "\nMethod: ";
+  if ( ascomserver.method() == HTTP_GET )
+  {
+    message += "GET";
+  }
+  else if ( ascomserver.method() == HTTP_POST )
+  {
+    message += "POST";
+  }
+  else if ( ascomserver.method() == HTTP_PUT )
+  {
+    message += "PUT";
+  }
+  else if ( ascomserver.method() == HTTP_DELETE )
+  {
+    message += "DELETE";
+  }
+  else
+  {
+    message += "UNKNOWN_METHOD: " + ascomserver.method();
+  }
+  message += "\nArguments: ";
+  message += ascomserver.args();
+  message += "\n";
+  for (uint8_t i = 0; i < ascomserver.args(); i++)
+  {
+    message += " " + ascomserver.argName(i) + ": " + ascomserver.arg(i) + "\n";
+  }
+  DebugPrint("Error: ");
+  DebugPrintln(message);
+  ASCOMErrorNumber  = ASCOMNOTIMPLEMENTED;
+  ASCOMErrorMessage = ASCOMERRORNOTIMPLEMENTED;
+  ASCOMServerTransactionID++;
+  jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
+  ASCOM_sendreply( BADREQUESTWEBPAGE, JSONPAGETYPE, jsonretstr);
+  delay(10);                     // small pause so background tasks can run
+}
+
+void ASCOM_handleRoot()
+{
+  String HomePage;
+  HomePage = "<html><head><meta http-equiv=\"refresh\" content=\"10\"></head>";
+  HomePage = HomePage + "<title>myFP2ESP ASCOM REMOTE</title></head>";
+  HomePage = HomePage + "<body><h3>myFP2ESP ASCOM REMOTE</h3>";
+  HomePage = HomePage + "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>";
+  HomePage = HomePage + "<p>IP Address: " + ipStr + ": Port: " + String(ALPACAPORT) + ", Firmware Version=" + String(programVersion) + "</p>";
+  HomePage = HomePage + "<p>Driverboard = myFP2ESP." + driverboard->getboardname() + "</p>";
+  HomePage = HomePage + "</body></html>";
+  ASCOMServerTransactionID++;
+  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, HomePage);
+  delay(10);                     // small pause so background tasks can run
+}
 #endif
 // ASCOM REMOTE END ---------------------------------------------------------------------------------
 
@@ -1570,7 +2149,7 @@ void displaylcdpage2(void)
   myoled->print(ipStr);
   myoled->print(STARTSTR);
   myoled->println(ALPACAPORT);
-#endif  
+#endif
 
 #if defined(BLUETOOTHMODE)
   myoled->setCursor(0, 0);
@@ -1793,11 +2372,22 @@ void ESP_Communication( byte mode )
     case 53: // return ESP32 Controller number of TCP packets received
       SendPaket('f' + String(packetsreceived) + EOFSTR);
       break;
-    case 54: // gstr#  return ESP32 Controller SSID
+    case 54: // return ESP32 Controller SSID
+#ifdef LOCALSERIAL
+      SendPaket("gSERIAL#");
+#endif
+#ifdef BLUETOOTH
+      SendPaket("gBLUETOOTH#");
+#endif
+#if !defined(LOCALSERIAL) && !defined(BLUETOOTHMODE)
       SendPaket('g' + String(mySSID) + EOFSTR);
+#endif
       break;
     case 55: // get motorspeed delay for current speed setting
       SendPaket('0' + String(driverboard->getstepdelay()) + EOFSTR);
+      break;
+    case 58: // get controller features
+      SendPaket('m' + String(Features) + EOFSTR);
       break;
     case 62: // get update of position on lcd when moving (00=disable, 01=enable)
       SendPaket('L' + String(mySetupData->get_lcdupdateonmove()) + EOFSTR);
@@ -2541,13 +3131,36 @@ void setup()
 #endif // if defined(OTAUPDATES)
 
 #ifdef WEBSERVER
-  BuildHomePage();                // construct the homepage now
-  webserver.begin();              // start webserver
-  DebugPrintln("Webserver started, open " + ipStr + " in a browser");
-#endif
+  setNotFoundPage();            // set up webserver page for no connection to a myFocuserPro2 controller
+  webserver.on("/", WEBSERVER_handleRoot);
+  webserver.onNotFound(WEBSERVER_handleNotFound);
+  webserver.begin();
+  #endif
 
 #ifdef ASCOMREMOTE
-
+  ascomserver.on("/", ASCOM_handleRoot);
+  ascomserver.onNotFound(ASCOM_handleNotFound);
+  ascomserver.on("/api/v1/focuser/0/connected", HTTP_PUT, ASCOM_handleconnectedput);
+  ascomserver.on("/api/v1/focuser/0/interfaceversion", HTTP_GET, ASCOM_handleinterfaceversionget);
+  ascomserver.on("/api/v1/focuser/0/name", HTTP_GET, ASCOM_handlenameget);
+  ascomserver.on("/api/v1/focuser/0/description", HTTP_GET, ASCOM_handledescriptionget);
+  ascomserver.on("/api/v1/focuser/0/driverinfo", HTTP_GET, ASCOM_handledriverinfoget);
+  ascomserver.on("/api/v1/focuser/0/driverversion", HTTP_GET, ASCOM_handledriverversionget);
+  ascomserver.on("/api/v1/focuser/0/absolute", HTTP_GET, ASCOM_handleabsoluteget);
+  ascomserver.on("/api/v1/focuser/0/maxstep", HTTP_GET, ASCOM_handlemaxstepget);
+  ascomserver.on("/api/v1/focuser/0/maxincrement", HTTP_GET, ASCOM_handlemaxincrementget);
+  ascomserver.on("/api/v1/focuser/0/temperature", HTTP_GET, ASCOM_handletemperatureget);
+  ascomserver.on("/api/v1/focuser/0/position", HTTP_GET, ASCOM_handlepositionget);
+  ascomserver.on("/api/v1/focuser/0/halt", HTTP_PUT, ASCOM_handlehaltput);
+  ascomserver.on("/api/v1/focuser/0/ismoving", HTTP_GET, ASCOM_handleismovingget);
+  ascomserver.on("/api/v1/focuser/0/stepsize", HTTP_GET, ASCOM_handlestepsizeget);
+  ascomserver.on("/api/v1/focuser/0/connected", HTTP_GET, ASCOM_handleconnectedget);
+  ascomserver.on("/api/v1/focuser/0/tempcomp", HTTP_GET, ASCOM_handletempcompget);
+  ascomserver.on("/api/v1/focuser/0/tempcomp", HTTP_PUT, ASCOM_handletempcompput);
+  ascomserver.on("/api/v1/focuser/0/tempcompavailable", HTTP_GET, ASCOM_handletempcompavailableget);
+  ascomserver.on("/api/v1/focuser/0/move", HTTP_PUT, ASCOM_handlemoveput);
+  ascomserver.on("/api/v1/focuser/0/supportedactions", HTTP_GET, ASCOM_handlesupportedactionsget);
+  ascomserver.begin();
 #endif
 
 #if defined(INOUTLEDPINS)
@@ -2569,7 +3182,6 @@ void loop()
 {
   static StateMachineStates MainStateMachine = State_Idle;
   static byte DirOfTravel = mySetupData->get_focuserdirection();
-  static byte ConnectionStatus = 0;
   static byte backlash_count = 0;
   static byte m_bl;
   static byte backlash_enabled = 0;
@@ -2579,6 +3191,11 @@ void loop()
   static byte Parked = false;
   static byte updatecount = 0;
 
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+#if !defined(WEBSERVER) && !defined(ASCOMREMOTE)
+  static byte ConnectionStatus = 0;
+#endif
+#endif
 
 #if defined(LOOPTIMETEST)
   DebugPrint(F("- Loop Start ="));
@@ -2586,7 +3203,7 @@ void loop()
 #endif
 
 #ifdef WEBSERVER
-  update_webserver();
+  webserver.handleClient();
 #endif
 
   // we want this to run if using an accesspoint or stationmode
@@ -2658,7 +3275,7 @@ void loop()
 #endif // if defined(OTAUPDATES)
 
 #ifdef ASCOMREMOTE
-  
+  ascomserver.handleClient();
 #endif
 
   //_____________________________MainMachine _____________________________

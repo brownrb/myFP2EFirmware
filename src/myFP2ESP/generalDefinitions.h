@@ -1,8 +1,6 @@
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
 
-
-
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
@@ -17,6 +15,7 @@
 #define ALPACAPORT            4040          // ASCOM Remote server port
 #define ASCOMMAXIMUMARGS      10
 #define WEBSERVERPORT         80            // Web server port
+#define WS_REFRESHRATE        10            // web server page refresh time
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
 #define ESPDATA               0
@@ -152,6 +151,9 @@
 #define ASCOMERRORMSGNULL         ""
 #define ASCOMERRORNOTIMPLEMENTED  "Not implemented"
 #define ASCOMERRORMSGINVALID      "Invalid operation"
+#define ASCOMNAME                 "myFP2ESPASCOMR"
+#define ASCOMDESCRIPTION          "ASCOM driver for myFP2ESP controllers"
+#define ASCOMDRIVERINFO           "myFP2ESP ASCOM Driver (c) R. Brown. 2019"
 
 #define WS_TURNON                 "<input type=\"submit\" value=\"TURN ON\"></form></p>"
 #define WS_TURNOFF                "<input type=\"submit\" value=\"TURN OFF\"></form></p>"
@@ -175,6 +177,33 @@
 #define WS_MSFASTCHECKED          "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast"
 #define WS_MSFASTUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"2\"> Fast"
 
+#define WS_COPYRIGHT              "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>"
+#define WS_TITLE                  "<h3>myFP2ESP Web based focus controller</h3>"
+#define WS_PAGETITLE              "<title>myFP2ESP WEB SERVER</title>"
+
+// Controller Features
+#define ENABLEDLCD                1
+#define ENABLEDOLED               2
+#define ENABLEDTEMPPROBE          4
+#define ENABLEDHPSW               8
+#define ENABLEDBLUETOOTH          16
+#define ENABLEDSTEPPERPWR         32
+#define ENABLEDPUSHBUTTONS        64
+#define ENABLEDROTARYENCODER      128
+#define ENABLEDINFRARED           256
+#define ENABLEDBACKLASH           512
+#define ENABLEDTFT                1024
+#define ENABLENOKIA               2048
+#define ENABLEKEYPAD              4096
+#define ENABLEDINOUTLEDS          8192
+#define ENABLEDBUZZER             16384
+#define ENABLEDACCESSPOINT        32768
+#define ENABLEDSTATIONMODE        65536
+#define ENABLEDLOCALSERIAL        131972
+#define ENABLEDOTAUPDATES         263944
+#define ENABLEDWEBSERVER          527888
+#define ENABLEDASCOMREMOTE        1055776
+#define ENABLEDSTATICIP           2111552
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------

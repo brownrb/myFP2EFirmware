@@ -69,7 +69,7 @@ Once you have done this, you can start programming the controller.
 One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the DRVBRD at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
 
 # Controller Modes
-The controller supports the modes ACCESSPOINT and STATION for ESP8266 with an additional BLUETOOTHMODE for the ESP32. 
+The controller supports the modes ACCESSPOINT, STATIONMODE, LOCALSERIAL, WEBSERVER and ASCOMREMOTE for ESP8266 with an additional BLUETOOTHMODE for the ESP32. 
 
 # Command Process Handler Routine
 At present a single command process handler manages received commands for either Bluetooth [ESP32 only] of TCP/IP. This must handle each controller mode, so some variables had to be made global to do this.

@@ -1,0 +1,22 @@
+// v105 11 November 2019
+// Add ASCOM Alpaca REMOTE support
+// webserver: add halt button to webserver
+// webserver: add setpos and gotopos buttons for position
+// webserver: fix bug for value of focuser position when updated
+// webserver: add board information and copyright
+// webserver: fix bug in motorspeed
+// webserver: add define for refresh rate of page
+// oleltext: Change displaypage2 to show controller mode being used
+// implement controller features: Case 58: Get controller features
+// fix case 54 to return correct value for SSID when running in different modes
+// remove motorspeedchange
+// fix error in stepmode for PRO2ESP32DRV8825
+// fix setstepperspeed in DriverBoard constructor for PRO2EULN2003
+// fix error in oled display I2C begin, use DRVBRD == instead of defined()
+// improve stepper motor speed on webserver
+// fix error in case 30 as there is potential issue
+// esp_comms() now disabled if using ascom remote or webserver
+// bracket connection of myfocuserpro2e client on port 2020 so not used with webserver or ascom remote
+// bracket ConnectionStatus in loop() if using ascom remote or webserver
+// add requirement to have either ACCESSPOINT or STATIONMODE defined
+// add requirement to have either ACCESSPOINT or STATIONMODE or BLUETOOTHMODE or LOCALSERIAL defined
