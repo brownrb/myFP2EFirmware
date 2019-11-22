@@ -1,5 +1,18 @@
-// v105 11 November 2019
+// 107
+// Allow mDNS service for most controller modes, change to port 8080
+
+// 106
+// For revision 4 ESP32 boards, add HOME POSITION SWITCH
+// Add mDNS for STATIONMODE/WEBSERVER
+// For revision 4 ESP32 boards, add HOME POSITION SWITCH to PCB
+// Add define for HOMEPOSITIONSWITCH
+// Add definitions into generalDefinitions.h and myBoards.h for HPSW
+// Add code to handle HPSW into myFP2ESP.ino
+
+// 105 11 November 2019
 // Add ASCOM Alpaca REMOTE support
+// code reduction/speed improvement in comms
+// seperation of ascomserver, comms, display, temperature, webserver defintions and code into seperate files
 // webserver: add halt button to webserver
 // webserver: add setpos and gotopos buttons for position
 // webserver: fix bug for value of focuser position when updated
