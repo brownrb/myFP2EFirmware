@@ -1,3 +1,14 @@
+// ----------------------------------------------------------------------------------------------
+// TITLE: myFP2ESP DRIVER BOARD DEFINITIONS
+// ----------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------
+// COPYRIGHT
+// ----------------------------------------------------------------------------------------------
+// (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
+// (c) Copyright Holger M, 2019. All Rights Reserved.
+// ----------------------------------------------------------------------------------------------
+
 #include "myBoardTypes.h"
 
 #ifndef myBoards_h
@@ -10,7 +21,7 @@
 
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
-#define DRVBRD PRO2EULN2003           // DONE
+//#define DRVBRD PRO2EULN2003           // DONE
 //#define DRVBRD PRO2EDRV8825           // DONE
 //#define DRVBRD PRO2EDRV8825BIG
 //#define DRVBRD PRO2EL293DNEMA         // DONE, FULL STEPPING ONLY
@@ -19,7 +30,7 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-//#define DRVBRD PRO2ESP32DRV8825
+#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -177,6 +188,7 @@
 #define INLEDPIN      18
 #define OUTLEDPIN     19
 #define IRPIN         15
+#define HPSWPIN       4
 #define MS1           27
 #define MS2           26
 #define MS3           25
@@ -197,6 +209,7 @@
 #define INLEDPIN      18
 #define OUTLEDPIN     19
 #define IRPIN         15
+#define HPSWPIN       4
 #define MSFAST        1
 #define MSMED         1000
 #define MSSLOW        8000
@@ -208,6 +221,7 @@
 #define DIRPIN        26
 #define STEPPIN       27
 #define ENABLEPIN     14
+#define HPSWPIN       4
 #define MSFAST        500
 #define MSMED         1000
 #define MSSLOW        2000

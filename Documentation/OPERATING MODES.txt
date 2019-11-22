@@ -1,0 +1,22 @@
+myFP2ESP CONNECTIONS AND OPERATING MODES 
+ 
+ASCOM      						CONTROLLER MODE 
+Client running ASCOM Driver    				ACCESSPOINT or STATIONMODE 
+ 
+ASCOM REMOTE
+Client running ASCOM REMOTE driver   			ASCOM REMOTE SERVER 
+ 
+BLUETOOTH 
+Android device running Android Bluetooth app  		BLUETOOTH 
+Windows device running myFocuserPro2 app 
+ 
+TCP/IP 
+Android device running android tcp/ip app  		ACCESSPOINT or STATIONMODE 
+Windows device running windows tcp/ip app 
+Linux device running Linux tcp/ip app 
+ 
+USB        
+Windows device running myFocuserPro2 app  		LOCALSERIAL 
+ 
+WEB BROWSER 
+Any device (Android, phone, tablet, Linux, Mac,   	WEBSERVER 

@@ -1,3 +1,14 @@
+// ----------------------------------------------------------------------------------------------
+// TITLE: myFP2ESP GENERAL DEFINITIONS
+// ----------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------
+// COPYRIGHT
+// ----------------------------------------------------------------------------------------------
+// (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
+// (c) Copyright Holger M, 2019. All Rights Reserved.
+// ----------------------------------------------------------------------------------------------
+
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
 
@@ -5,12 +16,8 @@
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-#define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address#endif // wemos
-#define SCREEN_WIDTH          128           // OLED display width, in pixels
-#define SCREEN_HEIGHT         64            // OLED display height, in pixels
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define MOTORRELEASEDELAY     120           // motor release power after 120s
-
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
 #define ALPACAPORT            4040          // ASCOM Remote server port
 #define ASCOMMAXIMUMARGS      10
@@ -33,6 +40,9 @@
 #define LCDPAGETIMEMIN        2             // 2s minimum lcd page display time
 #define LCDPAGETIMEMAX        10            // 10s maximum lcd page display time
 #define DEFAULTSAVETIME       30000         // default time to wait before saving data to SPIFFS
+#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
+#define HPSWOPEN              0             // hpsw states refelect status of switch
+#define HPSWCLOSED            1
 
 // You can set the speed of the motor when performing backlash to SLOW, MED or FAST
 #define BACKLASHSPEED         SLOW
@@ -69,8 +79,13 @@
 #define STEP32                32
 #endif
 
-#define STATEMOVINGSTR        "=>State_Moving"
-#define STATEAPPLYBACKLASH    "=>State_ApplyBacklash"
+#define STATEMOVINGSTR        ">State_Moving"
+#define STATEAPPLYBACKLASH    ">State_ApplyBacklash"
+#define STATESETHOMEPOSITION  ">SetHomePosition"
+#define STATEFINDHOMEPOSITION ">FindHomePosition"
+#define STATEDELAYAFTERMOVE   ">DelayAfterMove"
+#define STATEINITMOVE         ">InitMove"
+
 #define EOFSTR                '#'
 #define STARTSTR              ':'
 #define coilpwrstr            "Coil power  ="
@@ -133,27 +148,16 @@
 #define stationmodestr        "Station mode: "
 #define ascomremotestr        "ASCOM Remote: "
 
+// defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
+#define ascomremotestr            "ASCOM Remote: "
+#define jsonstring                "jsonstr = "
+#define webserverstr              "Webserver: "
 #define NORMALWEBPAGE             200
 #define BADREQUESTWEBPAGE         400
 #define NOTFOUNDWEBPAGE           404
 #define ASCOMINTERNALSERVERERROR  500
 #define TEXTPAGETYPE              "text/html"
 #define JSONPAGETYPE              "application/json"
-
-#define ASCOMSUCCESS              0
-#define ASCOMNOTIMPLEMENTED       0x400
-#define ASCOMINVALIDVALUE         0x401
-#define ASCOMVALUENOTSET          0x402
-#define ASCOMNOTCONNECTED         0x407
-#define ASCOMINVALIDOPERATION     0x40B
-#define ASCOMACTIONNOTIMPLEMENTED 0x40C
-#define ASCOMERRORMSGERROR        "Error"
-#define ASCOMERRORMSGNULL         ""
-#define ASCOMERRORNOTIMPLEMENTED  "Not implemented"
-#define ASCOMERRORMSGINVALID      "Invalid operation"
-#define ASCOMNAME                 "myFP2ESPASCOMR"
-#define ASCOMDESCRIPTION          "ASCOM driver for myFP2ESP controllers"
-#define ASCOMDRIVERINFO           "myFP2ESP ASCOM Driver (c) R. Brown. 2019"
 
 #define WS_TURNON                 "<input type=\"submit\" value=\"TURN ON\"></form></p>"
 #define WS_TURNOFF                "<input type=\"submit\" value=\"TURN OFF\"></form></p>"
@@ -199,11 +203,13 @@
 #define ENABLEDBUZZER             16384
 #define ENABLEDACCESSPOINT        32768
 #define ENABLEDSTATIONMODE        65536
-#define ENABLEDLOCALSERIAL        131972
-#define ENABLEDOTAUPDATES         263944
-#define ENABLEDWEBSERVER          527888
-#define ENABLEDASCOMREMOTE        1055776
-#define ENABLEDSTATICIP           2111552
+#define ENABLEDLOCALSERIAL        131072
+#define ENABLEDOTAUPDATES         262144
+#define ENABLEDWEBSERVER          524288
+#define ENABLEDASCOMREMOTE        1048576
+#define ENABLEDSTATICIP           2097152
+#define ENABLEDMDNS               4194304
+
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
