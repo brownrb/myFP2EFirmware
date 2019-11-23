@@ -1036,7 +1036,7 @@ void loop()
   DebugPrintln(millis());
 #endif
 
-#if !defined(BLUETOOTHMODE) && !defined(LOCALSERIAL)
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
   if (ConnectionStatus < 2)
   {
     myclient = myserver.available();
@@ -1071,7 +1071,7 @@ void loop()
       ConnectionStatus = 1;
     }
   }
-#endif // !defined(BLUETOOTHMODE) && !defined(LOCALSERIAL)
+#endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #ifdef BLUETOOTHMODE
   if ( SerialBT.available() )
