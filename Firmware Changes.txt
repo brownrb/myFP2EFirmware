@@ -1,3 +1,6 @@
+// 110
+// Add focuser presets and link to infra-red remote controller
+
 // 109 
 // Add ASCOM REMOTE MANAGEMENT ALPACA API functions
 
