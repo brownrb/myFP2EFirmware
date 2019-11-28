@@ -1,5 +1,7 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE RELEASE 107
+// TITLE: myFP2ESP FIRMWARE RELEASE 109
+// TODO: 
+// Add ASCOM REMOTE MANAGEMENT ALPACA API functions
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -577,7 +579,7 @@ enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash
 String programName;                                     // will become driverboard name
 DriverBoard* driverboard;
 
-char programVersion[] = "107";
+char programVersion[] = "109";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
 unsigned long fcurrentPosition;                         // current focuser position

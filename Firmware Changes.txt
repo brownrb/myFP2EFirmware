@@ -1,3 +1,6 @@
+// 109 
+// Add ASCOM REMOTE MANAGEMENT ALPACA API functions
+
 // 108 
 // Add joystick as alternative to push buttons
 
