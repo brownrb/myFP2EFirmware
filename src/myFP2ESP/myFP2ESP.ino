@@ -1,10 +1,11 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE RELEASE 107
+// TITLE: myFP2ESP FIRMWARE RELEASE 109
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
 // ESP8266 Supports OLED display, Temperature Probe
 // ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's. Infrared Remote
+// Supports modes, ACCESSPOINT, STATIONMODE, BLUETOOTH, LOCALSERIAL, WEBSERVER, ASCOMREMOTE
 // Remember to change your target CPU depending on board selection
 
 // ----------------------------------------------------------------------------------------------
@@ -99,10 +100,10 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
-#define OLEDTEXT 1
+//#define OLEDTEXT 1
 //#define OLEDGRAPHICS 2
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
@@ -110,11 +111,14 @@
 //#define HOMEPOSITIONSWITCH 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
 //#define BACKLASH 2    // ALTERNATIVE BACKLASH ALGORITHM
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
+
+// To enable the 2-Axis Joystick in this firmware, uncomment the next line [ESP32 only]
+#define JOYSTICK 1
 
 // To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTLEDPINS 1
@@ -142,6 +146,9 @@
 #ifdef INFRAREDREMOTE
 #halt // ERROR - INFRAREDREMOTE not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
+#ifdef JOYSTICK
+#halt // ERROR - JOYSTICK not supported for WEMOS or NODEMCUV1 ESP8266 chips
+#endif
 #endif
 
 #if defined(OLEDGRAPHICS)
@@ -159,6 +166,12 @@
 #halt // ERROR - Home Position Switch not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
 #endif // 
+
+#ifdef JOYSTICK
+#ifdef INOUTPUSHBUTTONS
+#halt // ERROR - you cannot have INOUTPUSHBUTTONS and JOYSTICK enabled at the same time
+#endif
+#endif
 
 // ----------------------------------------------------------------------------------------------
 // 5: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
@@ -180,14 +193,29 @@
 //#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support, uncomment the next line
-#define ASCOMREMOTE 6
+//#define ASCOMREMOTE 6
 
 // to enable Webserver interface, uncomment the next line [recommed use Internet Explorer or Microsoft Edge Browser]
-#define WEBSERVER 7
+//#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line
 #define MDNSSERVER 8
+
+// DO NOT CHANGE
+#ifdef MDNSSERVER
+#if defined(ESP8266)
+#ifndef WEBSERVER
+#include <ESP8266WebServer.h>
+#endif
+#include <ESP8266mDNS.h>
+#else
+#ifndef WEBSERVER
+#include <WebServer.h>
+#endif
+#include <ESPmDNS.h>
+#endif
+#endif // mDNS
 
 // DO NOT CHANGE
 #if defined(MDNSSERVER)
@@ -212,9 +240,9 @@
 #if !defined(ACCESSPOINT) && !defined(STATIONMODE)
 #halt //ERROR you must use ACCESSPOINT or STATIONMODE with ASCOMREMOTE
 #endif
-//#if defined(WEBSERVER)
-//#halt //ERROR you cannot have both ASCOMREMOTE and WEBSERVER enabled at the same time
-//#endif
+#if defined(WEBSERVER)
+#halt //ERROR you cannot have both ASCOMREMOTE and WEBSERVER enabled at the same time
+#endif
 #if defined(LOCALSERIAL)
 #halt //ERROR you cannot have both ASCOMREMOTE and LOCALSERIAL enabled at the same time
 #endif
@@ -301,20 +329,6 @@
 #include <WebServer.h>
 #endif // if defined(esp8266)
 #endif // webserver
-
-#ifdef MDNSSERVER
-#if defined(ESP8266)
-#ifndef WEBSERVER
-#include <ESP8266WebServer.h>
-#endif
-#include <ESP8266mDNS.h>
-#else
-#ifndef WEBSERVER
-#include <WebServer.h>
-#endif
-#include <ESPmDNS.h>
-#endif
-#endif // mDNS
 
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
@@ -548,6 +562,9 @@ void setFeatures()
 #ifdef MDNSSERVER
   Features = Features + ENABLEDMDNS;
 #endif
+#ifdef JOYSTICK
+  Features = Features + ENABLEDJOYSTICK;
+#endif
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -577,7 +594,7 @@ enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash
 String programName;                                     // will become driverboard name
 DriverBoard* driverboard;
 
-char programVersion[] = "107";
+char programVersion[] = "108";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
 unsigned long fcurrentPosition;                         // current focuser position
@@ -618,7 +635,7 @@ int packetssent;
 SetupData *mySetupData;
 
 // ----------------------------------------------------------------------------------------------
-// 17: CODE START - CHANGE AT YOUR OWN PERIL
+// 18: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #include "comms.h"
 #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
@@ -629,6 +646,9 @@ SetupData *mySetupData;
 #endif
 #ifdef INFRAREDREMOTE
 #include "infraredremote.h"
+#endif
+#ifdef JOYSTICK
+#include "joystick.h"
 #endif
 
 byte TimeCheck(unsigned long x, unsigned long Delay)
@@ -761,7 +781,12 @@ void setup()
   pinMode(OUTPBPIN, INPUT);
 #endif
 
-  displayfound = false;
+#ifdef JOYSTICK
+  // no need to initialise pins as input as they will be treated as analog
+  // JOYINOUTPIN and JOYSPEEDPIN
+#endif
+
+displayfound = false;
 #if defined(OLEDGRAPHICS) || defined(OLEDTEXT)
   displayfound = Init_OLED();
 #endif
@@ -955,7 +980,7 @@ void setup()
   delay(5);
   EasyDDNS.client(duckdnsdomain, duckdnstoken);         // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
   delay(5);
-  EasyDDNS.update(60000);                               // Check for New Ip Every 60 Seconds.
+  EasyDDNS.update(DUCKDNSREFRESHRATE);                               // Check for New Ip Every 60 Seconds.
   delay(5);
 #endif // useduckdns
 
@@ -1214,6 +1239,9 @@ void loop()
 #ifdef INOUTPUSHBUTTONS
         update_pushbuttons();
 #endif
+#ifdef JOYSTICK
+        update_joystick();
+#endif
 #ifdef INFRAREDREMOTE
         update_irremote();
 #endif
@@ -1250,7 +1278,6 @@ void loop()
         }
       }
       break;
-
 
     //__ApplyBacklash ____________________________________________________________________
     case State_ApplyBacklash:
