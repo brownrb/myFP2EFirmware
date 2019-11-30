@@ -16,13 +16,15 @@
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-#define MOTORPULSETIME        2             // DO NOT CHANGE
-#define MOTORRELEASEDELAY     120           // motor release power after 120s
-#define SERVERPORT            2020          // TCPIP port for myFP2ESP
 #define ALPACAPORT            4040          // ASCOM Remote server port
-#define ASCOMMAXIMUMARGS      10
 #define WEBSERVERPORT         80            // Web server port
+#define MDNSSERVERPORT        8080          // mdns server port
 #define WS_REFRESHRATE        10            // web server page refresh time
+#define DUCKDNS_REFRESHRATE   60000         // duck dns, check ip address every 60s for an update
+
+#define MOTORRELEASEDELAY     120           // motor release power after 120s
+#define MOTORPULSETIME        2             // DO NOT CHANGE
+#define SERVERPORT            2020          // TCPIP port for myFP2ESP
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
 #define ESPDATA               0
@@ -159,32 +161,6 @@
 #define TEXTPAGETYPE              "text/html"
 #define JSONPAGETYPE              "application/json"
 
-#define WS_TURNON                 "<input type=\"submit\" value=\"TURN ON\"></form></p>"
-#define WS_TURNOFF                "<input type=\"submit\" value=\"TURN OFF\"></form></p>"
-#define WS_SM1CHECKED             "<input type=\"radio\" name=\"sm\" value=\"1\" Checked> Full"
-#define WS_SM1UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"1\"> Full"
-#define WS_SM2CHECKED             "<input type=\"radio\" name=\"sm\" value=\"2\" Checked> 1/2"
-#define WS_SM2UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"2\"> 1/2"
-#define WS_SM4CHECKED             "<input type=\"radio\" name=\"sm\" value=\"4\" Checked> 1/4"
-#define WS_SM4UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"4\"> 1/4"
-#define WS_SM8CHECKED             "<input type=\"radio\" name=\"sm\" value=\"8\" Checked> 1/8"
-#define WS_SM8UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"8\"> 1/8"
-#define WS_SM16CHECKED            "<input type=\"radio\" name=\"sm\" value=\"16\" Checked> 1/16"
-#define WS_SM16UNCHECKED          "<input type=\"radio\" name=\"sm\" value=\"16\"> 1/16"
-#define WS_SM32CHECKED            "<input type=\"radio\" name=\"sm\" value=\"32\" Checked> 1/32"
-#define WS_SM32UNCHECKED          "<input type=\"radio\" name=\"sm\" value=\"32\"> 1/32"
-
-#define WS_MSSLOWCHECKED          "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow"
-#define WS_MSSLOWUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"0\"> Slow"
-#define WS_MSMEDCHECKED           "<input type=\"radio\" name=\"ms\" value=\"1\" Checked> Medium"
-#define WS_MSMEDUNCHECKED         "<input type=\"radio\" name=\"ms\" value=\"1\"> Medium"
-#define WS_MSFASTCHECKED          "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast"
-#define WS_MSFASTUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"2\"> Fast"
-
-#define WS_COPYRIGHT              "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>"
-#define WS_TITLE                  "<h3>myFP2ESP Web based focus controller</h3>"
-#define WS_PAGETITLE              "<title>myFP2ESP WEB SERVER</title>"
-
 // Controller Features
 #define ENABLEDLCD                1
 #define ENABLEDOLED               2
@@ -209,6 +185,7 @@
 #define ENABLEDASCOMREMOTE        1048576
 #define ENABLEDSTATICIP           2097152
 #define ENABLEDMDNS               4194304
+#define ENABLEDJOYSTICK           8388608
 
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
