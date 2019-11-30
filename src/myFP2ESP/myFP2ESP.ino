@@ -452,7 +452,7 @@ Adafruit_SSD1306 *myoled;
 #if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
   || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #ifdef INFRAREDREMOTE
-#include "myIRremotemappings.h"
+#include "irremotemappings.h"
 #include <IRremoteESP32.h>
 #endif
 #endif
@@ -577,7 +577,7 @@ enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash
 String programName;                                     // will become driverboard name
 DriverBoard* driverboard;
 
-char programVersion[] = "107";
+char programVersion[] = "110";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
 unsigned long fcurrentPosition;                         // current focuser position

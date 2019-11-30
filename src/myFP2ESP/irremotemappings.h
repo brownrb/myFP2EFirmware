@@ -1,16 +1,28 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP INFRA RED REMOTE CONTROLLER KEY MAPPINGS
+// myFP2ESP INFRA RED REMOTE CONTROLLER DEFINITIONS
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved.
+// (c) Copyright Holger M, 2019. All Rights Reserved. 
 // ----------------------------------------------------------------------------------------------
+
+#include <Arduino.h>
 
 #ifndef myIRremotemappings_h
 #define myIRremotemappings_h
+
+// IR REMOTE HAND CONTROLLER
+// 7 rows of 3 keys
+// CH-    CH    CH+
+// |<<    >>|   >||
+//  -      +     EQ
+//  0     100+  200+
+//  1      2     3
+//  4      5     6
+//  7      8     9
 
 // This file contains mappings for the various keys of the IRremote
 
@@ -52,5 +64,16 @@
 #define IR_IN100        KEY_MINUS
 #define IR_OUT100       KEY_EQUALS
 #define IR_SETPOSZERO   KEY_ZERO
+
+#define IR_PRESET0      KEY_PREV
+#define IR_PRESET1      KEY_NEXT
+#define IR_PRESET2      KEY_PLAY
+#define IR_PRESET3      KEY_100PLUS
+#define IR_PRESET4      KEY_200PLUS
+#define IR_PRESET5
+#define IR_PRESET6
+#define IR_PRESET7
+#define IR_PRESET8
+#define IR_PRESET9
 
 #endif

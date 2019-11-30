@@ -1,9 +1,17 @@
 // ----------------------------------------------------------------------------------------------
+// myFP2ESP FOCUSER DATA DEFINITIONS
+// ----------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
 // (c) Copyright Holger M, 2019. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
+
+#include <Arduino.h>
+
+#include "generalDefinitions.h"
 
 #define DEFAULTPOSITION 5000L
 #define DEFAULTMAXSTEPS 80000L
@@ -22,7 +30,6 @@ class SetupData
     void SetFocuserDefaults(void);
 
     //  getter
-    byte get_mode(void);
     unsigned long get_fposition();
     byte get_focuserdirection();
     unsigned long get_maxstep();
@@ -45,8 +52,9 @@ class SetupData
     byte get_tcdirection();
     byte get_motorSpeed();
     byte get_displayenabled();
+    unsigned long get_focuserpreset(byte);
 
-    //  setter
+    //__setter
     void set_fposition(unsigned long);
     void set_focuserdirection(byte);
     void set_maxstep(unsigned long);
@@ -69,6 +77,7 @@ class SetupData
     void set_tcdirection(byte);
     void set_motorSpeed(byte);
     void set_displayenabled(byte);
+    void set_focuserpreset(byte, unsigned long);
 
   private:
     byte SavePersitantConfiguration();
@@ -81,8 +90,7 @@ class SetupData
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
 
-    byte mode;                                          // store to EEPROM or SPIFFS
-    byte DataAssign;                // control time to save changed Setupdata
+    byte DataAssign;
     const String filename_persistant = "/data_per.jsn"; // persistant JSON setup data
     const String filename_vaiable = "/data_var.jsn";    // variable  JSON setup data
 
@@ -92,25 +100,35 @@ class SetupData
     byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
-    // dataset_persistant
+    //dataset_persistant
     unsigned long maxstep;          // max steps
     float stepsize;                 // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
     byte DelayAfterMove;            // delay after movement is finished (maxval=256)
     byte backlashsteps_in;          // number of backlash steps to apply for IN moves
     byte backlashsteps_out;         // number of backlash steps to apply for OUT moves
-    byte backlash_in_enabled;
-    byte backlash_out_enabled;
+    byte backlash_in_enabled;       // if 1, backlash is enabled for IN movements (lower or -ve moves)
+    byte backlash_out_enabled;      // if 1, backlash is enabled for OUT movements (higher or +ve moves)
     byte tempcoefficient;           // steps per degree temperature coefficient value (maxval=255)
     byte tempprecision;             // 9 -12
-    byte stepmode;
-    byte coilpower;
-    byte reversedirection;
+    byte stepmode;                  // stepping mode
+    byte coilpower;                 // if 1, coil power is enabled
+    byte reversedirection;          // if 1, motor direction is reversed
     byte stepsizeenabled;           // if 1, controller returns step size
     byte tempmode;                  // temperature display mode, Celcius=1, Fahrenheit=0
     byte lcdupdateonmove;           // update position on lcd when moving
-    byte lcdpagetime;
+    byte lcdpagetime;               // length of time a display page is shown for
     byte tempcompenabled;           // indicates if temperature compensation is enabled
-    byte tcdirection;
-    byte motorSpeed;
-    byte displayenabled;
+    byte tcdirection;               // direction in which to apply temperature compensation
+    byte motorSpeed;                // speed of motor, slow, medium or fast
+    byte displayenabled;            // if 1, display is enabled
+    unsigned long focuserpreset0;   // focuser presets can be used with software or ir-remote controller
+    unsigned long focuserpreset1;
+    unsigned long focuserpreset2;
+    unsigned long focuserpreset3;
+    unsigned long focuserpreset4;
+    unsigned long focuserpreset5;
+    unsigned long focuserpreset6;
+    unsigned long focuserpreset7;
+    unsigned long focuserpreset8;
+    unsigned long focuserpreset9;
 };

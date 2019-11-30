@@ -23,7 +23,6 @@ extern char programVersion[];
 extern String programName;
 extern DriverBoard* driverboard;
 extern char mySSID[64];
-extern void UpdatePositionOledText(void);
 
 #ifdef OLEDDISPLAY
 extern void UpdatePositionOledText(void);
@@ -36,7 +35,6 @@ extern float readtemp(byte);
 // ----------------------------------------------------------------------------------------------
 // DATA
 // ----------------------------------------------------------------------------------------------
-
 #if defined(LOCALSERIAL)
 Queue queue(QUEUELENGTH);               // receive serial queue of commands
 String serialline;                      // buffer for serial data
@@ -50,7 +48,8 @@ void SendPaket(String str)
 {
   DebugPrint(sendstr);
   DebugPrintln(str);
-#if defined(ACCESSPOINT) || defined(STATIONMODE)  // for Accesspoint or Station mode
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+  // for Accesspoint or Station mode
   myclient.print(str);
   packetssent++;
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
@@ -75,10 +74,10 @@ void ESP_Communication( byte mode )
       // for Accesspoint or Station mode
       packetsreceived++;
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-      receiveString = myclient.readStringUntil(EOFSTR);    // read until terminator
+      receiveString = myclient.readStringUntil(EOFSTR); // read until terminator
 #endif
       break;
-#if defined(BLUETOOTHMODE)
+#ifdef BLUETOOTHMODE
     case BTDATA:
       receiveString = STARTSTR + queue.pop();
       break;
@@ -90,19 +89,20 @@ void ESP_Communication( byte mode )
 #endif
   }
 
-  receiveString += EOFSTR;                                 // put back terminator
+  receiveString += EOFSTR;                          // put back terminator
   String cmdstr = receiveString.substring(1, 3);
-  cmdval = cmdstr.toInt();                              // convert command to an integer
+  cmdval = cmdstr.toInt();                       // convert command to an integer
   DebugPrint("-recstr=" + receiveString + EOFSTR);
   DebugPrint("-cmdstr=" + cmdstr + EOFSTR);
   DebugPrint("-cmdval=" + cmdval + EOFSTR);
+  DebugPrint("-WorkStr=" + WorkString + EOFSTR);
   switch (cmdval)
   {
     // all the get go first followed by set
     case 0: // get focuser position
       SendPaket('P' + String(fcurrentPosition) + EOFSTR);
       break;
-    case 1: // ismoving
+    case 1: // get ismoving
       SendPaket('I' + String(isMoving) + EOFSTR);
       break;
     case 2: // get controller status
@@ -115,7 +115,7 @@ void ESP_Communication( byte mode )
       SendPaket('F' + programName + '\r' + '\n' + String(programVersion) + EOFSTR);
       break;
     case 6: // get temperature
-#if defined(TEMPERATUREPROBE)
+#ifdef TEMPERATUREPROBE
       SendPaket('Z' + String(readtemp(0), 3) + EOFSTR);
 #else
       SendPaket("Z20.00#");
@@ -140,7 +140,7 @@ void ESP_Communication( byte mode )
       SendPaket('1' + String(mySetupData->get_tempcompenabled()) + EOFSTR);
       break;
     case 25: // get IF temperature compensation is available
-#if defined(TEMPERATUREPROBE)
+#ifdef TEMPERATUREPROBE
       SendPaket("A1#"); // this focuser supports temperature compensation
 #else
       SendPaket("A0#");
@@ -164,7 +164,7 @@ void ESP_Communication( byte mode )
     case 37: // get displaystatus
       SendPaket('D' + String(mySetupData->get_displayenabled()) + EOFSTR);
       break;
-    case 38: // :38#   Dxx#      Get Temperature mode 1=Celsius, 0=Fahrenheight
+    case 38: // get Temperature mode 1=Celsius, 0=Fahrenheight
       SendPaket('b' + String(mySetupData->get_tempmode()) + EOFSTR);
       break;
     case 39: // get the new motor position (target) XXXXXX
@@ -221,10 +221,10 @@ void ESP_Communication( byte mode )
     case 76: // get backlash OUT enabled status
       SendPaket((mySetupData->get_backlash_out_enabled() == 0) ? "50#" : "51#");
       break;
-    case 78: // return number of backlash steps IN
+    case 78: // get number of backlash steps IN
       SendPaket('6' + String(mySetupData->get_backlashsteps_in()) + EOFSTR);
       break;
-    case 80: // return number of backlash steps OUT
+    case 80: // get number of backlash steps OUT
       SendPaket('7' + String(mySetupData->get_backlashsteps_out()) + EOFSTR);
       break;
     case 83: // get if there is a temperature probe
@@ -233,18 +233,30 @@ void ESP_Communication( byte mode )
     case 87: // get tc direction
       SendPaket('k' + String(mySetupData->get_tcdirection()) + EOFSTR);
       break;
-    // only the set commands are listed here as they do not require a response
-    case 28:              // :28#       None    home the motor to position 0
+    case 91: // get focuserpreset [0-9]
+      {
+        byte preset = (byte) (receiveString[3] - '0');
+        preset = (preset > 9) ? 9 : preset;
+        SendPaket('h' + String(mySetupData->get_focuserpreset(preset)) + EOFSTR);
+      }
+      break;
+    // set commands follow, they do not require a response
+    case 28: // home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
       break;
-    case 5: // :05xxxxxx# None    Set new target position to xxxxxx (and focuser initiates immediate move to xxxxxx)
+    case 5: // Set new target position to xxxxxx (and focuser initiates immediate move to xxxxxx)
       // only if not already moving
       if ( isMoving == 0 )
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         ftargetPosition = (unsigned long)WorkString.toInt();
-        ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
-        UpdatePositionOledText();
+        if (ftargetPosition > mySetupData->get_maxstep())
+        {
+          ftargetPosition = mySetupData->get_maxstep();
+        }
+#ifdef OLEDDISPLAY
+        UpdatePositionOledText();                   // immediately update target position
+#endif // oleddisplay
       }
       break;
     case 7: // set maxsteps
@@ -267,7 +279,7 @@ void ESP_Communication( byte mode )
     case 14: // set reverse direction
       if ( isMoving == 0 )
       {
-        mySetupData->set_reversedirection((byte) (receiveString[3] - '0'));
+        mySetupData->set_reversedirection((byte)(receiveString[3] - '0'));
       }
       break;
     case 15: // set motorspeed
@@ -277,15 +289,15 @@ void ESP_Communication( byte mode )
       driverboard->setmotorspeed((byte) paramval);
       break;
     case 16: // set display to celsius
-      mySetupData->set_tempmode(1); // temperature display mode, Celsius=1, Fahrenheit=0
+      mySetupData->set_tempmode(1); // temperature display mode, Celcius=1, Fahrenheit=0
       break;
     case 17: // set display to fahrenheit
-      mySetupData->set_tempmode(0); // temperature display mode, Celsius=1, Fahrenheit=0
+      mySetupData->set_tempmode(0); // temperature display mode, Celcius=1, Fahrenheit=0
       break;
     case 18:
       // :180#    None    set the return of user specified stepsize to be OFF - default
       // :181#    None    set the return of user specified stepsize to be ON - reports what user specified as stepsize
-      mySetupData->set_stepsizeenabled((byte) (receiveString[3] - '0'));
+      mySetupData->set_stepsizeenabled((byte)(receiveString[3] - '0'));
       break;
     case 19: // :19xxxx#  None   set the step size value - double type, eg 2.1
       {
@@ -300,7 +312,7 @@ void ESP_Communication( byte mode )
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
       mySetupData->set_tempprecision((byte) paramval);
-#if defined(TEMPERATUREPROBE)
+#ifdef TEMPERATUREPROBE
       sensor1.setResolution(tpAddress, (byte) paramval);
 #endif
       break;
@@ -310,8 +322,8 @@ void ESP_Communication( byte mode )
       mySetupData->set_tempcoefficient((byte)paramval);
       break;
     case 23: // set the temperature compensation ON (1) or OFF (0)
-#if defined(TEMPERATUREPROBE)
-      mySetupData->set_tempcompenabled((byte) (receiveString[3] - '0'));
+#ifdef TEMPERATUREPROBE
+      mySetupData->set_tempcompenabled((byte)(receiveString[3] - '0'));
 #endif
       break;
     case 27: // stop a move - like a Halt
@@ -326,19 +338,18 @@ void ESP_Communication( byte mode )
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
       paramval = (byte)(paramval & 3);      // STEP1 - STEP2
 #endif
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG)
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS)
       paramval = DRV8825TEPMODE;            // stepmopde set by jumpers
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825)
-      paramval = (paramval < STEP1 ) ? STEP1 : paramval;
+      paramval = (paramval < STEP1  ) ? STEP1 : paramval;
       paramval = (paramval > STEP32 ) ? STEP32 : paramval;
 #endif
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
       paramval = STEP1;
 #endif
-      // this is the proper way to do this
+      mySetupData->set_stepmode((byte) paramval);
       driverboard->setstepmode((byte) paramval);
-      mySetupData->set_stepmode(driverboard->getstepmode());
       break;
     case 31: // set focuser position
       if ( isMoving == 0 )
@@ -363,31 +374,20 @@ void ESP_Communication( byte mode )
     case 36:
       // :360#    None    Disable Display
       // :361#    None    Enable Display
-      mySetupData->set_displayenabled((byte) (receiveString[3] - '0'));
+#ifdef OLEDDISPLAY
+      mySetupData->set_displayenabled((byte)(receiveString[3] - '0'));
       if (mySetupData->get_displayenabled() == 1)
       {
-#if defined(OLEDTEXT)
-        if ( displayfound == true )
-        {
-          myoled->dim(false);
-        }
-#endif
+        myoled->Display_On();
       }
       else
       {
-#if defined(OLEDTEXT)
-        if ( displayfound == true )
-        {
-          // clear display buffer
-          // set dim
-          myoled->clearDisplay();
-          myoled->dim(true);
-        }
-#endif
+        myoled->Display_Off();
       }
+#endif // ifdef OLEDDISPLAY
       break;
-    case 40: // reset Arduino myFocuserPro2E controller
-      software_Reboot(2000);      // reboot with 2s delay
+    case 40: // reset myF2ESP controller
+      software_Reboot(2000);
       break;
     case 42: // reset focuser defaults
       if ( isMoving == 0 )
@@ -397,15 +397,14 @@ void ESP_Communication( byte mode )
       }
       break;
     case 48: // save settings to EEPROM
-      // TODO: THIS SHOULD SAVE "ALL" FOCUSER SETTINGS
-      mySetupData->set_fposition(fcurrentPosition); // need to save setting
+      mySetupData->set_fposition(fcurrentPosition); // need to forth save setting????????
       break;
     case 56: // set motorspeed delay for current speed setting
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       driverboard->setstepdelay(WorkString.toInt());
       break;
-    case 61: // set update of position on lcd when moving (0=disable, 1=enable)
-      mySetupData->set_lcdupdateonmove((byte) (receiveString[3] - '0'));
+    case 61: // set update of position on lcd when moving (00=disable, 01=enable)
+      mySetupData->set_lcdupdateonmove((byte)(receiveString[3] - '0'));
       break;
     case 64: // move a specified number of steps
       if ( isMoving == 0 )
@@ -420,10 +419,10 @@ void ESP_Communication( byte mode )
       mySetupData->set_DelayAfterMove((byte)WorkString.toInt());
       break;
     case 73: // Disable/enable backlash IN (going to lower focuser position)
-      mySetupData->set_backlash_in_enabled((byte) (receiveString[3] - '0'));
+      mySetupData->set_backlash_in_enabled((byte)(receiveString[3] - '0'));
       break;
     case 75: // Disable/enable backlash OUT (going to lower focuser position)
-      mySetupData->set_backlash_out_enabled((byte) (receiveString[3] - '0'));
+      mySetupData->set_backlash_out_enabled((byte)(receiveString[3] - '0'));
       break;
     case 77: // set backlash in steps
       WorkString = receiveString.substring(3, receiveString.length() - 1);
@@ -434,18 +433,29 @@ void ESP_Communication( byte mode )
       mySetupData->set_backlashsteps_out((byte)WorkString.toInt());
       break;
     case 88: // set tc direction
-      mySetupData->set_tcdirection((byte) (receiveString[3] - '0'));
+      mySetupData->set_tcdirection((byte)(receiveString[3] - '0'));
+      break;
+    case 90: // Set preset x [0-9] with position value yyyy [unsigned long]
+      {
+        byte preset = (byte) (receiveString[3] - '0');
+        preset = (preset > 9) ? 9 : preset;
+        WorkString = receiveString.substring(4, receiveString.length() - 1);
+        tmppos = (unsigned long)WorkString.toInt();
+        mySetupData->set_focuserpreset( preset, tmppos );
+      }
       break;
 
     // compatibilty with myFocuserpro2 in LOCALSERIAL mode
     case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
-      //ignore
+      //WorkString = receiveString.substring(3, receiveString.length() - 1);
+      //motorspeedchangethresholdsteps  = (byte) (WorkString.toInt() & 255);
       break;
     case 45: // get motorspeedchange threshold value
       SendPaket("G200#");
       break;
     case 46: // enable/Disable motorspeed change when moving
-      //ignore
+      //WorkString = receiveString.substring(3, receiveString.length() - 1);
+      //motorspeedchangethresholdenabled = (byte) (WorkString.toInt() & 1);
       break;
     case 47: // get motorspeedchange enabled? on/off
       SendPaket("J0#");
@@ -473,7 +483,7 @@ void ESP_Communication( byte mode )
       break;
   }
 }
-#endif // if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
+#endif // if !defined(ASCOMREMOTE) || !defined(WEBSERVER)
 
 #if defined(LOCALSERIAL)
 void clearSerialPort()
@@ -512,7 +522,7 @@ void processserial()
 }
 #endif // if defined(LOCALSERIAL)
 
-#if defined(BLUETOOTHMODE)
+#ifdef BLUETOOTHMODE
 void clearbtPort()
 {
   while (SerialBT.available())
@@ -547,7 +557,7 @@ void processbt()
     }
   }
 }
-#endif // if defined(BLUETOOTHMODE)
+#endif
 
 
 #endif
