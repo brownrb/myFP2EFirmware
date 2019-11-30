@@ -1,13 +1,15 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP GENERAL DEFINITIONS
+// myFP2ESP GENERAL DEFINITIONS
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved.
+// (c) Copyright Holger M, 2019. All Rights Reserved. 
 // ----------------------------------------------------------------------------------------------
+
+#include <Arduino.h>
 
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
@@ -19,10 +21,16 @@
 #define ALPACAPORT            4040          // ASCOM Remote server port
 #define WEBSERVERPORT         80            // Web server port
 #define MDNSSERVERPORT        8080          // mdns server port
+<<<<<<< HEAD
 #define WS_REFRESHRATE        10            // web server page refresh time
 #define DUCKDNS_REFRESHRATE   60000         // duck dns, check ip address every 60s for an update
 
 #define MOTORRELEASEDELAY     120           // motor release power after 120s
+=======
+#define WS_REFRESHRATE        30            // web server page refresh time 30s
+#define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
+
+>>>>>>> focuser-presets
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
@@ -35,7 +43,7 @@
 #define DEFAULTSTEPSIZE       50.0          // This is the default setting for the step size in microns
 #define MINIMUMSTEPSIZE       0.0
 #define MAXIMUMSTEPSIZE       100.0
-#define TEMP_PRECISION        10            // Set the default DS18B20 precision to 0.25 of a degree 9=0.5, 10=0.25, 11=0.125, 12=0.0625
+#define TEMPPRECISION         10            // Set the default DS18B20 precision to 0.25 of a degree 9=0.5, 10=0.25, 11=0.125, 12=0.0625
 #define LCDUPDATEONMOVE       15            // defines how many steps before refreshing position when moving if lcdupdateonmove is 1
 #define FOCUSERUPPERLIMIT     2000000000L   // arbitary focuser limit up to 2000000000
 #define FOCUSERLOWERLIMIT     1024L         // lowest value that maxsteps can be
@@ -81,15 +89,30 @@
 #define STEP32                32
 #endif
 
-#define STATEMOVINGSTR        ">State_Moving"
-#define STATEAPPLYBACKLASH    ">State_ApplyBacklash"
+#define STATEMOVINGSTR        ">Moving"
+#define STATEAPPLYBACKLASH    ">ApplyBacklash"
 #define STATESETHOMEPOSITION  ">SetHomePosition"
-#define STATEFINDHOMEPOSITION ">FindHomePosition"
+#define STATEFINDHOMEPOSITION ">FindHomePosition#"
 #define STATEDELAYAFTERMOVE   ">DelayAfterMove"
+#define STATEFINISHEDMOVE     ">FinishedMove"
+#define STATEIDLE             ">Idle"
 #define STATEINITMOVE         ">InitMove"
-
 #define EOFSTR                '#'
 #define STARTSTR              ':'
+#define sendstr               "Send= "
+#define serialstartstr        "Serial started"
+#define debugonstr            "Debug on"
+#define bluetoothstartstr     "Bluetooth started"
+#define tprobestr             "Tsensors= "
+#define attemptconnstr        "Attempt connection to= "
+#define wifistartfailstr      "WiFi start failed"
+#define tcpserverportstr      "Port= "
+#define serverreadystr        "Server Ready"
+#define startstr              "Start"
+#define endstr                "End"
+#define progressstr           "Progress: "
+#define errorstr              "Error= "
+#define readystr              "Ready"
 #define coilpwrstr            "Coil power  ="
 #define revdirstr             "Reverse Dir ="
 #define tcompstepsstr         "TComp Steps = "
@@ -101,29 +124,14 @@
 #define backlashoutstepsstr   "Backlash Ou#= "
 #define bluetoothstr          "Bluetooth Mode"
 #define localserialstr        "Local Serial Mode"
-#define onstr                 "On"
-#define offstr                "Off"
-#define instr                 "In"
-#define outstr                "Out"
 #define currentposstr         "Current Pos = "
 #define targetposstr          "Target Pos  = "
 #define tempstr               "Temperature = "
 #define stepmodestr           "Step Mode   = "
 #define motorspeedstr         "Motor Speed = "
-#define slowstr               "Slow"
-#define medstr                "Med"
-#define faststr               "Fast"
 #define maxstepsstr           "MaxSteps    = "
-#define sendstr               "Send= "
-#define startstr              "Start"
-#define endstr                "End"
-#define progressstr           "Progress: "
-#define errorstr              "Error= "
-#define readystr              "Ready"
-#define serialstartstr        "Serial started"
-#define debugonstr            "Debug on"
-#define bluetoothstartstr     "Bluetooth started"
-#define checkfortprobestr     "Check for Tprobe"
+#define setupdrvbrdstr        "Setup drvbrd= "
+#define drvbrddonestr         "Driver board done"
 #define tprobenotfoundstr     "Tprobe not found"
 #define startapstr            "Start Access Point"
 #define startsmstr            "Start Station mode"
@@ -131,24 +139,15 @@
 #define attemptsstr           "Attempt= "
 #define starttcpserverstr     "Start TCP Server"
 #define tcpserverstartedstr   "TCP Server started"
-#define tcpserverportstr      "Port= "
-#define attemptconnstr        "Attempt connection to= "
-#define wifistartfailstr      "WiFi start failed"
-#define wifirestartstr        "Restarting"
-#define setupdrvbrdstr        "Setup drvbrd= "
-#define drvbrddonestr         "Driver board done"
 #define setupduckdnsstr       "Setup DuckDNS"
 #define setupendstr           "Setup end"
 #define startotaservicestr    "Start OTA service"
-#define serverreadystr        "Server Ready"
 #define ssidstr               "SSID = "
 #define ipaddressstr          "IP   = "
-#define jsonstring            "jsonstr = "
-#define webserverstr          "Webserver: "
-#define didnotconnectstr      "Did not connect to "
+#define wifirestartstr        "Restarting"
+#define checkfortprobestr     "Check for Tprobe"
 #define accesspointstr        "Access point: "
 #define stationmodestr        "Station mode: "
-#define ascomremotestr        "ASCOM Remote: "
 
 // defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
 #define ascomremotestr            "ASCOM Remote: "

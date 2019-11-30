@@ -6,7 +6,7 @@
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved. 
+// (c) Copyright Holger M, 2019. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
 #ifndef infraredremote_h
@@ -20,7 +20,6 @@ extern IRrecv irrecv;
 // ----------------------------------------------------------------------------------------------
 // DATA
 // ----------------------------------------------------------------------------------------------
-
 #ifdef INFRAREDREMOTE
 
 #endif // INFRAREDREMOTE
@@ -82,10 +81,40 @@ void update_irremote()
       case IR_OUT100:
         adjpos = 100;
         break;
-      case IR_SETPOSZERO :                              // 0 RESET POSITION TO 0
+      case IR_SETPOSZERO:                              // 0 RESET POSITION TO 0
         adjpos = 0;
         ftargetPosition = 0;
         fcurrentPosition = 0;
+        break;
+      case IR_PRESET0:
+        ftargetPosition = mySetupData->get_focuserpreset(0);
+        break;
+      case IR_PRESET1:
+        ftargetPosition = mySetupData->get_focuserpreset(1);
+        break;
+      case IR_PRESET2:
+        ftargetPosition = mySetupData->get_focuserpreset(2);
+        break;
+      case IR_PRESET3:
+        ftargetPosition = mySetupData->get_focuserpreset(3);
+        break;
+      case IR_PRESET4:
+        ftargetPosition = mySetupData->get_focuserpreset(4);
+        break;
+      case IR_PRESET5:
+        ftargetPosition = mySetupData->get_focuserpreset(5);
+        break;
+      case IR_PRESET6:
+        ftargetPosition = mySetupData->get_focuserpreset(6);
+        break;
+      case IR_PRESET7:
+        ftargetPosition = mySetupData->get_focuserpreset(7);
+        break;
+      case IR_PRESET8:
+        ftargetPosition = mySetupData->get_focuserpreset(8);
+        break;
+      case IR_PRESET9:
+        ftargetPosition = mySetupData->get_focuserpreset(9);
         break;
     }
     irrecv.resume();                                    // Receive the next value
