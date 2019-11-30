@@ -62,6 +62,7 @@ void update_joystick(void)
 {
   int joypos;
   int joyspeed;
+  //int motorspd;
   
   joypos = analogRead(JOYINOUTPIN);
   DebugPrint("X joypos:");
@@ -70,6 +71,7 @@ void update_joystick(void)
   joyspeed = analogRead(JOYSPEEDPIN);
   DebugPrint("Y joyspeed:");
   DebugPrintln(joyspeed);
+  //joyspeed = map(joyspeed, 0, 4095, 0, 2);
   joyspeed = map(joyspeed, 0, 4095, MSSLOW, MSFAST);
   
   // process joypos
@@ -88,6 +90,35 @@ void update_joystick(void)
 
   // process joyspeed
   driverboard->setstepdelay(joyspeed);
+  
+  /*
+  // process joyspeed
+  motorspd = mySetupData->get_motorSpeed();
+  switch ( joyspeed )
+  {
+    case 0:
+      // decrement speed
+      motorspd--;
+      if( motorspd < 0)
+      {
+        motorspd = 0;
+      }
+      mySetupData->set_motorSpeed((byte)motorspd);
+      break;
+    case 1:
+      // ignore, leave current speed alone
+      break;
+    case 2:
+      // increment speed
+      motorspd++;
+      if( motorspd > 2)
+      {
+        motorspd = 2;
+      }
+      mySetupData->set_motorSpeed((byte)motorspd);
+      break;
+  }
+  */
 }
 #endif // #ifdef JOYSTICK
 

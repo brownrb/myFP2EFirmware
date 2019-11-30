@@ -21,16 +21,9 @@
 #define ALPACAPORT            4040          // ASCOM Remote server port
 #define WEBSERVERPORT         80            // Web server port
 #define MDNSSERVERPORT        8080          // mdns server port
-<<<<<<< HEAD
-#define WS_REFRESHRATE        10            // web server page refresh time
-#define DUCKDNS_REFRESHRATE   60000         // duck dns, check ip address every 60s for an update
-
-#define MOTORRELEASEDELAY     120           // motor release power after 120s
-=======
-#define WS_REFRESHRATE        30            // web server page refresh time 30s
+#define WS_REFRESHRATE        30            // web server page refresh time
 #define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
 
->>>>>>> focuser-presets
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
 #define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command

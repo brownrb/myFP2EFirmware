@@ -274,22 +274,22 @@ void SetHomePage()
   // coilpower and reverse direction
   HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Coilpower </b>" + cpbuffer ;
   HomePage = HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
-  
+
   // reverse direction
   HomePage = HomePage + "<form action=\"/\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
   HomePage = HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
 
-  // focuser presets  
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 0</b> <input type=\"text\" name=\"p0\" size =\"15\" value=" + p0buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 1</b> <input type=\"text\" name=\"p1\" size =\"15\" value=" + p1buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 2</b> <input type=\"text\" name=\"p2\" size =\"15\" value=" + p2buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 3</b> <input type=\"text\" name=\"p3\" size =\"15\" value=" + p3buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 4</b> <input type=\"text\" name=\"p4\" size =\"15\" value=" + p4buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 5</b> <input type=\"text\" name=\"p5\" size =\"15\" value=" + p5buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 6</b> <input type=\"text\" name=\"p6\" size =\"15\" value=" + p6buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 7</b> <input type=\"text\" name=\"p7\" size =\"15\" value=" + p7buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 8</b> <input type=\"text\" name=\"p8\" size =\"15\" value=" + p8buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
-  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 9</b> <input type=\"text\" name=\"p9\" size =\"15\" value=" + p9buffer + "> <input type=\"submit\" value=\"Submit\"></form>";
+  // focuser presets
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 0</b> <input type=\"text\" name=\"p0\" size =\"15\" value=" + p0buffer + "> <input type=\"submit\" name=\"setp0\" value=\"Set\"> <input type=\"submit\" name=\"gop0\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 1</b> <input type=\"text\" name=\"p1\" size =\"15\" value=" + p1buffer + "> <input type=\"submit\" name=\"setp1\" value=\"Set\"> <input type=\"submit\" name=\"gop1\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 2</b> <input type=\"text\" name=\"p2\" size =\"15\" value=" + p2buffer + "> <input type=\"submit\" name=\"setp2\" value=\"Set\"> <input type=\"submit\" name=\"gop2\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 3</b> <input type=\"text\" name=\"p3\" size =\"15\" value=" + p3buffer + "> <input type=\"submit\" name=\"setp3\" value=\"Set\"> <input type=\"submit\" name=\"gop3\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 4</b> <input type=\"text\" name=\"p4\" size =\"15\" value=" + p4buffer + "> <input type=\"submit\" name=\"setp4\" value=\"Set\"> <input type=\"submit\" name=\"gop4\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 5</b> <input type=\"text\" name=\"p5\" size =\"15\" value=" + p5buffer + "> <input type=\"submit\" name=\"setp5\" value=\"Set\"> <input type=\"submit\" name=\"gop5\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 6</b> <input type=\"text\" name=\"p6\" size =\"15\" value=" + p6buffer + "> <input type=\"submit\" name=\"setp6\" value=\"Set\"> <input type=\"submit\" name=\"gop6\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 7</b> <input type=\"text\" name=\"p7\" size =\"15\" value=" + p7buffer + "> <input type=\"submit\" name=\"setp7\" value=\"Set\"> <input type=\"submit\" name=\"gop7\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 8</b> <input type=\"text\" name=\"p8\" size =\"15\" value=" + p8buffer + "> <input type=\"submit\" name=\"setp8\" value=\"Set\"> <input type=\"submit\" name=\"gop8\" value=\"Goto\"></form>";
+  HomePage = HomePage + "<form action=\"/\" method=\"post\"><b>Focuser Preset 9</b> <input type=\"text\" name=\"p9\" size =\"15\" value=" + p9buffer + "> <input type=\"submit\" name=\"setp9\" value=\"Set\"> <input type=\"submit\" name=\"gop9\" value=\"Goto\"></form>";
 
   // add HOME button
   HomePage = HomePage + "<form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form>";
@@ -302,6 +302,8 @@ void WEBSERVER_handleRoot()
 {
   // if the root page was a HALT request via Submit button
 
+  String fp_str;
+
   String halt_str = webserver.arg("ha");
   if ( halt_str != "" )
   {
@@ -311,17 +313,17 @@ void WEBSERVER_handleRoot()
   }
 
   // if set focuser position
-  String fpos_str = webserver.arg("setpos");
-  if ( fpos_str != "" )
+  fp_str = webserver.arg("setpos");
+  if ( fp_str != "" )
   {
-    Serial.print( "setpos:" );
-    Serial.println(fpos_str);
+    DebugPrint( "setpos:" );
+    DebugPrintln(fp_str);
     String fp = webserver.arg("fp");
     if ( fp != "" )
     {
       unsigned long temp = 0;
-      Serial.print("fp:");
-      Serial.println(fp);
+      DebugPrint("fp:");
+      DebugPrintln(fp);
       temp = fp.toInt();
       if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
       {
@@ -332,17 +334,17 @@ void WEBSERVER_handleRoot()
   }
 
   // if goto focuser position
-  fpos_str = webserver.arg("gotopos");
-  if ( fpos_str != "" )
+  fp_str = webserver.arg("gotopos");
+  if ( fp_str != "" )
   {
-    Serial.print( "gotopos:" );
-    Serial.println(fpos_str);
+    DebugPrint( "gotopos:" );
+    DebugPrintln(fp_str);
     String fp = webserver.arg("fp");
     if ( fp != "" )
     {
       unsigned long temp = 0;
-      Serial.print("fp:");
-      Serial.println(fp);
+      DebugPrint("fp:");
+      DebugPrintln(fp);
       temp = fp.toInt();
       if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
       {
@@ -375,154 +377,434 @@ void WEBSERVER_handleRoot()
     mySetupData->set_maxstep(temp);
   }
 
-  // if update of focuser preset 0
-  String fp0_str = webserver.arg("p0");
-  if ( fp0_str != "" )
+  // if set focuser preset 0
+  fp_str = webserver.arg("setp0");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp0:" );
-    DebugPrintln(fp0_str);
-    temp = fp0_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "setp0:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p0");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(0, temp);
     }
-    mySetupData->set_focuserpreset(0, temp);
   }
 
-  // if update of focuser preset 1
-  String fp1_str = webserver.arg("p1");
-  if ( fp1_str != "" )
+  // if goto focuser preset 0
+  fp_str = webserver.arg("gop0");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp1:" );
-    DebugPrintln(fp1_str);
-    temp = fp1_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "gop0:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p0");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(0, temp);
+      ftargetPosition = temp;
     }
-    mySetupData->set_focuserpreset(1, temp);
   }
 
-  // if update of focuser preset 2
-  String fp2_str = webserver.arg("p2");
-  if ( fp2_str != "" )
+  // if set focuser preset 1
+  fp_str = webserver.arg("setp1");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp2:" );
-    DebugPrintln(fp2_str);
-    temp = fp2_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "setp1:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p1");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(1, temp);
     }
-    mySetupData->set_focuserpreset(2, temp);
   }
 
-  // if update of focuser preset 3
-  String fp3_str = webserver.arg("p3");
-  if ( fp3_str != "" )
+  // if goto focuser preset 1
+  fp_str = webserver.arg("gop1");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp3:" );
-    DebugPrintln(fp3_str);
-    temp = fp3_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "gop1:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p1");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(1, temp);
+      ftargetPosition = temp;
     }
-    mySetupData->set_focuserpreset(3, temp);
   }
 
-  // if update of focuser preset 4
-  String fp4_str = webserver.arg("p4");
-  if ( fp4_str != "" )
+  // if set focuser preset 2
+  fp_str = webserver.arg("setp2");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp4:" );
-    DebugPrintln(fp4_str);
-    temp = fp4_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "setp2:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p2");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(2, temp);
     }
-    mySetupData->set_focuserpreset(4, temp);
   }
 
-  // if update of focuser preset 5
-  String fp5_str = webserver.arg("p5");
-  if ( fp5_str != "" )
+  // if goto focuser preset 2
+  fp_str = webserver.arg("gop2");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp5:" );
-    DebugPrintln(fp5_str);
-    temp = fp5_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "gop2:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p2");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(2, temp);
+      ftargetPosition = temp;
     }
-    mySetupData->set_focuserpreset(5, temp);
   }
 
-  // if update of focuser preset 6
-  String fp6_str = webserver.arg("p6");
-  if ( fp6_str != "" )
+  // if set focuser preset 3
+  fp_str = webserver.arg("setp3");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp6:" );
-    DebugPrintln(fp6_str);
-    temp = fp6_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "setp3:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p3");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(3, temp);
     }
-    mySetupData->set_focuserpreset(26, temp);
   }
 
-  // if update of focuser preset 7
-  String fp7_str = webserver.arg("p7");
-  if ( fp7_str != "" )
+  // if goto focuser preset 3
+  fp_str = webserver.arg("gop3");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp7:" );
-    DebugPrintln(fp7_str);
-    temp = fp7_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "gop3:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p3");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(3, temp);
+      ftargetPosition = temp;
     }
-    mySetupData->set_focuserpreset(7, temp);
   }
 
-  // if update of focuser preset 8
-  String fp8_str = webserver.arg("p8");
-  if ( fp8_str != "" )
+  // if set focuser preset 4
+  fp_str = webserver.arg("setp4");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp8:" );
-    DebugPrintln(fp8_str);
-    temp = fp8_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "setp4:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p4");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(4, temp);
     }
-    mySetupData->set_focuserpreset(8, temp);
   }
 
-  // if update of focuser preset 9
-  String fp9_str = webserver.arg("p9");
-  if ( fp9_str != "" )
+  // if goto focuser preset 4
+  fp_str = webserver.arg("gop4");
+  if ( fp_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -fp9:" );
-    DebugPrintln(fp9_str);
-    temp = fp9_str.toInt();
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    DebugPrint( "gop4:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p4");
+    if ( fp != "" )
     {
-      temp = mySetupData->get_maxstep();
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(4, temp);
+      ftargetPosition = temp;
     }
-    mySetupData->set_focuserpreset(9, temp);
+  }
+
+  // if set focuser preset 5
+  fp_str = webserver.arg("setp5");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "setp5:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p5");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(5, temp);
+    }
+  }
+
+  // if goto focuser preset 5
+  fp_str = webserver.arg("gop5");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "gop5:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p5");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(5, temp);
+      ftargetPosition = temp;
+    }
+  }
+
+  // if set focuser preset 6
+  fp_str = webserver.arg("setp6");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "setp6:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p6");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(6, temp);
+    }
+  }
+
+  // if goto focuser preset 6
+  fp_str = webserver.arg("gop6");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "gop6:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p6");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(6, temp);
+      ftargetPosition = temp;
+    }
+  }
+
+  // if set focuser preset 7
+  fp_str = webserver.arg("setp7");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "setp0:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p7");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(7, temp);
+    }
+  }
+
+  // if goto focuser preset 7
+  fp_str = webserver.arg("gop7");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "gop0:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p7");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(7, temp);
+      ftargetPosition = temp;
+    }
+  }
+
+  // if set focuser preset 8
+  fp_str = webserver.arg("setp8");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "setp8:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p8");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(8, temp);
+    }
+  }
+
+  // if goto focuser preset 8
+  fp_str = webserver.arg("gop8");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "gop8:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p8");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(8, temp);
+      ftargetPosition = temp;
+    }
+  }
+
+  // if set focuser preset 9
+  fp_str = webserver.arg("setp9");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "setp9:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p9");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(9, temp);
+    }
+  }
+
+  // if goto focuser preset 9
+  fp_str = webserver.arg("gop9");
+  if ( fp_str != "" )
+  {
+    DebugPrint( "gop9:" );
+    DebugPrintln(fp_str);
+    String fp = webserver.arg("p9");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      mySetupData->set_focuserpreset(9, temp);
+      ftargetPosition = temp;
+    }
   }
 
   // if update motorspeed
