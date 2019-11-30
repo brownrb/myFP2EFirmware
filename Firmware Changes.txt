@@ -1,8 +1,15 @@
 // 110
+<<<<<<< HEAD
 // Add focuser presets support in infrared remote controller
 
 // 109
 // Add ASCOM Remote Management api
+=======
+// Add focuser presets and link to infra-red remote controller
+
+// 109 
+// Add ASCOM REMOTE MANAGEMENT ALPACA API functions
+>>>>>>> ascom-remote-management
 
 // 108 
 // Add joystick as alternative to push buttons
