@@ -1,10 +1,14 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE RELEASE 107
+// TITLE: myFP2ESP FIRMWARE RELEASE 110
+// TODO
+// Add focuser presets to webserver page DONE
+
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
 // ESP8266 Supports OLED display, Temperature Probe
-// ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's. Infrared Remote
+// ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's, Infrared Remote, Bluetooth
+// Supports modes, ACCESSPOINT, STATIONMODE, BLUETOOTH, LOCALSERIAL, WEBSERVER, ASCOMREMOTE
 // Remember to change your target CPU depending on board selection
 
 // ----------------------------------------------------------------------------------------------
@@ -40,14 +44,13 @@
 // PCB BOARDS
 // ----------------------------------------------------------------------------------------------
 // ESP8266
-//  ULN2003       https://aisler.net/p/UAAKPUTS
-//  DRV8825       https://aisler.net/p/EKDGHUYW
-//  L293D Shield  https://www.ebay.com/itm/L293D-Motor-Drive-Shield-Wifi-Module-For-Arduino-NodeMcu-Lua-ESP8266-ESP-12E/292619874436
+//    ULN2003   https://aisler.net/p/UAAKPUTS
+//    DRV8825   https://aisler.net/p/EKDGHUYW
 // ESP32
-//  ULN2003       https://aisler.net/p/OTEGMJNE
-//  DRV8825       https://aisler.net/p/TYQHHGAI
+//    ULN2003   https://aisler.net/p/OTEGMJNE
+//    DRV8825   https://aisler.net/p/TYQHHGAI
 //
-//  ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
+// ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
 // ----------------------------------------------------------------------------------------------
 // COMPILE ENVIRONMENT : Tested with
 // Arduino IDE 1.8.9
@@ -57,7 +60,7 @@
 // myOLED as in myFP2ELibs
 // IRRemoteESP32 2.0.1 as in myFP2ELibs
 // HalfStepperESP32 as in myFP2ELibs
-// Dallas Temperature 3.80
+// myDallas Temperature 3.7.3A as in myFP2ELibs
 // Wire [as installed with Arduino 1.8.9
 // OneWire 2.3.5
 // EasyDDNS 1.5.2
@@ -99,34 +102,32 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
-// To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
-#define OLEDTEXT 1
-//#define OLEDGRAPHICS 2
+// To enable the OLED DISPLAY uncomment the next line
+//#define OLEDDISPLAY 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH, uncomment the next line
 //#define HOMEPOSITIONSWITCH 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
-//#define BACKLASH 2    // ALTERNATIVE BACKLASH ALGORITHM
+//#define BACKLASH 1
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
 
+// To enable the 2-Axis Joystick in this firmware, uncomment the next line [ESP32 only]
+//#define JOYSTICK 1
+
 // To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
-//#define INOUTLEDPINS 1
+//#define INOUTLEDS 1
 
 // To enable the Infrared remote controller, uncomment the next line [ESP32 only]
 //#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 //#define SHOWSTARTSCRN 1
-
-// To display Spash screen graphic, uncomment the next line
-//#define SPLASHSCREEN 1
 
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
@@ -136,19 +137,16 @@
 #ifdef INOUTPUSHBUTTONS
 #halt // ERROR - INOUTPUSHBUTTONS not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
-#ifdef INOUTLEDPINS
-#halt // ERROR - INOUTLEDPINS not supported for WEMOS or NODEMCUV1 ESP8266 chips
+#ifdef INOUTLEDS
+#halt // ERROR - INOUTLEDS not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
 #ifdef INFRAREDREMOTE
 #halt // ERROR - INFRAREDREMOTE not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
+#ifdef JOYSTICK
+#halt // ERROR - JOYSTICK not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
-
-#if defined(OLEDGRAPHICS)
-#if defined(OLEDTEXT)
-#halt // ERROR - you must have either OLEDGRAPHICS or OLEDTEXT defined, NOT BOTH
-#endif
-#endif
+#endif // 
 
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
@@ -160,6 +158,12 @@
 #endif
 #endif // 
 
+#ifdef JOYSTICK
+#ifdef INOUTPUSHBUTTONS
+#halt // ERROR - you cannot have INOUTPUSHBUTTONS and JOYSTICK enabled at the same time
+#endif
+#endif
+
 // ----------------------------------------------------------------------------------------------
 // 5: SPECIFY THE CONTROLLER MODE HERE - ONLY ONE OF THESE MUST BE DEFINED
 // ----------------------------------------------------------------------------------------------
@@ -168,26 +172,40 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-//#define ACCESSPOINT 2
+#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-#define STATIONMODE 3
+//#define STATIONMODE 3
 
 // to work only via USB cable as Serial port, uncomment the next line
 //#define LOCALSERIAL 4
 
-// To enable OTA updates, uncomment the next line [can only be used with stationmode]
+// to enable Over The Air (OTA) updates, uncomment the next line
 //#define OTAUPDATES 5
 
-// to enable this focuser for ASCOM ALPACA REMOTE support, uncomment the next line
-#define ASCOMREMOTE 6
+// to enable ASCOM ALPACA REMOTE support [on tcp port 4040], uncomment the next line
+//#define ASCOMREMOTE 6
 
-// to enable Webserver interface, uncomment the next line [recommed use Internet Explorer or Microsoft Edge Browser]
+// to enable Webserver interface [on tcp port 80], uncomment the next line
 #define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line
 #define MDNSSERVER 8
+
+#ifdef MDNSSERVER
+#if defined(ESP8266)
+#ifndef WEBSERVER
+#include <ESP8266WebServer.h>
+#endif
+#include <ESP8266mDNS.h>
+#else
+#ifndef WEBSERVER
+#include <WebServer.h>
+#endif
+#include <ESPmDNS.h>
+#endif
+#endif // mDNS
 
 // DO NOT CHANGE
 #if defined(MDNSSERVER)
@@ -212,9 +230,9 @@
 #if !defined(ACCESSPOINT) && !defined(STATIONMODE)
 #halt //ERROR you must use ACCESSPOINT or STATIONMODE with ASCOMREMOTE
 #endif
-//#if defined(WEBSERVER)
-//#halt //ERROR you cannot have both ASCOMREMOTE and WEBSERVER enabled at the same time
-//#endif
+#if defined(WEBSERVER)
+#halt //ERROR you cannot have both ASCOMREMOTE and WEBSERVER enabled at the same time
+#endif
 #if defined(LOCALSERIAL)
 #halt //ERROR you cannot have both ASCOMREMOTE and LOCALSERIAL enabled at the same time
 #endif
@@ -264,7 +282,6 @@
 #halt // ERROR - LOCALSERIAL not supported L293D Motor Shield [ESP8266] boards
 #endif
 #endif
-#define MotorReleaseDelay 120*1000          // motor release power after 120s
 
 // ----------------------------------------------------------------------------------------------
 // 6: INCLUDES FOR WIFI
@@ -284,6 +301,7 @@
 #include <WiFi.h>
 #include "SPIFFS.h"
 #endif
+#include <SPI.h>
 #include "FocuserSetupData.h"
 
 #ifdef ASCOMREMOTE
@@ -302,40 +320,27 @@
 #endif // if defined(esp8266)
 #endif // webserver
 
-#ifdef MDNSSERVER
-#if defined(ESP8266)
-#ifndef WEBSERVER
-#include <ESP8266WebServer.h>
-#endif
-#include <ESP8266mDNS.h>
-#else
-#ifndef WEBSERVER
-#include <WebServer.h>
-#endif
-#include <ESPmDNS.h>
-#endif
-#endif // mDNS
-
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // 1. For access point mode this is the network you connect to
 // 2. For station mode, change these to match your network details
-#ifdef ACCESSPOINT                          // your computer connects to this accesspoint
+#ifdef ACCESSPOINT                        // your computer connects to this accesspoint
 char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 #endif
-
 #ifdef STATIONMODE                          // the controller connects to your network
-char mySSID[64] = "myfp2eap";
-char myPASSWORD[64] = "myfp2eap";
+//char mySSID[64] = "myfp2eap";
+//char myPASSWORD[64] = "myfp2eap";
+char mySSID[64] = "SHALCYN";
+char myPASSWORD[64] = "summon spruce talen 74!";
 #endif
 
 // ----------------------------------------------------------------------------------------------
 // 8: OTA (OVER THE AIR UPDATING) SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // You can change the values for OTANAME and OTAPassword if required
-#if defined(OTAUPDATES)
+#ifdef OTAUPDATES
 const char *OTAName = "ESP8266";            // the username and password for the OTA service
 const char *OTAPassword = "esp8266";
 #include "otaupdate.h"                      // order of statements is important
@@ -370,21 +375,21 @@ int mdns_started;
 // To use DucksDNS, uncomment the next line - can only be used together with STATIONMODE
 //#define USEDUCKSDNS 1
 
-// if using DuckDNS you need to set these next two parameters
-// cannot use DuckDNS with ACCESSPOINT mode
-#if defined(DUCKDNS)
+// if using DuckDNS you need to set these next two parameters, duckdnsdomain and duckdnstoken
+// cannot use DuckDNS with ACCESSPOINT, BLUETOOTHMODE or LOCALSERIAL mode
+#ifdef DUCKDNS
 const char* duckdnsdomain = "myfp2erobert.duckdns.org";
 const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 #endif
 
 // DO NOT CHANGE
-#if defined(USEDUCKSDNS)
-#include <EasyDDNS.h>                       // https://github.com/ayushsharma82/EasyDDNS
+#ifdef USEDUCKSDNS
+#include <EasyDDNS.h>             // https://github.com/ayushsharma82/EasyDDNS
 #endif
 
-#if defined(ACCESSPOINT)
-#if defined(USEDUCKSDNS)
-#halt error- you cannot have ACCESSPOINT and STATIONMODE both defined - only one of then
+#ifdef ACCESSPOINT
+#ifdef USEDUCKSDNS
+#halt // Error- you cannot have ACCESSPOINT and STATIONMODE both defined - only one of then
 #endif
 #endif
 
@@ -401,20 +406,20 @@ const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
 //int staticip = STATICIPON;      // IP address specified by controller - must be defined correctly
 int staticip = STATICIPOFF;       // IP address is generated by network device and is dynamic and can change
 
-#if defined(STATIONMODE)
+#ifdef STATIONMODE
 // These need to reflect your current network settings - 192.168.x.21 - change x
 // This has to be within the range for dynamic ip allocation in the router
 // No effect if staticip = STATICIPOFF
-IPAddress ip(192, 168, 2, 21);              // station static IP - you can change these values to change the IP
-IPAddress dns(192, 168, 2, 1);              // just set it to the same IP as the gateway
+IPAddress ip(192, 168, 2, 21);                // station static IP - you can change these values to change the IP
+IPAddress dns(192, 168, 2, 1);                // just set it to the same IP as the gateway
 IPAddress gateway(192, 168, 2, 1);
 IPAddress subnet(255, 255, 255, 0);
 #endif
 
-#if defined(ACCESSPOINT)
+#ifdef ACCESSPOINT
 // By default the Access point should be 192.168.4.1 - DO NOT CHANGE
-IPAddress ip(192, 168, 4, 1);               // AP static IP - you can change these values to change the IP
-IPAddress dns(192, 168, 4, 1);              // just set it to the same IP as the gateway
+IPAddress ip(192, 168, 4, 1);                 // AP static IP - you can change these values to change the IP
+IPAddress dns(192, 168, 4, 1);                // just set it to the same IP as the gateway
 IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 #endif
@@ -432,21 +437,15 @@ IPAddress subnet(255, 255, 255, 0);
 
 #include <Wire.h>                           // needed for I2C => OLED display
 
-#if defined(TEMPERATUREPROBE)
+#ifdef TEMPERATUREPROBE
 #include <OneWire.h>                        // https://github.com/PaulStoffregen/OneWire
-#include <DallasTemperature.h>              // https://github.com/milesburton/Arduino-Temperature-Control-Library
+#include <myDallasTemperature.h>
 #include "temperature.h"
 #endif
 
-#if defined(OLEDGRAPHICS)
-#include <SSD1306Wire.h>
-#include "images.h"
-SSD1306Wire *myoled;
-#endif
-#if defined(OLEDTEXT)
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-Adafruit_SSD1306 *myoled;
+#ifdef OLEDDISPLAY
+#include <mySSD1306Ascii.h>
+#include <mySSD1306AsciiWire.h>
 #endif
 
 #if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
@@ -460,7 +459,7 @@ Adafruit_SSD1306 *myoled;
 // ----------------------------------------------------------------------------------------------
 // 15: BLUETOOTH MODE - Do not change
 // ----------------------------------------------------------------------------------------------
-#if defined(BLUETOOTHMODE)
+#ifdef BLUETOOTHMODE
 #include "BluetoothSerial.h"                // needed for Bluetooth comms
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -474,7 +473,6 @@ BluetoothSerial SerialBT;                   // define BT adapter to use
 // ----------------------------------------------------------------------------------------------
 // 16: CONTROLLER FEATURES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-
 unsigned long Features = 0L;
 
 void setFeatures()
@@ -548,6 +546,9 @@ void setFeatures()
 #ifdef MDNSSERVER
   Features = Features + ENABLEDMDNS;
 #endif
+#ifdef JOYSTICK
+  Features = Features + ENABLEDJOYSTICK;
+#endif
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -555,18 +556,16 @@ void setFeatures()
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
-enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash2, State_Moving, \
-                            State_FindHomePosition, State_SetHomePosition, State_DelayAfterMove, \
-                            State_FinishedMove
-                         };
-
-#define move_in               0
-#define move_out              1
-#define move_main             move_in      //__needed for Backlash 2 
-#define oled_off              0
-#define oled_on               1
-#define oled_stay             2
-
+#define State_Idle              0
+#define State_InitMove          1
+#define State_ApplyBacklash     2
+#define State_Moving            3
+#define State_DelayAfterMove    4
+#define State_FinishedMove      5
+#define State_SetHomePosition   6
+#define State_FindHomePosition  7
+#define move_in                 0
+#define move_out                1
 //           reversedirection
 //__________________________________
 //               0   |   1
@@ -574,39 +573,38 @@ enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash
 //move_out  1||  1   |   0
 //move_in   0||  0   |   1
 
-String programName;                                     // will become driverboard name
+String programName;
 DriverBoard* driverboard;
 
 char programVersion[] = "110";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
-unsigned long fcurrentPosition;                         // current focuser position
-unsigned long ftargetPosition;                          // target position
+unsigned long fcurrentPosition;         // current focuser position
+unsigned long ftargetPosition;          // target position
 unsigned long tmppos;
 
-byte tprobe1;                                           // indicate if there is a probe attached to myFocuserPro2
-byte isMoving;                                          // is the motor currently moving
-String ipStr;                                           // shared between BT mode and other modes
-boolean displayfound;
+byte tprobe1;                           // indicate if there is a probe attached to myFocuserPro2
+byte isMoving;                          // is the motor currently moving
+String ipStr;                           // shared between BT mode and other modes
 
-#if defined(BLUETOOTHMODE)
-Queue queue(QUEUELENGTH);                               // receive serial queue of commands
-String line;                                            // buffer for serial data
-#endif
+#ifdef BLUETOOTHMODE
+Queue queue(QUEUELENGTH);               // receive serial queue of commands
+String line;                            // buffer for serial data
+#endif // bluetoothmode
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTH)
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
 IPAddress ESP32IPAddress;
 String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
-WiFiClient myclient;                                    // only one client supported, multiple connections denied
+WiFiClient myclient;                    // only one client supported, multiple connections denied
 IPAddress myIP;
 long rssi;
 #endif
 
-#if defined(INFRAREDREMOTE)
+#ifdef INFRAREDREMOTE
 IRrecv irrecv(IRPIN);
 decode_results results;
-#endif
+#endif // infraredremote
 
 #ifdef HOMEPOSITIONSWITCH
 volatile int hpswstate;
@@ -618,41 +616,25 @@ int packetssent;
 SetupData *mySetupData;
 
 // ----------------------------------------------------------------------------------------------
-// 17: CODE START - CHANGE AT YOUR OWN PERIL
+// 18: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
+
 #include "comms.h"
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
 #include "displays.h"
-#endif
 #ifdef INOUTPUSHBUTTONS
 #include "pushbuttons.h"
 #endif
 #ifdef INFRAREDREMOTE
 #include "infraredremote.h"
 #endif
-
-byte TimeCheck(unsigned long x, unsigned long Delay)
-{
-  unsigned long y = x + Delay;
-  unsigned long z = millis();                           // pick current time
-
-  if ((x > y) && (x < z))
-    return 0;                                           // overflow y
-  if ((x < y) && ( x > z))
-    return 1;                                           // overflow z
-
-  return (y < z);                                       // no or (z and y) overflow
-}
+#ifdef JOYSTICK
+#include "joystick.h"
+#endif
 
 void software_Reboot(int Reboot_delay)
 {
-  oledtextmsg("Controller reboot", -1, true, false);
-#if defined(OLEDGRAPHICS)
-  myoled->clear();
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_24);
-  myoled->drawString(64, 28, "REBOOT");                 // Print currentPosition
-  myoled->display();
+#ifdef OLEDDISPLAY
+  oledtextmsg(wifirestartstr, -1, true, false);
 #endif
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   if ( myclient.connected() )
@@ -665,13 +647,13 @@ void software_Reboot(int Reboot_delay)
 }
 
 // STEPPER MOTOR ROUTINES
-void steppermotormove(byte dir )                        // direction move_in, move_out ^ reverse direction
+void steppermotormove(byte dir )           // direction move_in, move_out ^ reverse direction
 {
-#if defined(INOUTLEDPINS)
+#ifdef INOUTLEDS
   ( dir == move_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
 #endif
   driverboard->movemotor(dir);
-#if defined(INOUTLEDPINS)
+#ifdef INOUTLEDS
   ( dir == move_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
 #endif
 }
@@ -685,46 +667,6 @@ void IRAM_ATTR hpsw_isr()
 }
 #endif
 
-bool Read_WIFI_config_SPIFFS( char* xSSID, char* xPASSWORD)
-{
-  const String filename = "/wifi.json";
-  String SSID;
-  String PASSWORD;
-  boolean status = false;
-
-  DebugPrintln(F("check for Wifi setup data on SPIFFS"));
-  File f = SPIFFS.open(filename, "r");                          // file open to read
-  if (!f)
-  {
-    DebugPrintln(F("no SPIFFS Wifi Setupdata found => use default settings"));
-  }
-  else
-  {
-    String data = f.readString();                               // read content of the text file
-    DebugPrint(F("SPIFFS Wifi Setupdata: "));
-    DebugPrintln(data);                                         // ... and print on serial
-
-    DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(2) + 120));  // allocate json buffer
-    DeserializationError error = deserializeJson(doc, data);    // Parse JSON object
-    if (error)
-    {
-      DebugPrintln("Deserialization failed! => use default settings");
-    }
-    else
-    {
-      // Decode JSON/Extract values
-      SSID     =  doc["mySSID"].as<char*>();
-      PASSWORD =  doc["myPASSWORD"].as<char*>();
-
-      SSID.toCharArray(xSSID, SSID.length() + 1);
-      PASSWORD.toCharArray(xPASSWORD, PASSWORD.length() + 1);
-
-      status = true;
-    }
-  }
-  return status;
-}
-
 void setup()
 {
 #if defined(DEBUG) || defined(LOCALSEARIAL)
@@ -735,91 +677,89 @@ void setup()
 #endif
 #endif
 
-  mySetupData = new SetupData();                        // instantiate object SetUpData with SPIFFS
+  mySetupData = new SetupData();            // instantiate object SetUpData with SPIFFS file instead of using EEPROM, init SPIFFS
 
-#if defined(LOCALSERIAL)
+#ifdef LOCALSERIAL
   serialline = "";
   clearSerialPort();
 #endif // if defined(LOCALSERIAL)
 
-#if defined(BLUETOOTHMODE)                              // open Bluetooth port and set bluetooth device name if defined
-  SerialBT.begin(BLUETOOTHNAME);                        // Bluetooth device name
+#ifdef BLUETOOTHMODE                        // open Bluetooth port and set bluetooth device name if defined
+  SerialBT.begin(BLUETOOTHNAME);            // Bluetooth device name
   btline = "";
   clearbtPort();
   DebugPrintln(bluetoothstartstr);
 #endif
 
-#if defined(INOUTLEDPINS)                                  // Setup IN and OUT LEDS, use as controller power up indicator
+#ifdef INOUTLEDS                            // Setup IN and OUT LEDS, use as controller power up indicator
   pinMode(INLEDPIN, OUTPUT);
   pinMode(OUTLEDPIN, OUTPUT);
   digitalWrite(INLEDPIN, 1);
   digitalWrite(OUTLEDPIN, 1);
 #endif
 
-#if defined(INOUTPUSHBUTTONS)                           // Setup IN and OUT Pushbuttons, active high when pressed
+#ifdef INOUTPUSHBUTTONS                     // Setup IN and OUT Pushbuttons, active high when pressed
   pinMode(INPBPIN, INPUT);
   pinMode(OUTPBPIN, INPUT);
 #endif
 
-  displayfound = false;
-#if defined(OLEDGRAPHICS) || defined(OLEDTEXT)
-  displayfound = Init_OLED();
+#ifdef JOYSTICK
+  // no need to initialise pins as input as they will be treated as analog
+  // JOYINOUTPIN and JOYSPEEDPIN
 #endif
 
-  delay(100);                                           // keep delays small otherwise issue with ASCOM
+#ifdef OLEDDISPLAY
+  Init_OLED();
+#endif
 
-  DebugPrint(F(" fposition : "));                       // Print Loaded Values from SPIFF
+  delay(100);                                 // keep delays small otherwise issue with ASCOM
+
+  DebugPrint(F("fposition= "));               // Print Loaded Values from SPIFF
   DebugPrintln(mySetupData->get_fposition());
-  DebugPrint(F(" focuserdirection : "));
+  DebugPrint(F("focuserdirection= "));
   DebugPrintln(mySetupData->get_focuserdirection());
-  DebugPrint(F(" maxstep : "));
+  DebugPrint(F("maxstep= "));
   DebugPrintln(mySetupData->get_maxstep());
-  DebugPrint(F(" stepsize : "));;
+  DebugPrint(F("stepsize= "));;
   DebugPrintln(mySetupData->get_stepsize());;
-  DebugPrint(F(" DelayAfterMove : "));
+  DebugPrint(F("DelayAfterMove= "));
   DebugPrintln(mySetupData->get_DelayAfterMove());
-  DebugPrint(F(" backlashsteps_in : "));
+  DebugPrint(F("backlashsteps_in= "));
   DebugPrintln(mySetupData->get_backlashsteps_in());
-  DebugPrint(F(" backlashsteps_out : "));
+  DebugPrint(F("backlashsteps_out= "));
   DebugPrintln(mySetupData->get_backlashsteps_out());
-  DebugPrint(F(" tempcoefficient : "));
+  DebugPrint(F("tempcoefficient= "));
   DebugPrintln(mySetupData->get_tempcoefficient());
-  DebugPrint(F(" tempprecision : "));
+  DebugPrint(F("tempprecision= "));
   DebugPrintln(mySetupData->get_tempprecision());
-  DebugPrint(F(" stepmode : "));
+  DebugPrint(F("stepmode = "));
   DebugPrintln(mySetupData->get_stepmode());
-  DebugPrint(F(" coilpower : "));
+  DebugPrint(F("coilpower= "));
   DebugPrintln(mySetupData->get_coilpower());
-  DebugPrint(F(" reversedirection : "));
+  DebugPrint(F("reversedirection= "));
   DebugPrintln(mySetupData->get_reversedirection());
-  DebugPrint(F(" stepsizeenabled : "));
+  DebugPrint(F("stepsizeenabled= "));
   DebugPrintln(mySetupData->get_stepsizeenabled());
-  DebugPrint(F(" tempmode : "));
+  DebugPrint(F("tempmode= "));
   DebugPrintln(mySetupData->get_tempmode());
-  DebugPrint(F(" lcdupdateonmove : "));
+  DebugPrint(F("lcdupdateonmove= "));
   DebugPrintln(mySetupData->get_lcdupdateonmove());
-  DebugPrint(F(" lcdpagedisplaytime : "));
+  DebugPrint(F("lcdpagedisplaytime= "));
   DebugPrintln(mySetupData->get_lcdpagetime());
-  DebugPrint(F(" tempcompenabled : "));
+  DebugPrint(F("tempcompenabled= "));
   DebugPrintln(mySetupData->get_tempcompenabled());
-  DebugPrint(F(" tcdirection : "));
+  DebugPrint(F("tcdirection= "));
   DebugPrintln(mySetupData->get_tcdirection());
-  DebugPrint(F(" motorSpeed : "));
+  DebugPrint(F("motorSpeed= "));
   DebugPrintln(mySetupData->get_motorSpeed());
-  DebugPrint(F(" displayenabled : "));
+  DebugPrint(F("displayenabled= "));
   DebugPrintln(mySetupData->get_displayenabled());
 
-#if defined(TEMPERATUREPROBE)                           // start temp probe
+#ifdef TEMPERATUREPROBE                       // start temp probe
   inittemp();
 #endif // end TEMPERATUREPROBE
 
-  //_____Start WIFI config________________________
-
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
-  Read_WIFI_config_SPIFFS(mySSID, myPASSWORD); //__ Read mySSID,myPASSWORD from SPIFFS if exist, otherwise use defaults
-#endif
-
-#if defined(ACCESSPOINT)
+#ifdef ACCESSPOINT
   oledtextmsg(startapstr, -1, true, true);
   DebugPrintln(startapstr);
   WiFi.config(ip, dns, gateway, subnet);
@@ -827,11 +767,11 @@ void setup()
   WiFi.softAP(mySSID, myPASSWORD);
 #endif // end ACCESSPOINT
 
-#if defined(STATIONMODE)
   // this is setup as a station connecting to an existing wifi network
+#ifdef STATIONMODE
   DebugPrintln(startsmstr);
   oledtextmsg(startsmstr, -1, false, true);
-  if (staticip == STATICIPON)                           // if staticip then set this up before starting
+  if (staticip == STATICIPON)                       // if staticip then set this up before starting
   {
     DebugPrintln(setstaticipstr);
     oledtextmsg(setstaticipstr, -1, false, true);
@@ -839,46 +779,36 @@ void setup()
     delay(5);
   }
 
-  /* Log NodeMCU on to LAN. Provide IP Address over Serial port */
-
+  /* Log on to LAN */
   WiFi.mode(WIFI_STA);
-  WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi
+  byte status = WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi
   delay(1000);                                      // wait 500ms
 
-  for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
+  int attempts = 0;                                 // holds the number of attempts/tries
+  while (WiFi.status() != WL_CONNECTED)
   {
     DebugPrint(attemptconnstr);
     DebugPrintln(mySSID);
     DebugPrint(attemptsstr);
     DebugPrint(attempts);
-    delay(1000);            // wait 1s
+    delay(1000);                                    // wait 1s
+    attempts++;                                     // add 1 to attempt counter to start WiFi
 
-    oled_draw_Wifi(attempts);
     oledtextmsg(attemptsstr, attempts, false, true);
 
-#if defined(ESP32)
-    if (attempts % 3 == 2)
-    { // every 3 attempts new init for ESP32 => faster connection without reboot
-      WiFi.mode(WIFI_STA);
-      WiFi.begin(mySSID, myPASSWORD);
-    }
-#endif
-
-    if (attempts > 9)                              // if this attempt is 10 or more tries
+    if (attempts > 10)                              // if this attempt is 11 or more tries
     {
       DebugPrintln(wifistartfailstr);
       DebugPrintln(wifirestartstr);
-      oledtextmsg(didnotconnectstr, -1, true, false);
-      oledtextmsg(mySSID, -1, false, true);
-      oledgraphicmsg("Did not connect to AP", -1, true);
+      oledtextmsg("Did not connect to " + String(mySSID), -1, true, true);
       delay(2000);
-      software_Reboot(2000);                          // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
+      software_Reboot(2000);                            // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
   }
 #endif // end STATIONMODE
 
   oledtextmsg("Connected", -1, true, true);
-  delay(100);                                           // keep delays small else issue with ASCOM
+  delay(100);                                       // keep delays small else issue with ASCOM
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
@@ -888,7 +818,7 @@ void setup()
   myserver.begin();
   DebugPrintln(F("Get local IP address"));
   ESP32IPAddress = WiFi.localIP();
-  delay(100);                                           // keep delays small else issue with ASCOM
+  delay(100);                                       // keep delays small else issue with ASCOM
   DebugPrintln(tcpserverstartedstr);
   oledtextmsg(tcpserverstartedstr, -1, false, true);
 
@@ -907,7 +837,7 @@ void setup()
   myIP = WiFi.localIP();
   ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
 #else
-  // it is Bluetooth or Local Serial so set some globals
+  // it is Bluetooth so set some globals
   ipStr = "0.0.0.0";
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
@@ -920,7 +850,7 @@ void setup()
 
   driverboard = new DriverBoard(DRVBRD);
   // setup firmware filename
-  programName = programName + driverboard->getboardname();
+  programName = driverboard->getboardname();
   DebugPrintln(drvbrddonestr);
   oledtextmsg(drvbrddonestr, -1, false, true);
   delay(5);
@@ -934,28 +864,28 @@ void setup()
   //mySetupData->set_fposition((mySetupData->get_fposition() < 0 ) ? 0 : mySetupData->get_fposition());
   //mySetupData->set_fposition((mySetupData->get_fposition() > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : mySetupData->get_fposition());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() < 0.0 ) ? 0 : mySetupData->get_stepsize());
-  mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > DEFAULTSTEPSIZE ) ? DEFAULTSTEPSIZE : mySetupData->get_stepsize());
+  mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > MAXIMUMSTEPSIZE ) ? MAXIMUMSTEPSIZE : mySetupData->get_stepsize());
 
-  driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-  driverboard->setstepmode(mySetupData->get_stepmode());
+  driverboard->setmotorspeed(mySetupData->get_motorSpeed());  // restore motorspeed
+  driverboard->setstepmode(mySetupData->get_stepmode());      // restore stepmode
 
-  DebugPrintln(F("Check coilpower."));
+  DebugPrintln(F("Check coilpower"));
   if (mySetupData->get_coilpower() == 0)
   {
     driverboard->releasemotor();
-    DebugPrintln(F("Coil power released."));
+    DebugPrintln(F("Coil power released"));
   }
 
   delay(5);
 
-#if defined(USEDUCKSDNS)
+#ifdef USEDUCKSDNS
   DebugPrintln(setupduckdnsstr);
   oledtextmsg(setupduckdnsstr, -1, false, true);
-  EasyDDNS.service("duckdns");                          // Enter your DDNS Service Name - "duckdns" / "noip"
+  EasyDDNS.service("duckdns");                      // Enter your DDNS Service Name - "duckdns" / "noip"
   delay(5);
-  EasyDDNS.client(duckdnsdomain, duckdnstoken);         // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
+  EasyDDNS.client(duckdnsdomain, duckdnstoken);     // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
   delay(5);
-  EasyDDNS.update(60000);                               // Check for New Ip Every 60 Seconds.
+  EasyDDNS.update(DUCKDNSREFRESHRATE);              // Check for New Ip Every 60 Seconds.
   delay(5);
 #endif // useduckdns
 
@@ -967,8 +897,9 @@ void setup()
   hpswstate = 0;
 #endif
 
-#if defined(INFRAREDREMOTE)
-  irrecv.enableIRIn();                                  // Start the IR
+  // Setup infra red remote
+#ifdef INFRAREDREMOTE
+  irrecv.enableIRIn();                // Start the IR
 #endif
 
   isMoving = 0;
@@ -1000,7 +931,7 @@ void setup()
   DebugPrintln(setupendstr);
   oledtextmsg(setupendstr, -1, false, true);
 
-#if defined(INOUTLEDPINS)
+#ifdef INOUTLEDS
   digitalWrite(INLEDPIN, 0);
   digitalWrite(OUTLEDPIN, 0);
 #endif
@@ -1011,27 +942,19 @@ void setup()
 //void IRAM_ATTR loop() // ESP32
 void loop()
 {
-  static StateMachineStates MainStateMachine = State_Idle;
-  static byte DirOfTravel = mySetupData->get_focuserdirection();
+  static byte MainStateMachine = State_Idle;
   static byte backlash_count = 0;
-  static byte m_bl;
   static byte backlash_enabled = 0;
-
-  static unsigned long TimeStampDelayAfterMove = 0;
-  static unsigned long TimeStampPark = millis();
-  static byte Parked = false;
-  static byte updatecount = 0;
-
+  static byte DirOfTravel = mySetupData->get_focuserdirection();
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   //#if !defined(WEBSERVER) && !defined(ASCOMREMOTE)
   static byte ConnectionStatus = 0;
 #endif
-
 #ifdef HOMEPOSITIONSWITCH
   static byte stepstaken       = 0;
 #endif
 
-#if defined(LOOPTIMETEST)
+#ifdef LOOPTIMETEST
   DebugPrint(F("Loop Start ="));
   DebugPrintln(millis());
 #endif
@@ -1063,7 +986,7 @@ void loop()
     {
       if (myclient.available())
       {
-        ESP_Communication(ESPDATA);                     // Wifi communication
+        ESP_Communication(ESPDATA);
       }
     }
     else
@@ -1071,7 +994,7 @@ void loop()
       ConnectionStatus = 1;
     }
   }
-#endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
+#endif // !defined(BLUETOOTHMODE) && !defined(LOCALSERIAL)
 
 #ifdef BLUETOOTHMODE
   if ( SerialBT.available() )
@@ -1079,7 +1002,7 @@ void loop()
     processbt();
   }
   // if there is a command from Bluetooth
-  if ( queue.count() >= 1 )                             // check for serial command
+  if ( queue.count() >= 1 )                 // check for serial command
   {
     ESP_Communication(BTDATA);
   }
@@ -1120,93 +1043,17 @@ void loop()
 
   switch (MainStateMachine)
   {
-    //___Idle________________________________________________________________
     case State_Idle:
       if (fcurrentPosition != ftargetPosition)
       {
-        //__init move _____________________________
         isMoving = 1;
+        driverboard->enablemotor();
+        MainStateMachine = State_InitMove;
         DebugPrint(F(STATEINITMOVE));
         DebugPrint(currentposstr);
         DebugPrintln(fcurrentPosition);
         DebugPrint(targetposstr);
         DebugPrintln(ftargetPosition);
-
-        DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
-        driverboard->enablemotor();
-        if (mySetupData->get_focuserdirection() == DirOfTravel)
-        {
-          // move is in same direction, ignore backlash
-          MainStateMachine = State_Moving;
-          DebugPrintln(STATEMOVINGSTR);
-        }
-        else
-        {
-          // move is in opposite direction, check for backlash enabled
-          // get backlash settings
-          mySetupData->set_focuserdirection(DirOfTravel);
-#if (BACKLASH == 1)   // go for standard backlash
-          if ( DirOfTravel == move_in)
-          {
-            backlash_count = mySetupData->get_backlashsteps_in();
-            backlash_enabled = mySetupData->get_backlash_in_enabled();
-          }
-          else
-          {
-            backlash_count = mySetupData->get_backlashsteps_out();
-            backlash_enabled = mySetupData->get_backlash_out_enabled();
-          }
-          // backlash needs to be applied, so get backlash values and states
-
-          // if backlask was defined then follow the backlash rules
-          // if backlash has been enabled then apply it
-          if ( backlash_enabled == 1 )
-          {
-            // apply backlash
-            // save new direction of travel
-            // mySetupData->set_focuserdirection(DirOfTravel);
-            //driverboard->setmotorspeed(BACKLASHSPEED);
-            MainStateMachine = State_ApplyBacklash;
-            DebugPrint(STATEAPPLYBACKLASH);
-          }
-          else
-          {
-            // do not apply backlash, go straight to moving
-            MainStateMachine = State_Moving;
-            DebugPrint(STATEMOVINGSTR);
-          }
-
-#elif (BACKLASH == 2)
-
-          if ( DirOfTravel == move_main)
-          {
-            // do not apply backlash, go straight to moving
-            MainStateMachine = State_Moving;
-            DebugPrint(STATEMOVINGSTR);
-          }
-          else
-          {
-            unsigned long bl = mySetupData->get_backlashsteps_in();
-            unsigned long sm = mySetupData->get_stepmode();
-
-            if (DirOfTravel == move_out)
-            {
-              backlash_count = bl + sm - ((ftargetPosition + bl) % sm);   // Trip to tuning point should be a fullstep position
-            }
-            else
-            {
-              backlash_count = bl + sm - ((ftargetPosition - bl) % sm);   // Trip to tuning point should be a fullstep position
-            }
-            m_bl =  backlash_count;
-            MainStateMachine = State_ApplyBacklash;
-            DebugPrint(STATEAPPLYBACKLASH);
-          }
-#else
-          // ignore backlash
-          MainStateMachine = State_Moving;
-          DebugPrint(STATEMOVINGSTR);;
-#endif
-        }
       }
       else
       {
@@ -1214,45 +1061,82 @@ void loop()
 #ifdef INOUTPUSHBUTTONS
         update_pushbuttons();
 #endif
+#ifdef JOYSTICK
+        update_joystick();
+#endif
 #ifdef INFRAREDREMOTE
         update_irremote();
 #endif
-        if (mySetupData->get_displayenabled() == 1)
+#ifdef OLEDDISPLAY
+        if ( mySetupData->get_displayenabled() == 1)
         {
-          Update_OledGraphics(oled_stay);
           Update_OledText();
         }
-        else
-        {
-          Update_OledGraphics(oled_off);
-        }
+#endif // OLEDDISPLAY
 
 #ifdef TEMPERATUREPROBE
         Update_Temp();
-#endif
-
-        if (Parked == false)
-        {
-          if (TimeCheck(TimeStampPark, MotorReleaseDelay))   //Power off after MotorReleaseDelay
-          {
-            driverboard->releasemotor();
-            DebugPrintln(F("Idle: release motor"));
-            Parked = true;
-          }
-        }
-
+#endif // temperatureprobe
         byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
         if ( status == true )
         {
-          Update_OledGraphics(oled_off);                // Display off after config saved
-          DebugPrint("new Config saved: ");
+          DebugPrint("new Config saved= ");
           DebugPrintln(status);
         }
       }
       break;
 
+    case State_InitMove:
+      isMoving = 1;
+      DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
+      driverboard->enablemotor();
+      if (mySetupData->get_focuserdirection() == DirOfTravel)
+      {
+        // move is in same direction, ignore backlash
+        MainStateMachine = State_Moving;
+        DebugPrintln(STATEMOVINGSTR);
+      }
+      else
+      {
+        // move is in opposite direction, check for backlash enabled
+        // get backlash settings
+        if ( DirOfTravel == move_in)
+        {
+          backlash_count = mySetupData->get_backlashsteps_in();
+          backlash_enabled = mySetupData->get_backlash_in_enabled();
+        }
+        else
+        {
+          backlash_count = mySetupData->get_backlashsteps_out();
+          backlash_enabled = mySetupData->get_backlash_out_enabled();
+        }
+        // backlash needs to be applied, so get backlash values and states
+#ifdef BACKLASH
+        // if backlask was defined then follow the backlash rules
+        // if backlash has been enabled then apply it
+        if ( backlash_enabled == 1 )
+        {
+          // apply backlash
+          // save new direction of travel
+          mySetupData->set_focuserdirection(DirOfTravel);
+          //driverboard->setmotorspeed(BACKLASHSPEED);
+          MainStateMachine = State_ApplyBacklash;
+          DebugPrint(F(STATEAPPLYBACKLASH));
+        }
+        else
+        {
+          // do not apply backlash, go straight to moving
+          MainStateMachine = State_Moving;
+          DebugPrint(STATEMOVINGSTR);
+        }
+#else
+        // ignore backlash
+        MainStateMachine = State_Moving;
+        DebugPrint(STATEMOVINGSTR);
+#endif
+      }
+      break;
 
-    //__ApplyBacklash ____________________________________________________________________
     case State_ApplyBacklash:
       if ( backlash_count )
       {
@@ -1261,19 +1145,24 @@ void loop()
       }
       else
       {
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+        //driverboard->setmotorspeed(mySetupData->get_motorSpeed());
         MainStateMachine = State_Moving;
-        DebugPrint(STATEMOVINGSTR);
+        DebugPrintln(STATEMOVINGSTR);
       }
       break;
 
-    //__ Moving _________________________________________________________________________
     case State_Moving:
-      if ( fcurrentPosition != ftargetPosition )        // must come first else cannot halt
+      if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
       {
-        (DirOfTravel == move_out ) ? fcurrentPosition++ : fcurrentPosition--;
+        if (DirOfTravel == move_out )
+        {
+          fcurrentPosition++;
+        }
+        else
+        {
+          fcurrentPosition--;
+        }
         steppermotormove(DirOfTravel);
-
 #ifdef HOMEPOSITIONSWITCH
         // if switch state = CLOSED and currentPosition != 0
         // need to back OUT a little till switch opens and then set position to 0
@@ -1284,6 +1173,12 @@ void loop()
           MainStateMachine = State_SetHomePosition;
           DebugPrintln(F("HP closed, fcurrentPosition !=0"));
           DebugPrintln(F(STATESETHOMEPOSITION));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+          myoled->clear();
+          myoled->println(hpswclosedstr);
+#endif
+#endif  // SHOWHPSWMSGS
         }
         // else if switch state = CLOSED and Position = 0
         // need to back OUT a little till switch opens and then set position to 0
@@ -1294,6 +1189,12 @@ void loop()
           MainStateMachine = State_SetHomePosition;
           DebugPrintln(F("HP closed, fcurrentPosition=0"));
           DebugPrintln(F(STATESETHOMEPOSITION));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+          myoled->clear();
+          myoled->println(hpswclosedstr);
+#endif
+#endif
         }
         // else if switchstate = OPEN and Position = 0
         // need to move IN a little till switch CLOSES then
@@ -1304,53 +1205,32 @@ void loop()
           MainStateMachine = State_FindHomePosition;
           DebugPrintln(F("HP Open, fcurrentPosition=0"));
           DebugPrintln(F(STATEFINDHOMEPOSITION));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+          myoled->clear();
+          myoled->println(hpswopenstr);
+#endif
+#endif  // SHOWHPSWMSGS
         }
 #endif // HOMEPOSITIONSWITCH
-
-        if ( mySetupData->get_displayenabled() == 1)
-        {
-          updatecount++;
-          if ( updatecount > LCDUPDATEONMOVE )
-          {
-            updatecount++;
-            if ( updatecount > LCDUPDATEONMOVE )
-            {
-              updatecount = 0;
-              UpdatePositionOledText();
-            }
-          }
-        }
       }
       else
       {
-#if (BACKLASH == 2)
-        if ( DirOfTravel != move_main)
-        {
-          DirOfTravel ^= 1;
-          mySetupData->set_focuserdirection(DirOfTravel);
-          backlash_count = m_bl;        // Backlash retour
-          TimeStampDelayAfterMove = millis();
-          MainStateMachine = State_ApplyBacklash2;
-          DebugPrintln(F("State_Moving => State_ApplyBacklash2"));
-        }
-        else
-        {
-          MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(F("State_Moving => State_DelayAfterMove"));
-        }
-#else
         MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(F("State_Moving => State_DelayAfterMove"));
-#endif
+        DebugPrintln(F(STATEDELAYAFTERMOVE));
       }
       break;
 
-    //__ FindHomePosition _________________________________________________________________________
     case State_FindHomePosition:                // move in till home position switch closes
 #ifdef HOMEPOSITIONSWITCH
       driverboard->setmotorspeed(SLOW);
       stepstaken = 0;
       DebugPrintln(F("HP MoveIN till closed"));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+      myoled->println(hpswfindclosedstr);
+#endif
+#endif // SHOWHPSWMSGS
       while ( hpswstate == HPSWOPEN )
       {
         // step IN till switch closes
@@ -1364,6 +1244,12 @@ void loop()
       }
       DebugPrint(F("HP MoveIN stepstaken="));
       DebugPrint(stepstaken);
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+      myoled->clear();
+      myoled->println(hpswclosedstr);
+#endif
+#endif  // SHOWHPSWMSGS
       DebugPrint(F("HP MoveIN finished"));
       driverboard->setmotorspeed(mySetupData->get_motorSpeed());
 #endif  // HOMEPOSITIONSWITCH
@@ -1371,12 +1257,16 @@ void loop()
       DebugPrint(F(STATESETHOMEPOSITION));
       break;
 
-    //__ SetHomePosition _________________________________________________________________________
     case State_SetHomePosition:                 // move out till home position switch opens
 #ifdef HOMEPOSITIONSWITCH
       driverboard->setmotorspeed(SLOW);
       stepstaken = 0;
       DebugPrintln(F("HP Move out till OPEN"));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+      myoled->println(hpswfindopenstr);
+#endif
+#endif // SHOWHPSWMSGS
       // if the previous moveIN failed at HOMESTEPS and HPSWITCH is still open then the
       // following while() code will drop through and have no effect and position = 0
       while ( hpswstate == HPSWCLOSED )
@@ -1395,53 +1285,41 @@ void loop()
       DebugPrintln(stepstaken);
       driverboard->setmotorspeed(mySetupData->get_motorSpeed());
       DebugPrintln(F("HP MoveOUT ended"));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDDISPLAY
+      myoled->clear();
+      myoled->println(hpswopenstr);
+#endif
+#endif  // SHOWHPSWMSGS
 #endif  // HOMEPOSITIONSWITCH
       MainStateMachine = State_DelayAfterMove;
       DebugPrintln(F(STATEDELAYAFTERMOVE));
       break;
 
-    //__ ApplyBacklash2 ___________________________________________________________________
-    case State_ApplyBacklash2:
-      if (TimeCheck(TimeStampDelayAfterMove , 250))
-      {
-        if (backlash_count)
-        {
-          driverboard->movemotor(DirOfTravel);
-          backlash_count--;
-        }
-        else
-        {
-          TimeStampDelayAfterMove = millis();
-          MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(F(STATEDELAYAFTERMOVE));
-        }
-      }
-      break;
-
-    //__ DelayAfterMove _________________________________________________________________________
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
-      if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
-      {
-        //__FinishedMove
-        Update_OledGraphics(oled_on);                   // display on after move
-        TimeStampPark  = millis();                      // catch current time
-        Parked = false;                                 // mark to park the motor in State_Idle
-        isMoving = 0;
-        MainStateMachine = State_Idle;
-        DebugPrintln(F("State_DelayAfterMove => State_Idle"));
-      }
+      delay(mySetupData->get_DelayAfterMove());
+      MainStateMachine = State_FinishedMove;
+      DebugPrintln(F(STATEFINISHEDMOVE));
       break;
-      
-    //__ Default _________________________________________________________________________
+
+    case State_FinishedMove:
+      isMoving = 0;
+      if ( mySetupData->get_coilpower() == 0 )
+      {
+        driverboard->releasemotor();
+      }
+      MainStateMachine = State_Idle;
+      DebugPrintln(F(STATEIDLE));
+      break;
+
     default:
-      DebugPrintln(F("Error: wrong State => State_Idle"));
       MainStateMachine = State_Idle;
       break;
   }
 
-#if defined(LOOPTIMETEST)
-  DebugPrint(F("- Loop End ="));
+#ifdef LOOPTIMETEST
+  DebugPrint(F("Loop End ="));
   DebugPrintln(millis());
 #endif
 } // end Loop()
