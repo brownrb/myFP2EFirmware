@@ -1,6 +1,10 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE ASCOMSERVER
+// myFP2ESP ASCOM SERVER ROUTINES AND DEFINITIONS
 // ----------------------------------------------------------------------------------------------
+// TODO
+// Add basic webpage for "/setup/v1/focuser/0/setup" ASCOM_handlesetupfocuser();
+// Set position, maxsteps, stepmode, motorspeed
+// Copy basic code from webserver
 
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
@@ -13,17 +17,47 @@
 #define ascomserver_h
 
 // ----------------------------------------------------------------------------------------------
-// EXTERNALS
+// EXTERNS
 // ----------------------------------------------------------------------------------------------
 extern SetupData *mySetupData;
-extern unsigned long fcurrentPosition;                         // current focuser position
-extern unsigned long ftargetPosition;                          // target position
+extern unsigned long fcurrentPosition;         // current focuser position
+extern unsigned long ftargetPosition;          // target position
 extern byte isMoving;
 extern String ipStr;
+extern String programName;
 extern char programVersion[];
 extern DriverBoard* driverboard;
 #ifdef TEMPERATUREPROBE
 extern float readtemp(byte);
+#endif
+
+// ----------------------------------------------------------------------------------------------
+// DATA AND DEFINITIONS - ASCOM SETUP WEB PAGE
+// ----------------------------------------------------------------------------------------------
+#ifdef ASCOMREMOTE
+#define AS_COPYRIGHT              "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>"
+#define AS_TITLE                  "<h3>myFP2ESP ASCOM REMOTE focus controller</h3>"
+#define AS_PAGETITLE              "<title>myFP2ESP ASCOM SERVER</title>"
+
+#define AS_SM1CHECKED             "<input type=\"radio\" name=\"sm\" value=\"1\" Checked> Full"
+#define AS_SM1UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"1\"> Full"
+#define AS_SM2CHECKED             "<input type=\"radio\" name=\"sm\" value=\"2\" Checked> 1/2"
+#define AS_SM2UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"2\"> 1/2"
+#define AS_SM4CHECKED             "<input type=\"radio\" name=\"sm\" value=\"4\" Checked> 1/4"
+#define AS_SM4UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"4\"> 1/4"
+#define AS_SM8CHECKED             "<input type=\"radio\" name=\"sm\" value=\"8\" Checked> 1/8"
+#define AS_SM8UNCHECKED           "<input type=\"radio\" name=\"sm\" value=\"8\"> 1/8"
+#define AS_SM16CHECKED            "<input type=\"radio\" name=\"sm\" value=\"16\" Checked> 1/16"
+#define AS_SM16UNCHECKED          "<input type=\"radio\" name=\"sm\" value=\"16\"> 1/16"
+#define AS_SM32CHECKED            "<input type=\"radio\" name=\"sm\" value=\"32\" Checked> 1/32"
+#define AS_SM32UNCHECKED          "<input type=\"radio\" name=\"sm\" value=\"32\"> 1/32"
+
+#define AS_MSSLOWCHECKED          "<input type=\"radio\" name=\"ms\" value=\"0\" Checked> Slow"
+#define AS_MSSLOWUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"0\"> Slow"
+#define AS_MSMEDCHECKED           "<input type=\"radio\" name=\"ms\" value=\"1\" Checked> Medium"
+#define AS_MSMEDUNCHECKED         "<input type=\"radio\" name=\"ms\" value=\"1\"> Medium"
+#define AS_MSFASTCHECKED          "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast"
+#define AS_MSFASTUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"2\"> Fast"
 #endif
 
 // ----------------------------------------------------------------------------------------------
@@ -42,10 +76,13 @@ extern float readtemp(byte);
 #define ASCOMERRORMSGNULL         ""
 #define ASCOMERRORNOTIMPLEMENTED  "Not implemented"
 #define ASCOMERRORMSGINVALID      "Invalid operation"
-#define ASCOMNAME                 "myFP2ESPASCOMR"
-#define ASCOMDESCRIPTION          "ASCOM driver for myFP2ESP controllers"
-#define ASCOMDRIVERINFO           "myFP2ESP ASCOM Driver (c) R. Brown. 2019"
+#define ASCOMNAME                 "\"myFP2ESPASCOMR\""
+#define ASCOMDESCRIPTION          "\"ASCOM driver for myFP2ESP controllers\""
+#define ASCOMDRIVERINFO           "\"myFP2ESP ASCOM Driver (c) R. Brown. 2019\""
+#define ASCOMMANAGEMENTINFO       "{\"ServerName\":\"myFP2ESP\",\"Manufacturer\":\"R. Brown\",\"ManufacturerVersion\":\"v1.0\",\"Location\":\"New Zealand\"}"
 
+String Focuser_Setup_HomePage;    //  url:/setup/v1/focuser/0/setup
+String Setup_HomePage;            //  url:/setup
 unsigned int ASCOMClientID;
 unsigned int ASCOMClientTransactionID;
 unsigned int ASCOMServerTransactionID = 0;
@@ -60,12 +97,179 @@ ESP8266WebServer ascomserver(ALPACAPORT);
 #else
 WebServer ascomserver(ALPACAPORT);
 #endif // if defined(esp8266)
+
 #endif // ifdef ASCOMREMOTE
 
 // ----------------------------------------------------------------------------------------------
-// CODE
+// CODE 
 // ----------------------------------------------------------------------------------------------
 #ifdef ASCOMREMOTE
+// Construct pages for /setup
+void ASCOM_Setup_HomePage()
+{
+  Setup_HomePage = "<html><head></head>";
+  Setup_HomePage = Setup_HomePage + "<title>myFP2ESP ASCOM REMOTE</title></head>";
+  Setup_HomePage = Setup_HomePage + "<body><h3>myFP2ESP ASCOM REMOTE</h3>";
+  Setup_HomePage = Setup_HomePage + "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>";
+  Setup_HomePage = Setup_HomePage + "<p>IP Address: " + ipStr + ": Port: " + String(ALPACAPORT) + ", Firmware Version=" + String(programVersion) + "</p>";
+  Setup_HomePage = Setup_HomePage + "<p>Driverboard = myFP2ESP." + driverboard->getboardname() + "</p>";
+  // add link for setup page /setup/v1/focuser/0/setup
+  Setup_HomePage = Setup_HomePage + "<p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
+  Setup_HomePage = Setup_HomePage + "</body></html>";  
+}
+
+// constructs ascom setup server page /setup/v1/focuser/0/setup
+void ASCOM_Create_Setup_Focuser_HomePage()
+{
+  // Convert IP address to a string;
+  // already in ipStr
+  // convert current values of focuserposition and focusermaxsteps to string types
+  String fpbuffer = String(fcurrentPosition);
+  String mxbuffer = String(mySetupData->get_maxstep());
+  String smbuffer = String(mySetupData->get_stepmode());
+  String imbuffer = String(isMoving);
+
+  switch ( mySetupData->get_stepmode() )
+  {
+    case 1:
+      smbuffer = AS_SM1CHECKED;
+      smbuffer = smbuffer + AS_SM2UNCHECKED;
+      smbuffer = smbuffer + AS_SM4UNCHECKED;
+      smbuffer = smbuffer + AS_SM8UNCHECKED;
+      smbuffer = smbuffer + AS_SM16UNCHECKED;
+      smbuffer = smbuffer + AS_SM32UNCHECKED;
+      break;
+    case 2 :
+      smbuffer = AS_SM1UNCHECKED;
+      smbuffer = smbuffer + AS_SM2CHECKED;
+      smbuffer = smbuffer + AS_SM4UNCHECKED;
+      smbuffer = smbuffer + AS_SM8UNCHECKED;
+      smbuffer = smbuffer + AS_SM16UNCHECKED;
+      smbuffer = smbuffer + AS_SM32UNCHECKED;
+      break;
+    case 4 :
+      smbuffer = AS_SM1UNCHECKED;
+      smbuffer = smbuffer + AS_SM2UNCHECKED;
+      smbuffer = smbuffer + AS_SM4CHECKED;
+      smbuffer = smbuffer + AS_SM8UNCHECKED;
+      smbuffer = smbuffer + AS_SM16UNCHECKED;
+      smbuffer = smbuffer + AS_SM32UNCHECKED;
+      break;
+    case 8 :
+      smbuffer = AS_SM1UNCHECKED;
+      smbuffer = smbuffer + AS_SM2UNCHECKED;
+      smbuffer = smbuffer + AS_SM4UNCHECKED;
+      smbuffer = smbuffer + AS_SM8CHECKED;
+      smbuffer = smbuffer + AS_SM16UNCHECKED;
+      smbuffer = smbuffer + AS_SM32UNCHECKED;
+      break;
+    case 16 :
+      smbuffer = AS_SM1UNCHECKED;
+      smbuffer = smbuffer + AS_SM2UNCHECKED;
+      smbuffer = smbuffer + AS_SM4UNCHECKED;
+      smbuffer = smbuffer + AS_SM8UNCHECKED;
+      smbuffer = smbuffer + AS_SM16CHECKED;
+      smbuffer = smbuffer + AS_SM32UNCHECKED;
+      break;
+    case 32 :
+      smbuffer = AS_SM1UNCHECKED;
+      smbuffer = smbuffer + AS_SM2UNCHECKED;
+      smbuffer = smbuffer + AS_SM4UNCHECKED;
+      smbuffer = smbuffer + AS_SM8UNCHECKED;
+      smbuffer = smbuffer + AS_SM16UNCHECKED;
+      smbuffer = smbuffer + AS_SM32CHECKED;
+      break;
+    default :
+      smbuffer = AS_SM1CHECKED;
+      smbuffer = smbuffer + AS_SM2UNCHECKED;
+      smbuffer = smbuffer + AS_SM4UNCHECKED;
+      smbuffer = smbuffer + AS_SM8UNCHECKED;
+      smbuffer = smbuffer + AS_SM16UNCHECKED;
+      smbuffer = smbuffer + AS_SM32UNCHECKED;
+      break;
+  }
+
+  String msbuffer = String(mySetupData->get_motorSpeed());
+  switch ( mySetupData->get_motorSpeed() )
+  {
+    case 0:
+      msbuffer = AS_MSSLOWCHECKED;
+      msbuffer = msbuffer + AS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + AS_MSFASTUNCHECKED;
+      break;
+    case 1:
+      msbuffer = AS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + AS_MSMEDCHECKED;
+      msbuffer = msbuffer + AS_MSFASTUNCHECKED;
+      break;
+    case 2:
+      msbuffer = AS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + AS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + AS_MSFASTCHECKED;
+      break;
+    default:
+      msbuffer = AS_MSSLOWUNCHECKED;
+      msbuffer = msbuffer + AS_MSMEDUNCHECKED;
+      msbuffer = msbuffer + AS_MSFASTCHECKED;
+      break;
+  }
+
+  String cpbuffer;
+  if ( !mySetupData->get_coilpower() )
+  {
+    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" > ";
+  }
+  else
+  {
+    cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked> ";
+  }
+
+  String rdbuffer;
+  if ( !mySetupData->get_reversedirection() )
+  {
+    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" > ";
+  }
+  else
+  {
+    rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
+  }
+
+  // construct home page of webserver
+  // header
+  Focuser_Setup_HomePage = "<head>" + String(AS_PAGETITLE) + "</head><body>";
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_TITLE);
+
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_COPYRIGHT);
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<p>Driverboard = myFP2ESP." + programName + "<br>";
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<myFP2ESP." + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion) + "</br>";
+
+  // position. set position
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> ";
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"submit\" name=\"setpos\" value=\"Set Pos\"> </form></p>";
+
+  // maxstep
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>MaxSteps</b> <input type=\"text\" name=\"fm\" size =\"15\" value=" + mxbuffer + "> ";
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
+
+  // coilpower
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Coil Power </b>" + cpbuffer ;
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  // reverse direction
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  // stepmode
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Step Mode </b>" + smbuffer + " ";
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  // motor speed
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Motor Speed: </b>" + msbuffer + " ";
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "</body></html>\r\n";
+}
+
 // generic ASCOM send reply
 void ASCOM_sendreply( int replycode, String contenttype, String jsonstr)
 {
@@ -75,7 +279,7 @@ void ASCOM_sendreply( int replycode, String contenttype, String jsonstr)
   DebugPrint(contenttype);
   DebugPrint(", \njson:");
   DebugPrintln(jsonstr);
-  // ascomserver.send builds the http header, jsonstr will be in the body?
+  // ascomserver.send builds the http header, jsonstr will be in the body
   ascomserver.send(replycode, contenttype, jsonstr );
 }
 
@@ -177,8 +381,217 @@ String ASCOM_addclientinfo(String str )
   return str1;
 }
 
+// ----------------------------------------------------------------------------------------------
+// Setup functions
+// ----------------------------------------------------------------------------------------------
+void ASCOM_handle_setup()
+{
+  // url /setup
+  // The web page must describe the overall device, including name, manufacturer and version number.
+  // content-type: text/html
+  ASCOMServerTransactionID++;
+  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, Setup_HomePage);
+  delay(10);                     // small pause so background tasks can run    
+}
+
+void ASCOM_handle_focuser_setup()
+{
+  // url /setup/v1/focuser/0/setup
+  // Configuration web page for the specified device
+  // content-type: text/html
+
+  // if set focuser position
+  String fpos_str = ascomserver.arg("setpos");
+  if ( fpos_str != "" )
+  {
+    Serial.print( "setpos:" );
+    Serial.println(fpos_str);
+    String fp = ascomserver.arg("fp");
+    if ( fp != "" )
+    {
+      unsigned long temp = 0;
+      Serial.print("fp:");
+      Serial.println(fp);
+      temp = fp.toInt();
+      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
+      {
+        temp = mySetupData->get_maxstep();
+      }
+      fcurrentPosition = ftargetPosition = temp;
+    }
+  }
+
+  // if update of maxsteps
+  String fmax_str = ascomserver.arg("fm");
+  if ( fmax_str != "" )
+  {
+    unsigned long temp = 0;
+    DebugPrint( "root() -maxsteps:" );
+    DebugPrintln(fmax_str);
+    temp = fmax_str.toInt();
+    if ( temp < fcurrentPosition )                    // if maxstep is less than focuser position
+    {
+      temp = fcurrentPosition + 1;
+    }
+    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
+    {
+      temp = FOCUSERLOWERLIMIT;
+    }
+    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    {
+      temp = mySetupData->get_maxstep();
+    }
+    mySetupData->set_maxstep(temp);
+  }
+
+  // if update motorspeed
+  String fms_str = ascomserver.arg("ms");
+  if ( fms_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint( "root() -motorspeed:" );
+    DebugPrintln(fms_str);
+    temp1 = fms_str.toInt();
+    if ( temp1 < SLOW )
+    {
+      temp1 = SLOW;
+    }
+    if ( temp1 > FAST )
+    {
+      temp1 = FAST;
+    }
+    mySetupData->set_motorSpeed(temp1);
+  }
+
+  // if update coilpower
+  String fcp_str = ascomserver.arg("cp");
+  if ( fcp_str != "" )
+  {
+    DebugPrint( "root() -coil power:" );
+    DebugPrintln(fcp_str);
+    if ( fcp_str == "cp" )
+    {
+      mySetupData->set_coilpower(1);
+    }
+    else
+    {
+      mySetupData->set_coilpower(0);
+    }
+  }
+
+  // if update reversedirection
+  String frd_str = ascomserver.arg("rd");
+  if ( frd_str != "" )
+  {
+    DebugPrint( "root() -reverse direction:" );
+    DebugPrintln(frd_str);
+    if ( frd_str == "rd" )
+    {
+      mySetupData->set_reversedirection(1);
+    }
+    else
+    {
+      mySetupData->set_reversedirection(0);
+    }
+  }
+
+  // if update stepmode
+  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
+  String fsm_str = ascomserver.arg("sm");
+  if ( fsm_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint( "root() -stepmode:" );
+    DebugPrintln(fsm_str);
+    temp1 = fsm_str.toInt();
+    if ( temp1 < STEP1 )
+    {
+      temp1 = STEP1;
+    }
+    if ( temp1 > STEP32 )
+    {
+      temp1 = STEP32;
+    }
+    mySetupData->set_stepmode(temp1);
+  }
+
+  DebugPrintln( "root() -build homepage" );
+
+  // construct the homepage now
+  ASCOM_Create_Setup_Focuser_HomePage();
+
+  // send the homepage to a connected client
+  ASCOMServerTransactionID++;
+  DebugPrintln("root() - send homepage");
+  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, Focuser_Setup_HomePage);
+  delay(10);                     // small pause so background ESP8266 tasks can run 
+}
+
+// ----------------------------------------------------------------------------------------------
+// Management API functions
+// ----------------------------------------------------------------------------------------------
+void ASCOM_handleapiversions()
+{
+  // url /management/apiversions
+  // Returns an integer array of supported Alpaca API version numbers.
+  // { "Value": [1,2,3,4],"ClientTransactionID": 9876,"ServerTransactionID": 54321}
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleapiversions:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":[1]," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleapidescription()
+{
+  // url /management/v1/description 
+  // Returns cross-cutting information that applies to all devices available at this URL:Port.
+  // content-type: application/json
+  // { "Value": { "ServerName": "Random Alpaca Device", "Manufacturer": "The Briliant Company",
+  //   "ManufacturerVersion": "v1.0.0", "Location": "Horsham, UK" },
+  //   "ClientTransactionID": 9876, "ServerTransactionID": 54321 }
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleapidescription:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":" + String(ASCOMMANAGEMENTINFO) + "," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+void ASCOM_handleapiconfigureddevices()
+{
+  // url /management/v1/configureddevices
+  // Returns an array of device description objects, providing unique information for each served device, enabling them to be accessed through the Alpaca Device API.
+  // content-type: application/json
+  // { "Value": [{"DeviceName": "Super focuser 1","DeviceType": "Focuser","DeviceNumber": 0,"UniqueID": "277C652F-2AA9-4E86-A6A6-9230C42876FA"}],"ClientTransactionID": 9876,"ServerTransactionID": 54321}
+  String jsonretstr = "";
+  DebugPrintln("ASCOM_handleapiconfigureddevices:");
+  ASCOMServerTransactionID++;
+  ASCOMErrorNumber = 0;
+  ASCOMErrorMessage = ASCOMERRORMSGNULL;
+  ASCOM_getURLParameters();
+  // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
+  jsonretstr = "{\"Value\":[{\"DeviceName\":" + String(ASCOMNAME) + ",\"DeviceType\":\"focuser\",\"DeviceNumber\":0,\"UniqueID\":\"7e239e71-d304-4e7e-acda-3ff2e2b68515\"}]," + ASCOM_addclientinfo( jsonretstr );
+  // sendreply builds http header, sets content type, and then sends jsonretstr
+  ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+}
+
+// ----------------------------------------------------------------------------------------------
+// ASCOM ALPACA API
+// ----------------------------------------------------------------------------------------------
 void ASCOM_handleinterfaceversionget()
 {
+  // curl -X GET "/api/v1/focuser/0/interfaceversion?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {"Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string"}
   String jsonretstr = "";
   DebugPrintln("ASCOM_handleinterfaceversionget:");
   ASCOMServerTransactionID++;
@@ -193,6 +606,8 @@ void ASCOM_handleinterfaceversionget()
 
 void ASCOM_handleconnectedput()
 {
+  // PUT "/api/v1/focuser/0/connected" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "Connected=true&ClientID=1&ClientTransactionID=2"
+  // response { "ErrorNumber": 0, "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handleconnectedput:");
   ASCOMServerTransactionID++;
@@ -201,7 +616,6 @@ void ASCOM_handleconnectedput()
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
   jsonretstr = "{\"ErrorNumber\":0,";
-  //jsonretstr = jsonretstr + "\"ErrorMessage\":\"\"}";
   jsonretstr = jsonretstr + "\"ErrorMessage\":\"\"}";
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
@@ -209,6 +623,9 @@ void ASCOM_handleconnectedput()
 
 void ASCOM_handleconnectedget()
 {
+  // GET "/api/v1/focuser/0/connected?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true, "ErrorNumber": 0, "ErrorMessage": "string"}
+
   // Should we just return the value of ASCOMConnectedState?
   String jsonretstr = "";
   ASCOMServerTransactionID++;
@@ -223,6 +640,8 @@ void ASCOM_handleconnectedget()
 
 void ASCOM_handlenameget()
 {
+  // curl -X GET "/api/v1/focuser/0/name?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlenameget:");
   ASCOMServerTransactionID++;
@@ -230,13 +649,15 @@ void ASCOM_handlenameget()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":\"myFP2ESPASCOMR\"," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":" + String(ASCOMNAME) + "," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
 
 void ASCOM_handledescriptionget()
 {
+  // GET "/api/v1/focuser/0/description?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handledescriptionget:");
   ASCOMServerTransactionID++;
@@ -244,13 +665,15 @@ void ASCOM_handledescriptionget()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":\"ASCOM driver for myFP2ESP controllers\"," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":" + String(ASCOMDESCRIPTION) + "," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
 
 void ASCOM_handledriverinfoget()
 {
+  // curl -X GET "/api/v1/focuser/0/driverinfo?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handledescriptionget:");
   ASCOMServerTransactionID++;
@@ -258,13 +681,15 @@ void ASCOM_handledriverinfoget()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":\"myFP2ESP ASCOM Driver (c) R. Brown. 2019\"," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":" + String(ASCOMDRIVERINFO) + "," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
 
 void ASCOM_handledriverversionget()
 {
+  // curl -X GET "/api/v1/focuser/0/driverversion?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": "string",  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handledriverversionget");
   ASCOMServerTransactionID++;
@@ -272,13 +697,15 @@ void ASCOM_handledriverversionget()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":\"104\"," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":\"" + String(programVersion) + "\"," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
 
 void ASCOM_handleabsoluteget()
 {
+  // curl -X GET "/api/v1/focuser/0/absolute?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handleabsoluteget");
   ASCOMServerTransactionID++;
@@ -294,6 +721,8 @@ void ASCOM_handleabsoluteget()
 
 void ASCOM_handlemaxstepget()
 {
+  // curl -X GET "/api/v1/focuser/0/maxstep?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlemaxstepget");
   ASCOMServerTransactionID++;
@@ -308,6 +737,8 @@ void ASCOM_handlemaxstepget()
 
 void ASCOM_handlemaxincrementget()
 {
+  // curl -X GET "/api/v1/focuser/0/maxincrement?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlemaxincrementget");
   ASCOMServerTransactionID++;
@@ -322,6 +753,8 @@ void ASCOM_handlemaxincrementget()
 
 void ASCOM_handletemperatureget()
 {
+  // curl -X GET "/api/v1/focuser/0/temperature?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 1.100000023841858,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handletemperatureget");
   ASCOMServerTransactionID++;
@@ -340,6 +773,8 @@ void ASCOM_handletemperatureget()
 
 void  ASCOM_handlepositionget()
 {
+  // curl -X GET "/api/v1/focuser/0/position?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 0,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlepositionget");
   ASCOMServerTransactionID++;
@@ -354,6 +789,8 @@ void  ASCOM_handlepositionget()
 
 void  ASCOM_handlehaltput()
 {
+  // curl -X PUT "/api/v1/focuser/0/halt" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "ClientID=22&ClientTransactionID=33"
+  // { "ErrorNumber": 0, "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlehaltput");
   ASCOMServerTransactionID++;
@@ -369,6 +806,8 @@ void  ASCOM_handlehaltput()
 
 void ASCOM_handleismovingget()
 {
+  // curl -X GET "/api/v1/focuser/0/ismoving?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handleismovingget:");
   ASCOMServerTransactionID++;
@@ -390,6 +829,8 @@ void ASCOM_handleismovingget()
 
 void ASCOM_handlestepsizeget()
 {
+  // curl -X GET "/api/v1/focuser/0/stepsize?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": 1.100000023841858,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlestepsizeget:");
   ASCOMServerTransactionID++;
@@ -404,6 +845,8 @@ void ASCOM_handlestepsizeget()
 
 void ASCOM_handletempcompget()
 {
+  // curl -X GET "/api/v1/focuser/0/tempcomp?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handletempcompget:");
   ASCOMServerTransactionID++;
@@ -425,6 +868,9 @@ void ASCOM_handletempcompget()
 
 void ASCOM_handletempcompput()
 {
+  // curl -X PUT "/api/v1/focuser/0/tempcomp" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "TempComp=true&Client=1&ClientTransactionIDForm=12"
+  // {  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  // look for parameter tempcomp=true or tempcomp=false
   String jsonretstr = "";
   DebugPrintln("ASCOM_handletempcompput:");
   ASCOMServerTransactionID++;
@@ -456,6 +902,8 @@ void ASCOM_handletempcompput()
 
 void ASCOM_handletempcompavailableget()
 {
+  // curl -X GET "/api/v1/focuser/0/tempcompavailable?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": true,  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handletempcompavailableget:");
   ASCOMServerTransactionID++;
@@ -474,6 +922,9 @@ void ASCOM_handletempcompavailableget()
 
 void  ASCOM_handlemoveput()
 {
+  // curl -X PUT "/api/v1/focuser/0/move" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "Position=1000&ClientID=22&ClientTransactionID=33"
+  // {  "ErrorNumber": 0,  "ErrorMessage": "string" }
+  // extract new value
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlemoveput:");
   ASCOMServerTransactionID++;
@@ -520,6 +971,8 @@ void  ASCOM_handlemoveput()
 
 void ASCOM_handlesupportedactionsget()
 {
+  // curl -X GET "/api/v1/focuser/0/supportedactions?ClientID=1&ClientTransactionID=1234" -H  "accept: application/json"
+  // {  "Value": [    "string"  ],  "ErrorNumber": 0,  "ErrorMessage": "string" }
   String jsonretstr = "";
   DebugPrintln("ASCOM_handlesupportedactionsget:");
   ASCOMServerTransactionID++;
@@ -578,23 +1031,26 @@ void ASCOM_handleNotFound()
 
 void ASCOM_handleRoot()
 {
-  String HomePage;
-  HomePage = "<html><head><meta http-equiv=\"refresh\" content=\"10\"></head>";
-  HomePage = HomePage + "<title>myFP2ESP ASCOM REMOTE</title></head>";
-  HomePage = HomePage + "<body><h3>myFP2ESP ASCOM REMOTE</h3>";
-  HomePage = HomePage + "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>";
-  HomePage = HomePage + "<p>IP Address: " + ipStr + ": Port: " + String(ALPACAPORT) + ", Firmware Version=" + String(programVersion) + "</p>";
-  HomePage = HomePage + "<p>Driverboard = myFP2ESP." + driverboard->getboardname() + "</p>";
-  HomePage = HomePage + "</body></html>";
   ASCOMServerTransactionID++;
-  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, HomePage);
+  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, Setup_HomePage);
   delay(10);                     // small pause so background tasks can run
 }
 
 void start_ascomremoteserver(void)
 {
-  ascomserver.on("/", ASCOM_handleRoot);
-  ascomserver.onNotFound(ASCOM_handleNotFound);
+  ASCOM_Setup_HomePage();                       // create home page for ascom focuser setup
+  ASCOM_Create_Setup_Focuser_HomePage();        // create home page for ascom management setup api
+  
+  ascomserver.on("/", ASCOM_handleRoot);        // handle root access
+  ascomserver.onNotFound(ASCOM_handleNotFound); // handle url not found 404
+  
+  ascomserver.on("/management/apiversions", ASCOM_handleapiversions);
+  ascomserver.on("/management/v1/description", ASCOM_handleapidescription);
+  ascomserver.on("/management/v1/configureddevices", ASCOM_handleapiconfigureddevices);
+
+  ascomserver.on("/setup", ASCOM_handle_setup);
+  ascomserver.on("/setup/v1/focuser/0/setup", ASCOM_handle_focuser_setup);
+
   ascomserver.on("/api/v1/focuser/0/connected", HTTP_PUT, ASCOM_handleconnectedput);
   ascomserver.on("/api/v1/focuser/0/interfaceversion", HTTP_GET, ASCOM_handleinterfaceversionget);
   ascomserver.on("/api/v1/focuser/0/name", HTTP_GET, ASCOM_handlenameget);
