@@ -1,10 +1,6 @@
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP ASCOM SERVER ROUTINES AND DEFINITIONS
 // ----------------------------------------------------------------------------------------------
-// TODO
-// Add basic webpage for "/setup/v1/focuser/0/setup" ASCOM_handlesetupfocuser();
-// Set position, maxsteps, stepmode, motorspeed
-// Copy basic code from webserver
 
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT

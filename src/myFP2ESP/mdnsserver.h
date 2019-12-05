@@ -38,7 +38,6 @@ extern char mDNSNAME[];
 #endif
 
 #ifdef MDNSSERVER
-#define MDNSSERVERPORT        8080          // mdns server port
 #define MDNS_COPYRIGHT        "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>"
 #define MDNS_TITLE            "<h3>myFP2ESP WiFi focus controller</h3>"
 #define MDNS_PAGETITLE        "<title>myFP2ESP mDNS SERVICE</title>"

@@ -5,6 +5,7 @@
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
 // ESP8266 Supports OLED display, Temperature Probe
 // ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's. Infrared Remote
+// Supports modes, ACCESSPOINT, STATIONMODE, BLUETOOTH, LOCALSERIAL, WEBSERVER, ASCOMREMOTE
 // Remember to change your target CPU depending on board selection
 
 // ----------------------------------------------------------------------------------------------
@@ -464,7 +465,7 @@ Adafruit_SSD1306 *myoled;
 #if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32ULN2003   || DRVBRD == PRO2ESP32L298N \
   || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #ifdef INFRAREDREMOTE
-#include "myIRremotemappings.h"
+#include "irremotemappings.h"
 #include <IRremoteESP32.h>
 #endif
 #endif
@@ -1046,7 +1047,6 @@ void loop()
   static byte updatecount = 0;
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-  //#if !defined(WEBSERVER) && !defined(ASCOMREMOTE)
   static byte ConnectionStatus = 0;
 #endif
 

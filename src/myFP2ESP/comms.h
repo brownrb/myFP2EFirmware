@@ -233,6 +233,14 @@ void ESP_Communication( byte mode )
     case 87: // get tc direction
       SendPaket('k' + String(mySetupData->get_tcdirection()) + EOFSTR);
       break;
+    case 91: // get focuserpreset [0-9]
+      {
+        byte preset = (byte) (receiveString[3] - '0');
+        preset = (preset > 9) ? 9 : preset;
+        SendPaket('h' + String(mySetupData->get_focuserpreset(preset)) + EOFSTR);
+      }
+      break;
+      
     // only the set commands are listed here as they do not require a response
     case 28:              // :28#       None    home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
@@ -436,7 +444,16 @@ void ESP_Communication( byte mode )
     case 88: // set tc direction
       mySetupData->set_tcdirection((byte) (receiveString[3] - '0'));
       break;
-
+    case 90: // Set preset x [0-9] with position value yyyy [unsigned long]
+      {
+        byte preset = (byte) (receiveString[3] - '0');
+        preset = (preset > 9) ? 9 : preset;
+        WorkString = receiveString.substring(4, receiveString.length() - 1);
+        tmppos = (unsigned long)WorkString.toInt();
+        mySetupData->set_focuserpreset( preset, tmppos );
+      }
+      break;
+      
     // compatibilty with myFocuserpro2 in LOCALSERIAL mode
     case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
       //ignore
