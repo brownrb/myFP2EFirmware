@@ -100,10 +100,10 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
-#define OLEDTEXT 1
+//#define OLEDTEXT 1
 //#define OLEDGRAPHICS 2
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
@@ -111,7 +111,7 @@
 //#define HOMEPOSITIONSWITCH 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 1
+//#define BACKLASH 1
 //#define BACKLASH 2    // ALTERNATIVE BACKLASH ALGORITHM
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
@@ -200,7 +200,7 @@
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line
-#define MDNSSERVER 8
+//#define MDNSSERVER 8
 
 // DO NOT CHANGE
 #if defined(MDNSSERVER)

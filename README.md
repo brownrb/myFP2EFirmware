@@ -52,6 +52,9 @@ To compile you will also need to import these libraries in the folder src/myFP2E
 
 Do not edit or replace any of these library files with others.
 
+# OLED Graphics
+If you decide to use OLEDGRAHICS, you must download and install the OLED Graphics library frim https://github.com/ThingPulse/esp8266-oled-ssd1306
+
 # Additional Libraries which must be downloaded and installed
 To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file firat.
 

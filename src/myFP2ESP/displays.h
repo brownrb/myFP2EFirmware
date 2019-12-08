@@ -122,7 +122,12 @@ void oled_draw_main_update(void)
     myoled->drawString(64, 12, "IP= " + ipStr);
 
     myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-    myoled->drawString(54, 54, "TEMP:" + String(readtemp(0), 2) + " C");
+#ifdef TEMPERATUREPROBE
+    String tmbuffer = String(readtemp(0), 2);
+#else
+    String tmbuffer = "20.0";
+#endif
+    myoled->drawString(54, 54, "TEMP:" + tmbuffer + " C");
     myoled->drawString(0, 54, "BL:" + String(mySetupData->get_backlashsteps_out()));
     //myoled->drawString(24, 54, "SM:" + String(driverboard->getstepmode()));
 
