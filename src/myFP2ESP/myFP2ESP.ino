@@ -495,7 +495,7 @@ void setFeatures()
 #ifdef LCDDISPLAY
   Features = Features + ENABLEDLCD;
 #endif
-#ifdef OLEDDISPLAY
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
   Features = Features + ENABLEDOLED;
 #endif
 #ifdef TEMPERATUREPROBE
