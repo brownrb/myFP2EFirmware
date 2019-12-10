@@ -118,7 +118,9 @@
 //#define INOUTPUSHBUTTONS 1
 
 // To enable the 2-Axis Joystick in this firmware, uncomment the next line [ESP32 only]
-//#define JOYSTICK 1
+//#define JOYSTICK1 1
+// To enable the Keyes KY-023 PS2 style 2-Axis Joystick in this firmware, uncomment the next line [ESP32 only]
+//#define JOYSTICK2 2
 
 // To enable In and Out LEDS in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTLEDPINS 1
@@ -146,10 +148,10 @@
 #ifdef INFRAREDREMOTE
 #halt // ERROR - INFRAREDREMOTE not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
-#ifdef JOYSTICK
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
 #halt // ERROR - JOYSTICK not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
-#endif
+#endif // 
 
 #if defined(OLEDGRAPHICS)
 #if defined(OLEDTEXT)
@@ -167,9 +169,15 @@
 #endif
 #endif // 
 
-#ifdef JOYSTICK
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
 #ifdef INOUTPUSHBUTTONS
 #halt // ERROR - you cannot have INOUTPUSHBUTTONS and JOYSTICK enabled at the same time
+#endif
+#endif
+
+#ifdef JOYSTICK1
+#ifdef JOYSTICK2
+#halt // ERROR - you cannot have both JOYSTICK1 or JOYSTICK2 defined at the same time
 #endif
 #endif
 
@@ -561,7 +569,7 @@ void setFeatures()
 #ifdef MDNSSERVER
   Features = Features + ENABLEDMDNS;
 #endif
-#ifdef JOYSTICK
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
   Features = Features + ENABLEDJOYSTICK;
 #endif
 }
@@ -637,16 +645,14 @@ SetupData *mySetupData;
 // 17: CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #include "comms.h"
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
-#include "displays.h"
-#endif
+#include "displays.h"           // do not enclose in #define
 #ifdef INOUTPUSHBUTTONS
 #include "pushbuttons.h"
 #endif
 #ifdef INFRAREDREMOTE
 #include "infraredremote.h"
 #endif
-#ifdef JOYSTICK
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
 #include "joystick.h"
 #endif
 
@@ -778,11 +784,6 @@ void setup()
 #if defined(INOUTPUSHBUTTONS)                           // Setup IN and OUT Pushbuttons, active high when pressed
   pinMode(INPBPIN, INPUT);
   pinMode(OUTPBPIN, INPUT);
-#endif
-
-#ifdef JOYSTICK
-  // no need to initialise pins as input as they will be treated as analog
-  // JOYINOUTPIN and JOYSPEEDPIN
 #endif
 
   displayfound = false;
@@ -993,6 +994,15 @@ void setup()
 
 #if defined(INFRAREDREMOTE)
   irrecv.enableIRIn();                                  // Start the IR
+#endif
+
+  // setup joystick
+#ifdef JOYSTICK1
+  init_joystick1();
+#endif
+
+#ifdef JOYSTICK2
+  init_joystick2();
 #endif
 
   isMoving = 0;
@@ -1237,8 +1247,11 @@ void loop()
 #ifdef INOUTPUSHBUTTONS
         update_pushbuttons();
 #endif
-#ifdef JOYSTICK
-        update_joystick();
+#ifdef JOYSTICK1
+        update_joystick1();
+#endif
+#ifdef JOYSTICK2
+        update_joystick2();
 #endif
 #ifdef INFRAREDREMOTE
         update_irremote();

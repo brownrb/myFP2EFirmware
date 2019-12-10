@@ -1,9 +1,12 @@
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP JOYSTICK ROUTINES AND DEFINITIONS
 // ----------------------------------------------------------------------------------------------
-// 2-AXIS Analog Thumb Joystick for Arduino 3V-5V
+// 2-AXIS Analog Thumb Joystick for Arduino
 // https://www.ebay.com/itm/1PCS-New-PSP-2-Axis-Analog-Thumb-GAME-Joystick-Module-3V-5V-For-arduino-PSP/401236361097
 // https://www.ebay.com/itm/1PCS-New-PSP-2-Axis-Analog-Thumb-GAME-Joystick-Module-3V-5V-For-arduino-PSP/232426858990
+//
+// Keyes KY-023 PS2 style 2-Axis Joystick with Switch
+// https://www.ebay.com/itm/Joy-Stick-Breakout-Module-Shield-PS2-Joystick-Game-Controller-For-Arduino/293033141970
 //
 // On ESP32 analog input is 0-4095. GND=GND, VCC=3.3V
 // ADC2 pins cannot be used when WiFi is being used
@@ -30,97 +33,142 @@ extern unsigned long fcurrentPosition;      // current focuser position
 extern unsigned long ftargetPosition;       // target position
 
 // ----------------------------------------------------------------------------------------------
-// DATA
+// DATA AND DEFINES
 // ----------------------------------------------------------------------------------------------
 
-// range is 0-4095, so midpoint is 2046/7
-// halfway to left is 1024 and halfway to right is 3070
-// map(value, fromLow, fromHigh, toLow, toHigh)
-// map(value, 0, 4095, 0, 2)  // left, middle, right and up, middle, down
+#ifdef JOYSTICK1
+#define JOYINOUTPIN   34      // ADC1_6, D34 - Wire to X
+#define JOYOTHERPIN   35      // ADC1_7, D35 - Do not wire
+#define JZEROPOINT    2047
+#define JTHRESHOLD    20
+#endif //
 
-// Alternatively, instead of mapping motorspeed, map driverboard->stepdelay
-// pickup MSSLOW, MSFAST limits and map this way
-// map(motorspd, 0, 4095, MSSLOW, MSFAST)
-
-#ifdef JOYSTICK
-#define JOYLEFT       1024    // <= 
-#define JOYRIGHT      3070    // >=
-#define JOYSLOW       1024    // <=
-#define JOYMED        3070    // >=
-#define JOYFAST       2046    //
-
-#define JOYINOUTPIN   34
-#define JOYSPEEDPIN   35
-#endif // JOYSTICK
+#ifdef JOYSTICK2
+#define JOYINOUTPIN   34      // ADC1_6, D34 - Wire to VRx
+#define JOYOTHERPIN   35      // ADC1_7, D35 - Wire to SW
+#define JZEROPOINT    2047
+#define JTHRESHOLD    20
+volatile int joy2swstate;
+#endif
 
 // ----------------------------------------------------------------------------------------------
-// CODE
+// CODE JOYSTICK1 : DO NOT CHANGE : 2-AXIS Analog Thumb Joystick for Arduino
 // ----------------------------------------------------------------------------------------------
-#ifdef JOYSTICK
-
-void update_joystick(void)
+#ifdef JOYSTICK1
+void update_joystick1(void)
 {
   int joypos;
   int joyspeed;
-  //int motorspd;
-  
-  joypos = analogRead(JOYINOUTPIN);
+  int joyval;
+
+  joyval = analogRead(JOYINOUTPIN);             // range is 0 - 4095, midpoint is 2047
   DebugPrint("X joypos:");
-  DebugPrintln(joypos);
-  joypos = map(joypos, 0, 4095, 0, 2);
-  joyspeed = analogRead(JOYSPEEDPIN);
-  DebugPrint("Y joyspeed:");
-  DebugPrintln(joyspeed);
-  //joyspeed = map(joyspeed, 0, 4095, 0, 2);
-  joyspeed = map(joyspeed, 0, 4095, MSSLOW, MSFAST);
-  
-  // process joypos
-  if ( joypos == 0 )      // move IN
+  DebugPrintln(joyval);
+  if ( joyval < (JZEROPOINT - JTHRESHOLD) )
   {
-    ftargetPosition--;
+    ftargetPosition--;                          // move IN
+    joyval = joyval - JZEROPOINT;
+    if ( joyval < 0 )
+    {
+      joyval = JZEROPOINT - joyval;
+    }
+    joyspeed = map(joyval, 0, JZEROPOINT, MSSLOW, MSFAST);
+    driverboard->setstepdelay(joyspeed);
   }
-  else if ( joypos == 2)  // move OUT
+  else if ( joyval > (JZEROPOINT + JTHRESHOLD) )
   {
-    ftargetPosition++;
+    ftargetPosition++;                          // move OUT
     if ( ftargetPosition > mySetupData->get_maxstep())
     {
       ftargetPosition = mySetupData->get_maxstep();
     }
+    joyval = joyval - JZEROPOINT;
+    if ( joyval < 0 )
+    {
+      joyval = JZEROPOINT - joyval;
+    }
+    joyspeed = map(joyval, 0, JZEROPOINT, MSSLOW, MSFAST);
+    driverboard->setstepdelay(joyspeed);
   }
-
-  // process joyspeed
-  driverboard->setstepdelay(joyspeed);
-  
-  /*
-  // process joyspeed
-  motorspd = mySetupData->get_motorSpeed();
-  switch ( joyspeed )
-  {
-    case 0:
-      // decrement speed
-      motorspd--;
-      if( motorspd < 0)
-      {
-        motorspd = 0;
-      }
-      mySetupData->set_motorSpeed((byte)motorspd);
-      break;
-    case 1:
-      // ignore, leave current speed alone
-      break;
-    case 2:
-      // increment speed
-      motorspd++;
-      if( motorspd > 2)
-      {
-        motorspd = 2;
-      }
-      mySetupData->set_motorSpeed((byte)motorspd);
-      break;
-  }
-  */
 }
-#endif // #ifdef JOYSTICK
 
+void init_joystick1(void)
+{
+  // perform any inititalisations necessary
+  // for future use
+  pinMode(JOYINOUTPIN, INPUT);
+  pinMode(JOYOTHERPIN, INPUT);
+}
+#endif // #ifdef JOYSTICK1
+
+// ----------------------------------------------------------------------------------------------
+// CODE JOYSTICK2 : YOU CAN CHANGE THIS IF YOU WANT : Keyes KY-023 PS2 style 2-Axis Joystick
+// IT REMAINS UNSUPPORTED TO ALLOW YOU TO CONFIGURE AS YOU WISH
+// ----------------------------------------------------------------------------------------------
+#ifdef JOYSTICK2
+
+void IRAM_ATTR joystick2sw_isr()
+{
+  joy2swstate = !(digitalRead(JOYOTHERPIN));  // joy2swstate will be 1 when switch is pressed
+}
+
+void update_joystick2(void)
+{
+  int joypos;
+  int joyspeed;
+  int joyval;
+
+  joyval = analogRead(JOYINOUTPIN);             // range is 0 - 4095, midpoint is 2047
+  DebugPrint("X joypos:");
+  DebugPrintln(joyval);
+  if ( joyval < (JZEROPOINT - JTHRESHOLD) )
+  {
+    ftargetPosition--;                          // move IN
+    joyval = joyval - JZEROPOINT;
+    if ( joyval < 0 )
+    {
+      joyval = JZEROPOINT - joyval;
+    }
+    joyspeed = map(joyval, 0, JZEROPOINT, MSSLOW, MSFAST);
+    driverboard->setstepdelay(joyspeed);
+  }
+  else if ( joyval > (JZEROPOINT + JTHRESHOLD) )
+  {
+    ftargetPosition++;                          // move OUT
+    if ( ftargetPosition > mySetupData->get_maxstep())
+    {
+      ftargetPosition = mySetupData->get_maxstep();
+    }
+    joyval = joyval - JZEROPOINT;
+    if ( joyval < 0 )
+    {
+      joyval = JZEROPOINT - joyval;
+    }
+    joyspeed = map(joyval, 0, JZEROPOINT, MSSLOW, MSFAST);
+    driverboard->setstepdelay(joyspeed);
+  }
+
+  if ( joy2swstate == 1)     // switch is pressed
+  {
+    // user defined code here
+    // could be a halt
+    // could be a home
+    // could be a preset
+    // insert code here
+
+    // finally reset joystick switch state
+    joy2swstate = 0;
+  }
+}
+
+void init_joystick2(void)
+{
+  pinMode(JOYINOUTPIN, INPUT);
+  pinMode(JOYOTHERPIN, INPUT_PULLUP);
+  // setup interrupt, falling, when switch is pressed, pin falls from high to low
+  attachInterrupt(JOYOTHERPIN, joystick2sw_isr, FALLING);
+  joy2swstate = 0;
+}
+#endif // #ifdef JOYSTICK2
 
 #endif // #ifndef joystick_h
