@@ -51,11 +51,12 @@
 
 // MAKE A MAP TABLE NOW - DO NOT CHANGE THE LEFT SIDE, IR_xxxxxx
 // Motorspeed
-#define IR_SLOW         KEY_CHMINUS
+#define IR_SLOW         KEY_CHMINUS      // Each must have a unique value
 #define IR_MEDIUM       KEY_CH
 #define IR_FAST         KEY_CHPLUS
 
-#define IR_IN1          KEY_ONE
+// Move
+#define IR_IN1          KEY_ONE           // Each must have a unique value
 #define IR_OUT1         KEY_THREE
 #define IR_IN10         KEY_FOUR
 #define IR_OUT10        KEY_SIX
@@ -65,15 +66,16 @@
 #define IR_OUT100       KEY_EQUALS
 #define IR_SETPOSZERO   KEY_ZERO
 
-#define IR_PRESET0      KEY_PREV
-#define IR_PRESET1      KEY_NEXT
+// Presets
+#define IR_PRESET0      KEY_PREV          // Each must have a unique value
+#define IR_PRESET1      KEY_NEXT          // -x means not assigned
 #define IR_PRESET2      KEY_PLAY
 #define IR_PRESET3      KEY_100PLUS
 #define IR_PRESET4      KEY_200PLUS
-#define IR_PRESET5
-#define IR_PRESET6
-#define IR_PRESET7
-#define IR_PRESET8
-#define IR_PRESET9
+#define IR_PRESET5      -1
+#define IR_PRESET6      -2
+#define IR_PRESET7      -3
+#define IR_PRESET8      -4
+#define IR_PRESET9      -6
 
 #endif
