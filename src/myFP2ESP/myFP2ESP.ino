@@ -3962,21 +3962,20 @@ void setup()
     }
 #endif
 
-    if (attempts > 9)                              // if this attempt is 10 or more tries
+    if (attempts > 9)                               // if this attempt is 10 or more tries
     {
       DebugPrintln(wifistartfailstr);
       DebugPrintln(wifirestartstr);
-      oledtextmsg(didnotconnectstr, -1, true, false);
-      oledtextmsg(mySSID, -1, false, true);
+      oledtextmsg("Did not connect to " + String(mySSID), -1, true, true);
       oledgraphicmsg("Did not connect to AP", -1, true);
       delay(2000);
-      software_Reboot(2000);                          // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
+      software_Reboot(2000);                        // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
   }
 #endif // end STATIONMODE
 
   oledtextmsg("Connected", -1, true, true);
-  delay(100);                                           // keep delays small else issue with ASCOM
+  delay(100);                                       // keep delays small else issue with ASCOM
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
@@ -3986,7 +3985,7 @@ void setup()
   myserver.begin();
   DebugPrintln(F("Get local IP address"));
   ESP32IPAddress = WiFi.localIP();
-  delay(100);                                           // keep delays small else issue with ASCOM
+  delay(100);                                       // keep delays small else issue with ASCOM
   DebugPrintln(tcpserverstartedstr);
   oledtextmsg(tcpserverstartedstr, -1, false, true);
 
@@ -4101,7 +4100,7 @@ void setup()
 #endif
 
 #ifdef MDNSSERVER
-  mdns_started = start_mdns_service();
+  start_mdns_service();
 #endif
 
   DebugPrint(currentposstr);
@@ -4219,13 +4218,6 @@ void loop()
   webserver.handleClient();
 #endif
 
-#ifdef MDNSSERVER
-  if (mdns_started == 1 )
-  {
-    mdnswebserver.handleClient();
-  }
-#endif
-
 #ifdef MANAGEMENT
   mserver.handleClient();
 #endif
@@ -4325,7 +4317,7 @@ void loop()
       else
       {
         // focuser stationary. isMoving is 0
-#ifdef INOUTPUSHBUTTONS
+#ifdef PUSHBUTTONS
         update_pushbuttons();
 #endif
 #ifdef JOYSTICK1

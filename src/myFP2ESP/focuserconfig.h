@@ -22,13 +22,13 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
 //#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
-#define OLEDGRAHICS 1
+//#define OLEDGRAHICS 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -82,7 +82,7 @@
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 
-#define WEBSERVER 7
+//#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
@@ -152,7 +152,6 @@
 #halt // ERROR - you cannot have both OLEDTEXT or OLEDGRAPHICS defined at the same time
 #endif
 #endif
-
 
 // DO NOT CHANGE
 #if defined(MDNSSERVER)
