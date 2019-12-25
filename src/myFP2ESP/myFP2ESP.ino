@@ -966,7 +966,7 @@ void init_oledtextdisplay(void)
   myoled->println(programVersion);
   myoled->println(ProgramAuthor);
 #endif // showstartscreen
-#endif OLEDTEXT
+#endif // OLEDTEXT
 }
 
 // ----------------------------------------------------------------------------------------------
