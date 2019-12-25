@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE RELEASE 110
+// TITLE: myFP2ESP FIRMWARE RELEASE 112
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -735,12 +735,12 @@ void display_oledtext_page0(void)           // displaylcd screen
   myoled->println();
 
   myoled->print(coilpwrstr);
-  myoled->println(mySetupData->get_coilpower());
+  myoled->print(mySetupData->get_coilpower());
   myoled->clearToEOL();
   myoled->println();
 
   myoled->print(revdirstr);
-  myoled->println(mySetupData->get_reversedirection());
+  myoled->print(mySetupData->get_reversedirection());
   myoled->clearToEOL();
   myoled->println();
 
@@ -763,7 +763,7 @@ void display_oledtext_page0(void)           // displaylcd screen
 
   //Motor Speed
   myoled->print(motorspeedstr);
-  myoled->println(mySetupData->get_motorSpeed());
+  myoled->print(mySetupData->get_motorSpeed());
   myoled->clearToEOL();
   myoled->println();
 
@@ -786,22 +786,22 @@ void display_oledtext_page1(void)
   myoled->println();
 
   myoled->print(tcompstatestr);
-  myoled->println(mySetupData->get_tempcompenabled());
+  myoled->print(mySetupData->get_tempcompenabled());
   myoled->clearToEOL();
   myoled->println();
 
   myoled->print(tcompdirstr);
-  myoled->println(mySetupData->get_tcdirection());
+  myoled->print(mySetupData->get_tcdirection());
   myoled->clearToEOL();
   myoled->println();
 
   myoled->print(backlashinstr);
-  myoled->println(mySetupData->get_backlash_in_enabled());
+  myoled->print(mySetupData->get_backlash_in_enabled());
   myoled->clearToEOL();
   myoled->println();
 
   myoled->print(backlashoutstr);
-  myoled->println(mySetupData->get_backlash_out_enabled());
+  myoled->print(mySetupData->get_backlash_out_enabled());
   myoled->clearToEOL();
   myoled->println();
 
@@ -843,35 +843,28 @@ void display_oledtext_page2(void)
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #if defined(WEBSERVER)
-  myoled->setCursor(0, 0);
+  //myoled->setCursor(0, 0);
   myoled->print(webserverstr);
   myoled->clearToEOL();
   myoled->println();
-#if defined(ACCESSPOINT)
-  myoled->print(accesspointstr);
-  myoled->clearToEOL();
-  myoled->println();
-#endif
-#if defined(STATIONMODE)
-  myoled->print(stationmodestr);
-  myoled->clearToEOL();
-  myoled->println();
-#endif
   myoled->print(ipaddressstr);
   myoled->print(ipStr);
-  myoled->print(STARTSTR);
+  myoled->clearToEOL();
+  myoled->println();
+  myoled->print(PORTSTR);
   myoled->print(SERVERPORT);
   myoled->clearToEOL();
   myoled->println();
 #endif // webserver
 #if defined(ASCOMREMOTE)
-  myoled->setCursor(0, 0);
   myoled->print(ascomremotestr);
   myoled->clearToEOL();
   myoled->println();
   myoled->print(ipaddressstr);
   myoled->print(ipStr);
-  myoled->print(STARTSTR);
+  myoled->clearToEOL();
+  myoled->println();
+  myoled->print(PORTSTR);
   myoled->print(ALPACAPORT);
   myoled->clearToEOL();
   myoled->println();
@@ -3998,7 +3991,7 @@ void setup()
   DebugPrintln(mySSID);
   DebugPrint(ipaddressstr);
   DebugPrintln(WiFi.localIP());
-  DebugPrint(tcpserverportstr);
+  DebugPrint(PORTSTR);
   DebugPrintln(SERVERPORT);
   DebugPrintln(F(serverreadystr));
   myIP = WiFi.localIP();
