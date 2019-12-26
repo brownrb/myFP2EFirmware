@@ -38,6 +38,13 @@ extern Adafruit_SSD1306 *myoled;
 #define SCREEN_WIDTH          128           // OLED display width, in pixels
 #define SCREEN_HEIGHT         64            // OLED display height, in pixels
 
+
+// ----------------------------------------------------------------------------------------------
+// PROTOTYPES
+// ----------------------------------------------------------------------------------------------
+
+void oled_draw_main_update(void);
+
 // ----------------------------------------------------------------------------------------------
 // CODE
 // ----------------------------------------------------------------------------------------------
@@ -143,17 +150,34 @@ void oled_draw_main_update(void)
 boolean Init_OLED(void)
 {
   Wire.begin();
+  Wire.setClock(400000L);                               // 400 kHZ max. speed on I2C
+
+
+#ifdef  DEBUG
+//Scan all I2C addresses for device detection
+  Serial.print ("Scan for devices on I2C: ");
+  for (int i = 0; i < 128; i++)
+  {
+    Wire.beginTransmission(i);
+    if(!Wire.endTransmission ())
+    { 
+      Serial.print(" 0x");
+      Serial.print(i, HEX);
+    }
+  }
+  Serial.println("");
+#endif 
+
+
   Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
     DebugPrintln(F("no I2C device found"));
-    DebugPrint(F("I2C device found at address "));
-    DebugPrintln(OLED_ADDR, HEX);
     displayfound = false;
   }
   else
   {
-    DebugPrint(F("I2C device found at address "));
+    DebugPrint(F("connect to I2C device at address "));
     DebugPrintln(OLED_ADDR, HEX);
     displayfound = true;
     myoled = new SSD1306Wire(OLED_ADDR , I2CDATAPIN, I2CCLKPIN);

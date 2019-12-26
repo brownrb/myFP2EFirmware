@@ -178,8 +178,11 @@
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
 #define TEMPPIN       13
-#define I2CDATAPIN    22
-#define I2CCLKPIN     21
+//#define I2CDATAPIN    22
+//#define I2CCLKPIN     21
+#define I2CDATAPIN    21
+#define I2CCLKPIN     22
+
 #define DIRPIN        32
 #define STEPPIN       33
 #define ENABLEPIN     14

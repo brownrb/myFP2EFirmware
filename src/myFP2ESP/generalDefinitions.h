@@ -142,6 +142,7 @@
 #define accesspointstr        "Access point: "
 #define stationmodestr        "Station mode: "
 
+
 // defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
 #define ascomremotestr            "ASCOM Remote: "
 #define jsonstring                "jsonstr = "
@@ -182,7 +183,7 @@
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-//#define DEBUG     1
+#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

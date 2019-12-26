@@ -100,11 +100,11 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-//#define TEMPERATUREPROBE 1
+#define TEMPERATUREPROBE 1
 
 // To enable the OLED DISPLAY uncomment one of the next lines, deselect OLED display by uncomment both lines
 //#define OLEDTEXT 1
-//#define OLEDGRAPHICS 2
+#define OLEDGRAPHICS 2
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH, uncomment the next line
@@ -112,7 +112,7 @@
 
 // To enable backlash in this firmware, uncomment the next line
 //#define BACKLASH 1
-//#define BACKLASH 2    // ALTERNATIVE BACKLASH ALGORITHM
+#define BACKLASH 2    // ALTERNATIVE BACKLASH ALGORITHM
 
 // To enable In and Out Pushbuttons in this firmware, uncomment the next line [ESP32 only]
 //#define INOUTPUSHBUTTONS 1
@@ -132,7 +132,7 @@
 //#define SHOWSTARTSCRN 1
 
 // To display Spash screen graphic, uncomment the next line
-//#define SPLASHSCREEN 1
+#define SPLASHSCREEN 1
 
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
@@ -189,10 +189,10 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-#define ACCESSPOINT 2
+//#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-//#define STATIONMODE 3
+#define STATIONMODE 3
 
 // to work only via USB cable as Serial port, uncomment the next line
 //#define LOCALSERIAL 4
@@ -893,7 +893,8 @@ void setup()
     {
       DebugPrintln(wifistartfailstr);
       DebugPrintln(wifirestartstr);
-      oledtextmsg(didnotconnectstr, -1, true, false);
+//      oledtextmsg(didnotconnectstr, -1, true, false);
+      oledtextmsg("did not connect", -1, true, false);     // //  didnotconnectstr is not defined
       oledtextmsg(mySSID, -1, false, true);
       oledgraphicmsg("Did not connect to AP", -1, true);
       delay(2000);
