@@ -206,13 +206,13 @@ byte SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTrave
     this->fposition = currentPosition;
     this->focuserdirection = DirOfTravel;
     DataAssign |= 2;    // set bit1
-    SnapShotMillis = millis();
+    this->SnapShotMillis = millis();
   }
 
   byte status = false;
   unsigned long x = millis();
 
-  if ((SnapShotMillis + DEFAULTSAVETIME) < x || SnapShotMillis > x)    // 30s after snapshot
+  if ((this->SnapShotMillis + DEFAULTSAVETIME) < x || this->SnapShotMillis > x)    // 30s after snapshot
   {
     if (DataAssign & 1)
     {
@@ -626,7 +626,7 @@ void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_d
   if (org_data != new_data)
   {
     DataAssign |= 1;    // set bit0
-    SnapShotMillis = millis();
+    this->SnapShotMillis = millis();
     org_data = new_data;
   }
 }
@@ -636,7 +636,7 @@ void SetupData::StartDelayedUpdate(float & org_data, float new_data)
   if (org_data != new_data)
   {
     DataAssign |= 1;    // set bit0
-    SnapShotMillis = millis();
+    this->SnapShotMillis = millis();
     org_data = new_data;
   }
 }
@@ -646,7 +646,7 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
   if (org_data != new_data)
   {
     DataAssign |= 1;    // set bit0
-    SnapShotMillis = millis();
+    this->SnapShotMillis = millis();
     org_data = new_data;
   }
 }

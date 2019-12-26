@@ -96,8 +96,8 @@ class SetupData
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
-    unsigned long fposition_org;    // last focuser position
-    byte focuserdirection_org;      // keeps track of last focuser move direction
+//    unsigned long fposition_org;    // last focuser position
+//    byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
     //dataset_persistant
