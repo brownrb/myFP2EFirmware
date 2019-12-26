@@ -93,9 +93,13 @@ void ESP_Communication( byte mode )
   receiveString += EOFSTR;                                 // put back terminator
   String cmdstr = receiveString.substring(1, 3);
   cmdval = cmdstr.toInt();                              // convert command to an integer
-  DebugPrint("-recstr=" + receiveString + EOFSTR);
-  DebugPrint("-cmdstr=" + cmdstr + EOFSTR);
-  DebugPrint("-cmdval=" + cmdval + EOFSTR);
+
+  DebugPrint("Recieve= " + receiveString + "  ");
+//  DebugPrint("-recstr=" + receiveString + EOFSTR);
+//  DebugPrint("-cmdstr=" + cmdstr + EOFSTR);
+//  DebugPrint("-cmdval=" + cmdval + EOFSTR);
+
+
   switch (cmdval)
   {
     // all the get go first followed by set

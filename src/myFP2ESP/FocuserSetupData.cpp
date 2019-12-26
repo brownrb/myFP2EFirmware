@@ -24,8 +24,10 @@ SetupData::SetupData(void)
 {
   DebugPrintln("Constructor Setupdata");
 
-  this->DataAssign = DEFAULTOFF;
+
   this->SnapShotMillis = millis();
+  this->ReqSaveData_var  = false;
+  this->ReqSaveData_per = false;
 
   // mount SPIFFS
   if (!SPIFFS.begin())
@@ -198,40 +200,52 @@ void SetupData::LoadDefaultVariableData()
   this->focuserdirection = moving_in;                 // keeps track of last focuser move direction
 }
 
-// Saves the configuration to a file
-byte SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
+//_______Saves the configuration to a file
+
+boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
 {
   if (this->fposition != currentPosition || this->focuserdirection != DirOfTravel)  // last focuser position
   {
     this->fposition = currentPosition;
     this->focuserdirection = DirOfTravel;
-    DataAssign |= 2;    // set bit1
+    this->ReqSaveData_var = true;
     this->SnapShotMillis = millis();
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving variable data"));    
   }
 
-  byte status = false;
+  boolean status = false;
   unsigned long x = millis();
 
   if ((this->SnapShotMillis + DEFAULTSAVETIME) < x || this->SnapShotMillis > x)    // 30s after snapshot
   {
-    if (DataAssign & 1)
+    if (this->ReqSaveData_per == true)
     {
       if (SavePersitantConfiguration() == false)
       {
         DebugPrintln(F("Error save persistant configuration"));
       }
-      status |= 1;
-      DataAssign &= (byte) ~1;   // clear bit0
+      else
+      {
+        DebugPrintln(F("++++++++++++++++++++++++++++++++++++ persistant data saved"));
+      }
+      
+      status = true;
+      this->ReqSaveData_per = false;
     }
 
-    if (DataAssign & 2)
+    if (this->ReqSaveData_var == true)
     {
       if (SaveVariableConfiguration() == false)
       {
         DebugPrintln(F("Error save variable configuration"));
       }
-      status |= 2;
-      DataAssign &= (byte) ~2;   // clear bit1
+      else
+      {
+        DebugPrintln(F("++++++++++++++++++++++++++++++++++++ variable data saved"));
+      }
+      
+      status = true;
+      this->ReqSaveData_var = false;
     }
   }
   return status;
@@ -625,9 +639,10 @@ void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_d
 {
   if (org_data != new_data)
   {
-    DataAssign |= 1;    // set bit0
+    this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));        
   }
 }
 
@@ -635,9 +650,10 @@ void SetupData::StartDelayedUpdate(float & org_data, float new_data)
 {
   if (org_data != new_data)
   {
-    DataAssign |= 1;    // set bit0
+    this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
   }
 }
 
@@ -645,8 +661,9 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
 {
   if (org_data != new_data)
   {
-    DataAssign |= 1;    // set bit0
+    this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
   }
 }

@@ -1281,12 +1281,9 @@ void loop()
           }
         }
 
-        byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
-        if ( status == true )
+        if(mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel)) // save config if needed
         {
           Update_OledGraphics(oled_off);                // Display off after config saved
-          DebugPrint("new Config saved: ");
-          DebugPrintln(status);
         }
       }
       break;
