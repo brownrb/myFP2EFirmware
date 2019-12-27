@@ -200,7 +200,7 @@ void SetupData::LoadDefaultVariableData()
 }
 
 // Saves the configuration to a file
-booleanSetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
+boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
 {
   if (this->fposition != currentPosition || this->focuserdirection != DirOfTravel)  // last focuser position
   {
