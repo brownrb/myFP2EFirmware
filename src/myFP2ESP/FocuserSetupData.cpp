@@ -657,12 +657,9 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
 {
   if (org_data != new_data)
   {
-  if (org_data != new_data)
-  {
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
     DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
   }           
-  }
 }
