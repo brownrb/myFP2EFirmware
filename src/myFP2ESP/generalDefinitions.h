@@ -107,7 +107,7 @@
 #define bluetoothstartstr     "Bluetooth started"
 #define tprobestr             "Tsensors= "
 #define attemptconnstr        "Attempt connection to= "
-#define wifistartfailstr      "WiFi start failed"
+#define apstartfailstr        "Did not connect to AP "
 
 #define serverreadystr        "Server Ready"
 #define startstr              "Start"

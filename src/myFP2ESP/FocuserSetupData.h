@@ -26,7 +26,7 @@ class SetupData
   public:
     SetupData(void);
     byte LoadConfiguration(void);
-    byte SaveConfiguration(unsigned long, byte);
+    boolean SaveConfiguration(unsigned long, byte);
     void SetFocuserDefaults(void);
 
     //  getter
@@ -90,14 +90,14 @@ class SetupData
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
 
-    byte DataAssign;
+    boolean ReqSaveData_var;    // Flag for request save variable data
+    boolean ReqSaveData_per;    // Flag for request save persitant data
+
     const String filename_persistant = "/data_per.jsn"; // persistant JSON setup data
     const String filename_vaiable = "/data_var.jsn";    // variable  JSON setup data
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
-    unsigned long fposition_org;    // last focuser position
-    byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
     //dataset_persistant

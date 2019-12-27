@@ -540,8 +540,6 @@ void update_temp(void)
 // ----------------------------------------------------------------------------------------------
 // 19A: OLED GRAPHICS DISPLAY - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-#ifdef OLEDGRAPHICS
-#endif // #ifdef OLEDGRAPHICS
 // Enclose function code in #ifdef - #endif so function declarations are visible
 
 void Update_OledGraphics(byte new_status)
@@ -652,12 +650,27 @@ boolean Init_OLED(void)
 {
 #if defined(OLEDGRAPHICS)
   Wire.begin();
+  Wire.setClock(400000L);                               // 400 kHZ max. speed on I2C
+
+#ifdef  DEBUG
+  //Scan all I2C addresses for device detection
+  Serial.print ("Scan for devices on I2C: ");
+  for (int i = 0; i < 128; i++)
+  {
+    Wire.beginTransmission(i);
+    if (!Wire.endTransmission ())
+    {
+      Serial.print(" 0x");
+      Serial.print(i, HEX);
+    }
+  }
+  Serial.println("");
+#endif
+
   Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
     DebugPrintln(F("no I2C device found"));
-    DebugPrint(F("I2C device found at address "));
-    DebugPrintln(OLED_ADDR, HEX);
     displayfound = false;
   }
   else
@@ -684,8 +697,7 @@ boolean Init_OLED(void)
 // ----------------------------------------------------------------------------------------------
 // 19B: OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-#ifdef OLEDTEXT
-#endif // #ifdef OLEDTEXT
+
 // Enclose function code in #ifdef - #endif so function declarations are visible
 
 void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
@@ -3957,10 +3969,9 @@ void setup()
 
     if (attempts > 9)                               // if this attempt is 10 or more tries
     {
-      DebugPrintln(wifistartfailstr);
-      DebugPrintln(wifirestartstr);
-      oledtextmsg("Did not connect to " + String(mySSID), -1, true, true);
-      oledgraphicmsg("Did not connect to AP", -1, true);
+      DebugPrintln(apstartfailstr);
+      oledtextmsg(apstartfailstr + String(mySSID), -1, true, true);
+      oledgraphicmsg(apstartfailstr, -1, true);
       delay(2000);
       software_Reboot(2000);                        // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
@@ -4346,16 +4357,12 @@ void loop()
           }
         }
 
-        byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
-        if ( status == true )
+        if (mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel)) // save config if needed
         {
           Update_OledGraphics(oled_off);                // Display off after config saved
-          DebugPrint("new Config saved: ");
-          DebugPrintln(status);
         }
       }
       break;
-
 
     //__ApplyBacklash ____________________________________________________________________
     case State_ApplyBacklash:
