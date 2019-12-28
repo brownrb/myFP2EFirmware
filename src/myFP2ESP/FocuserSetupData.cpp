@@ -105,6 +105,7 @@ byte SetupData::LoadConfiguration()
       this->focuserpreset7 = doc_per["focuserpreset7"];
       this->focuserpreset8 = doc_per["focuserpreset8"];
       this->focuserpreset9 = doc_per["focuserpreset9"];
+      this->webserverport  = doc_per["webserverport"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -191,6 +192,7 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset7        = 0;
   this->focuserpreset8        = 0;
   this->focuserpreset9        = 0;
+  this->webserverport         = WEBSERVERPORT;
 }
 
 void SetupData::LoadDefaultVariableData()
@@ -294,6 +296,8 @@ byte SetupData::SavePersitantConfiguration()
   doc["focuserpreset7"] = this->focuserpreset7;
   doc["focuserpreset8"] = this->focuserpreset8;
   doc["focuserpreset9"] = this->focuserpreset9;
+  doc["webserverport"]  = this->webserverport;
+
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
   {
@@ -488,6 +492,11 @@ unsigned long SetupData::get_focuserpreset(byte idx)
   }
 }
 
+unsigned long SetupData::get_webserverport(void)
+{
+  return this->webserverport;
+}
+
 //__Setter
 
 void SetupData::set_fposition(unsigned long fposition)
@@ -631,6 +640,11 @@ void SetupData::set_focuserpreset(byte idx, unsigned long pos)
   }
 }
 
+void SetupData::set_webserverport(unsigned long wsp)
+{
+  this->StartDelayedUpdate(this->webserverport, wsp);
+}
+
 void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_data)
 {
   if (org_data != new_data)
@@ -638,7 +652,7 @@ void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_d
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));        
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
   }
 }
 
@@ -649,7 +663,7 @@ void SetupData::StartDelayedUpdate(float & org_data, float new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
   }
 }
 
@@ -660,6 +674,6 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
-  }           
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+  }
 }

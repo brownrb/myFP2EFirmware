@@ -82,7 +82,7 @@
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 
-//#define WEBSERVER 7
+#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
