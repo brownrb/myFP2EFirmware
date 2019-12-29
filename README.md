@@ -43,7 +43,7 @@ You can do this within the Arduino IDE by
 * Select the version: 6.11.2
 * Click install
 
-This file is provided here in this repository. The latest version is at https://github.com/bblanchon/ArduinoJson/releases
+The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 
 # Libraries
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
@@ -57,6 +57,9 @@ Do not edit or replace any of these library files with others.
 
 # Additional Libraries which must be downloaded and installed
 To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file firat.
+
+Graphics OLED
+https://github.com/ThingPulse/esp8266-oled-ssd1306
 
 OneWire
 https://github.com/PaulStoffregen/OneWire
@@ -72,13 +75,15 @@ https://github.com/esp8266/arduino-esp8266fs-plugin
 
 After downloading the zip files, you then need to install these into the Arduino IDE environment. To do that, start the Arduino IDE, select Sketch, Include Library, Add .Zip library, then navigate to where the ZIP files are stored and select them (you can only load 1 zip file at a time so please repeat this for all ZIP files).
 
+The Sketch Data uploaders require a different method for installing. The install instructions are found in their respective download pages and require copying the files into a special folder of the Arduino program installation.
+
 Once you have done this, you can start programming the controller.
 
 # Hardware Driver Boards
-One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the DRVBRD at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
+One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the **DRVBRD** at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
 
-# focuserconfig
-Configuration information about the controller is specified in the focuserconfig.h file. This is where you specify the controller options like TEMPERATURE PROBE and OLEDTEXT, as well as the controller mode such as ACCESSPOINT or STATIONMODE.
+# focuserconfig.h
+Configuration information about the controller is specified in the *focuserconfig.h* file. This is where you specify the controller options like TEMPERATURE PROBE and OLEDTEXT, as well as the controller mode such as ACCESSPOINT or STATIONMODE.
 
 # Controller Modes
 The controller supports the modes ACCESSPOINT, STATIONMODE, LOCALSERIAL, WEBSERVER and ASCOMREMOTE for ESP8266 with an additional BLUETOOTHMODE for the ESP32.
