@@ -3985,18 +3985,9 @@ void setup()
 
     if (attempts > 9)                               // if this attempt is 10 or more tries
     {
-<<<<<<< HEAD
-      DebugPrintln(wifistartfailstr);
-      DebugPrintln(wifirestartstr);
-//      oledtextmsg(didnotconnectstr, -1, true, false);
-      oledtextmsg("did not connect", -1, true, false);     // //  didnotconnectstr is not defined
-      oledtextmsg(mySSID, -1, false, true);
-      oledgraphicmsg("Did not connect to AP", -1, true);
-=======
       DebugPrintln(apstartfailstr);
       oledtextmsg(apstartfailstr + String(mySSID), -1, true, true);
       oledgraphicmsg(apstartfailstr, -1, true);
->>>>>>> b531656bf26fcef42fb6f4f9acabe225296b7348
       delay(2000);
       software_Reboot(2000);                        // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
