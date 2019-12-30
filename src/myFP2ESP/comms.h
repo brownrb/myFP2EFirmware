@@ -38,11 +38,6 @@ extern void temp_setresolution(byte);
 // DATA
 // ----------------------------------------------------------------------------------------------
 
-#if defined(LOCALSERIAL)
-Queue queue(QUEUELENGTH);               // receive serial queue of commands
-String serialline;                      // buffer for serial data
-#endif // localserial
-
 // ----------------------------------------------------------------------------------------------
 // CODE
 // ----------------------------------------------------------------------------------------------

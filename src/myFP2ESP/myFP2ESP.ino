@@ -333,7 +333,7 @@ boolean displayfound;
 #include "ESPQueue.h"                   //  By Steven de Salas
 Queue queue(QUEUELENGTH);               // receive serial queue of commands
 #ifdef LOCALSERIAL
-String line;                            // buffer for serial data
+String serialline;                      // buffer for serial data
 #endif
 #ifdef BLUETOOTHMODE
 String btline;                          // buffer for serial data

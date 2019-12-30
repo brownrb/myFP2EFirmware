@@ -235,6 +235,23 @@
 #endif
 #endif
 
+#ifdef LOCALSERIAL
+#ifdef OTAUPDATES
+#halt // Error Cannot enable OTAUPDATES with LOCALSERIAL
+#endif
+#ifdef ASCOMREMOTE
+#halt // Error Cannot enable ASCOMREMOTE with LOCALSERIAL
+#endif
+#ifdef WEBSERVER
+#halt // Error Cannot enable WEBSERVER with LOCALSERIAL
+#endif
+#ifdef MDNSSERVER
+#halt // Error Cannot enable MDNSSERVER with LOCALSERIAL
+#endif
+#ifdef MANAGEMENT
+#halt // Error Cannot enable MANAGEMENT with LOCALSERIAL
+#endif
+#endif
 
 
 #endif
