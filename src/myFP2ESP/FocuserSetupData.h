@@ -53,6 +53,7 @@ class SetupData
     byte get_motorSpeed();
     byte get_displayenabled();
     unsigned long get_focuserpreset(byte);
+    unsigned long get_webserverport();
 
     //__setter
     void set_fposition(unsigned long);
@@ -78,6 +79,7 @@ class SetupData
     void set_motorSpeed(byte);
     void set_displayenabled(byte);
     void set_focuserpreset(byte, unsigned long);
+    void set_webserverport(unsigned long);
 
   private:
     byte SavePersitantConfiguration();
@@ -90,7 +92,6 @@ class SetupData
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
 
-
     boolean ReqSaveData_var;    // Flag for request save variable data
     boolean ReqSaveData_per;    // Flag for request save persitant data
 
@@ -99,7 +100,7 @@ class SetupData
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
-    unsigned long SnapShotMillis;   // TimeStamp for events
+    unsigned long SnapShotMillis;
 
     //dataset_persistant
     unsigned long maxstep;          // max steps
@@ -132,4 +133,5 @@ class SetupData
     unsigned long focuserpreset7;
     unsigned long focuserpreset8;
     unsigned long focuserpreset9;
+    unsigned long webserverport;
 };

@@ -20,13 +20,21 @@
 
 #define ALPACAPORT            4040          // ASCOM Remote server port
 #define WEBSERVERPORT         80            // Web server port
-#define MDNSSERVERPORT        8080          // mdns server port
-#define WS_REFRESHRATE        30            // web server page refresh time
+#define MSSERVERPORT          6060          // Management interface
+#define MDNSSERVERPORT        7070          // mDNS service
+#define WS_REFRESHRATE        30            // web server page refresh time 30s
 #define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
+#define RUNNING               true
+#define STOPPED               false
+#define MotorReleaseDelay     120*1000      // motor release power after 120s
+
+#define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find correct address
+#define SCREEN_WIDTH          128           // OLED display width, in pixels
+#define SCREEN_HEIGHT         64            // OLED display height, in pixels
 
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
-#define TEMPREFRESHRATE       2000L         // refresh rate between temperature conversions unless an update is requested via serial command
+#define TEMPREFRESHRATE       3000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
 #define ESPDATA               0
 #define BTDATA                1
@@ -92,27 +100,28 @@
 #define STATEINITMOVE         ">InitMove"
 #define EOFSTR                '#'
 #define STARTSTR              ':'
+#define PORTSTR               "Port= "
 #define sendstr               "Send= "
 #define serialstartstr        "Serial started"
 #define debugonstr            "Debug on"
 #define bluetoothstartstr     "Bluetooth started"
 #define tprobestr             "Tsensors= "
 #define attemptconnstr        "Attempt connection to= "
-#define wifistartfailstr      "WiFi start failed"
-#define tcpserverportstr      "Port= "
+#define apstartfailstr        "Did not connect to AP "
+
 #define serverreadystr        "Server Ready"
 #define startstr              "Start"
 #define endstr                "End"
 #define progressstr           "Progress: "
 #define errorstr              "Error= "
 #define readystr              "Ready"
-#define coilpwrstr            "Coil power  ="
-#define revdirstr             "Reverse Dir ="
+#define coilpwrstr            "Coil power  = "
+#define revdirstr             "Reverse Dir = "
 #define tcompstepsstr         "TComp Steps = "
 #define tcompstatestr         "TComp State = "
 #define tcompdirstr           "TComp Dir   = "
 #define backlashinstr         "Backlash In = "
-#define backlashoutstr        "Backlash Out = "
+#define backlashoutstr        "Backlash Out ="
 #define backlashinstepsstr    "Backlash In#= "
 #define backlashoutstepsstr   "Backlash Ou#= "
 #define bluetoothstr          "Bluetooth Mode"

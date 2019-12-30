@@ -1,5 +1,5 @@
 # myFP2E Firmware for ESP32 and ESP8266 myFP2 Controllers
-This is the firmware for the myFocuserPro2E ESP8266 and ESP32 focus controller projecta on Sourceforge.
+This is the firmware for the myFocuserPro2E ESP8266 and ESP32 focus controller projects on Sourceforge.
 https://sourceforge.net/projects/arduinoascomfocuserpro2diy/files/myFocuserPro2E/
 https://sourceforge.net/projects/myfocuserpro2-esp32/
 
@@ -7,6 +7,9 @@ https://sourceforge.net/projects/myfocuserpro2-esp32/
 (c) Holger Manz, 2019. All rights reserved.
 
 The source code is located in the src folder. 
+
+# PDF
+To get a clear understanding of myFP2ESP features and options, it is essential to read the PDF.
 
 # Compiling for ESP8266
 Compiling the source code requires Arduino IDE **v1.8.9** with the ExpressIF ESP8266 Arduino extensions.
@@ -40,7 +43,7 @@ You can do this within the Arduino IDE by
 * Select the version: 6.11.2
 * Click install
 
-This file is provided here in this repository. The latest version is at https://github.com/bblanchon/ArduinoJson/releases
+The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 
 # Libraries
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
@@ -52,11 +55,11 @@ To compile you will also need to import these libraries in the folder src/myFP2E
 
 Do not edit or replace any of these library files with others.
 
-# OLED Graphics
-If you decide to use OLEDGRAHICS, you must download and install the OLED Graphics library frim https://github.com/ThingPulse/esp8266-oled-ssd1306
-
 # Additional Libraries which must be downloaded and installed
 To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file firat.
+
+Graphics OLED
+https://github.com/ThingPulse/esp8266-oled-ssd1306
 
 OneWire
 https://github.com/PaulStoffregen/OneWire
@@ -64,18 +67,29 @@ https://github.com/PaulStoffregen/OneWire
 DuckDNS
 https://github.com/ayushsharma82/EasyDDNS
 
+ESP32 Sketch Data uploader
+https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
+
+ESP8266 Sketch Data uploader
+https://github.com/esp8266/arduino-esp8266fs-plugin
+
 After downloading the zip files, you then need to install these into the Arduino IDE environment. To do that, start the Arduino IDE, select Sketch, Include Library, Add .Zip library, then navigate to where the ZIP files are stored and select them (you can only load 1 zip file at a time so please repeat this for all ZIP files).
+
+The Sketch Data uploaders require a different method for installing. The install instructions are found in their respective download pages and require copying the files into a special folder of the Arduino program installation.
 
 Once you have done this, you can start programming the controller.
 
 # Hardware Driver Boards
-One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the DRVBRD at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
+One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the **DRVBRD** at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
+
+# focuserconfig.h
+Configuration information about the controller is specified in the *focuserconfig.h* file. This is where you specify the controller options like TEMPERATURE PROBE and OLEDTEXT, as well as the controller mode such as ACCESSPOINT or STATIONMODE.
 
 # Controller Modes
-The controller supports the modes ACCESSPOINT, STATIONMODE, LOCALSERIAL, WEBSERVER and ASCOMREMOTE for ESP8266 with an additional BLUETOOTHMODE for the ESP32. 
+The controller supports the modes ACCESSPOINT, STATIONMODE, LOCALSERIAL, WEBSERVER and ASCOMREMOTE for ESP8266 with an additional BLUETOOTHMODE for the ESP32.
 
 # Command Process Handler Routine
-At present a single command process handler manages received commands for either Bluetooth [ESP32 only] of TCP/IP. This must handle each controller mode, so some variables had to be made global to do this.
+At present a single command process handler manages received commands for LOCALSERIAL, BLUETOOTH [ESP32 only] of TCP/IP. This must handle each controller mode, so some variables had to be made global to do this.
 
 # FocuserSetupData.cpp and .h files
 At present these must be in the same folder as the .ino file, but will later migrate to a library. These files handle the SPIFFS data, saving, restoring and persistance of controller settings. A JSON file in file system SPIFFS area is used to store focuser data.

@@ -1,18 +1,26 @@
+// 112
+/ Add management interface on port 6060
+
+// 111
+// Fix temperature precision being set on boot
+// Move code inline
+// Build web pages in SPIFFS, add dynamic processor
+// Improve joystick code
+// Add calibration of joystick to pdf
+// Create joystick calibation and test programs in Test-programs folder
+
 // 110
-<<<<<<< HEAD
-// Add focuser presets support in infrared remote controller
+// Add focuser presets [0-9] to use with software or infrared remote controller - stored in SPIFFS
+// Add options for a different joystick (2-Axis PS2 Arduino style)
+// Restore motorspeed before move [in case joystick has changed the speed]. 
+// ascomserver, comms, infraredremote, joystick, webserver
 
 // 109
-// Add ASCOM Remote Management api
-=======
-// Add focuser presets and link to infra-red remote controller
+// Add ASCOM REMOTE ALPACA Management interface
 
-// 109 
-// Add ASCOM REMOTE MANAGEMENT ALPACA API functions
->>>>>>> ascom-remote-management
-
-// 108 
-// Add joystick as alternative to push buttons
+// 108
+// Add 2-axis joystick 
+// Add joystick to list of controller features
 
 // 107
 // Allow mDNS service for most controller modes, change to port 8080
@@ -25,17 +33,22 @@
 // Add definitions into generalDefinitions.h and myBoards.h for HPSW
 // Add code to handle HPSW into myFP2ESP.ino
 
-// 105 11 November 2019
+// 105 04 November 2019
 // Add ASCOM Alpaca REMOTE support
 // code reduction/speed improvement in comms
-// seperation of ascomserver, comms, display, temperature, webserver defintions and code into seperate files
+// separation of ascomserver, comms, display, temperature, webserver definitions and code into separate files
+
+// 104 02 November 2019
+// Improve webserver support
 // webserver: add halt button to webserver
 // webserver: add setpos and gotopos buttons for position
 // webserver: fix bug for value of focuser position when updated
 // webserver: add board information and copyright
 // webserver: fix bug in motorspeed
 // webserver: add define for refresh rate of page
-// oleltext: Change displaypage2 to show controller mode being used
+// bracket ConnectionStatus in loop() if using ascom remote or webserver
+// add requirement to have either ACCESSPOINT or STATIONMODE defined
+// add requirement to have either ACCESSPOINT or STATIONMODE or BLUETOOTHMODE or LOCALSERIAL defined
 // implement controller features: Case 58: Get controller features
 // fix case 54 to return correct value for SSID when running in different modes
 // fix error in stepmode for PRO2ESP32DRV8825
@@ -43,20 +56,13 @@
 // fix error in oled display I2C begin, use DRVBRD == instead of defined()
 // improve stepper motor speed on webserver
 // fix error in case 30 as there is potential issue
+// oleltext: Change displaypage2 to show controller mode being used
 // esp_comms() now disabled if using ascom remote or webserver
-// bracket connection of myfocuserpro2e client on port 2020 so not used with webserver or ascom remote
-// bracket ConnectionStatus in loop() if using ascom remote or webserver
-// add requirement to have either ACCESSPOINT or STATIONMODE defined
-// add requirement to have either ACCESSPOINT or STATIONMODE or BLUETOOTHMODE or LOCALSERIAL defined
-// extract display/serial/temperature/web-server/ascom-server to seperate files
- 
-// v104
-// Add basic ASCOM Alpaca REMOTE support
 
-// v103
+// 103
 // Add Webserver
 
-// v102
+// 102
 // Add PRO2ESP32R3WEMOS
 // Running ok on ESP32, have wired 470uf to VIN/GND and adjusted current
 // Add IR Mappings file

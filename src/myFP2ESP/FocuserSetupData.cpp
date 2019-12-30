@@ -24,7 +24,6 @@ SetupData::SetupData(void)
 {
   DebugPrintln("Constructor Setupdata");
 
-
   this->SnapShotMillis = millis();
   this->ReqSaveData_var  = false;
   this->ReqSaveData_per = false;
@@ -106,6 +105,7 @@ byte SetupData::LoadConfiguration()
       this->focuserpreset7 = doc_per["focuserpreset7"];
       this->focuserpreset8 = doc_per["focuserpreset8"];
       this->focuserpreset9 = doc_per["focuserpreset9"];
+      this->webserverport  = doc_per["webserverport"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -192,6 +192,7 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset7        = 0;
   this->focuserpreset8        = 0;
   this->focuserpreset9        = 0;
+  this->webserverport         = WEBSERVERPORT;
 }
 
 void SetupData::LoadDefaultVariableData()
@@ -200,8 +201,7 @@ void SetupData::LoadDefaultVariableData()
   this->focuserdirection = moving_in;                 // keeps track of last focuser move direction
 }
 
-//_______Saves the configuration to a file
-
+// Saves the configuration to a file
 boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
 {
   if (this->fposition != currentPosition || this->focuserdirection != DirOfTravel)  // last focuser position
@@ -210,7 +210,7 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
     this->focuserdirection = DirOfTravel;
     this->ReqSaveData_var = true;
     this->SnapShotMillis = millis();
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving variable data"));    
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving variable data"));
   }
 
   boolean status = false;
@@ -228,7 +228,6 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
       {
         DebugPrintln(F("++++++++++++++++++++++++++++++++++++ persistant data saved"));
       }
-      
       status = true;
       this->ReqSaveData_per = false;
     }
@@ -243,7 +242,6 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
       {
         DebugPrintln(F("++++++++++++++++++++++++++++++++++++ variable data saved"));
       }
-      
       status = true;
       this->ReqSaveData_var = false;
     }
@@ -298,6 +296,8 @@ byte SetupData::SavePersitantConfiguration()
   doc["focuserpreset7"] = this->focuserpreset7;
   doc["focuserpreset8"] = this->focuserpreset8;
   doc["focuserpreset9"] = this->focuserpreset9;
+  doc["webserverport"]  = this->webserverport;
+
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
   {
@@ -492,6 +492,11 @@ unsigned long SetupData::get_focuserpreset(byte idx)
   }
 }
 
+unsigned long SetupData::get_webserverport(void)
+{
+  return this->webserverport;
+}
+
 //__Setter
 
 void SetupData::set_fposition(unsigned long fposition)
@@ -635,6 +640,11 @@ void SetupData::set_focuserpreset(byte idx, unsigned long pos)
   }
 }
 
+void SetupData::set_webserverport(unsigned long wsp)
+{
+  this->StartDelayedUpdate(this->webserverport, wsp);
+}
+
 void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_data)
 {
   if (org_data != new_data)
@@ -642,7 +652,7 @@ void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_d
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));        
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
   }
 }
 
@@ -653,7 +663,7 @@ void SetupData::StartDelayedUpdate(float & org_data, float new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
   }
 }
 
@@ -664,6 +674,6 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));            
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
   }
 }

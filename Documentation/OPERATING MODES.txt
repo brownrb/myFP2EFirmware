@@ -19,4 +19,4 @@ USB
 Windows device running myFocuserPro2 app  		LOCALSERIAL 
  
 WEB BROWSER 
-Any device (Android, phone, tablet, Linux, Mac,   	WEBSERVER 
+Any device (Android, phone, tablet, Linux, Mac)   	ACCESSPOINT or STATIONMODE

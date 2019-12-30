@@ -23,24 +23,20 @@ extern char programVersion[];
 extern String programName;
 extern DriverBoard* driverboard;
 extern char mySSID[64];
-extern void UpdatePositionOledText(void);
+extern void software_Reboot(int);
 
-#ifdef OLEDDISPLAY
-extern void UpdatePositionOledText(void);
+#ifdef OLEDTEXT
+extern void update_oledtext_position(void);
 extern SSD1306AsciiWire* myoled;
 #endif
 #ifdef TEMPERATUREPROBE
-extern float readtemp(byte);
+extern float read_temp(byte);
+extern void temp_setresolution(byte);
 #endif
 
 // ----------------------------------------------------------------------------------------------
 // DATA
 // ----------------------------------------------------------------------------------------------
-
-#if defined(LOCALSERIAL)
-Queue queue(QUEUELENGTH);               // receive serial queue of commands
-String serialline;                      // buffer for serial data
-#endif // localserial
 
 // ----------------------------------------------------------------------------------------------
 // CODE
@@ -93,13 +89,8 @@ void ESP_Communication( byte mode )
   receiveString += EOFSTR;                                 // put back terminator
   String cmdstr = receiveString.substring(1, 3);
   cmdval = cmdstr.toInt();                              // convert command to an integer
-
-  DebugPrint("Recieve= " + receiveString + "  ");
-//  DebugPrint("-recstr=" + receiveString + EOFSTR);
-//  DebugPrint("-cmdstr=" + cmdstr + EOFSTR);
-//  DebugPrint("-cmdval=" + cmdval + EOFSTR);
-
-
+  DebugPrintln("recstr=" + receiveString);
+  DebugPrintln("cmdstr=" + cmdstr);
   switch (cmdval)
   {
     // all the get go first followed by set
@@ -120,7 +111,7 @@ void ESP_Communication( byte mode )
       break;
     case 6: // get temperature
 #if defined(TEMPERATUREPROBE)
-      SendPaket('Z' + String(readtemp(0), 3) + EOFSTR);
+      SendPaket('Z' + String(read_temp(0), 3) + EOFSTR);
 #else
       SendPaket("Z20.00#");
 #endif
@@ -244,10 +235,14 @@ void ESP_Communication( byte mode )
         SendPaket('h' + String(mySetupData->get_focuserpreset(preset)) + EOFSTR);
       }
       break;
-      
+
     // only the set commands are listed here as they do not require a response
     case 28:              // :28#       None    home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
       break;
     case 5: // :05xxxxxx# None    Set new target position to xxxxxx (and focuser initiates immediate move to xxxxxx)
       // only if not already moving
@@ -256,7 +251,11 @@ void ESP_Communication( byte mode )
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         ftargetPosition = (unsigned long)WorkString.toInt();
         ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
-        UpdatePositionOledText();
+        update_oledtext_position();
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+        // restore motorspeed just in case
+        driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
       }
       break;
     case 7: // set maxsteps
@@ -312,8 +311,8 @@ void ESP_Communication( byte mode )
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
       mySetupData->set_tempprecision((byte) paramval);
-#if defined(TEMPERATUREPROBE)
-      sensor1.setResolution(tpAddress, (byte) paramval);
+#ifdef TEMPERATUREPROBE
+      temp_setresolution((byte) paramval);
 #endif
       break;
     case 22: // set the temperature compensation value to xxx
@@ -375,28 +374,23 @@ void ESP_Communication( byte mode )
     case 36:
       // :360#    None    Disable Display
       // :361#    None    Enable Display
+#if defined(OLEDTEXT)
       mySetupData->set_displayenabled((byte) (receiveString[3] - '0'));
       if (mySetupData->get_displayenabled() == 1)
       {
-#if defined(OLEDTEXT)
         if ( displayfound == true )
         {
-          myoled->dim(false);
+          myoled->Display_On();
         }
-#endif
       }
       else
       {
-#if defined(OLEDTEXT)
         if ( displayfound == true )
         {
-          // clear display buffer
-          // set dim
-          myoled->clearDisplay();
-          myoled->dim(true);
+          myoled->Display_Off();
         }
-#endif
       }
+#endif // ifdef OLEDTEXT
       break;
     case 40: // reset Arduino myFocuserPro2E controller
       software_Reboot(2000);      // reboot with 2s delay
@@ -425,6 +419,10 @@ void ESP_Communication( byte mode )
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         tmppos = (unsigned long)WorkString.toInt() + fcurrentPosition;
         ftargetPosition = ( tmppos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : tmppos;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+        // restore motorspeed just in case
+        driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
       }
       break;
     case 71: // set DelayAfterMove in milliseconds
@@ -457,7 +455,7 @@ void ESP_Communication( byte mode )
         mySetupData->set_focuserpreset( preset, tmppos );
       }
       break;
-      
+
     // compatibilty with myFocuserpro2 in LOCALSERIAL mode
     case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
       //ignore
