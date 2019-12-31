@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE RELEASE 113
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 114
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
 // ESP8266 Supports OLED display, Temperature Probe
-// ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's. Infrared Remote
+// ESP32 Supports OLED display, Temperature Probe, Push Buttons, Direction LED's, Infrared Remote, Bluetooth
 // Supports modes, ACCESSPOINT, STATIONMODE, BLUETOOTH, LOCALSERIAL, WEBSERVER, ASCOMREMOTE
 // Remember to change your target CPU depending on board selection
 
@@ -53,7 +53,7 @@
 // myOLED as in myFP2ELibs
 // IRRemoteESP32 2.0.1 as in myFP2ELibs
 // HalfStepperESP32 as in myFP2ELibs
-// Dallas Temperature 3.80
+// myDallas Temperature 3.7.3A as in myFP2ELibs
 // Wire [as installed with Arduino 1.8.9
 // OneWire 2.3.5
 // EasyDDNS 1.5.2
@@ -78,8 +78,7 @@
 #include "myBoards.h"
 
 // ----------------------------------------------------------------------------------------------
-// 2: FOR ESP8266 BOARDS USING DRV8825 SET DRV8825STEPMODE in myBoards.h
-//    FOR R3 WEMOS ESP32 USING DRV8825 SET DRV8825STEPMODE in myBoards.h
+// 2: FOR ALL ESP8266 BOARDS AND R3-WEMOS-ESP32 USING DRV8825 SET DRV8825STEPMODE in myBoards.h
 // ----------------------------------------------------------------------------------------------
 // Remember to set DRV8825TEPMODE to the correct value if using WEMOS or NODEMCUV1 in myBoards.h
 
@@ -114,6 +113,7 @@
 #include <WiFi.h>
 #include "SPIFFS.h"
 #endif
+#include <SPI.h>
 #include "FocuserSetupData.h"
 
 // ----------------------------------------------------------------------------------------------
@@ -125,17 +125,16 @@
 char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 #endif
-
 #ifdef STATIONMODE                          // the controller connects to your network
 char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 #endif
 
 // ----------------------------------------------------------------------------------------------
-// 8: OTA (OVER THE AIR UPDATING) SSID AND PASSWORD CONFIGURATION
+// 8: OTAUPDATES (OVER THE AIR UPDATE) SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
 // You can change the values for OTANAME and OTAPassword if required
-#if defined(OTAUPDATES)
+#ifdef OTAUPDATES
 #include <ArduinoOTA.h>
 
 const char *OTAName = "ESP8266";            // the username and password for the OTA service
@@ -208,6 +207,17 @@ IPAddress subnet(255, 255, 255, 0);
 
 BluetoothSerial SerialBT;                   // define BT adapter to use
 #endif // BLUETOOTHMODE
+
+// ----------------------------------------------------------------------------------------------
+// 14: FIRMWARE CODE START - INCLUDES AND LIBRARIES
+// ----------------------------------------------------------------------------------------------
+// Compile this with Arduino IDE 1.8.9 with ESP8266 Core library installed v2.5.2 [for ESP8266]
+// Make sure target board is set to Node MCU 1.0 (ESP12-E Module) [for ESP8266]
+
+// Project specific includes
+#if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
+#include "ESPQueue.h"                       //  By Steven de Salas
+#endif
 
 // ----------------------------------------------------------------------------------------------
 // 15: CONTROLLER FEATURES -- DO NOT CHANGE
@@ -295,18 +305,19 @@ void setFeatures()
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
-enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash2, State_Moving, \
-                            State_FindHomePosition, State_SetHomePosition, State_DelayAfterMove, \
-                            State_FinishedMove
-                         };
-
-#define move_in               0
-#define move_out              1
-#define move_main             move_in      //__needed for Backlash 2 
-#define oled_off              0
-#define oled_on               1
-#define oled_stay             2
-
+#define State_Idle              0
+#define State_InitMove          1
+#define State_ApplyBacklash     2
+#define State_Moving            3
+#define State_DelayAfterMove    4
+#define State_FinishedMove      5
+#define State_SetHomePosition   6
+#define State_FindHomePosition  7
+#define move_in                 0
+#define move_out                1
+#define oled_off                0
+#define oled_on                 1
+#define oled_stay               2
 //           reversedirection
 //__________________________________
 //               0   |   1
@@ -314,20 +325,20 @@ enum  StateMachineStates {  State_Idle, State_ApplyBacklash, State_ApplyBacklash
 //move_out  1||  1   |   0
 //move_in   0||  0   |   1
 
-String programName;                                     // will become driverboard name
+String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "113";
+char programVersion[] = "114";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
-unsigned long fcurrentPosition;                         // current focuser position
-unsigned long ftargetPosition;                          // target position
+unsigned long fcurrentPosition;         // current focuser position
+unsigned long ftargetPosition;          // target position
 unsigned long tmppos;
-
-byte tprobe1;                                           // indicate if there is a probe attached to myFocuserPro2
-byte isMoving;                                          // is the motor currently moving
-String ipStr;                                           // shared between BT mode and other modes
 boolean displayfound;
+
+byte tprobe1;                           // indicate if there is a probe attached to myFocuserPro2
+byte isMoving;                          // is the motor currently moving
+String ipStr;                           // shared between BT mode and other modes
 
 #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 #include "ESPQueue.h"                   //  By Steven de Salas
@@ -340,14 +351,14 @@ String btline;                          // buffer for serial data
 #endif
 #endif // #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTH)
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
 IPAddress ESP32IPAddress;
 String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
-WiFiClient myclient;                                    // only one client supported, multiple connections denied
+WiFiClient myclient;                    // only one client supported, multiple connections denied
 IPAddress myIP;
 long rssi;
-#endif
+#endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #ifdef TEMPERATUREPROBE
 #include <OneWire.h>                      // https://github.com/PaulStoffregen/OneWire
@@ -697,7 +708,8 @@ boolean Init_OLED(void)
 // ----------------------------------------------------------------------------------------------
 // 19B: OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-
+#ifdef OLEDTEXT
+#endif // #ifdef OLEDTEXT
 // Enclose function code in #ifdef - #endif so function declarations are visible
 
 void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
@@ -946,7 +958,7 @@ void init_oledtextdisplay(void)
 #ifdef OLEDTEXT
 #if defined(ESP8266)
 #if (DRVBRD == PRO2EL293DNEMA) || (DRVBRD == PRO2EL293D28BYJ48)
-  Wire.begin(I2CDATAPIN, I2CCLKPIN);        // l293d esp8266 shield
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);      // l293d esp8266 shield
   DebugPrintln("Setup PRO2EL293DNEMA/PRO2EL293D28BYJ48 I2C");
 #else
   DebugPrintln("Setup esp8266 I2C");
@@ -954,7 +966,7 @@ void init_oledtextdisplay(void)
 #endif
 #else
   DebugPrintln("Setup esp32 I2C");
-  Wire.begin(I2CDATAPIN, I2CCLKPIN);          // esp32
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);        // esp32
 #endif
   myoled = new SSD1306AsciiWire();
   // Setup the OLED
@@ -1325,7 +1337,7 @@ void start_mdns_service(void)
 #ifdef MANAGEMENT
 
 #if defined(ESP8266)
-#include <ESP8266WebServer.h>
+#include <ESP8266webserver.h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
@@ -1513,12 +1525,13 @@ void MANAGEMENT_handleroot(void)
     stop_ascomremoteserver();
 #endif
   }
-  msg = mserver.arg("setport");
+
+  msg = mserver.arg("setwsport");
   if ( msg != "" )
   {
     DebugPrint( "set web server port: " );
     DebugPrintln(msg);
-    String wp = mserver.arg("wp");                      // get webserver port number
+    String wp = mserver.arg("wp");                      // preocess new webserver port number
     if ( wp != "" )
     {
       unsigned long newport = 0;
@@ -1535,28 +1548,76 @@ void MANAGEMENT_handleroot(void)
         }
         else
         {
-          if ( newport == MSSERVERPORT )              // if same as management server
+          if ( newport == MSSERVERPORT )                              // if same as management server
           {
             DebugPrintln("wp error: new Port = MSSERVERPORT");
           }
-          else if ( newport == ALPACAPORT )           // if same as ASCOM REMOTE server
+          else if ( newport == mySetupData->get_ascomalpacaport() )   // if same as ASCOM REMOTE server
           {
             DebugPrintln("wp error: new Port = ALPACAPORT");
           }
-          else if ( newport == MDNSSERVERPORT )       // if same as mDNS server
+          else if ( newport == MDNSSERVERPORT )                       // if same as mDNS server
           {
             DebugPrintln("wp error: new Port = MDNSSERVERPORT");
           }
           else
           {
             DebugPrintln("New webserver port = " + String(newport));
-            mySetupData->set_webserverport(newport);  // assign new port and save it
+            mySetupData->set_webserverport(newport);                  // assign new port and save it
           }
         }
       }
       else
       {
         DebugPrintln("Attempt to change webserver port when webserver running");
+      }
+    }
+  }
+
+  msg = mserver.arg("setasport");
+  if ( msg != "" )
+  {
+    DebugPrint( "set ascom server port: " );
+    DebugPrintln(msg);
+    String ap = mserver.arg("ap");                      // process new ascomalpaca port number
+    if ( ap != "" )
+    {
+      unsigned long newport = 0;
+      DebugPrint("ap:");
+      DebugPrintln(ap);
+      newport = ap.toInt();
+      if ( ascomserverstate == STOPPED )
+      {
+        unsigned long currentport = mySetupData->get_ascomalpacaport();
+        if ( newport == currentport)
+        {
+          // port is the same so do not bother to change it
+          DebugPrintln("ap error: new Port = current port");
+        }
+        else
+        {
+          if ( newport == MSSERVERPORT )                              // if same as management server
+          {
+            DebugPrintln("wp error: new Port = MSSERVERPORT");
+          }
+          else if ( newport == mySetupData->get_webserverport() )     // if same as webserver
+          {
+            DebugPrintln("wp error: new Port = ALPACAPORT");
+          }
+          else if ( newport == MDNSSERVERPORT )                       // if same as mDNS server
+          {
+            DebugPrintln("wp error: new Port = MDNSSERVERPORT");
+          }
+          else
+          {
+            DebugPrintln("New ascomalpaca port = " + String(newport));
+            mySetupData->set_ascomalpacaport(newport);                // assign new port and save it
+          }
+        }
+      }
+      else
+      {
+        DebugPrintln("Attempt to change ascomalpaca port when ascomserver running");
       }
     }
   }
@@ -1614,10 +1675,11 @@ void MANAGEMENT_handleroot(void)
       {
         MHomePage.replace("%WSTATUS%", "STOPPED");
       }
+      MHomePage.replace("%WSPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"wp\" size=\"15\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\"> </form>");
 #else
       MHomePage.replace("%WSTATUS%", "Web server not defined in firmware");
+      MHomePage.replace("%WSPORT%", "Port: " + String(mySetupData->get_webserverport()));
 #endif
-      MHomePage.replace("%WSPORT%", String(mySetupData->get_webserverport()));
       // %WSBUTTON%
 #ifdef WEBSERVER
       if ( webserverstate == RUNNING)
@@ -1640,10 +1702,11 @@ void MANAGEMENT_handleroot(void)
       {
         MHomePage.replace("%ASTATUS%", "STOPPED");
       }
+      MHomePage.replace("%ASPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"ap\" size=\"15\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"> </form>");
 #else
       MHomePage.replace("%ASTATUS%", "ASCOM REMOTE server not defined in firmware");
+      MHomePage.replace("%ASPORT%", "Port: " + String(mySetupData->get_ascomalpacaport()));
 #endif
-      MHomePage.replace("%ASPORT%", String(ALPACAPORT));
 #ifdef ASCOMREMOTE
       if ( ascomserverstate == RUNNING )
       {
@@ -1711,7 +1774,6 @@ void start_management(void)
     return;
   }
   mserver.on("/", MANAGEMENT_handleroot);
-  //mserver.onNotFound(MANAGEMENT_handlenotfound);
   mserver.onNotFound([]() {                         // if the client requests any URI
     if (!MANAGEMENT_handleFileRead(mserver.uri()))  // send file if it exists
     {
@@ -1737,17 +1799,15 @@ void stop_management(void)
 #ifdef WEBSERVER
 
 #if defined(ESP8266)
-#include <ESP8266WebServer.h>
+#include <ESP8266webserver->h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
 
 #include "webserver.h"
 #if defined(ESP8266)
-//ESP8266WebServer webserver(WEBSERVERPORT);
 ESP8266WebServer *webserver;
 #else
-//WebServer webserver(WEBSERVERPORT);
 WebServer *webserver;
 #endif // if defined(esp8266)
 
@@ -2648,14 +2708,13 @@ void start_webserver(void)
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
-  delay(10);                        // small pause so background tasks can run
+  delay(10);                      // small pause so background tasks can run
 }
 
 void stop_webserver(void)
 {
-  //webserver->stop();
   webserver->close();
-  delete webserver;                 // free the webserver pointer and associated memory/code
+  delete webserver;            // free the webserver pointer and associated memory/code
   webserverstate = STOPPED;
 }
 // WEBSERVER END ------------------------------------------------------------------------------------
@@ -2666,15 +2725,14 @@ void stop_webserver(void)
 // ----------------------------------------------------------------------------------------------
 #ifdef ASCOMREMOTE
 #if defined(ESP8266)
-#include <ESP8266WebServer.h>
+#include <ESP8266webserver.h>
 #else
-#include <WebServer.h>
+#include <webserver.h>
 #endif // if defined(esp8266)
 
 #include "ascomserver.h"
 
 String Focuser_Setup_HomePage;    //  url:/setup/v1/focuser/0/setup
-String Setup_HomePage;            //  url:/setup
 unsigned int ASCOMClientID;
 unsigned int ASCOMClientTransactionID;
 unsigned int ASCOMServerTransactionID = 0;
@@ -2685,24 +2743,12 @@ byte ASCOMTempCompState = 0;
 byte ASCOMConnectedState = 0;
 WiFiClient ascomclient;
 #if defined(ESP8266)
-ESP8266WebServer ascomserver(ALPACAPORT);
+ESP8266WebServer *ascomserver;
 #else
-WebServer ascomserver(ALPACAPORT);
+WebServer *ascomserver;
 #endif // if defined(esp8266)
 
 // Construct pages for /setup
-void ASCOM_Setup_HomePage()
-{
-  Setup_HomePage = "<html><head></head>";
-  Setup_HomePage = Setup_HomePage + "<title>myFP2ESP ASCOM REMOTE</title></head>";
-  Setup_HomePage = Setup_HomePage + "<body><h3>myFP2ESP ASCOM REMOTE</h3>";
-  Setup_HomePage = Setup_HomePage + "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>";
-  Setup_HomePage = Setup_HomePage + "<p>IP Address: " + ipStr + ": Port: " + String(ALPACAPORT) + ", Firmware Version=" + String(programVersion) + "</p>";
-  Setup_HomePage = Setup_HomePage + "<p>Driverboard = myFP2ESP." + driverboard->getboardname() + "</p>";
-  // add link for setup page /setup/v1/focuser/0/setup
-  Setup_HomePage = Setup_HomePage + "<p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
-  Setup_HomePage = Setup_HomePage + "</body></html>";
-}
 
 // constructs ascom setup server page /setup/v1/focuser/0/setup
 void ASCOM_Create_Setup_Focuser_HomePage()
@@ -2713,8 +2759,8 @@ void ASCOM_Create_Setup_Focuser_HomePage()
   String fpbuffer = String(fcurrentPosition);
   String mxbuffer = String(mySetupData->get_maxstep());
   String smbuffer = String(mySetupData->get_stepmode());
-  String imbuffer = String(isMoving);
-
+  int eflag = 0;
+  
   switch ( mySetupData->get_stepmode() )
   {
     case 1:
@@ -2820,40 +2866,81 @@ void ASCOM_Create_Setup_Focuser_HomePage()
     rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
   }
 
-  // construct home page of webserver
+  // construct setup page of ascom server
   // header
-  Focuser_Setup_HomePage = "<head>" + String(AS_PAGETITLE) + "</head><body>";
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_TITLE);
+  if (SPIFFS.begin())
+  {
+    if ( SPIFFS.exists("/assetup.html"))
+    {
+      DebugPrintln("ascomserver: assetup.html found in spiffs");
+      // open file for read
+      File file = SPIFFS.open("/assetup.html", "r");
+      // read contents into string
+      DebugPrintln("ascomserver: read page into string");
+      Focuser_Setup_HomePage = file.readString();
 
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_COPYRIGHT);
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<p>Driverboard = myFP2ESP." + programName + "<br>";
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<myFP2ESP." + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion) + "</br>";
+      DebugPrintln("ascomserver: processing page start");
+      // process for dynamic data
+      Focuser_Setup_HomePage.replace("%PROGRAMNAME%", String(programName));
+      Focuser_Setup_HomePage.replace("%IPSTR%", ipStr);
+      Focuser_Setup_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
+      Focuser_Setup_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
+      Focuser_Setup_HomePage.replace("%FPBUFFER%", fpbuffer);
+      Focuser_Setup_HomePage.replace("%MXBUFFER%", mxbuffer);
+      Focuser_Setup_HomePage.replace("%CPBUFFER%", cpbuffer);
+      Focuser_Setup_HomePage.replace("%RDBUFFER%", rdbuffer);
+      Focuser_Setup_HomePage.replace("%SMBUFFER%", smbuffer);
+      Focuser_Setup_HomePage.replace("%MSBUFFER%", msbuffer);
+      DebugPrintln("ascomserver: processing page done");
+      eflag = 0;
+    }
+    else
+    {
+      // assetup.html not found
+      eflag = 1;
+    }
+  }
+  else 
+  {
+    // spiffs not started
+    eflag = 1;
+  }
+  if( eflag == 1 )
+  {
+    // SPIFFS FILE NOT FOUND
+    Focuser_Setup_HomePage = "<head>" + String(AS_PAGETITLE) + "</head><body>";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_TITLE);
 
-  // position. set position
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> ";
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"submit\" name=\"setpos\" value=\"Set Pos\"> </form></p>";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_COPYRIGHT);
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<p>Driverboard = myFP2ESP." + programName + "<br>";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<myFP2ESP." + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion) + "</br>";
 
-  // maxstep
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>MaxSteps</b> <input type=\"text\" name=\"fm\" size =\"15\" value=" + mxbuffer + "> ";
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
+    // position. set position
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> ";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"submit\" name=\"setpos\" value=\"Set Pos\"> </form></p>";
 
-  // coilpower
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Coil Power </b>" + cpbuffer ;
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+    // maxstep
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>MaxSteps</b> <input type=\"text\" name=\"fm\" size =\"15\" value=" + mxbuffer + "> ";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"submit\" value=\"Submit\"></form>";
 
-  // reverse direction
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+    // coilpower
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Coil Power </b>" + cpbuffer ;
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"cp\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
 
-  // stepmode
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Step Mode </b>" + smbuffer + " ";
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+    // reverse direction
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Reverse Direction </b>" + rdbuffer ;
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"rd\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
 
-  // motor speed
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Motor Speed: </b>" + msbuffer + " ";
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+    // stepmode
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Step Mode </b>" + smbuffer + " ";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"sm\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
 
-  Focuser_Setup_HomePage = Focuser_Setup_HomePage + "</body></html>\r\n";
+    // motor speed
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><b>Motor Speed: </b>" + msbuffer + " ";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<input type=\"hidden\" name=\"ms\" value=\"true\"><input type=\"submit\" value=\"Submit\"></form>";
+
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "</body></html>\r\n";
+  }
 }
 
 // generic ASCOM send reply
@@ -2866,7 +2953,7 @@ void ASCOM_sendreply( int replycode, String contenttype, String jsonstr)
   DebugPrint(", \njson:");
   DebugPrintln(jsonstr);
   // ascomserver.send builds the http header, jsonstr will be in the body
-  ascomserver.send(replycode, contenttype, jsonstr );
+  ascomserver->send(replycode, contenttype, jsonstr );
 }
 
 void ASCOM_getURLParameters()
@@ -2875,32 +2962,32 @@ void ASCOM_getURLParameters()
   // get server args, translate server args to lowercase, they can be mixed case
   DebugPrintln("ASCOM_getURLParameters START");
   DebugPrint("Number of args:");
-  DebugPrintln(ascomserver.args());
-  for (int i = 0; i < ascomserver.args(); i++)
+  DebugPrintln(ascomserver->args());
+  for (int i = 0; i < ascomserver->args(); i++)
   {
     if ( i >= ASCOMMAXIMUMARGS )
     {
       break;
     }
-    str = ascomserver.argName(i);
+    str = ascomserver->argName(i);
     str.toLowerCase();
     DebugPrint("Paramter Found: ");
     DebugPrintln(str);
     if ( str.equals("clientid") )
     {
-      ASCOMClientID = (unsigned int) ascomserver.arg(i).toInt();
+      ASCOMClientID = (unsigned int) ascomserver->arg(i).toInt();
       DebugPrint("clientID:");
       DebugPrintln(ASCOMClientID);
     }
     if ( str.equals("clienttransactionid") )
     {
-      ASCOMClientTransactionID = (unsigned int) ascomserver.arg(i).toInt();
+      ASCOMClientTransactionID = (unsigned int) ascomserver->arg(i).toInt();
       DebugPrint("clienttransactionid:");
       DebugPrintln(ASCOMClientTransactionID);
     }
     if ( str.equals("tempcomp") )
     {
-      String strtmp = ascomserver.arg(i);
+      String strtmp = ascomserver->arg(i);
       strtmp.toLowerCase();
       if ( strtmp.equals("true") )
       {
@@ -2915,16 +3002,16 @@ void ASCOM_getURLParameters()
     }
     if ( str.equals("position") )
     {
-      String str = ascomserver.arg(i);
+      String str = ascomserver->arg(i);
       DebugPrint("ASCOMpos RAW:");
       DebugPrintln(str);
-      ASCOMpos = ascomserver.arg(i).toInt();      // this returns a long data type
+      ASCOMpos = ascomserver->arg(i).toInt();      // this returns a long data type
       DebugPrint("ASCOMpos:");
       DebugPrintln(ASCOMpos);
     }
     if ( str.equals("connected") )
     {
-      String strtmp = ascomserver.arg(i);
+      String strtmp = ascomserver->arg(i);
       strtmp.toLowerCase();
       DebugPrint("conneded RAW:");
       DebugPrintln(str);
@@ -2975,8 +3062,48 @@ void ASCOM_handle_setup()
   // url /setup
   // The web page must describe the overall device, including name, manufacturer and version number.
   // content-type: text/html
+  String AS_HomePage;
+  // read ashomepage.html from SPIFFS
+  if (!SPIFFS.begin())
+  {
+    DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
+    DebugPrintln("ascomserver: build_default_homepage");
+    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
+    AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
+    AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
+    AS_HomePage = AS_HomePage + "</body></html>";
+  }
+  else
+  {
+    if ( SPIFFS.exists("/ashomepage.html"))
+    {
+      DebugPrintln("ascomserver: ashomepage.html found in spiffs");
+      // open file for read
+      File file = SPIFFS.open("/ashomepage.html", "r");
+      // read contents into string
+      DebugPrintln("ascomserver: read page into string");
+      AS_HomePage = file.readString();
+
+      DebugPrintln("ascomserver: processing page start");
+      // process for dynamic data
+      AS_HomePage.replace("%IPSTR%", ipStr);
+      AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
+      AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
+      AS_HomePage.replace("%PROGRAMNAME%", String(programName));
+      DebugPrintln("ascomserver: processing page done");
+    }
+    else
+    {
+      DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
+      DebugPrintln("ascomserver: build_default_homepage");
+      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
+      AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
+      AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
+      AS_HomePage = AS_HomePage + "</body></html>";
+    }
+  }
   ASCOMServerTransactionID++;
-  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, Setup_HomePage);
+  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, AS_HomePage);
   delay(10);                     // small pause so background tasks can run
 }
 
@@ -2987,17 +3114,17 @@ void ASCOM_handle_focuser_setup()
   // content-type: text/html
 
   // if set focuser position
-  String fpos_str = ascomserver.arg("setpos");
+  String fpos_str = ascomserver->arg("setpos");
   if ( fpos_str != "" )
   {
-    Serial.print( "setpos:" );
-    Serial.println(fpos_str);
-    String fp = ascomserver.arg("fp");
+    DebugPrint( "setpos:" );
+    DebugPrintln(fpos_str);
+    String fp = ascomserver->arg("fp");
     if ( fp != "" )
     {
       unsigned long temp = 0;
-      Serial.print("fp:");
-      Serial.println(fp);
+      DebugPrint("fp:");
+      DebugPrintln(fp);
       temp = fp.toInt();
       if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
       {
@@ -3008,7 +3135,7 @@ void ASCOM_handle_focuser_setup()
   }
 
   // if update of maxsteps
-  String fmax_str = ascomserver.arg("fm");
+  String fmax_str = ascomserver->arg("fm");
   if ( fmax_str != "" )
   {
     unsigned long temp = 0;
@@ -3031,7 +3158,7 @@ void ASCOM_handle_focuser_setup()
   }
 
   // if update motorspeed
-  String fms_str = ascomserver.arg("ms");
+  String fms_str = ascomserver->arg("ms");
   if ( fms_str != "" )
   {
     int temp1 = 0;
@@ -3050,7 +3177,7 @@ void ASCOM_handle_focuser_setup()
   }
 
   // if update coilpower
-  String fcp_str = ascomserver.arg("cp");
+  String fcp_str = ascomserver->arg("cp");
   if ( fcp_str != "" )
   {
     DebugPrint( "root() -coil power:" );
@@ -3066,7 +3193,7 @@ void ASCOM_handle_focuser_setup()
   }
 
   // if update reversedirection
-  String frd_str = ascomserver.arg("rd");
+  String frd_str = ascomserver->arg("rd");
   if ( frd_str != "" )
   {
     DebugPrint( "root() -reverse direction:" );
@@ -3083,7 +3210,7 @@ void ASCOM_handle_focuser_setup()
 
   // if update stepmode
   // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
-  String fsm_str = ascomserver.arg("sm");
+  String fsm_str = ascomserver->arg("sm");
   if ( fsm_str != "" )
   {
     int temp1 = 0;
@@ -3580,34 +3707,34 @@ void ASCOM_handleNotFound()
   String jsonretstr = "";
   DebugPrintln("ASCOM_handleNotFound:");
   message += "URI: ";
-  message += ascomserver.uri();
+  message += ascomserver->uri();
   message += "\nMethod: ";
-  if ( ascomserver.method() == HTTP_GET )
+  if ( ascomserver->method() == HTTP_GET )
   {
     message += "GET";
   }
-  else if ( ascomserver.method() == HTTP_POST )
+  else if ( ascomserver->method() == HTTP_POST )
   {
     message += "POST";
   }
-  else if ( ascomserver.method() == HTTP_PUT )
+  else if ( ascomserver->method() == HTTP_PUT )
   {
     message += "PUT";
   }
-  else if ( ascomserver.method() == HTTP_DELETE )
+  else if ( ascomserver->method() == HTTP_DELETE )
   {
     message += "DELETE";
   }
   else
   {
-    message += "UNKNOWN_METHOD: " + ascomserver.method();
+    message += "UNKNOWN_METHOD: " + ascomserver->method();
   }
   message += "\nArguments: ";
-  message += ascomserver.args();
+  message += ascomserver->args();
   message += "\n";
-  for (uint8_t i = 0; i < ascomserver.args(); i++)
+  for (uint8_t i = 0; i < ascomserver->args(); i++)
   {
-    message += " " + ascomserver.argName(i) + ": " + ascomserver.arg(i) + "\n";
+    message += " " + ascomserver->argName(i) + ": " + ascomserver->arg(i) + "\n";
   }
   DebugPrint("Error: ");
   DebugPrintln(message);
@@ -3621,48 +3748,93 @@ void ASCOM_handleNotFound()
 
 void ASCOM_handleRoot()
 {
+  String AS_HomePage;
+  // read ashomepage.html from SPIFFS
+  if (!SPIFFS.begin())
+  {
+    DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
+    DebugPrintln("ascomserver: build_default_homepage");
+    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
+    AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
+    AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
+    AS_HomePage = AS_HomePage + "</body></html>";
+  }
+  else
+  {
+    if ( SPIFFS.exists("/ashomepage.html"))
+    {
+      DebugPrintln("ascomserver: ashomepage.html found in spiffs");
+      // open file for read
+      File file = SPIFFS.open("/ashomepage.html", "r");
+      // read contents into string
+      DebugPrintln("ascomserver: read page into string");
+      AS_HomePage = file.readString();
+
+      DebugPrintln("ascomserver: processing page start");
+      // process for dynamic data
+      AS_HomePage.replace("%IPSTR%", ipStr);
+      AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
+      AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
+      AS_HomePage.replace("%PROGRAMNAME%", String(programName));
+      DebugPrintln("ascomserver: processing page done");
+    }
+    else
+    {
+      DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
+      DebugPrintln("ascomserver: build_default_homepage");
+      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
+      AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
+      AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
+      AS_HomePage = AS_HomePage + "</body></html>";
+    }
+  }
   ASCOMServerTransactionID++;
-  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, Setup_HomePage);
+  ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, AS_HomePage);
   delay(10);                     // small pause so background tasks can run
 }
 
 void start_ascomremoteserver(void)
 {
   DebugPrintln("start_ascomserver()");
-  ASCOM_Setup_HomePage();                       // create home page for ascom focuser setup
   ASCOM_Create_Setup_Focuser_HomePage();        // create home page for ascom management setup api
 
-  ascomserver.on("/", ASCOM_handleRoot);        // handle root access
-  ascomserver.onNotFound(ASCOM_handleNotFound); // handle url not found 404
+#if defined(ESP8266)
+  ascomserver = new ESP8266WebServer(mySetupData->get_wascomalpacaport());
+#else
+  ascomserver = new WebServer(mySetupData->get_ascomalpacaport());
+#endif // if defined(esp8266) 
 
-  ascomserver.on("/management/apiversions", ASCOM_handleapiversions);
-  ascomserver.on("/management/v1/description", ASCOM_handleapidescription);
-  ascomserver.on("/management/v1/configureddevices", ASCOM_handleapiconfigureddevices);
+  ascomserver->on("/", ASCOM_handleRoot);        // handle root access
+  ascomserver->onNotFound(ASCOM_handleNotFound); // handle url not found 404
 
-  ascomserver.on("/setup", ASCOM_handle_setup);
-  ascomserver.on("/setup/v1/focuser/0/setup", ASCOM_handle_focuser_setup);
+  ascomserver->on("/management/apiversions", ASCOM_handleapiversions);
+  ascomserver->on("/management/v1/description", ASCOM_handleapidescription);
+  ascomserver->on("/management/v1/configureddevices", ASCOM_handleapiconfigureddevices);
 
-  ascomserver.on("/api/v1/focuser/0/connected", HTTP_PUT, ASCOM_handleconnectedput);
-  ascomserver.on("/api/v1/focuser/0/interfaceversion", HTTP_GET, ASCOM_handleinterfaceversionget);
-  ascomserver.on("/api/v1/focuser/0/name", HTTP_GET, ASCOM_handlenameget);
-  ascomserver.on("/api/v1/focuser/0/description", HTTP_GET, ASCOM_handledescriptionget);
-  ascomserver.on("/api/v1/focuser/0/driverinfo", HTTP_GET, ASCOM_handledriverinfoget);
-  ascomserver.on("/api/v1/focuser/0/driverversion", HTTP_GET, ASCOM_handledriverversionget);
-  ascomserver.on("/api/v1/focuser/0/absolute", HTTP_GET, ASCOM_handleabsoluteget);
-  ascomserver.on("/api/v1/focuser/0/maxstep", HTTP_GET, ASCOM_handlemaxstepget);
-  ascomserver.on("/api/v1/focuser/0/maxincrement", HTTP_GET, ASCOM_handlemaxincrementget);
-  ascomserver.on("/api/v1/focuser/0/temperature", HTTP_GET, ASCOM_handletemperatureget);
-  ascomserver.on("/api/v1/focuser/0/position", HTTP_GET, ASCOM_handlepositionget);
-  ascomserver.on("/api/v1/focuser/0/halt", HTTP_PUT, ASCOM_handlehaltput);
-  ascomserver.on("/api/v1/focuser/0/ismoving", HTTP_GET, ASCOM_handleismovingget);
-  ascomserver.on("/api/v1/focuser/0/stepsize", HTTP_GET, ASCOM_handlestepsizeget);
-  ascomserver.on("/api/v1/focuser/0/connected", HTTP_GET, ASCOM_handleconnectedget);
-  ascomserver.on("/api/v1/focuser/0/tempcomp", HTTP_GET, ASCOM_handletempcompget);
-  ascomserver.on("/api/v1/focuser/0/tempcomp", HTTP_PUT, ASCOM_handletempcompput);
-  ascomserver.on("/api/v1/focuser/0/tempcompavailable", HTTP_GET, ASCOM_handletempcompavailableget);
-  ascomserver.on("/api/v1/focuser/0/move", HTTP_PUT, ASCOM_handlemoveput);
-  ascomserver.on("/api/v1/focuser/0/supportedactions", HTTP_GET, ASCOM_handlesupportedactionsget);
-  ascomserver.begin();
+  ascomserver->on("/setup", ASCOM_handle_setup);
+  ascomserver->on("/setup/v1/focuser/0/setup", ASCOM_handle_focuser_setup);
+
+  ascomserver->on("/api/v1/focuser/0/connected", HTTP_PUT, ASCOM_handleconnectedput);
+  ascomserver->on("/api/v1/focuser/0/interfaceversion", HTTP_GET, ASCOM_handleinterfaceversionget);
+  ascomserver->on("/api/v1/focuser/0/name", HTTP_GET, ASCOM_handlenameget);
+  ascomserver->on("/api/v1/focuser/0/description", HTTP_GET, ASCOM_handledescriptionget);
+  ascomserver->on("/api/v1/focuser/0/driverinfo", HTTP_GET, ASCOM_handledriverinfoget);
+  ascomserver->on("/api/v1/focuser/0/driverversion", HTTP_GET, ASCOM_handledriverversionget);
+  ascomserver->on("/api/v1/focuser/0/absolute", HTTP_GET, ASCOM_handleabsoluteget);
+  ascomserver->on("/api/v1/focuser/0/maxstep", HTTP_GET, ASCOM_handlemaxstepget);
+  ascomserver->on("/api/v1/focuser/0/maxincrement", HTTP_GET, ASCOM_handlemaxincrementget);
+  ascomserver->on("/api/v1/focuser/0/temperature", HTTP_GET, ASCOM_handletemperatureget);
+  ascomserver->on("/api/v1/focuser/0/position", HTTP_GET, ASCOM_handlepositionget);
+  ascomserver->on("/api/v1/focuser/0/halt", HTTP_PUT, ASCOM_handlehaltput);
+  ascomserver->on("/api/v1/focuser/0/ismoving", HTTP_GET, ASCOM_handleismovingget);
+  ascomserver->on("/api/v1/focuser/0/stepsize", HTTP_GET, ASCOM_handlestepsizeget);
+  ascomserver->on("/api/v1/focuser/0/connected", HTTP_GET, ASCOM_handleconnectedget);
+  ascomserver->on("/api/v1/focuser/0/tempcomp", HTTP_GET, ASCOM_handletempcompget);
+  ascomserver->on("/api/v1/focuser/0/tempcomp", HTTP_PUT, ASCOM_handletempcompput);
+  ascomserver->on("/api/v1/focuser/0/tempcompavailable", HTTP_GET, ASCOM_handletempcompavailableget);
+  ascomserver->on("/api/v1/focuser/0/move", HTTP_PUT, ASCOM_handlemoveput);
+  ascomserver->on("/api/v1/focuser/0/supportedactions", HTTP_GET, ASCOM_handlesupportedactionsget);
+  ascomserver->begin();
   ascomserverstate = RUNNING;
   delay(10);                     // small pause so background tasks can run
 }
@@ -3670,7 +3842,8 @@ void start_ascomremoteserver(void)
 void stop_ascomremoteserver(void)
 {
   DebugPrintln("stop_ascomserver()");
-  ascomserver.stop();
+  ascomserver->close();
+  delete ascomserver;            // free the ascomserver pointer and associated memory/code
   ascomserverstate = STOPPED;
   delay(10);                     // small pause so background tasks can run
 }
@@ -3756,7 +3929,6 @@ void init_duckdns(void)
 // ----------------------------------------------------------------------------------------------
 // 30: FIRMWARE - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-
 byte TimeCheck(unsigned long x, unsigned long Delay)
 {
   unsigned long y = x + Delay;
@@ -3773,13 +3945,6 @@ byte TimeCheck(unsigned long x, unsigned long Delay)
 void software_Reboot(int Reboot_delay)
 {
   oledtextmsg(wifirestartstr, -1, true, false);
-#if defined(OLEDGRAPHICS)
-  myoled->clear();
-  myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-  myoled->setFont(ArialMT_Plain_24);
-  myoled->drawString(64, 28, "REBOOT");                 // Print currentPosition
-  myoled->display();
-#endif
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   if ( myclient.connected() )
   {
@@ -3791,55 +3956,15 @@ void software_Reboot(int Reboot_delay)
 }
 
 // STEPPER MOTOR ROUTINES
-void steppermotormove(byte dir )                        // direction move_in, move_out ^ reverse direction
+void steppermotormove(byte dir )                // direction move_in, move_out ^ reverse direction
 {
-#if defined(INOUTLEDS)
+#ifdef INOUTLEDS
   ( dir == move_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
 #endif
   driverboard->movemotor(dir);
-#if defined(INOUTLEDS)
+#ifdef INOUTLEDS
   ( dir == move_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
 #endif
-}
-
-bool Read_WIFI_config_SPIFFS( char* xSSID, char* xPASSWORD)
-{
-  const String filename = "/wifi.json";
-  String SSID;
-  String PASSWORD;
-  boolean status = false;
-
-  DebugPrintln(F("check for Wifi setup data on SPIFFS"));
-  File f = SPIFFS.open(filename, "r");                          // file open to read
-  if (!f)
-  {
-    DebugPrintln(F("no SPIFFS Wifi Setupdata found => use default settings"));
-  }
-  else
-  {
-    String data = f.readString();                               // read content of the text file
-    DebugPrint(F("SPIFFS Wifi Setupdata: "));
-    DebugPrintln(data);                                         // ... and print on serial
-
-    DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(2) + 120));  // allocate json buffer
-    DeserializationError error = deserializeJson(doc, data);    // Parse JSON object
-    if (error)
-    {
-      DebugPrintln("Deserialization failed! => use default settings");
-    }
-    else
-    {
-      // Decode JSON/Extract values
-      SSID     =  doc["mySSID"].as<char*>();
-      PASSWORD =  doc["myPASSWORD"].as<char*>();
-
-      SSID.toCharArray(xSSID, SSID.length() + 1);
-      PASSWORD.toCharArray(xPASSWORD, PASSWORD.length() + 1);
-
-      status = true;
-    }
-  }
-  return status;
 }
 
 void setup()
@@ -3852,28 +3977,28 @@ void setup()
 #endif
 #endif
 
-  mySetupData = new SetupData();                        // instantiate object SetUpData with SPIFFS
+  mySetupData = new SetupData();                // instantiate object SetUpData with SPIFFS file instead of using EEPROM, init SPIFFS
 
-#if defined(LOCALSERIAL)
+#ifdef LOCALSERIAL
   serialline = "";
   clearSerialPort();
 #endif // if defined(LOCALSERIAL)
 
-#if defined(BLUETOOTHMODE)                              // open Bluetooth port and set bluetooth device name if defined
-  SerialBT.begin(BLUETOOTHNAME);                        // Bluetooth device name
+#ifdef BLUETOOTHMODE                            // open Bluetooth port, set bluetooth device name
+  SerialBT.begin(BLUETOOTHNAME);                // Bluetooth device name
   btline = "";
   clearbtPort();
   DebugPrintln(bluetoothstartstr);
 #endif
 
-#if defined(INOUTLEDS)                                  // Setup IN and OUT LEDS, use as controller power up indicator
+#ifdef INOUTLEDS                                // Setup LEDS, use as controller power up indicator
   pinMode(INLEDPIN, OUTPUT);
   pinMode(OUTLEDPIN, OUTPUT);
   digitalWrite(INLEDPIN, 1);
   digitalWrite(OUTLEDPIN, 1);
 #endif
 
-#if defined(PUSHBUTTONS)                           // Setup IN and OUT Pushbuttons, active high when pressed
+#ifdef PUSHBUTTONS                              // Setup Pushbuttons, active high when pressed
   init_pushbuttons();
 #endif
 
@@ -3885,60 +4010,56 @@ void setup()
   displayfound = Init_OLED();
 #endif
 
-  delay(100);                                           // keep delays small otherwise issue with ASCOM
+  delay(100);                                   // keep delays small otherwise issue with ASCOM
 
-  DebugPrint(F(" fposition : "));                       // Print Loaded Values from SPIFF
+  DebugPrint(F("fposition= "));                 // Print Loaded Values from SPIFF
   DebugPrintln(mySetupData->get_fposition());
-  DebugPrint(F(" focuserdirection : "));
+  DebugPrint(F("focuserdirection= "));
   DebugPrintln(mySetupData->get_focuserdirection());
-  DebugPrint(F(" maxstep : "));
+  DebugPrint(F("maxstep= "));
   DebugPrintln(mySetupData->get_maxstep());
-  DebugPrint(F(" stepsize : "));;
+  DebugPrint(F("stepsize= "));;
   DebugPrintln(mySetupData->get_stepsize());;
-  DebugPrint(F(" DelayAfterMove : "));
+  DebugPrint(F("DelayAfterMove= "));
   DebugPrintln(mySetupData->get_DelayAfterMove());
-  DebugPrint(F(" backlashsteps_in : "));
+  DebugPrint(F("backlashsteps_in= "));
   DebugPrintln(mySetupData->get_backlashsteps_in());
-  DebugPrint(F(" backlashsteps_out : "));
+  DebugPrint(F("backlashsteps_out= "));
   DebugPrintln(mySetupData->get_backlashsteps_out());
-  DebugPrint(F(" tempcoefficient : "));
+  DebugPrint(F("tempcoefficient= "));
   DebugPrintln(mySetupData->get_tempcoefficient());
-  DebugPrint(F(" tempprecision : "));
+  DebugPrint(F("tempprecision= "));
   DebugPrintln(mySetupData->get_tempprecision());
-  DebugPrint(F(" stepmode : "));
+  DebugPrint(F("stepmode = "));
   DebugPrintln(mySetupData->get_stepmode());
-  DebugPrint(F(" coilpower : "));
+  DebugPrint(F("coilpower= "));
   DebugPrintln(mySetupData->get_coilpower());
-  DebugPrint(F(" reversedirection : "));
+  DebugPrint(F("reversedirection= "));
   DebugPrintln(mySetupData->get_reversedirection());
-  DebugPrint(F(" stepsizeenabled : "));
+  DebugPrint(F("stepsizeenabled= "));
   DebugPrintln(mySetupData->get_stepsizeenabled());
-  DebugPrint(F(" tempmode : "));
+  DebugPrint(F("tempmode= "));
   DebugPrintln(mySetupData->get_tempmode());
-  DebugPrint(F(" lcdupdateonmove : "));
+  DebugPrint(F("lcdupdateonmove= "));
   DebugPrintln(mySetupData->get_lcdupdateonmove());
-  DebugPrint(F(" lcdpagedisplaytime : "));
+  DebugPrint(F("lcdpagedisplaytime= "));
   DebugPrintln(mySetupData->get_lcdpagetime());
-  DebugPrint(F(" tempcompenabled : "));
+  DebugPrint(F("tempcompenabled= "));
   DebugPrintln(mySetupData->get_tempcompenabled());
-  DebugPrint(F(" tcdirection : "));
+  DebugPrint(F("tcdirection= "));
   DebugPrintln(mySetupData->get_tcdirection());
-  DebugPrint(F(" motorSpeed : "));
+  DebugPrint(F("motorSpeed= "));
   DebugPrintln(mySetupData->get_motorSpeed());
-  DebugPrint(F(" displayenabled : "));
+  DebugPrint(F("displayenabled= "));
   DebugPrintln(mySetupData->get_displayenabled());
+  DebugPrint(F("webserverport= "));
+  DebugPrintln(mySetupData->get_webserverport());
 
-#if defined(TEMPERATUREPROBE)                           // start temp probe
+#ifdef TEMPERATUREPROBE                         // start temp probe
   init_temp();
 #endif // end TEMPERATUREPROBE
 
-  //_____Start WIFI config________________________
-
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
-  Read_WIFI_config_SPIFFS(mySSID, myPASSWORD); //__ Read mySSID,myPASSWORD from SPIFFS if exist, otherwise use defaults
-#endif
-
-#if defined(ACCESSPOINT)
+#ifdef ACCESSPOINT
   oledtextmsg(startapstr, -1, true, true);
   DebugPrintln(startapstr);
   WiFi.config(ip, dns, gateway, subnet);
@@ -3946,11 +4067,11 @@ void setup()
   WiFi.softAP(mySSID, myPASSWORD);
 #endif // end ACCESSPOINT
 
-#if defined(STATIONMODE)
   // this is setup as a station connecting to an existing wifi network
+#ifdef STATIONMODE
   DebugPrintln(startsmstr);
   oledtextmsg(startsmstr, -1, false, true);
-  if (staticip == STATICIPON)                           // if staticip then set this up before starting
+  if (staticip == STATICIPON)                   // if staticip then set this up before starting
   {
     DebugPrintln(setstaticipstr);
     oledtextmsg(setstaticipstr, -1, false, true);
@@ -3958,54 +4079,43 @@ void setup()
     delay(5);
   }
 
-  /* Log NodeMCU on to LAN. Provide IP Address over Serial port */
-
+  /* Log on to LAN */
   WiFi.mode(WIFI_STA);
-  WiFi.begin(mySSID, myPASSWORD);     // attempt to start the WiFi
-  delay(1000);                                      // wait 500ms
+  byte status = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
+  delay(1000);                                  // wait 500ms
 
-  for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
+  int attempts = 0;                             // holds the number of attempts/tries
+  while (WiFi.status() != WL_CONNECTED)
   {
     DebugPrint(attemptconnstr);
     DebugPrintln(mySSID);
     DebugPrint(attemptsstr);
     DebugPrint(attempts);
-    delay(1000);            // wait 1s
-
-    oled_draw_Wifi(attempts);
+    delay(1000);                                // wait 1s
+    attempts++;                                 // add 1 to attempt counter to start WiFi
     oledtextmsg(attemptsstr, attempts, false, true);
-
-#if defined(ESP32)
-    if (attempts % 3 == 2)
-    { // every 3 attempts new init for ESP32 => faster connection without reboot
-      WiFi.mode(WIFI_STA);
-      WiFi.begin(mySSID, myPASSWORD);
-    }
-#endif
-
-    if (attempts > 9)                               // if this attempt is 10 or more tries
+    if (attempts > 10)                          // if this attempt is 11 or more tries
     {
-      DebugPrintln(apstartfailstr);
-      oledtextmsg(apstartfailstr + String(mySSID), -1, true, true);
-      oledgraphicmsg(apstartfailstr, -1, true);
+      DebugPrintln(wifistartfailstr);
+      DebugPrintln(wifirestartstr);
+      oledtextmsg("Did not connect to " + String(mySSID), -1, true, true);
       delay(2000);
-      software_Reboot(2000);                        // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
+      software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
   }
 #endif // end STATIONMODE
 
   oledtextmsg("Connected", -1, true, true);
-  delay(100);                                       // keep delays small else issue with ASCOM
+  delay(100);                                   // keep delays small else issue with ASCOM
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
   DebugPrintln(starttcpserverstr);
   oledtextmsg(starttcpserverstr, -1, false, true);
-
   myserver.begin();
   DebugPrintln(F("Get local IP address"));
   ESP32IPAddress = WiFi.localIP();
-  delay(100);                                       // keep delays small else issue with ASCOM
+  delay(100);                                   // keep delays small else issue with ASCOM
   DebugPrintln(tcpserverstartedstr);
   oledtextmsg(tcpserverstartedstr, -1, false, true);
 
@@ -4024,7 +4134,7 @@ void setup()
   myIP = WiFi.localIP();
   ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
 #else
-  // it is Bluetooth or Local Serial so set some globals
+  // it is Bluetooth so set some globals
   ipStr = "0.0.0.0";
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
@@ -4037,7 +4147,7 @@ void setup()
 
   driverboard = new DriverBoard(DRVBRD);
   // setup firmware filename
-  programName = programName + driverboard->getboardname();
+  programName = driverboard->getboardname();
   DebugPrintln(drvbrddonestr);
   oledtextmsg(drvbrddonestr, -1, false, true);
   delay(5);
@@ -4051,16 +4161,16 @@ void setup()
   //mySetupData->set_fposition((mySetupData->get_fposition() < 0 ) ? 0 : mySetupData->get_fposition());
   //mySetupData->set_fposition((mySetupData->get_fposition() > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : mySetupData->get_fposition());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() < 0.0 ) ? 0 : mySetupData->get_stepsize());
-  mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > DEFAULTSTEPSIZE ) ? DEFAULTSTEPSIZE : mySetupData->get_stepsize());
+  mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > MAXIMUMSTEPSIZE ) ? MAXIMUMSTEPSIZE : mySetupData->get_stepsize());
 
-  driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-  driverboard->setstepmode(mySetupData->get_stepmode());
+  driverboard->setmotorspeed(mySetupData->get_motorSpeed());  // restore motorspeed
+  driverboard->setstepmode(mySetupData->get_stepmode());      // restore stepmode
 
-  DebugPrintln(F("Check coilpower."));
+  DebugPrintln(F("Check coilpower"));
   if (mySetupData->get_coilpower() == 0)
   {
     driverboard->releasemotor();
-    DebugPrintln(F("Coil power released."));
+    DebugPrintln(F("Coil power released"));
   }
 
   delay(5);
@@ -4104,7 +4214,7 @@ void setup()
   otaservicestate = STOPPED;
 
 #ifdef OTAUPDATES
-  start_otaservice();                        // Start the OTA service
+  start_otaservice();                       // Start the OTA service
 #endif // if defined(OTAUPDATES)
 
 #ifdef MANAGEMENT
@@ -4130,7 +4240,7 @@ void setup()
   DebugPrintln(setupendstr);
   oledtextmsg(setupendstr, -1, false, true);
 
-#if defined(INOUTLEDS)
+#ifdef INOUTLEDS
   digitalWrite(INLEDPIN, 0);
   digitalWrite(OUTLEDPIN, 0);
 #endif
@@ -4141,26 +4251,22 @@ void setup()
 //void IRAM_ATTR loop() // ESP32
 void loop()
 {
-  static StateMachineStates MainStateMachine = State_Idle;
-  static byte DirOfTravel = mySetupData->get_focuserdirection();
+  static byte MainStateMachine = State_Idle;
   static byte backlash_count = 0;
-  static byte m_bl;
   static byte backlash_enabled = 0;
-
+  static byte DirOfTravel = mySetupData->get_focuserdirection();
   static unsigned long TimeStampDelayAfterMove = 0;
   static unsigned long TimeStampPark = millis();
   static byte Parked = false;
   static byte updatecount = 0;
-
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   static byte ConnectionStatus = 0;
 #endif
-
 #ifdef HOMEPOSITIONSWITCH
   static byte stepstaken       = 0;
 #endif
 
-#if defined(LOOPTIMETEST)
+#ifdef LOOPTIMETEST
   DebugPrint(F("Loop Start ="));
   DebugPrintln(millis());
 #endif
@@ -4192,7 +4298,7 @@ void loop()
     {
       if (myclient.available())
       {
-        ESP_Communication(ESPDATA);                     // Wifi communication
+        ESP_Communication(ESPDATA);
       }
     }
     else
@@ -4200,7 +4306,7 @@ void loop()
       ConnectionStatus = 1;
     }
   }
-#endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
+#endif // defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #ifdef BLUETOOTHMODE
   if ( SerialBT.available() )
@@ -4208,7 +4314,7 @@ void loop()
     processbt();
   }
   // if there is a command from Bluetooth
-  if ( queue.count() >= 1 )                             // check for serial command
+  if ( queue.count() >= 1 )                 // check for serial command
   {
     ESP_Communication(BTDATA);
   }
@@ -4220,7 +4326,7 @@ void loop()
   {
     processserial();
   }
-  if ( queue.count() >= 1 )                             // check for serial command
+  if ( queue.count() >= 1 )                 // check for serial command
   {
     ESP_Communication(SERIALDATA);
   }
@@ -4233,11 +4339,10 @@ void loop()
   }
 #endif // ifdef OTAUPDATES
 
-
 #ifdef ASCOMREMOTE
   if ( ascomserverstate == RUNNING)
   {
-    ascomserver.handleClient();
+    ascomserver->handleClient();
   }
 #endif
 
@@ -4247,105 +4352,41 @@ void loop()
     webserver->handleClient();
   }
 #endif
+
 #ifdef MANAGEMENT
-  mserver.handleClient();
+  if ( managementserverstate == RUNNING )
+  {
+    mserver.handleClient();
+  }
 #endif
 
   //_____________________________MainMachine _____________________________
 
   switch (MainStateMachine)
   {
-    //___Idle________________________________________________________________
     case State_Idle:
       if (fcurrentPosition != ftargetPosition)
       {
-        //__init move _____________________________
         isMoving = 1;
+        driverboard->enablemotor();
+        MainStateMachine = State_InitMove;
         DebugPrint(F(STATEINITMOVE));
         DebugPrint(currentposstr);
         DebugPrintln(fcurrentPosition);
         DebugPrint(targetposstr);
         DebugPrintln(ftargetPosition);
-
-        DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
-        driverboard->enablemotor();
-        if (mySetupData->get_focuserdirection() == DirOfTravel)
-        {
-          // move is in same direction, ignore backlash
-          MainStateMachine = State_Moving;
-          DebugPrintln(STATEMOVINGSTR);
-        }
-        else
-        {
-          // move is in opposite direction, check for backlash enabled
-          // get backlash settings
-          mySetupData->set_focuserdirection(DirOfTravel);
-#if (BACKLASH == 1)   // go for standard backlash
-          if ( DirOfTravel == move_in)
-          {
-            backlash_count = mySetupData->get_backlashsteps_in();
-            backlash_enabled = mySetupData->get_backlash_in_enabled();
-          }
-          else
-          {
-            backlash_count = mySetupData->get_backlashsteps_out();
-            backlash_enabled = mySetupData->get_backlash_out_enabled();
-          }
-          // backlash needs to be applied, so get backlash values and states
-
-          // if backlask was defined then follow the backlash rules
-          // if backlash has been enabled then apply it
-          if ( backlash_enabled == 1 )
-          {
-            // apply backlash
-            // save new direction of travel
-            // mySetupData->set_focuserdirection(DirOfTravel);
-            //driverboard->setmotorspeed(BACKLASHSPEED);
-            MainStateMachine = State_ApplyBacklash;
-            DebugPrint(STATEAPPLYBACKLASH);
-          }
-          else
-          {
-            // do not apply backlash, go straight to moving
-            MainStateMachine = State_Moving;
-            DebugPrint(STATEMOVINGSTR);
-          }
-
-#elif (BACKLASH == 2)
-
-          if ( DirOfTravel == move_main)
-          {
-            // do not apply backlash, go straight to moving
-            MainStateMachine = State_Moving;
-            DebugPrint(STATEMOVINGSTR);
-          }
-          else
-          {
-            unsigned long bl = mySetupData->get_backlashsteps_in();
-            unsigned long sm = mySetupData->get_stepmode();
-
-            if (DirOfTravel == move_out)
-            {
-              backlash_count = bl + sm - ((ftargetPosition + bl) % sm);   // Trip to tuning point should be a fullstep position
-            }
-            else
-            {
-              backlash_count = bl + sm - ((ftargetPosition - bl) % sm);   // Trip to tuning point should be a fullstep position
-            }
-            m_bl =  backlash_count;
-            MainStateMachine = State_ApplyBacklash;
-            DebugPrint(STATEAPPLYBACKLASH);
-          }
-#else
-          // ignore backlash
-          MainStateMachine = State_Moving;
-          DebugPrint(STATEMOVINGSTR);;
-#endif
-        }
       }
       else
       {
         // focuser stationary. isMoving is 0
+        byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
+        if ( status == true )
+        {
+          Update_OledGraphics(oled_off);                // Display off after config saved
+          DebugPrint("new Config saved: ");
+          DebugPrintln(status);
+        }
+
 #ifdef PUSHBUTTONS
         update_pushbuttons();
 #endif
@@ -4370,7 +4411,7 @@ void loop()
 
 #ifdef TEMPERATUREPROBE
         update_temp();
-#endif
+#endif // temperatureprobe
 
         if (Parked == false)
         {
@@ -4381,15 +4422,60 @@ void loop()
             Parked = true;
           }
         }
-
-        if (mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel)) // save config if needed
-        {
-          Update_OledGraphics(oled_off);                // Display off after config saved
-        }
       }
       break;
 
-    //__ApplyBacklash ____________________________________________________________________
+    case State_InitMove:
+      isMoving = 1;
+      DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
+      driverboard->enablemotor();
+      if (mySetupData->get_focuserdirection() == DirOfTravel)
+      {
+        // move is in same direction, ignore backlash
+        MainStateMachine = State_Moving;
+        DebugPrintln(STATEMOVINGSTR);
+      }
+      else
+      {
+        // move is in opposite direction, check for backlash enabled
+        // get backlash settings
+        if ( DirOfTravel == move_in)
+        {
+          backlash_count = mySetupData->get_backlashsteps_in();
+          backlash_enabled = mySetupData->get_backlash_in_enabled();
+        }
+        else
+        {
+          backlash_count = mySetupData->get_backlashsteps_out();
+          backlash_enabled = mySetupData->get_backlash_out_enabled();
+        }
+        // backlash needs to be applied, so get backlash values and states
+#ifdef BACKLASH
+        // if backlask was defined then follow the backlash rules
+        // if backlash has been enabled then apply it
+        if ( backlash_enabled == 1 )
+        {
+          // apply backlash
+          // save new direction of travel
+          mySetupData->set_focuserdirection(DirOfTravel);
+          //driverboard->setmotorspeed(BACKLASHSPEED);
+          MainStateMachine = State_ApplyBacklash;
+          DebugPrint(F(STATEAPPLYBACKLASH));
+        }
+        else
+        {
+          // do not apply backlash, go straight to moving
+          MainStateMachine = State_Moving;
+          DebugPrint(STATEMOVINGSTR);
+        }
+#else
+        // ignore backlash
+        MainStateMachine = State_Moving;
+        DebugPrint(STATEMOVINGSTR);
+#endif
+      }
+      break;
+
     case State_ApplyBacklash:
       if ( backlash_count )
       {
@@ -4398,19 +4484,31 @@ void loop()
       }
       else
       {
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+        //driverboard->setmotorspeed(mySetupData->get_motorSpeed());
         MainStateMachine = State_Moving;
-        DebugPrint(STATEMOVINGSTR);
+        DebugPrintln(STATEMOVINGSTR);
       }
       break;
 
-    //__ Moving _________________________________________________________________________
     case State_Moving:
-      if ( fcurrentPosition != ftargetPosition )        // must come first else cannot halt
+      if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
       {
         (DirOfTravel == move_out ) ? fcurrentPosition++ : fcurrentPosition--;
         steppermotormove(DirOfTravel);
 
+        if ( mySetupData->get_displayenabled() == 1)
+        {
+          updatecount++;
+          if ( updatecount > LCDUPDATEONMOVE )
+          {
+            updatecount++;
+            if ( updatecount > LCDUPDATEONMOVE )
+            {
+              updatecount = 0;
+              update_oledtext_position();
+            }
+          }
+        }
 #ifdef HOMEPOSITIONSWITCH
         // if switch state = CLOSED and currentPosition != 0
         // need to back OUT a little till switch opens and then set position to 0
@@ -4421,6 +4519,12 @@ void loop()
           MainStateMachine = State_SetHomePosition;
           DebugPrintln(F("HP closed, fcurrentPosition !=0"));
           DebugPrintln(F(STATESETHOMEPOSITION));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+          myoled->clear();
+          myoled->println(hpswclosedstr);
+#endif  // OLEDTEXT
+#endif  // SHOWHPSWMSGS
         }
         // else if switch state = CLOSED and Position = 0
         // need to back OUT a little till switch opens and then set position to 0
@@ -4431,6 +4535,12 @@ void loop()
           MainStateMachine = State_SetHomePosition;
           DebugPrintln(F("HP closed, fcurrentPosition=0"));
           DebugPrintln(F(STATESETHOMEPOSITION));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+          myoled->clear();
+          myoled->println(hpswclosedstr);
+#endif // OLEDTEXT
+#endif // SHOWHPSWMSGS
         }
         // else if switchstate = OPEN and Position = 0
         // need to move IN a little till switch CLOSES then
@@ -4441,9 +4551,14 @@ void loop()
           MainStateMachine = State_FindHomePosition;
           DebugPrintln(F("HP Open, fcurrentPosition=0"));
           DebugPrintln(F(STATEFINDHOMEPOSITION));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+          myoled->clear();
+          myoled->println(hpswopenstr);
+#endif  // OLEDTEXT
+#endif  // SHOWHPSWMSGS
         }
 #endif // HOMEPOSITIONSWITCH
-
         if ( mySetupData->get_displayenabled() == 1)
         {
           updatecount++;
@@ -4460,40 +4575,27 @@ void loop()
       }
       else
       {
-#if (BACKLASH == 2)
-        if ( DirOfTravel != move_main)
-        {
-          DirOfTravel ^= 1;
-          mySetupData->set_focuserdirection(DirOfTravel);
-          backlash_count = m_bl;        // Backlash retour
-          TimeStampDelayAfterMove = millis();
-          MainStateMachine = State_ApplyBacklash2;
-          DebugPrintln(F("State_Moving => State_ApplyBacklash2"));
-        }
-        else
-        {
-          MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(F("State_Moving => State_DelayAfterMove"));
-        }
-#else
         MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(F("State_Moving => State_DelayAfterMove"));
-#endif
+        DebugPrintln(F(STATEDELAYAFTERMOVE));
       }
       break;
 
-    //__ FindHomePosition _________________________________________________________________________
-    case State_FindHomePosition:                // move in till home position switch closes
+    case State_FindHomePosition:            // move in till home position switch closes
 #ifdef HOMEPOSITIONSWITCH
       driverboard->setmotorspeed(SLOW);
       stepstaken = 0;
       DebugPrintln(F("HP MoveIN till closed"));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+      myoled->println(hpswfindclosedstr);
+#endif // OLEDTEXT
+#endif // SHOWHPSWMSGS
       while ( hpswstate == HPSWOPEN )
       {
         // step IN till switch closes
         steppermotormove(DirOfTravel);
         stepstaken++;
-        if ( stepstaken > HOMESTEPS )           // this prevents the endless loop if the hpsw is not connected or is faulty
+        if ( stepstaken > HOMESTEPS )       // this prevents the endless loop if the hpsw is not connected or is faulty
         {
           DebugPrint(F("HP MoveIN ERROR: HOMESTEPS exceeded"));
           break;
@@ -4501,6 +4603,12 @@ void loop()
       }
       DebugPrint(F("HP MoveIN stepstaken="));
       DebugPrint(stepstaken);
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+      myoled->clear();
+      myoled->println(hpswclosedstr);
+#endif  // OLEDTEXT
+#endif  // SHOWHPSWMSGS
       DebugPrint(F("HP MoveIN finished"));
       driverboard->setmotorspeed(mySetupData->get_motorSpeed());
 #endif  // HOMEPOSITIONSWITCH
@@ -4508,12 +4616,16 @@ void loop()
       DebugPrint(F(STATESETHOMEPOSITION));
       break;
 
-    //__ SetHomePosition _________________________________________________________________________
-    case State_SetHomePosition:                 // move out till home position switch opens
+    case State_SetHomePosition:             // move out till home position switch opens
 #ifdef HOMEPOSITIONSWITCH
       driverboard->setmotorspeed(SLOW);
       stepstaken = 0;
       DebugPrintln(F("HP Move out till OPEN"));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+      myoled->println(hpswfindopenstr);
+#endif // OLEDTEXT
+#endif // SHOWHPSWMSGS
       // if the previous moveIN failed at HOMESTEPS and HPSWITCH is still open then the
       // following while() code will drop through and have no effect and position = 0
       while ( hpswstate == HPSWCLOSED )
@@ -4522,7 +4634,7 @@ void loop()
         DirOfTravel = !DirOfTravel;
         steppermotormove(DirOfTravel);
         stepstaken++;
-        if ( stepstaken > HOMESTEPS )           // this prevents the endless loop if the hpsw is not connected or is faulty
+        if ( stepstaken > HOMESTEPS )       // this prevents the endless loop if the hpsw is not connected or is faulty
         {
           DebugPrintln(F("HP MoveOUT ERROR: HOMESTEPS exceeded#"));
           break;
@@ -4532,53 +4644,47 @@ void loop()
       DebugPrintln(stepstaken);
       driverboard->setmotorspeed(mySetupData->get_motorSpeed());
       DebugPrintln(F("HP MoveOUT ended"));
+#ifdef SHOWHPSWMSGS
+#ifdef OLEDTEXT
+      myoled->clear();
+      myoled->println(hpswopenstr);
+#endif  // OLEDTEXT
+#endif  // SHOWHPSWMSGS
 #endif  // HOMEPOSITIONSWITCH
       MainStateMachine = State_DelayAfterMove;
       DebugPrintln(F(STATEDELAYAFTERMOVE));
       break;
 
-    //__ ApplyBacklash2 ___________________________________________________________________
-    case State_ApplyBacklash2:
-      if (TimeCheck(TimeStampDelayAfterMove , 250))
-      {
-        if (backlash_count)
-        {
-          driverboard->movemotor(DirOfTravel);
-          backlash_count--;
-        }
-        else
-        {
-          TimeStampDelayAfterMove = millis();
-          MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(F(STATEDELAYAFTERMOVE));
-        }
-      }
-      break;
-
-    //__ DelayAfterMove _________________________________________________________________________
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
-        //__FinishedMove
         Update_OledGraphics(oled_on);                   // display on after move
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle
-        isMoving = 0;
-        MainStateMachine = State_Idle;
-        DebugPrintln(F("State_DelayAfterMove => State_Idle"));
+        MainStateMachine = State_FinishedMove;
+        DebugPrintln(F(STATEFINISHEDMOVE));
       }
       break;
 
-    //__ Default _________________________________________________________________________
+    case State_FinishedMove:
+      isMoving = 0;
+      if ( mySetupData->get_coilpower() == 0 )
+      {
+        driverboard->releasemotor();
+      }
+      MainStateMachine = State_Idle;
+      DebugPrintln(F(STATEIDLE));
+      break;
+
     default:
       DebugPrintln(F("Error: wrong State => State_Idle"));
       MainStateMachine = State_Idle;
       break;
   }
 
-#if defined(LOOPTIMETEST)
-  DebugPrint(F("- Loop End ="));
+#ifdef LOOPTIMETEST
+  DebugPrint(F("Loop End ="));
   DebugPrintln(millis());
 #endif
 } // end Loop()

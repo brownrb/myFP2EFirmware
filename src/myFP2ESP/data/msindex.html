@@ -1,9 +1,10 @@
 <html><head></head><title>myFP2ESP MANAGEMENT SERVER</title></head><body><h3>myFP2ESP MANAGEMENT SERVER</h3><p>(c) R. Brown, Holger M, 2019. All rights reserved<br>IP Address: %MS_IPSTR%: Port: %MSSERVERPORT%, Firmware Version=%MSPROGRAMVERSION%<br>Driverboard = %MSPROGRAMNAME%</p><p><b>Controller Mode:</b> %MSCONTROLLERMODE%</p>
 
-<p><b>Webserver Status: </b>%WSTATUS%<br>
-<form action="/" method="post" >Port: <input type="text" name="wp" size ="15" value=%WSPORT%> <input type="submit" name="setport" value="Set"></form>%WSBUTTON%</p>
+<p><b>Webserver Status: </b><br>%WSTATUS%<br>%WSPORT% %WSBUTTON%</p>
 
-<p><b>ASCOM server status:</b><br>%ASTATUS%<br>Port: %ASPORT% %ASBUTTON%</p><p><b>OTA Updates</b>: %OTAUSTATUS%</p><p><p><b>Static IP:</b> %IPSTATUS%</p><p><b>mDNS Server status:</b><br>%MDNSSTATUS%<br>Port: %MDNSPORT%</p>
+<p><b>ASCOM server status:</b><br>%ASTATUS%<br>%ASPORT% %ASBUTTON%</p>
+
+<p><b>OTA Updates</b>: %OTAUSTATUS%</p><p><p><b>Static IP:</b> %IPSTATUS%</p><p><b>mDNS Server status:</b><br>%MDNSSTATUS%<br>Port: %MDNSPORT%</p>
 
 <p>Free heap memory: %HEAPMEMORY%</p>
 </body></html>

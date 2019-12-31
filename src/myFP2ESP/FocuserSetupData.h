@@ -19,7 +19,7 @@
 #define DEFAULTON       1
 #define DEFAULTCELSIUS  1
 #define DEFAULTFAHREN   0
-#define DEFAULTDOCSIZE  512
+#define DEFAULTDOCSIZE  1024
 
 class SetupData
 {
@@ -54,6 +54,7 @@ class SetupData
     byte get_displayenabled();
     unsigned long get_focuserpreset(byte);
     unsigned long get_webserverport();
+    unsigned long get_ascomalpacaport();
 
     //__setter
     void set_fposition(unsigned long);
@@ -80,6 +81,7 @@ class SetupData
     void set_displayenabled(byte);
     void set_focuserpreset(byte, unsigned long);
     void set_webserverport(unsigned long);
+    void set_ascomalpacaport(unsigned long);
 
   private:
     byte SavePersitantConfiguration();
@@ -100,6 +102,8 @@ class SetupData
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
+    unsigned long fposition_org;    // last focuser position
+    byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
     //dataset_persistant
@@ -134,4 +138,5 @@ class SetupData
     unsigned long focuserpreset8;
     unsigned long focuserpreset9;
     unsigned long webserverport;
+    unsigned long ascomalpacaport;
 };
