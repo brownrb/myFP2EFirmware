@@ -639,7 +639,7 @@ void oled_draw_main_update(void)
 
     myoled->setTextAlignment(TEXT_ALIGN_LEFT);
 #ifdef TEMPERATUREPROBE
-    String tmbuffer = String(readtemp(0), 2);
+    String tmbuffer = String(read_temp(0), 2);
 #else
     String tmbuffer = "20.0";
 #endif
@@ -3476,7 +3476,7 @@ void ASCOM_handletemperatureget()
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
 #ifdef TEMPERATUREPROBE
-  jsonretstr = "{\"Value\":" + String(readtemp(0)) + "," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":" + String(read_temp(0)) + "," + ASCOM_addclientinfo( jsonretstr );
 #else
   jsonretstr = "{\"Value\":20.0," + ASCOM_addclientinfo( jsonretstr );
 #endif
@@ -4096,7 +4096,7 @@ void setup()
     oledtextmsg(attemptsstr, attempts, false, true);
     if (attempts > 10)                          // if this attempt is 11 or more tries
     {
-      DebugPrintln(wifistartfailstr);
+      DebugPrintln("Could not connect to AP");
       DebugPrintln(wifirestartstr);
       oledtextmsg("Did not connect to " + String(mySSID), -1, true, true);
       delay(2000);

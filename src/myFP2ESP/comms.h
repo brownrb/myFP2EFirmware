@@ -89,8 +89,8 @@ void ESP_Communication( byte mode )
   receiveString += EOFSTR;                                 // put back terminator
   String cmdstr = receiveString.substring(1, 3);
   cmdval = cmdstr.toInt();                              // convert command to an integer
-  DebugPrintln("recstr=" + receiveString);
-  DebugPrintln("cmdstr=" + cmdstr);
+  DebugPrint("recstr=" + receiveString + "  ");
+  //  DebugPrintln("cmdstr=" + cmdstr);
   switch (cmdval)
   {
     // all the get go first followed by set
@@ -417,8 +417,9 @@ void ESP_Communication( byte mode )
       if ( isMoving == 0 )
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
-        tmppos = (unsigned long)WorkString.toInt() + fcurrentPosition;
-        ftargetPosition = ( tmppos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : tmppos;
+        long pos = (long)WorkString.toInt() + (long)fcurrentPosition;
+        pos  = (pos < 0) ? 0 : pos;
+        ftargetPosition = ( pos > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)pos;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
         // restore motorspeed just in case
         driverboard->setmotorspeed(mySetupData->get_motorSpeed());
