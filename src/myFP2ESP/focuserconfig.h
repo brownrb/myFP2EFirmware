@@ -251,6 +251,9 @@
 #ifdef MANAGEMENT
 #halt // Error Cannot enable MANAGEMENT with LOCALSERIAL
 #endif
+#ifdef DEBUG
+#halt // Error Cannot enbale DEBUG with LOCALSERIAL
+#endif
 #endif
 
 

@@ -3969,17 +3969,16 @@ void steppermotormove(byte dir )                // direction move_in, move_out ^
 
 void setup()
 {
-#if defined(DEBUG) || defined(LOCALSEARIAL)
+#if defined(DEBUG)
   Serial.begin(SERIALPORTSPEED);
   DebugPrintln(serialstartstr);
-#if defined(DEBUG)
   DebugPrintln(debugonstr);
-#endif
 #endif
 
   mySetupData = new SetupData();                // instantiate object SetUpData with SPIFFS file instead of using EEPROM, init SPIFFS
 
 #ifdef LOCALSERIAL
+  Serial.begin(SERIALPORTSPEED);
   serialline = "";
   clearSerialPort();
 #endif // if defined(LOCALSERIAL)
