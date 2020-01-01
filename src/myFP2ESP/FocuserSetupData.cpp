@@ -193,6 +193,8 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset8        = 0;
   this->focuserpreset9        = 0;
   this->webserverport         = WEBSERVERPORT;
+
+  this->SavePersitantConfiguration();         // write default values to SPIFFS
 }
 
 void SetupData::LoadDefaultVariableData()
