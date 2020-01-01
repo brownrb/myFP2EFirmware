@@ -104,7 +104,11 @@ void ESP_Communication( byte mode )
       SendPaket("EOK#");
       break;
     case 3: // get firmware version
+#ifdef INDI
+      SendPaket("F291#");
+#else
       SendPaket('F' + String(programVersion) + EOFSTR);
+#endif
       break;
     case 4: // get firmware name
       SendPaket('F' + programName + '\r' + '\n' + String(programVersion) + EOFSTR);

@@ -78,19 +78,23 @@
 //#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support [Port 4040], uncomment the next line
-#define ASCOMREMOTE 6
+//#define ASCOMREMOTE 6
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 
-#define WEBSERVER 7
+//#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
 //#define MDNSSERVER 8
 
 // ManagementServer Control Interface [Port 6060] - enabled by default - DO NOT CHANGE
-#define MANAGEMENT 9
-#define MANAGEMENTFORCEDOWNLOAD 1
+//#define MANAGEMENT 9
+//#define MANAGEMENTFORCEDOWNLOAD 1
+
+// To make the firmware return the correct firmware value when talking to a
+// myFocuserpro2 INDI driver [use only for INDI support], uncomment the following line
+//#define INDI
 
 // ------------------------------------------------------------------------------
 // 3: DO NOT CHANGE: OPTIONS DRIVER BOARD CHECKS
@@ -252,7 +256,13 @@
 #halt // Error Cannot enable MANAGEMENT with LOCALSERIAL
 #endif
 #ifdef DEBUG
-#halt // Error Cannot enbale DEBUG with LOCALSERIAL
+#halt // Error Cannot enable DEBUG with LOCALSERIAL
+#endif
+#endif
+
+#ifdef INDI
+#ifndef LOCALSERIAL
+#halt // ERROR Cannot enable INDI without also enabling LOCALSERIAL
 #endif
 #endif
 

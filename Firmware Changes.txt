@@ -1,5 +1,14 @@
+// 114
+// Fix LOCALSERIAL issue
+// Add INDI config so can work in LOCALSERIAL with INDI
+
+// 113
+// Fix Bluetooth running on WEMOS ESP32
+// Fix LOCALSERIAL compilation errors
+// Move WEBSERVERPORT to SPIFFS and allow MANAGEMENT SERVER to change the webserver port
+
 // 112
-/ Add management interface on port 6060
+// Add management interface on port 6060
 
 // 111
 // Fix temperature precision being set on boot
