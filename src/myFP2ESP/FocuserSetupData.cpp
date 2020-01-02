@@ -194,6 +194,8 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset9        = 0;
   this->webserverport         = WEBSERVERPORT;
   this->ascomalpacaport       = ALPACAPORT;
+  
+  this->SavePerstistantConfiguration();               // write default values to SPIFFS
 }
 
 void SetupData::LoadDefaultVariableData()
