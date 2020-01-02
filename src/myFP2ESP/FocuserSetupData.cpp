@@ -75,42 +75,42 @@ byte SetupData::LoadConfiguration()
     }
     else
     {
-      this->maxstep = doc_per["maxstep"];                             // max steps
-      this->stepsize = doc_per["stepsize"];                           // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
-      this->DelayAfterMove = doc_per["DelayAfterMove"];               // delay after movement is finished (maxval=256)
-      this->backlashsteps_in = doc_per["backlashsteps_in"];           // number of backlash steps to apply for IN moves
-      this->backlashsteps_out = doc_per["backlashsteps_out"];         // number of backlash steps to apply for OUT moves
-      this->backlash_in_enabled = doc_per["byte backlash_in_enabled"];
-      this->backlash_out_enabled = doc_per["backlash_out_enabled"];
-      this->tempcoefficient = doc_per["tempcoefficient"];             // steps per degree temperature coefficient value (maxval=256)
-      this->tempprecision = doc_per["tempprecision"];                 // 9 -12
-      this->stepmode = doc_per["stepmode"];
-      this->coilpower = doc_per["coilpower"];
-      this->reversedirection = doc_per["reversedirection"];
-      this->stepsizeenabled = doc_per["stepsizeenabled"];             // if 1, controller returns step size
-      this->tempmode = doc_per["tempmode"];                           // temperature display mode, Celcius=1, Fahrenheit=0
-      this->lcdupdateonmove = doc_per["lcdupdateonmove"];             // update position on lcd when moving
-      this->lcdpagetime = doc_per["lcdpagetime"];
-      this->tempcompenabled = doc_per["tempcompenabled"];             // indicates if temperature compensation is enabled
-      this->tcdirection = doc_per["tcdirection"];
-      this->motorSpeed = doc_per["motorSpeed"];
-      this->displayenabled =  doc_per["displayenabled"];
-      this->focuserpreset0 = doc_per["focuserpreset0"];
-      this->focuserpreset1 = doc_per["focuserpreset1"];
-      this->focuserpreset2 = doc_per["focuserpreset2"];
-      this->focuserpreset3 = doc_per["focuserpreset3"];
-      this->focuserpreset4 = doc_per["focuserpreset4"];
-      this->focuserpreset5 = doc_per["focuserpreset5"];
-      this->focuserpreset6 = doc_per["focuserpreset6"];
-      this->focuserpreset7 = doc_per["focuserpreset7"];
-      this->focuserpreset8 = doc_per["focuserpreset8"];
-      this->focuserpreset9 = doc_per["focuserpreset9"];
-      this->webserverport  = doc_per["webserverport"];
+      this->maxstep               = doc_per["maxstep"];                   // max steps
+      this->stepsize              = doc_per["stepsize"];                  // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
+      this->DelayAfterMove        = doc_per["DelayAfterMove"];            // delay after movement is finished (maxval=256)
+      this->backlashsteps_in      = doc_per["backlashsteps_in"];          // number of backlash steps to apply for IN moves
+      this->backlashsteps_out     = doc_per["backlashsteps_out"];         // number of backlash steps to apply for OUT moves
+      this->backlash_in_enabled   = doc_per["byte backlash_in_enabled"];
+      this->backlash_out_enabled  = doc_per["backlash_out_enabled"];
+      this->tempcoefficient       = doc_per["tempcoefficient"];           // steps per degree temperature coefficient value (maxval=256)
+      this->tempprecision         = doc_per["tempprecision"];             // 9 -12
+      this->stepmode              = doc_per["stepmode"];
+      this->coilpower             = doc_per["coilpower"];
+      this->reversedirection      = doc_per["reversedirection"];
+      this->stepsizeenabled       = doc_per["stepsizeenabled"];           // if 1, controller returns step size
+      this->tempmode              = doc_per["tempmode"];                  // temperature display mode, Celcius=1, Fahrenheit=0
+      this->lcdupdateonmove       = doc_per["lcdupdateonmove"];           // update position on lcd when moving
+      this->lcdpagetime           = doc_per["lcdpagetime"];
+      this->tempcompenabled       = doc_per["tempcompenabled"];           // indicates if temperature compensation is enabled
+      this->tcdirection           = doc_per["tcdirection"];
+      this->motorSpeed            = doc_per["motorSpeed"];
+      this->displayenabled        =  doc_per["displayenabled"];
+      this->focuserpreset0        = doc_per["focuserpreset0"];
+      this->focuserpreset1        = doc_per["focuserpreset1"];
+      this->focuserpreset2        = doc_per["focuserpreset2"];
+      this->focuserpreset3        = doc_per["focuserpreset3"];
+      this->focuserpreset4        = doc_per["focuserpreset4"];
+      this->focuserpreset5        = doc_per["focuserpreset5"];
+      this->focuserpreset6        = doc_per["focuserpreset6"];
+      this->focuserpreset7        = doc_per["focuserpreset7"];
+      this->focuserpreset8        = doc_per["focuserpreset8"];
+      this->focuserpreset9        = doc_per["focuserpreset9"];
+      this->webserverport         = doc_per["webserverport"];
+      this->ascomalpacaport       = doc_per["ascomalpcaport"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
   }
-
 
   file = SPIFFS.open(filename_vaiable, "r");
   if (!file)
@@ -122,7 +122,7 @@ byte SetupData::LoadConfiguration()
   else
   {
     String data = file.readString();  // read content of the text file
-    DebugPrint(F("SPIFFS. Varibale SetupData= "));
+    DebugPrint(F("SPIFFS. Variable SetupData= "));
     DebugPrintln(data);               // ... and print on serial
 
     // Allocate a temporary JsonDocument
@@ -193,6 +193,7 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset8        = 0;
   this->focuserpreset9        = 0;
   this->webserverport         = WEBSERVERPORT;
+  this->ascomalpacaport       = ALPACAPORT;
 
   this->SavePersitantConfiguration();         // write default values to SPIFFS
 }
@@ -206,6 +207,7 @@ void SetupData::LoadDefaultVariableData()
 // Saves the configuration to a file
 boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
 {
+  //DebugPrintln("SaveConfiguration:");
   if (this->fposition != currentPosition || this->focuserdirection != DirOfTravel)  // last focuser position
   {
     this->fposition = currentPosition;
@@ -215,10 +217,10 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
     DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving variable data"));
   }
 
-  boolean status = false;
+  byte status = false;
   unsigned long x = millis();
 
-  if ((this->SnapShotMillis + DEFAULTSAVETIME) < x || this->SnapShotMillis > x)    // 30s after snapshot
+  if ((SnapShotMillis + DEFAULTSAVETIME) < x || SnapShotMillis > x)    // 30s after snapshot
   {
     if (this->ReqSaveData_per == true)
     {
@@ -258,7 +260,7 @@ byte SetupData::SavePersitantConfiguration()
   File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
   if (!file)
   {
-    DebugPrintln(F("Failed to create file for persistant data"));
+    DebugPrintln(F("Failed to create file for persitant data"));
     return false;
   }
 
@@ -268,37 +270,38 @@ byte SetupData::SavePersitantConfiguration()
   StaticJsonDocument<DEFAULTDOCSIZE> doc;
 
   // Set the values in the document
-  doc["maxstep"] = this->maxstep;                           // max steps
-  doc["stepsize"] = this->stepsize;                         // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
-  doc["DelayAfterMove"] = this->DelayAfterMove;             // delay after movement is finished (maxval=256)
-  doc["backlashsteps_in"] = this->backlashsteps_in;         // number of backlash steps to apply for IN moves
-  doc["backlashsteps_out"] = this->backlashsteps_out;       // number of backlash steps to apply for OUT moves
+  doc["maxstep"]            = this->maxstep;                    // max steps
+  doc["stepsize"]           = this->stepsize;                   // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
+  doc["DelayAfterMove"]     = this->DelayAfterMove;             // delay after movement is finished (maxval=256)
+  doc["backlashsteps_in"]   = this->backlashsteps_in;           // number of backlash steps to apply for IN moves
+  doc["backlashsteps_out"]  = this->backlashsteps_out;          // number of backlash steps to apply for OUT moves
   doc["backlash_in_enabled"] = this->backlash_in_enabled;
   doc["backlash_out_enabled"] = this->backlash_out_enabled;
-  doc["tempcoefficient"] = this->tempcoefficient;           // steps per degree temperature coefficient value (maxval=256)
-  doc["tempprecision"] = this->tempprecision;
-  doc["stepmode"] = this->stepmode;
-  doc["coilpower"] = this->coilpower;
-  doc["reversedirection"] = this->reversedirection;
-  doc["stepsizeenabled"] = this->stepsizeenabled;           // if 1, controller returns step size
-  doc["tempmode"] = this->tempmode;                         // temperature display mode, Celcius=1, Fahrenheit=0
-  doc["lcdupdateonmove"] = this->lcdupdateonmove;           // update position on lcd when moving
-  doc["lcdpagetime"] = this->lcdpagetime;                   // *100 to give interval between lcd pages display time
-  doc["tempcompenabled"] = this->tempcompenabled;           // indicates if temperature compensation is enabled
-  doc["tcdirection"] = this->tcdirection;
-  doc["motorSpeed"] = this->motorSpeed;
-  doc["displayenabled"] = this->displayenabled;
-  doc["focuserpreset0"] = this->focuserpreset0;
-  doc["focuserpreset1"] = this->focuserpreset1;
-  doc["focuserpreset2"] = this->focuserpreset2;
-  doc["focuserpreset3"] = this->focuserpreset3;
-  doc["focuserpreset4"] = this->focuserpreset4;
-  doc["focuserpreset5"] = this->focuserpreset5;
-  doc["focuserpreset6"] = this->focuserpreset6;
-  doc["focuserpreset7"] = this->focuserpreset7;
-  doc["focuserpreset8"] = this->focuserpreset8;
-  doc["focuserpreset9"] = this->focuserpreset9;
-  doc["webserverport"]  = this->webserverport;
+  doc["tempcoefficient"]    = this->tempcoefficient;            // steps per degree temperature coefficient value (maxval=256)
+  doc["tempprecision"]      = this->tempprecision;
+  doc["stepmode"]           = this->stepmode;
+  doc["coilpower"]          = this->coilpower;
+  doc["reversedirection"]   = this->reversedirection;
+  doc["stepsizeenabled"]    = this->stepsizeenabled;            // if 1, controller returns step size
+  doc["tempmode"]           = this->tempmode;                   // temperature display mode, Celcius=1, Fahrenheit=0
+  doc["lcdupdateonmove"]    = this->lcdupdateonmove;            // update position on lcd when moving
+  doc["lcdpagetime"]        = this->lcdpagetime;                // *100 to give interval between lcd pages display time
+  doc["tempcompenabled"]    = this->tempcompenabled;            // indicates if temperature compensation is enabled
+  doc["tcdirection"]        = this->tcdirection;
+  doc["motorSpeed"]         = this->motorSpeed;
+  doc["displayenabled"]     = this->displayenabled;
+  doc["focuserpreset0"]     = this->focuserpreset0;
+  doc["focuserpreset1"]     = this->focuserpreset1;
+  doc["focuserpreset2"]     = this->focuserpreset2;
+  doc["focuserpreset3"]     = this->focuserpreset3;
+  doc["focuserpreset4"]     = this->focuserpreset4;
+  doc["focuserpreset5"]     = this->focuserpreset5;
+  doc["focuserpreset6"]     = this->focuserpreset6;
+  doc["focuserpreset7"]     = this->focuserpreset7;
+  doc["focuserpreset8"]     = this->focuserpreset8;
+  doc["focuserpreset9"]     = this->focuserpreset9;
+  doc["webserverport"]      = this->webserverport;
+  doc["ascomalpacaport"]    = this->ascomalpacaport;
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
@@ -316,7 +319,6 @@ byte SetupData::SavePersitantConfiguration()
 
 byte SetupData::SaveVariableConfiguration()
 {
-
   // Delete existing file
   SPIFFS.remove(filename_vaiable);
 
@@ -363,7 +365,7 @@ byte SetupData::get_focuserdirection()
   return this->focuserdirection; // keeps track of last focuser move direction
 }
 
-unsigned long  SetupData::get_maxstep()
+unsigned long SetupData::get_maxstep()
 {
   return this->maxstep; // max steps
 }
@@ -497,6 +499,11 @@ unsigned long SetupData::get_focuserpreset(byte idx)
 unsigned long SetupData::get_webserverport(void)
 {
   return this->webserverport;
+}
+
+unsigned long SetupData::get_ascomalpacaport(void)
+{
+  return this->ascomalpacaport;
 }
 
 //__Setter
@@ -645,6 +652,11 @@ void SetupData::set_focuserpreset(byte idx, unsigned long pos)
 void SetupData::set_webserverport(unsigned long wsp)
 {
   this->StartDelayedUpdate(this->webserverport, wsp);
+}
+
+void SetupData::set_ascomalpacaport(unsigned long asp)
+{
+  this->StartDelayedUpdate(this->ascomalpacaport, asp);
 }
 
 void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_data)

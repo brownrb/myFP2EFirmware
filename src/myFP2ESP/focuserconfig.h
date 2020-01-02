@@ -28,7 +28,7 @@
 //#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
-#define OLEDGRAHICS 1
+#define OLEDGRAPHICS 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -66,7 +66,7 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-// #define ACCESSPOINT 2
+//#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
 #define STATIONMODE 3
@@ -82,15 +82,19 @@
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 
-#define WEBSERVER 7
+//#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
 //#define MDNSSERVER 8
 
 // ManagementServer Control Interface [Port 6060] - enabled by default - DO NOT CHANGE
-#define MANAGEMENT 9
-#define MANAGEMENTFORCEDOWNLOAD 1
+//#define MANAGEMENT 9
+//#define MANAGEMENTFORCEDOWNLOAD 1
+
+// To make the firmware return the correct firmware value when talking to a
+// myFocuserpro2 INDI driver [use only for INDI support], uncomment the following line
+//#define INDI
 
 // ------------------------------------------------------------------------------
 // 3: DO NOT CHANGE: OPTIONS DRIVER BOARD CHECKS
@@ -250,6 +254,15 @@
 #endif
 #ifdef MANAGEMENT
 #halt // Error Cannot enable MANAGEMENT with LOCALSERIAL
+#endif
+#ifdef DEBUG
+#halt // Error Cannot enable DEBUG with LOCALSERIAL
+#endif
+#endif
+
+#ifdef INDI
+#ifndef LOCALSERIAL
+#halt // ERROR Cannot enable INDI without also enabling LOCALSERIAL
 #endif
 #endif
 
