@@ -1743,7 +1743,7 @@ void MANAGEMENT_handleroot(void)
   msg = mserver.arg("setwsrate");
   if ( msg != "" )
   {
-    DebugPrint( "set web server page refresh rate: " );
+    DebugPrint("set web server page refresh rate: ");
     DebugPrintln(msg);
     String wr = mserver.arg("wr");                      // preocess new webserver page refresh rate
     if ( wr != "" )
@@ -1786,7 +1786,7 @@ void MANAGEMENT_handleroot(void)
   msg = mserver.arg("setasport");
   if ( msg != "" )
   {
-    DebugPrint( "set ascom server port: " );
+    DebugPrint("set ascom server port: ");
     DebugPrintln(msg);
     String ap = mserver.arg("ap");                      // process new ascomalpaca port number
     if ( ap != "" )
@@ -1992,7 +1992,7 @@ void WEBSERVER_handlemove()
   String halt_str = webserver->arg("ha");
   if ( halt_str != "" )
   {
-    DebugPrint( "root() -halt:" );
+    DebugPrint("root() -halt:");
     DebugPrintln(halt_str);
     ftargetPosition = fcurrentPosition;
   }
@@ -2002,18 +2002,12 @@ void WEBSERVER_handlemove()
   if ( fmv_str != "" )
   {
     long temp = 0;
-    DebugPrint("root() -move:" );
+    DebugPrint("root() -move:");
     DebugPrintln(fmv_str);
     temp = fmv_str.toInt();
     long newtemp = (long) fcurrentPosition + temp;
-    if ( newtemp < 0 )
-    {
-      newtemp = 0;
-    }
-    else if ( newtemp > (long) mySetupData->get_maxstep() )
-    {
-      newtemp = (long) mySetupData->get_maxstep();
-    }
+    newtemp = ( newtemp < 0 ) ? 0 : newtemp;
+    newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
     ftargetPosition = (unsigned long) newtemp;
     DebugPrint("Move = "); DebugPrintln(fmv_str);
     DebugPrint("Current = "); DebugPrint(fcurrentPosition);
@@ -2033,7 +2027,7 @@ void WEBSERVER_handlemove()
 
 void WEBSERVER_buildhome(void)
 {
-  DebugPrintln( "root() -build homepage" );
+  DebugPrintln( "root() -build homepage");
 
   // construct the homepage now
   DebugPrintln(F("webserver: build_homepage()"));
@@ -2209,7 +2203,7 @@ void WEBSERVER_handleroot()
   String halt_str = webserver->arg("ha");
   if ( halt_str != "" )
   {
-    DebugPrint( "root() -halt:" );
+    DebugPrint("root() -halt:");
     DebugPrintln(halt_str);
     ftargetPosition = fcurrentPosition;
   }
@@ -2219,7 +2213,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setpos");
   if ( fp_str != "" )
   {
-    DebugPrint( "setpos:" );
+    DebugPrint("setpos:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("fp");
     if ( fp != "" )
@@ -2228,15 +2222,9 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp < 0 )
-      {
-        temp = 0;
-      }
-      else if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
-      fcurrentPosition = ftargetPosition = (unsigned long) temp;
+      temp = (temp < 0) ? 0 : temp;
+      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+      fcurrentPosition = ftargetPosition;
     }
   }
 
@@ -2244,7 +2232,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gotopos");
   if ( fp_str != "" )
   {
-    DebugPrint( "gotopos:" );
+    DebugPrint("gotopos:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("fp");
     if ( fp != "" )
@@ -2253,15 +2241,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp < 0 )
-      {
-        temp = 0;
-      }
-      else if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
-      ftargetPosition = (unsigned long) temp;
+      temp = (temp < 0) ? 0 : temp;
+      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
       // restore motorspeed just in case
       driverboard->setmotorspeed(mySetupData->get_motorSpeed());
@@ -2274,7 +2255,7 @@ void WEBSERVER_handleroot()
   if ( fmax_str != "" )
   {
     long temp = 0;
-    DebugPrint( "root() -maxsteps:" );
+    DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
     if ( temp < (long) fcurrentPosition )             // if maxstep is less than focuser position
@@ -2296,7 +2277,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp0");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp0:" );
+    DebugPrint("setp0:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p0");
     if ( fp != "" )
@@ -2305,10 +2286,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(0, (unsigned long)temp);
     }
   }
@@ -2317,7 +2296,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop0");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop0:" );
+    DebugPrint("gop0:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p0");
     if ( fp != "" )
@@ -2326,10 +2305,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(0, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2343,7 +2320,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp1");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp1:" );
+    DebugPrint("setp1:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p1");
     if ( fp != "" )
@@ -2352,10 +2329,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(1, (unsigned long) temp);
     }
   }
@@ -2364,7 +2339,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop1");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop1:" );
+    DebugPrint("gop1:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p1");
     if ( fp != "" )
@@ -2373,10 +2348,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(1, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2390,7 +2363,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp2");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp2:" );
+    DebugPrint("setp2:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p2");
     if ( fp != "" )
@@ -2399,10 +2372,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(2, (unsigned long) temp);
     }
   }
@@ -2411,7 +2382,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop2");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop2:" );
+    DebugPrint("gop2:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p2");
     if ( fp != "" )
@@ -2420,10 +2391,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(2, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2437,7 +2406,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp3");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp3:" );
+    DebugPrint("setp3:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p3");
     if ( fp != "" )
@@ -2446,10 +2415,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(3, (unsigned long) temp);
     }
   }
@@ -2458,7 +2425,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop3");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop3:" );
+    DebugPrint("gop3:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p3");
     if ( fp != "" )
@@ -2467,10 +2434,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(3, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2484,7 +2449,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp4");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp4:" );
+    DebugPrint("setp4:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p4");
     if ( fp != "" )
@@ -2493,10 +2458,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(4, (unsigned long) temp);
     }
   }
@@ -2505,7 +2468,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop4");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop4:" );
+    DebugPrint("gop4:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p4");
     if ( fp != "" )
@@ -2514,10 +2477,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(4, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2531,7 +2492,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp5");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp5:" );
+    DebugPrint("setp5:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p5");
     if ( fp != "" )
@@ -2540,10 +2501,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(5, (unsigned long) temp);
     }
   }
@@ -2552,7 +2511,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop5");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop5:" );
+    DebugPrint("gop5:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p5");
     if ( fp != "" )
@@ -2561,10 +2520,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(5, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2578,7 +2535,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp6");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp6:" );
+    DebugPrint("setp6:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p6");
     if ( fp != "" )
@@ -2587,10 +2544,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(6, (unsigned long) temp);
     }
   }
@@ -2599,7 +2554,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop6");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop6:" );
+    DebugPrint("gop6:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p6");
     if ( fp != "" )
@@ -2608,10 +2563,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(6, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2625,7 +2578,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp7");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp0:" );
+    DebugPrint("setp0:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p7");
     if ( fp != "" )
@@ -2634,10 +2587,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(7, (unsigned long) temp);
     }
   }
@@ -2646,7 +2597,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop7");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop0:" );
+    DebugPrint("gop0:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p7");
     if ( fp != "" )
@@ -2655,10 +2606,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(7, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2672,7 +2621,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp8");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp8:" );
+    DebugPrint("setp8:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p8");
     if ( fp != "" )
@@ -2681,10 +2630,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(8, (unsigned long) temp);
     }
   }
@@ -2693,7 +2640,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop8");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop8:" );
+    DebugPrint("gop8:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p8");
     if ( fp != "" )
@@ -2702,10 +2649,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(8, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2719,7 +2664,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("setp9");
   if ( fp_str != "" )
   {
-    DebugPrint( "setp9:" );
+    DebugPrint("setp9:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p9");
     if ( fp != "" )
@@ -2728,10 +2673,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(9, (unsigned long) temp);
     }
   }
@@ -2740,7 +2683,7 @@ void WEBSERVER_handleroot()
   fp_str = webserver->arg("gop9");
   if ( fp_str != "" )
   {
-    DebugPrint( "gop9:" );
+    DebugPrint("gop9:");
     DebugPrintln(fp_str);
     String fp = webserver->arg("p9");
     if ( fp != "" )
@@ -2749,10 +2692,8 @@ void WEBSERVER_handleroot()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = ( temp < 0 ) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(9, (unsigned long) temp);
       ftargetPosition = temp;
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
@@ -2767,7 +2708,7 @@ void WEBSERVER_handleroot()
   if ( fms_str != "" )
   {
     int temp1 = 0;
-    DebugPrint( "root() -motorspeed:" );
+    DebugPrint("root() -motorspeed:");
     DebugPrintln(fms_str);
     temp1 = fms_str.toInt();
     if ( temp1 < SLOW )
@@ -2785,7 +2726,7 @@ void WEBSERVER_handleroot()
   String fcp_str = webserver->arg("cp");
   if ( fcp_str != "" )
   {
-    DebugPrint( "root() -coil power:" );
+    DebugPrint("root() -coil power:");
     DebugPrintln(fcp_str);
     if ( fcp_str == "cp" )
     {
@@ -2801,7 +2742,7 @@ void WEBSERVER_handleroot()
   String frd_str = webserver->arg("rd");
   if ( frd_str != "" )
   {
-    DebugPrint( "root() -reverse direction:" );
+    DebugPrint("root() -reverse direction:");
     DebugPrintln(frd_str);
     if ( frd_str == "rd" )
     {
@@ -2819,7 +2760,7 @@ void WEBSERVER_handleroot()
   if ( fsm_str != "" )
   {
     int temp1 = 0;
-    DebugPrint( "root() -stepmode:" );
+    DebugPrint("root() -stepmode:");
     DebugPrintln(fsm_str);
     temp1 = fsm_str.toInt();
     if ( temp1 < STEP1 )
@@ -2838,7 +2779,7 @@ void WEBSERVER_handleroot()
   if ( tres_str != "" )
   {
     int temp = 0;
-    DebugPrint( "root() -temperature resolution:" );
+    DebugPrint("root() -temperature resolution:");
     DebugPrintln(tres_str);
     temp = tres_str.toInt();
     if ( temp < 9 )
@@ -2858,7 +2799,7 @@ void WEBSERVER_handleroot()
   if ( fmv_str != "" )
   {
     unsigned long temp = 0;
-    DebugPrint("root() -move:" );
+    DebugPrint("root() -move:");
     DebugPrintln(fmv_str);
     temp = fmv_str.toInt();
     ftargetPosition = fcurrentPosition + temp;
@@ -3308,7 +3249,7 @@ void ASCOM_handle_focuser_setup()
   String fpos_str = ascomserver->arg("setpos");
   if ( fpos_str != "" )
   {
-    DebugPrint( "setpos:" );
+    DebugPrint("setpos:");
     DebugPrintln(fpos_str);
     String fp = ascomserver->arg("fp");
     if ( fp != "" )
@@ -3317,10 +3258,8 @@ void ASCOM_handle_focuser_setup()
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > (long) mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = (long) mySetupData->get_maxstep();
-      }
+      temp = ( temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       fcurrentPosition = ftargetPosition = (unsigned long) temp;
     }
   }
@@ -3330,7 +3269,7 @@ void ASCOM_handle_focuser_setup()
   if ( fmax_str != "" )
   {
     long temp = 0;
-    DebugPrint( "root() -maxsteps:" );
+    DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
     if ( temp < (long) fcurrentPosition )             // if maxstep is less than focuser position
@@ -3353,7 +3292,7 @@ void ASCOM_handle_focuser_setup()
   if ( fms_str != "" )
   {
     int temp1 = 0;
-    DebugPrint( "root() -motorspeed:" );
+    DebugPrint("root() -motorspeed:");
     DebugPrintln(fms_str);
     temp1 = fms_str.toInt();
     if ( temp1 < SLOW )
@@ -3371,7 +3310,7 @@ void ASCOM_handle_focuser_setup()
   String fcp_str = ascomserver->arg("cp");
   if ( fcp_str != "" )
   {
-    DebugPrint( "root() -coil power:" );
+    DebugPrint("root() -coil power:");
     DebugPrintln(fcp_str);
     if ( fcp_str == "cp" )
     {
@@ -3387,7 +3326,7 @@ void ASCOM_handle_focuser_setup()
   String frd_str = ascomserver->arg("rd");
   if ( frd_str != "" )
   {
-    DebugPrint( "root() -reverse direction:" );
+    DebugPrint("root() -reverse direction:");
     DebugPrintln(frd_str);
     if ( frd_str == "rd" )
     {
@@ -3405,7 +3344,7 @@ void ASCOM_handle_focuser_setup()
   if ( fsm_str != "" )
   {
     int temp1 = 0;
-    DebugPrint( "root() -stepmode:" );
+    DebugPrint("root() -stepmode:");
     DebugPrintln(fsm_str);
     temp1 = fsm_str.toInt();
     if ( temp1 < STEP1 )
@@ -3419,7 +3358,7 @@ void ASCOM_handle_focuser_setup()
     mySetupData->set_stepmode(temp1);
   }
 
-  DebugPrintln( "root() -build homepage" );
+  DebugPrintln( "root() -build homepage");
 
   // construct the homepage now
   ASCOM_Create_Setup_Focuser_HomePage();
