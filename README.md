@@ -1,12 +1,11 @@
 # myFP2E Firmware for ESP32 and ESP8266 myFP2 Controllers
 This is the firmware for the myFocuserPro2E ESP8266 and ESP32 focus controller projects on Sourceforge.
-https://sourceforge.net/projects/arduinoascomfocuserpro2diy/files/myFocuserPro2E/
+https://sourceforge.net/projects/arduinoascomfocuserpro2diy/files/myFocuserPro2E/ and 
 https://sourceforge.net/projects/myfocuserpro2-esp32/
 
-(c) Robert Brown, 2019. All rights reserved.
-(c) Holger Manz, 2019. All rights reserved.
+(c) Robert Brown and Holger Manz, 2019-2020. All rights reserved.
 
-The source code is located in the src folder. 
+The source code is located in the **src** folder. 
 
 # PDF
 To get a clear understanding of myFP2ESP features and options, it is essential to read the PDF.

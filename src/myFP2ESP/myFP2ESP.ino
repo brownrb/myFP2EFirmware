@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 114
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 115
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -160,10 +160,10 @@ char mDNSNAME[] = "myfp2eap";
 // ----------------------------------------------------------------------------------------------
 // if using DuckDNS you need to set these next two parameters, duckdnsdomain and duckdnstoken
 // cannot use DuckDNS with ACCESSPOINT, BLUETOOTHMODE or LOCALSERIAL mode
-#ifdef DUCKDNS
+#ifdef USEDUCKDNS
 const char* duckdnsdomain = "myfp2erobert.duckdns.org";
 const char* duckdnstoken = "0a0379d5-3979-44ae-b1e2-6c371a4fe9bf";
-#endif // #ifdef DUCKDNS
+#endif // #ifdef USEDUCKDNS
 
 // ----------------------------------------------------------------------------------------------
 // 12: STATIC IP ADDRESS CONFIGURATION
@@ -328,7 +328,7 @@ void setFeatures()
 String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "114";
+char programVersion[] = "115";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
 unsigned long fcurrentPosition;         // current focuser position
@@ -387,7 +387,8 @@ bool mdnsserverstate;
 bool webserverstate;
 bool ascomserverstate;
 bool managementserverstate;
-bool otaservicestate;
+bool otaupdatestate;
+bool duckdnsstate;
 
 SetupData *mySetupData;
 
@@ -1348,6 +1349,9 @@ ESP8266WebServer mserver(MSSERVERPORT);
 WebServer mserver(MSSERVERPORT);
 #endif // if defined(esp8266)
 
+String MHomePage;
+String MNotFoundPage;
+
 // convert the file extension to the MIME type
 String MANAGEMENT_getContentType(String filename)
 {
@@ -1448,10 +1452,8 @@ void MANAGEMENT_listSPIFFSfiles(void)
 #endif
 }
 
-void MANAGEMENT_handlenotfound()
+void MANAGEMENT_buildnotfound(void)
 {
-  String MNotFoundPage;
-
   // load not found page from spiffs - wsnotfound.html
   if (!SPIFFS.begin())
   {
@@ -1485,146 +1487,15 @@ void MANAGEMENT_handlenotfound()
       MNotFoundPage = "<html><head><title>Management Server: Not found></title></head><body><p>The requested URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
     }
   }
+}
+
+void MANAGEMENT_handlenotfound(void)
+{
   mserver.send(NOTFOUNDWEBPAGE, TEXTPAGETYPE, MNotFoundPage);
 }
 
-void MANAGEMENT_handleroot(void)
+void MANAGEMENT_buildhome(void)
 {
-  // code here to handle a put request
-  String msg;
-  msg = mserver.arg("startws");
-  if ( msg != "" )
-  {
-    DebugPrintln(F("MANAGEMENT_handleroot: startws: "));
-#ifdef WEBSERVER
-    start_webserver();
-#endif
-  }
-  msg = mserver.arg("stopws");
-  if ( msg != "" )
-  {
-    DebugPrintln(F("MANAGEMENT_handleroot: stopws: "));
-#ifdef WEBSERVER
-    stop_webserver();
-#endif
-  }
-
-  msg = mserver.arg("startas");
-  if ( msg != "" )
-  {
-    DebugPrintln(F("MANAGEMENT_handleroot: startas: "));
-#ifdef ASCOMREMOTE
-    start_ascomremoteserver();
-#endif
-  }
-  msg = mserver.arg("stopas");
-  if ( msg != "" )
-  {
-    DebugPrintln(F("MANAGEMENT_handleroot: stopas: "));
-#ifdef ASCOMREMOTE
-    stop_ascomremoteserver();
-#endif
-  }
-
-  msg = mserver.arg("setwsport");
-  if ( msg != "" )
-  {
-    DebugPrint( "set web server port: " );
-    DebugPrintln(msg);
-    String wp = mserver.arg("wp");                      // preocess new webserver port number
-    if ( wp != "" )
-    {
-      unsigned long newport = 0;
-      DebugPrint("wp:");
-      DebugPrintln(wp);
-      newport = wp.toInt();
-      if ( webserverstate == STOPPED )
-      {
-        unsigned long currentport = mySetupData->get_webserverport();
-        if ( newport == currentport)
-        {
-          // port is the same so do not bother to change it
-          DebugPrintln("wp error: new Port = current port");
-        }
-        else
-        {
-          if ( newport == MSSERVERPORT )                              // if same as management server
-          {
-            DebugPrintln("wp error: new Port = MSSERVERPORT");
-          }
-          else if ( newport == mySetupData->get_ascomalpacaport() )   // if same as ASCOM REMOTE server
-          {
-            DebugPrintln("wp error: new Port = ALPACAPORT");
-          }
-          else if ( newport == MDNSSERVERPORT )                       // if same as mDNS server
-          {
-            DebugPrintln("wp error: new Port = MDNSSERVERPORT");
-          }
-          else
-          {
-            DebugPrintln("New webserver port = " + String(newport));
-            mySetupData->set_webserverport(newport);                  // assign new port and save it
-          }
-        }
-      }
-      else
-      {
-        DebugPrintln("Attempt to change webserver port when webserver running");
-      }
-    }
-  }
-
-  msg = mserver.arg("setasport");
-  if ( msg != "" )
-  {
-    DebugPrint( "set ascom server port: " );
-    DebugPrintln(msg);
-    String ap = mserver.arg("ap");                      // process new ascomalpaca port number
-    if ( ap != "" )
-    {
-      unsigned long newport = 0;
-      DebugPrint("ap:");
-      DebugPrintln(ap);
-      newport = ap.toInt();
-      if ( ascomserverstate == STOPPED )
-      {
-        unsigned long currentport = mySetupData->get_ascomalpacaport();
-        if ( newport == currentport)
-        {
-          // port is the same so do not bother to change it
-          DebugPrintln("ap error: new Port = current port");
-        }
-        else
-        {
-          if ( newport == MSSERVERPORT )                              // if same as management server
-          {
-            DebugPrintln("wp error: new Port = MSSERVERPORT");
-          }
-          else if ( newport == mySetupData->get_webserverport() )     // if same as webserver
-          {
-            DebugPrintln("wp error: new Port = ALPACAPORT");
-          }
-          else if ( newport == MDNSSERVERPORT )                       // if same as mDNS server
-          {
-            DebugPrintln("wp error: new Port = MDNSSERVERPORT");
-          }
-          else
-          {
-            DebugPrintln("New ascomalpaca port = " + String(newport));
-            mySetupData->set_ascomalpacaport(newport);                // assign new port and save it
-          }
-        }
-      }
-      else
-      {
-        DebugPrintln("Attempt to change ascomalpaca port when ascomserver running");
-      }
-    }
-  }
-
-  // construct the homepage now
-  String MHomePage;
-
   // constructs home page of management server
   DebugPrintln(F("management: build_homepage()"));
   // load not found page from spiffs - wsindex.html
@@ -1675,20 +1546,24 @@ void MANAGEMENT_handleroot(void)
       {
         MHomePage.replace("%WSTATUS%", "STOPPED");
       }
-      MHomePage.replace("%WSPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"wp\" size=\"15\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\"> </form>");
+      //MHomePage.replace("%WSPORT%", "<form style=\"width:300px; display:inline-block;\" action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\"> </form>");
+      //MHomePage.replace("%WSREFRESHRATE%", "<form style=\"width:300px; display:inline-block;\" action=\"/\" method =\"post\" >Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"> </form>");
+      MHomePage.replace("%WSPORT%", "<table><tr><td><form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\"> </form></td>");
+      MHomePage.replace("%WSREFRESHRATE%", "<td><form action=\"/\" method =\"post\">Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"> </form></td>");
 #else
       MHomePage.replace("%WSTATUS%", "Web server not defined in firmware");
       MHomePage.replace("%WSPORT%", "Port: " + String(mySetupData->get_webserverport()));
+      MHomePage.replace("%WSREFRESHRATE%", "Refresh Rate: " + String(mySetupData->get_webpagerefreshrate()));
 #endif
       // %WSBUTTON%
 #ifdef WEBSERVER
       if ( webserverstate == RUNNING)
       {
-        MHomePage.replace("%WSBUTTON%", "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>");
+        MHomePage.replace("%WSBUTTON%", "<tr><td><form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form></td></tr></table>");
       }
       else
       {
-        MHomePage.replace("%WSBUTTON%", "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>");
+        MHomePage.replace("%WSBUTTON%", "<tr><td><form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form></td></tr></table>");
       }
 #else
       MHomePage.replace("%WSBUTTON%", " ");
@@ -1702,7 +1577,7 @@ void MANAGEMENT_handleroot(void)
       {
         MHomePage.replace("%ASTATUS%", "STOPPED");
       }
-      MHomePage.replace("%ASPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"ap\" size=\"15\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"> </form>");
+      MHomePage.replace("%ASPORT%", "<table><tr><td><form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"> </form></td>");
 #else
       MHomePage.replace("%ASTATUS%", "ASCOM REMOTE server not defined in firmware");
       MHomePage.replace("%ASPORT%", "Port: " + String(mySetupData->get_ascomalpacaport()));
@@ -1710,19 +1585,38 @@ void MANAGEMENT_handleroot(void)
 #ifdef ASCOMREMOTE
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ASBUTTON%", "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>");
+        MHomePage.replace("%ASBUTTON%", "<tr><td><form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form></td></tr></table>");
       }
       else
       {
-        MHomePage.replace("%ASBUTTON%", "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form>");
+        MHomePage.replace("%ASBUTTON%", "<tr><td><form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form></td></tr></table>");
       }
 #else
       MHomePage.replace("%ASBUTTON%", " ");
 #endif
 #ifdef OTAUPDATES
-      MHomePage.replace("%OTAUSTATUS%", "ON");
+      if ( otaupdatestate == RUNNING )
+      {
+        MHomePage.replace("%OTAUSTATUS%", "RUNNING");
+      }
+      else
+      {
+        MHomePage.replace("%OTAUSTATUS%", "STOPPED");
+      }
 #else
-      MHomePage.replace("%OTAUSTATUS%", "OFF");
+      MHomePage.replace("%OTAUSTATUS%", "OTAUPDATES not defined in firmware");
+#endif
+#ifdef USEDUCKDNS
+      if ( duckdnsstate == RUNNING )
+      {
+        MHomePage.replace("%DUCKDNSSTATUS%", "RUNNING");
+      }
+      else
+      {
+        MHomePage.replace("%DUCKDNSSTATUS%", "STOPPED");
+      }
+#else
+      MHomePage.replace("%DUCKDNSSTATUS%", "DUCKDNS not defined in firmware");
 #endif
       if ( staticip == STATICIPON )
       {
@@ -1755,9 +1649,189 @@ void MANAGEMENT_handleroot(void)
     {
       // could not read index file from SPIFFS
       DebugPrintln("management: build_defaulthomepage");
-      MHomePage = "<html><head><title>Management Server:></title></head><body><p>The index file for the Management server was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+      MHomePage = "<html><head><title>Management Server: > < / title > < / head > <body><p>The index file for the Management server was not found. < / p > <p>Did you forget to upload the data files to SPIFFS ? < / p > < / body > < / html > ";
     }
   }
+}
+
+void MANAGEMENT_handleroot(void)
+{
+  // code here to handle a put request
+  String msg;
+  msg = mserver.arg("startws");
+  if ( msg != "" )
+  {
+    DebugPrintln(F("MANAGEMENT_handleroot: startws: "));
+#ifdef WEBSERVER
+    start_webserver();
+#endif
+  }
+  msg = mserver.arg("stopws");
+  if ( msg != "" )
+  {
+    DebugPrintln(F("MANAGEMENT_handleroot: stopws: "));
+#ifdef WEBSERVER
+    stop_webserver();
+#endif
+  }
+
+  msg = mserver.arg("startas");
+  if ( msg != "" )
+  {
+    DebugPrintln(F("MANAGEMENT_handleroot: startas: "));
+#ifdef ASCOMREMOTE
+    start_ascomremoteserver();
+#endif
+  }
+  msg = mserver.arg("stopas");
+  if ( msg != "" )
+  {
+    DebugPrintln(F("MANAGEMENT_handleroot: stopas: "));
+#ifdef ASCOMREMOTE
+    stop_ascomremoteserver();
+#endif
+  }
+
+  msg = mserver.arg("setwsport");
+  if ( msg != "" )
+  {
+    DebugPrint("set web server port: ");
+    DebugPrintln(msg);
+    String wp = mserver.arg("wp");                      // preocess new webserver port number
+    if ( wp != "" )
+    {
+      unsigned long newport = 0;
+      DebugPrint("wp:");
+      DebugPrintln(wp);
+      newport = wp.toInt();
+      if ( webserverstate == STOPPED )
+      {
+        unsigned long currentport = mySetupData->get_webserverport();
+        if ( newport == currentport)
+        {
+          // port is the same so do not bother to change it
+          DebugPrintln("wp error: new Port = current port");
+        }
+        else
+        {
+          if ( newport == MSSERVERPORT )                              // if same as management server
+          {
+            DebugPrintln("wp error: new Port = MSSERVERPORT");
+          }
+          else if ( newport == mySetupData->get_ascomalpacaport() )   // if same as ASCOM REMOTE server
+          {
+            DebugPrintln("wp error: new Port = ALPACAPORT");
+          }
+          else if ( newport == MDNSSERVERPORT )                       // if same as mDNS server
+          {
+            DebugPrintln("wp error: new Port = MDNSSERVERPORT");
+          }
+          else
+          {
+            DebugPrintln("New webserver port = " + String(newport));
+            mySetupData->set_webserverport(newport);                  // assign new port and save it
+          }
+        }
+      }
+      else
+      {
+        DebugPrintln("Attempt to change webserver port when webserver running");
+      }
+    }
+  }
+
+  msg = mserver.arg("setwsrate");
+  if ( msg != "" )
+  {
+    DebugPrint("set web server page refresh rate: ");
+    DebugPrintln(msg);
+    String wr = mserver.arg("wr");                      // preocess new webserver page refresh rate
+    if ( wr != "" )
+    {
+      int newrate = 0;
+      DebugPrint("wr:");
+      DebugPrintln(wr);
+      newrate = wr.toInt();
+      if ( webserverstate == STOPPED )
+      {
+        int currentrate = mySetupData->get_webpagerefreshrate();
+        if ( newrate == currentrate)
+        {
+          // port is the same so do not bother to change it
+          DebugPrintln("wr error: new page refresh rate = current page refresh rate");
+        }
+        else
+        {
+          if ( newrate < MINREFRESHPAGERATE )
+          {
+            DebugPrintln("wr error: Page refresh rate too low");
+            newrate = MINREFRESHPAGERATE;
+          }
+          else if ( newrate > MAXREFRESHPAGERATE )
+          {
+            DebugPrintln("wr error: Page refresh rate too high");
+            newrate = MAXREFRESHPAGERATE;
+          }
+          DebugPrintln("New page refresh rate = " + String(newrate));
+          mySetupData->set_webpagerefreshrate(newrate);                  // assign new refresh rate and save it
+        }
+      }
+      else
+      {
+        DebugPrintln("Attempt to change webserver refresh rate when webserver running");
+      }
+    }
+  }
+
+  msg = mserver.arg("setasport");
+  if ( msg != "" )
+  {
+    DebugPrint("set ascom server port: ");
+    DebugPrintln(msg);
+    String ap = mserver.arg("ap");                      // process new ascomalpaca port number
+    if ( ap != "" )
+    {
+      unsigned long newport = 0;
+      DebugPrint("ap:");
+      DebugPrintln(ap);
+      newport = ap.toInt();
+      if ( ascomserverstate == STOPPED )
+      {
+        unsigned long currentport = mySetupData->get_ascomalpacaport();
+        if ( newport == currentport)
+        {
+          // port is the same so do not bother to change it
+          DebugPrintln("ap error: new Port = current port");
+        }
+        else
+        {
+          if ( newport == MSSERVERPORT )                              // if same as management server
+          {
+            DebugPrintln("wp error: new Port = MSSERVERPORT");
+          }
+          else if ( newport == mySetupData->get_webserverport() )     // if same as webserver
+          {
+            DebugPrintln("wp error: new Port = ALPACAPORT");
+          }
+          else if ( newport == MDNSSERVERPORT )                       // if same as mDNS server
+          {
+            DebugPrintln("wp error: new Port = MDNSSERVERPORT");
+          }
+          else
+          {
+            DebugPrintln("New ascomalpaca port = " + String(newport));
+            mySetupData->set_ascomalpacaport(newport);                // assign new port and save it
+          }
+        }
+      }
+      else
+      {
+        DebugPrintln("Attempt to change ascomalpaca port when ascomserver running");
+      }
+    }
+  }
+
+  MANAGEMENT_buildhome();
 
   // send the homepage to a connected client
   DebugPrintln("root() - send homepage");
@@ -1767,12 +1841,15 @@ void MANAGEMENT_handleroot(void)
 
 void start_management(void)
 {
+  DebugPrintln(F("Start management server"));
   if (!SPIFFS.begin())
   {
-    DebugPrintln(F("start_management: An Error has occurred starting SPIFFS"));
+    DebugPrintln(F("start_management : An Error has occurred starting SPIFFS"));
     managementserverstate = STOPPED;
     return;
   }
+  MANAGEMENT_buildnotfound();
+  MANAGEMENT_buildhome();
   mserver.on("/", MANAGEMENT_handleroot);
   mserver.onNotFound([]() {                         // if the client requests any URI
     if (!MANAGEMENT_handleFileRead(mserver.uri()))  // send file if it exists
@@ -1789,7 +1866,7 @@ void stop_management(void)
 {
   mserver.stop();
   managementserverstate = STOPPED;
-  DebugPrintln(F("stop_management: stopped"));
+  DebugPrintln(F("stop_management : stopped"));
 }
 #endif // #ifdef MANAGEMENT
 
@@ -1810,18 +1887,20 @@ ESP8266WebServer *webserver;
 #else
 WebServer *webserver;
 #endif // if defined(esp8266)
+String WNotFoundPage;
+String WHomePage;
+String WMovePage;
 
-void WEBSERVER_handlenotfound()
+void WEBSERVER_buildnotfound(void)
 {
-  String WNotFoundPage;
   // load not found page from spiffs - wsnotfound.html
   if (!SPIFFS.begin())
   {
-    DebugPrintln(F("webserver: Error occurred when mounting SPIFFS"));
-    DebugPrintln("webserver: build_default_notfoundpage");
-    WNotFoundPage = "<html><head><title>Web Server: Not found></title></head><body>";
-    WNotFoundPage = WNotFoundPage + "<p>The requested URL was not found</p>";
-    WNotFoundPage = WNotFoundPage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p>";
+    DebugPrintln(F("webserver : Error occurred when mounting SPIFFS"));
+    DebugPrintln("webserver : build_default_notfoundpage");
+    WNotFoundPage = "<html><head><title>Web Server : Not found > < / title > < / head > <body>";
+    WNotFoundPage = WNotFoundPage + "<p>The requested URL was not found < / p > ";
+    WNotFoundPage = WNotFoundPage + "<p> < form action = \"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p>";
     WNotFoundPage = WNotFoundPage + "</body></html>";
   }
   else
@@ -1838,7 +1917,7 @@ void WEBSERVER_handlenotfound()
 
       DebugPrintln("webserver: processing page start");
       // process for dynamic data
-      WNotFoundPage.replace("%WS_IPSTR%", ipStr);
+      WNotFoundPage.replace("%WSIPSTR%", ipStr);
       WNotFoundPage.replace("%WEBSERVERPORT%", String(mySetupData->get_webserverport()));
       WNotFoundPage.replace("%WSPROGRAMVERSION%", String(programVersion));
       WNotFoundPage.replace("%WSPROGRAMNAME%", String(programName));
@@ -1853,678 +1932,102 @@ void WEBSERVER_handlenotfound()
       WNotFoundPage = WNotFoundPage + "</body></html>";
     }
   }
+}
+
+void WEBSERVER_handlenotfound(void)
+{
   webserver->send(NOTFOUNDWEBPAGE, TEXTPAGETYPE, WNotFoundPage);
 }
 
-// handles root page of webserver
-// this is called whenever a client requests home page of sebserver
-void WEBSERVER_handleroot()
+void WEBSERVER_buildmove(void)
 {
-  String WHomePage;
+  // construct the movepage now
+  DebugPrintln(F("webserver: build_movepage()"));
+  // load not found page from spiffs - wsmove.html
+  if (!SPIFFS.begin())
+  {
+    DebugPrintln(F("webserver: Error occurred when mounting SPIFFS"));
+    // could not read move file from SPIFFS
+    DebugPrintln("webserver: build_movepage");
+    WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+  }
+  else
+  {
+    DebugPrintln("webserver: SPIFFS mounted");
+    if ( SPIFFS.exists("/wsmove.html"))
+    {
+      DebugPrintln("webserver: wsmove.html found in spiffs");
+      // open file for read
+      File file = SPIFFS.open("/wsmove.html", "r");
+      // read contents into string
+      DebugPrintln("webserver: read page into string");
+      WMovePage = file.readString();
 
+      DebugPrintln("webserver: processing page start");
+      // process for dynamic data
+      WMovePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
+      WMovePage.replace("%WSIPSTR%", ipStr);
+      WMovePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
+      WMovePage.replace("%WSPROGRAMVERSION%", String(programVersion));
+      WMovePage.replace("%WSPROGRAMNAME%", String(programName));
+      WMovePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+      WMovePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
+      WMovePage.replace("%WSISMOVING%", String(isMoving));
+      DebugPrintln("webserver: processing page done");
+    }
+    else
+    {
+      // could not read movedex file from SPIFFS
+      DebugPrintln("webserver: build_movepage");
+      WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    }
+  }
+
+}
+// handles move page of webserver
+// this is called whenever a client requests move
+void WEBSERVER_handlemove()
+{
   // if the root page was a HALT request via Submit button
   String halt_str = webserver->arg("ha");
   if ( halt_str != "" )
   {
-    DebugPrint( "root() -halt:" );
+    DebugPrint("root() -halt:");
     DebugPrintln(halt_str);
     ftargetPosition = fcurrentPosition;
-  }
-
-  // if set focuser position
-  String fp_str;
-  fp_str = webserver->arg("setpos");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setpos:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("fp");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      fcurrentPosition = ftargetPosition = temp;
-    }
-  }
-
-  // if goto focuser position
-  fp_str = webserver->arg("gotopos");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gotopos:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("fp");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if update of maxsteps
-  String fmax_str = webserver->arg("fm");
-  if ( fmax_str != "" )
-  {
-    unsigned long temp = 0;
-    DebugPrint( "root() -maxsteps:" );
-    DebugPrintln(fmax_str);
-    temp = fmax_str.toInt();
-    if ( temp < fcurrentPosition )                    // if maxstep is less than focuser position
-    {
-      temp = fcurrentPosition + 1;
-    }
-    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
-    {
-      temp = FOCUSERLOWERLIMIT;
-    }
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
-    {
-      temp = mySetupData->get_maxstep();
-    }
-    mySetupData->set_maxstep(temp);
-  }
-
-  // if set focuser preset 0
-  fp_str = webserver->arg("setp0");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp0:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p0");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(0, temp);
-    }
-  }
-
-  // if goto focuser preset 0
-  fp_str = webserver->arg("gop0");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop0:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p0");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(0, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 1
-  fp_str = webserver->arg("setp1");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp1:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p1");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(1, temp);
-    }
-  }
-
-  // if goto focuser preset 1
-  fp_str = webserver->arg("gop1");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop1:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p1");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(1, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 2
-  fp_str = webserver->arg("setp2");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp2:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p2");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(2, temp);
-    }
-  }
-
-  // if goto focuser preset 2
-  fp_str = webserver->arg("gop2");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop2:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p2");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(2, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 3
-  fp_str = webserver->arg("setp3");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp3:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p3");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(3, temp);
-    }
-  }
-
-  // if goto focuser preset 3
-  fp_str = webserver->arg("gop3");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop3:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p3");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(3, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 4
-  fp_str = webserver->arg("setp4");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp4:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p4");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(4, temp);
-    }
-  }
-
-  // if goto focuser preset 4
-  fp_str = webserver->arg("gop4");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop4:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p4");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(4, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 5
-  fp_str = webserver->arg("setp5");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp5:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p5");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(5, temp);
-    }
-  }
-
-  // if goto focuser preset 5
-  fp_str = webserver->arg("gop5");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop5:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p5");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(5, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 6
-  fp_str = webserver->arg("setp6");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp6:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p6");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(6, temp);
-    }
-  }
-
-  // if goto focuser preset 6
-  fp_str = webserver->arg("gop6");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop6:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p6");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(6, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 7
-  fp_str = webserver->arg("setp7");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp0:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p7");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(7, temp);
-    }
-  }
-
-  // if goto focuser preset 7
-  fp_str = webserver->arg("gop7");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop0:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p7");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(7, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 8
-  fp_str = webserver->arg("setp8");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp8:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p8");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(8, temp);
-    }
-  }
-
-  // if goto focuser preset 8
-  fp_str = webserver->arg("gop8");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop8:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p8");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(8, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if set focuser preset 9
-  fp_str = webserver->arg("setp9");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "setp9:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p9");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(9, temp);
-    }
-  }
-
-  // if goto focuser preset 9
-  fp_str = webserver->arg("gop9");
-  if ( fp_str != "" )
-  {
-    DebugPrint( "gop9:" );
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("p9");
-    if ( fp != "" )
-    {
-      unsigned long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      mySetupData->set_focuserpreset(9, temp);
-      ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if update motorspeed
-  String fms_str = webserver->arg("ms");
-  if ( fms_str != "" )
-  {
-    int temp1 = 0;
-    DebugPrint( "root() -motorspeed:" );
-    DebugPrintln(fms_str);
-    temp1 = fms_str.toInt();
-    if ( temp1 < SLOW )
-    {
-      temp1 = SLOW;
-    }
-    if ( temp1 > FAST )
-    {
-      temp1 = FAST;
-    }
-    mySetupData->set_motorSpeed(temp1);
-  }
-
-  // if update coilpower
-  String fcp_str = webserver->arg("cp");
-  if ( fcp_str != "" )
-  {
-    DebugPrint( "root() -coil power:" );
-    DebugPrintln(fcp_str);
-    if ( fcp_str == "cp" )
-    {
-      mySetupData->set_coilpower(1);
-    }
-    else
-    {
-      mySetupData->set_coilpower(0);
-    }
-  }
-
-  // if update reversedirection
-  String frd_str = webserver->arg("rd");
-  if ( frd_str != "" )
-  {
-    DebugPrint( "root() -reverse direction:" );
-    DebugPrintln(frd_str);
-    if ( frd_str == "rd" )
-    {
-      mySetupData->set_reversedirection(1);
-    }
-    else
-    {
-      mySetupData->set_reversedirection(0);
-    }
-  }
-
-  // if update stepmode
-  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
-  String fsm_str = webserver->arg("sm");
-  if ( fsm_str != "" )
-  {
-    int temp1 = 0;
-    DebugPrint( "root() -stepmode:" );
-    DebugPrintln(fsm_str);
-    temp1 = fsm_str.toInt();
-    if ( temp1 < STEP1 )
-    {
-      temp1 = STEP1;
-    }
-    if ( temp1 > STEP32 )
-    {
-      temp1 = STEP32;
-    }
-    mySetupData->set_stepmode(temp1);
-  }
-
-  // if update temperature resolution
-  String tres_str = webserver->arg("tr");
-  if ( tres_str != "" )
-  {
-    int temp = 0;
-    DebugPrint( "root() -temperature resolution:" );
-    DebugPrintln(tres_str);
-    temp = tres_str.toInt();
-    if ( temp < 9 )
-    {
-      // error, do not change
-      temp = 9;
-    }
-    if ( temp > 12 )
-    {
-      temp = 12;
-    }
-    mySetupData->set_tempprecision(temp);
   }
 
   // if move
   String fmv_str = webserver->arg("mv");
   if ( fmv_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint("root() -move:" );
+    long temp = 0;
+    DebugPrint("root() -move:");
     DebugPrintln(fmv_str);
     temp = fmv_str.toInt();
-    ftargetPosition = fcurrentPosition + temp;
+    long newtemp = (long) fcurrentPosition + temp;
+    newtemp = ( newtemp < 0 ) ? 0 : newtemp;
+    newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
+    ftargetPosition = (unsigned long) newtemp;
     DebugPrint("Move = "); DebugPrintln(fmv_str);
     DebugPrint("Current = "); DebugPrint(fcurrentPosition);
     DebugPrint(", Target = "); DebugPrintln(ftargetPosition);
-    if ( ftargetPosition > mySetupData->get_maxstep() )
-    {
-      ftargetPosition = mySetupData->get_maxstep();
-    }
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
     // restore motorspeed just in case
     driverboard->setmotorspeed(mySetupData->get_motorSpeed());
 #endif
   }
 
-  DebugPrintln( "root() -build homepage" );
+  WEBSERVER_buildmove();
+  // send the movepage to a connected client
+  DebugPrintln("root() - send movepage");
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WMovePage );
+  delay(10);                     // small pause so background ESP8266 tasks can run
+}
+
+void WEBSERVER_buildhome(void)
+{
+  DebugPrintln( "root() -build homepage");
 
   // construct the homepage now
   DebugPrintln(F("webserver: build_homepage()"));
@@ -2550,7 +2053,7 @@ void WEBSERVER_handleroot()
 
       DebugPrintln("webserver: processing page start");
       // process for dynamic data
-      WHomePage.replace("%WSREFRESHRATE%", String(WS_REFRESHRATE));
+      WHomePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
       WHomePage.replace("%WSIPSTR%", ipStr);
       WHomePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
       WHomePage.replace("%WSPROGRAMVERSION%", String(programVersion));
@@ -2690,7 +2193,630 @@ void WEBSERVER_handleroot()
       WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
     }
   }
+}
 
+// handles root page of webserver
+// this is called whenever a client requests home page of sebserver
+void WEBSERVER_handleroot()
+{
+  // if the root page was a HALT request via Submit button
+  String halt_str = webserver->arg("ha");
+  if ( halt_str != "" )
+  {
+    DebugPrint("root() -halt:");
+    DebugPrintln(halt_str);
+    ftargetPosition = fcurrentPosition;
+  }
+
+  // if set focuser position
+  String fp_str;
+  fp_str = webserver->arg("setpos");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setpos:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("fp");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+      fcurrentPosition = ftargetPosition;
+    }
+  }
+
+  // if goto focuser position
+  fp_str = webserver->arg("gotopos");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gotopos:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("fp");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if update of maxsteps
+  String fmax_str = webserver->arg("fm");
+  if ( fmax_str != "" )
+  {
+    long temp = 0;
+    DebugPrint("root() -maxsteps:");
+    DebugPrintln(fmax_str);
+    temp = fmax_str.toInt();
+    if ( temp < (long) fcurrentPosition )             // if maxstep is less than focuser position
+    {
+      temp = (long) fcurrentPosition + 1;
+    }
+    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
+    {
+      temp = FOCUSERLOWERLIMIT;
+    }
+    if ( temp > (long) mySetupData->get_maxstep() )   // if higher than max value
+    {
+      temp = (long) mySetupData->get_maxstep();
+    }
+    mySetupData->set_maxstep((unsigned long)temp);
+  }
+
+  // if set focuser preset 0
+  fp_str = webserver->arg("setp0");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp0:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p0");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(0, (unsigned long)temp);
+    }
+  }
+
+  // if goto focuser preset 0
+  fp_str = webserver->arg("gop0");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop0:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p0");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(0, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 1
+  fp_str = webserver->arg("setp1");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp1:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p1");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(1, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 1
+  fp_str = webserver->arg("gop1");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop1:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p1");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(1, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 2
+  fp_str = webserver->arg("setp2");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp2:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p2");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(2, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 2
+  fp_str = webserver->arg("gop2");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop2:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p2");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(2, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 3
+  fp_str = webserver->arg("setp3");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp3:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p3");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(3, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 3
+  fp_str = webserver->arg("gop3");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop3:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p3");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(3, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 4
+  fp_str = webserver->arg("setp4");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp4:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p4");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(4, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 4
+  fp_str = webserver->arg("gop4");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop4:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p4");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(4, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 5
+  fp_str = webserver->arg("setp5");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp5:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p5");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(5, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 5
+  fp_str = webserver->arg("gop5");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop5:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p5");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(5, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 6
+  fp_str = webserver->arg("setp6");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp6:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p6");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(6, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 6
+  fp_str = webserver->arg("gop6");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop6:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p6");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(6, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 7
+  fp_str = webserver->arg("setp7");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp0:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p7");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(7, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 7
+  fp_str = webserver->arg("gop7");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop0:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p7");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(7, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 8
+  fp_str = webserver->arg("setp8");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp8:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p8");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(8, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 8
+  fp_str = webserver->arg("gop8");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop8:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p8");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(8, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if set focuser preset 9
+  fp_str = webserver->arg("setp9");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setp9:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p9");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(9, (unsigned long) temp);
+    }
+  }
+
+  // if goto focuser preset 9
+  fp_str = webserver->arg("gop9");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gop9:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("p9");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = ( temp < 0 ) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      mySetupData->set_focuserpreset(9, (unsigned long) temp);
+      ftargetPosition = temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if update motorspeed
+  String fms_str = webserver->arg("ms");
+  if ( fms_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint("root() -motorspeed:");
+    DebugPrintln(fms_str);
+    temp1 = fms_str.toInt();
+    if ( temp1 < SLOW )
+    {
+      temp1 = SLOW;
+    }
+    if ( temp1 > FAST )
+    {
+      temp1 = FAST;
+    }
+    mySetupData->set_motorSpeed(temp1);
+  }
+
+  // if update coilpower
+  String fcp_str = webserver->arg("cp");
+  if ( fcp_str != "" )
+  {
+    DebugPrint("root() -coil power:");
+    DebugPrintln(fcp_str);
+    if ( fcp_str == "cp" )
+    {
+      mySetupData->set_coilpower(1);
+    }
+    else
+    {
+      mySetupData->set_coilpower(0);
+    }
+  }
+
+  // if update reversedirection
+  String frd_str = webserver->arg("rd");
+  if ( frd_str != "" )
+  {
+    DebugPrint("root() -reverse direction:");
+    DebugPrintln(frd_str);
+    if ( frd_str == "rd" )
+    {
+      mySetupData->set_reversedirection(1);
+    }
+    else
+    {
+      mySetupData->set_reversedirection(0);
+    }
+  }
+
+  // if update stepmode
+  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
+  String fsm_str = webserver->arg("sm");
+  if ( fsm_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint("root() -stepmode:");
+    DebugPrintln(fsm_str);
+    temp1 = fsm_str.toInt();
+    if ( temp1 < STEP1 )
+    {
+      temp1 = STEP1;
+    }
+    if ( temp1 > STEP32 )
+    {
+      temp1 = STEP32;
+    }
+    mySetupData->set_stepmode(temp1);
+  }
+
+  // if update temperature resolution
+  String tres_str = webserver->arg("tr");
+  if ( tres_str != "" )
+  {
+    int temp = 0;
+    DebugPrint("root() -temperature resolution:");
+    DebugPrintln(tres_str);
+    temp = tres_str.toInt();
+    if ( temp < 9 )
+    {
+      // error, do not change
+      temp = 9;
+    }
+    if ( temp > 12 )
+    {
+      temp = 12;
+    }
+    mySetupData->set_tempprecision(temp);
+  }
+
+  // if move
+  String fmv_str = webserver->arg("mv");
+  if ( fmv_str != "" )
+  {
+    unsigned long temp = 0;
+    DebugPrint("root() -move:");
+    DebugPrintln(fmv_str);
+    temp = fmv_str.toInt();
+    ftargetPosition = fcurrentPosition + temp;
+    DebugPrint("Move = "); DebugPrintln(fmv_str);
+    DebugPrint("Current = "); DebugPrint(fcurrentPosition);
+    DebugPrint(", Target = "); DebugPrintln(ftargetPosition);
+    if ( ftargetPosition > mySetupData->get_maxstep() )
+    {
+      ftargetPosition = mySetupData->get_maxstep();
+    }
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+    // restore motorspeed just in case
+    driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+  }
+
+  WEBSERVER_buildhome();
   // send the homepage to a connected client
   DebugPrintln("root() - send homepage");
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WHomePage );
@@ -2699,12 +2825,18 @@ void WEBSERVER_handleroot()
 
 void start_webserver(void)
 {
+  DebugPrintln(F("Start web server"));
 #if defined(ESP8266)
   webserver = new ESP8266WebServer(mySetupData->get_webserverport());
 #else
   webserver = new WebServer(mySetupData->get_webserverport());
 #endif // if defined(esp8266) 
+  WEBSERVER_buildnotfound();
+  WEBSERVER_buildhome();
+  WEBSERVER_buildmove();
+
   webserver->on("/", WEBSERVER_handleroot);
+  webserver->on("/move", WEBSERVER_handlemove);
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
@@ -2760,7 +2892,7 @@ void ASCOM_Create_Setup_Focuser_HomePage()
   String mxbuffer = String(mySetupData->get_maxstep());
   String smbuffer = String(mySetupData->get_stepmode());
   int eflag = 0;
-  
+
   switch ( mySetupData->get_stepmode() )
   {
     case 1:
@@ -2900,12 +3032,12 @@ void ASCOM_Create_Setup_Focuser_HomePage()
       eflag = 1;
     }
   }
-  else 
+  else
   {
     // spiffs not started
     eflag = 1;
   }
-  if( eflag == 1 )
+  if ( eflag == 1 )
   {
     // SPIFFS FILE NOT FOUND
     Focuser_Setup_HomePage = "<head>" + String(AS_PAGETITLE) + "</head><body>";
@@ -3117,20 +3249,18 @@ void ASCOM_handle_focuser_setup()
   String fpos_str = ascomserver->arg("setpos");
   if ( fpos_str != "" )
   {
-    DebugPrint( "setpos:" );
+    DebugPrint("setpos:");
     DebugPrintln(fpos_str);
     String fp = ascomserver->arg("fp");
     if ( fp != "" )
     {
-      unsigned long temp = 0;
+      long temp = 0;
       DebugPrint("fp:");
       DebugPrintln(fp);
       temp = fp.toInt();
-      if ( temp > mySetupData->get_maxstep() )  // if greater than maxStep then set to maxStep
-      {
-        temp = mySetupData->get_maxstep();
-      }
-      fcurrentPosition = ftargetPosition = temp;
+      temp = ( temp < 0) ? 0 : temp;
+      temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
+      fcurrentPosition = ftargetPosition = (unsigned long) temp;
     }
   }
 
@@ -3138,23 +3268,23 @@ void ASCOM_handle_focuser_setup()
   String fmax_str = ascomserver->arg("fm");
   if ( fmax_str != "" )
   {
-    unsigned long temp = 0;
-    DebugPrint( "root() -maxsteps:" );
+    long temp = 0;
+    DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
-    if ( temp < fcurrentPosition )                    // if maxstep is less than focuser position
+    if ( temp < (long) fcurrentPosition )             // if maxstep is less than focuser position
     {
-      temp = fcurrentPosition + 1;
+      temp = (long) fcurrentPosition + 1;
     }
     if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
     {
       temp = FOCUSERLOWERLIMIT;
     }
-    if ( temp > mySetupData->get_maxstep() )          // if higher than max value
+    if ( temp > (long) mySetupData->get_maxstep() )   // if higher than max value
     {
-      temp = mySetupData->get_maxstep();
+      temp = (long) mySetupData->get_maxstep();
     }
-    mySetupData->set_maxstep(temp);
+    mySetupData->set_maxstep((unsigned long) temp);
   }
 
   // if update motorspeed
@@ -3162,7 +3292,7 @@ void ASCOM_handle_focuser_setup()
   if ( fms_str != "" )
   {
     int temp1 = 0;
-    DebugPrint( "root() -motorspeed:" );
+    DebugPrint("root() -motorspeed:");
     DebugPrintln(fms_str);
     temp1 = fms_str.toInt();
     if ( temp1 < SLOW )
@@ -3180,7 +3310,7 @@ void ASCOM_handle_focuser_setup()
   String fcp_str = ascomserver->arg("cp");
   if ( fcp_str != "" )
   {
-    DebugPrint( "root() -coil power:" );
+    DebugPrint("root() -coil power:");
     DebugPrintln(fcp_str);
     if ( fcp_str == "cp" )
     {
@@ -3196,7 +3326,7 @@ void ASCOM_handle_focuser_setup()
   String frd_str = ascomserver->arg("rd");
   if ( frd_str != "" )
   {
-    DebugPrint( "root() -reverse direction:" );
+    DebugPrint("root() -reverse direction:");
     DebugPrintln(frd_str);
     if ( frd_str == "rd" )
     {
@@ -3214,7 +3344,7 @@ void ASCOM_handle_focuser_setup()
   if ( fsm_str != "" )
   {
     int temp1 = 0;
-    DebugPrint( "root() -stepmode:" );
+    DebugPrint("root() -stepmode:");
     DebugPrintln(fsm_str);
     temp1 = fsm_str.toInt();
     if ( temp1 < STEP1 )
@@ -3228,7 +3358,7 @@ void ASCOM_handle_focuser_setup()
     mySetupData->set_stepmode(temp1);
   }
 
-  DebugPrintln( "root() -build homepage" );
+  DebugPrintln( "root() -build homepage");
 
   // construct the homepage now
   ASCOM_Create_Setup_Focuser_HomePage();
@@ -3795,7 +3925,7 @@ void ASCOM_handleRoot()
 
 void start_ascomremoteserver(void)
 {
-  DebugPrintln("start_ascomserver()");
+  DebugPrintln("start ascom server");
   ASCOM_Create_Setup_Focuser_HomePage();        // create home page for ascom management setup api
 
 #if defined(ESP8266)
@@ -3841,7 +3971,7 @@ void start_ascomremoteserver(void)
 
 void stop_ascomremoteserver(void)
 {
-  DebugPrintln("stop_ascomserver()");
+  DebugPrintln("stop ascom server");
   ascomserver->close();
   delete ascomserver;            // free the ascomserver pointer and associated memory/code
   ascomserverstate = STOPPED;
@@ -3903,14 +4033,14 @@ void start_otaservice()
   });
   ArduinoOTA.begin();
   DebugPrintln(readystr);
-  otaservicestate = RUNNING;
+  otaupdatestate = RUNNING;
 }
 #endif // #if defined(OTAUPDATES)
 
 // ----------------------------------------------------------------------------------------------
 // 29: DUCKDNS - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-#ifdef USEDUCKSDNS
+#ifdef USEDUCKDNS
 #include <EasyDDNS.h>                           // https://github.com/ayushsharma82/EasyDDNS
 
 void init_duckdns(void)
@@ -3921,8 +4051,9 @@ void init_duckdns(void)
   delay(5);
   EasyDDNS.client(duckdnsdomain, duckdnstoken); // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
   delay(5);
-  EasyDDNS.update(DUCKDNSREFRESHRATE);          // Check for New Ip Every 60 Seconds.
+  EasyDDNS.update(DUCKDNS_REFREHRATE);          // Check for New Ip Every 60 Seconds.
   delay(5);
+  duckdnsstate = RUNNING;
 }
 #endif // #ifdef USEDUCKSDNS
 
@@ -4053,6 +4184,10 @@ void setup()
   DebugPrintln(mySetupData->get_displayenabled());
   DebugPrint(F("webserverport= "));
   DebugPrintln(mySetupData->get_webserverport());
+  DebugPrint(F("ascomalpacaserverport= "));
+  DebugPrintln(mySetupData->get_ascomalpacaport());
+  DebugPrint(F("webserver page refresh ratet= "));
+  DebugPrintln(mySetupData->get_webpagerefreshrate());
 
 #ifdef TEMPERATUREPROBE                         // start temp probe
   init_temp();
@@ -4174,11 +4309,6 @@ void setup()
 
   delay(5);
 
-  // setup duckdns
-#ifdef USEDUCKSDNS
-  init_duckdns();
-#endif
-
   // setup home position switch
 #ifdef HOMEPOSITIONSWITCH
   init_homepositionswitch();
@@ -4210,7 +4340,8 @@ void setup()
   webserverstate = STOPPED;
   ascomserverstate = STOPPED;
   managementserverstate = STOPPED;
-  otaservicestate = STOPPED;
+  otaupdatestate = STOPPED;
+  duckdnsstate = STOPPED;
 
 #ifdef OTAUPDATES
   start_otaservice();                       // Start the OTA service
@@ -4230,6 +4361,11 @@ void setup()
 
 #ifdef MDNSSERVER
   start_mdns_service();
+#endif
+
+  // setup duckdns
+#ifdef USEDUCKDNS
+  init_duckdns();
 #endif
 
   DebugPrint(currentposstr);
@@ -4332,7 +4468,7 @@ void loop()
 #endif // ifdef LOCALSERIAL
 
 #ifdef OTAUPDATES
-  if ( otaservicestate == RUNNING )
+  if ( otaupdatestate == RUNNING )
   {
     ArduinoOTA.handle();                      // listen for OTA events
   }

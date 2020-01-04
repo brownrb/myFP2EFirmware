@@ -1,24 +1,34 @@
 <html><head></head><meta http-equiv=refresh content="%WSREFRESHRATE%"><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>(c) R. Brown, Holger M, 2019. All rights reserved<br>IP Address: %WSIPSTR%: Port: %WSWEBSERVERPORT%, Firmware Version=%WSPROGRAMVERSION%<br>Driverboard = %WSPROGRAMNAME%</p>
 
-<p><form action="/" method="post"><br><b>Position</b> <input type="text" name="fp" size ="15" value="%WSCURRENTPOSITION%"> <input type="submit" name="setpos" value="Set"> <input type="submit" name="gotopos" value="Goto"> (Target = %WSFTARGETPOSITION%)</form></p>
-
-<p><form action="/" method="post" ><b>MaxSteps</b> <input type="text" name="fm" size ="15" value=%WSMAXSTEP%> <input type="submit" value="Set"></form></p><p>
-
+<p>
+<table>
+<tr><td><b>Position </b></td><td><form action="/" method="post"><input type="text" name="fp" size ="15" value="%WSCURRENTPOSITION%"></td><td> <input type="submit" name="setpos" value="Set"></td><td> <input type="submit" name="gotopos" value="Goto"> (Target = %WSFTARGETPOSITION%)</form></td></tr>
+<tr><td><b>MaxSteps </b></td><td><form action="/" method="post"><input type="text" name="fm" size ="15" value=%WSMAXSTEP%></td><td> <input type="submit" value="Set"></form></td></tr>
+</table></p>
 <form action="/" method="post" ><b>Move: </b><input type="radio" name="mv" value="-500" > -500 <input type="radio" name="mv" value="-100" > -100 <input type="radio" name="mv" value="-10" > -10 <input type="radio" name="mv" value="-1" > -1 <input type="radio" name="mv" value="0" Checked > 0 <input type="radio" name="mv" value="1" > 1 <input type="radio" name="mv" value="10" > 10 <input type="radio" name="mv" value="100" > 100 <input type="radio" name="mv" value="500" > 500 <input type="hidden" name="mv" value="true"><input type="submit" value="MOVE"></form></p>
-
 <p><form action="/" method="post"><b>IsMoving</b> = %WSISMOVING% <input type="hidden" name="ha" value="true"><input type="submit" value="HALT"></form></p>
-
 <p><form action="/" method="post"><b>Temp</b> = %WSTEMPERATURE%, <b>Temp Resolution </b><input type="text" name="tr" size ="3" value="%WSTEMPPRECISION%"> <input type="submit" value="Set"></form></p>
-
 <p><form action="/" method="post" ><b>Stepmode </b> %WSSMBUFFER%  <input type="hidden" name="sm" value="true"><input type="submit" value="Set"></form></p>
-
 <p><form action="/" method="post" ><b>Motorspeed: </b> %WSMSBUFFER% <input type="hidden" name="ms" value="true"><input type="submit" value="Set"></form></p>
 
-<p><form action="/" method="post" ><b>Coilpower </b> %WSCPBUFFER% <input type="hidden" name="cp" value="true"><input type="submit" value="Set"></form></p>
+<p>
+<table>
+<tr><td><b>Coilpower </b></td><td><form action="/" method="post"> %WSCPBUFFER% <input type="hidden" name="cp" value="true"></td><td><input type="submit" value="Set"></form></td></tr>
+<tr><td><b>Reverse Direction </b></td><td><form action="/" method="post"> %WSRDBUFFER% <input type="hidden" name="rd" value="true"></td><td><input type="submit" value="Set"></form></td></tr></table></p>
 
-<p><form action="/" method="post" ><b>Reverse Direction </b> %WSRDBUFFER% <input type="hidden" name="rd" value="true"><input type="submit" value="Set"></form></p>
-
-<p><form action="/" method="post"><b>Focuser Preset 0</b> <input type="text" name="p0" size ="15" value="%WSP0BUFFER%"> <input type="submit" name="setp0" value="Set"> <input type="submit" name="gop0" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 1</b> <input type="text" name="p1" size ="15" value="%WSP1BUFFER%"> <input type="submit" name="setp1" value="Set"> <input type="submit" name="gop1" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 2</b> <input type="text" name="p2" size ="15" value="%WSP2BUFFER%"> <input type="submit" name="setp2" value="Set"> <input type="submit" name="gop2" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 3</b> <input type="text" name="p3" size ="15" value="%WSP3BUFFER%"> <input type="submit" name="setp3" value="Set"> <input type="submit" name="gop3" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 4</b> <input type="text" name="p4" size ="15" value="%WSP4BUFFER%"> <input type="submit" name="setp4" value="Set"> <input type="submit" name="gop4" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 5</b> <input type="text" name="p5" size ="15" value="%WSP5BUFFER%"> <input type="submit" name="setp5" value="Set"> <input type="submit" name="gop5" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 6</b> <input type="text" name="p6" size ="15" value="%WSP6BUFFER%"> <input type="submit" name="setp6" value="Set"> <input type="submit" name="gop6" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 7</b> <input type="text" name="p7" size ="15" value="%WSP7BUFFER%"> <input type="submit" name="setp7" value="Set"> <input type="submit" name="gop7" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 8</b> <input type="text" name="p8" size ="15" value="%WSP8BUFFER%"> <input type="submit" name="setp8" value="Set"> <input type="submit" name="gop8" value="Goto"></form><form action="/" method="post"><b>Focuser Preset 9</b> <input type="text" name="p9" size ="15" value="%WSP9BUFFER%"> <input type="submit" name="setp9" value="Set"> <input type="submit" name="gop9" value="Goto"></form></p>
-
+<p>
+<table>
+<tr><td><form action="/" method="post"><b>Focuser Preset 0</b> <input type="text" name="p0" size ="15" value="%WSP0BUFFER%"> <input type="submit" name="setp0" value="Set"> <input type="submit" name="gop0" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 1</b> <input type="text" name="p1" size ="15" value="%WSP1BUFFER%"> <input type="submit" name="setp1" value="Set"> <input type="submit" name="gop1" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 2</b> <input type="text" name="p2" size ="15" value="%WSP2BUFFER%"> <input type="submit" name="setp2" value="Set"> <input type="submit" name="gop2" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 3</b> <input type="text" name="p3" size ="15" value="%WSP3BUFFER%"> <input type="submit" name="setp3" value="Set"> <input type="submit" name="gop3" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 4</b> <input type="text" name="p4" size ="15" value="%WSP4BUFFER%"> <input type="submit" name="setp4" value="Set"> <input type="submit" name="gop4" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 5</b> <input type="text" name="p5" size ="15" value="%WSP5BUFFER%"> <input type="submit" name="setp5" value="Set"> <input type="submit" name="gop5" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 6</b> <input type="text" name="p6" size ="15" value="%WSP6BUFFER%"> <input type="submit" name="setp6" value="Set"> <input type="submit" name="gop6" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 7</b> <input type="text" name="p7" size ="15" value="%WSP7BUFFER%"> <input type="submit" name="setp7" value="Set"> <input type="submit" name="gop7" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 8</b> <input type="text" name="p8" size ="15" value="%WSP8BUFFER%"> <input type="submit" name="setp8" value="Set"> <input type="submit" name="gop8" value="Goto"></form></td></tr>
+<tr><td><form action="/" method="post"><b>Focuser Preset 9</b> <input type="text" name="p9" size ="15" value="%WSP9BUFFER%"> <input type="submit" name="setp9" value="Set"> <input type="submit" name="gop9" value="Goto"></form></td></tr>
+</table>
+</p>
 <p><form action="/" method="GET"><input type="submit" value="HOMEPAGE"></form></p>
 </body></html>
