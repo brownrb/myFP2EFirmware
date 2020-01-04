@@ -1,6 +1,28 @@
+// 115
+// Add duckdns mdns otaupdate etc to management page msindex.html
+// Fix duckdns incorrect define and checks in focuserconfig.h
+// Add duckdnsstate to main .ino
+// Rename otaserverstate to otaupdatestate
+// Add code in management server to handle duckdns state
+// Add refreshrate for webpages into management console
+// Add /move page to webserver
+// Add range check for focuser position and presets on webserver
+// Add range check for focuser position and maxsteps on ascom server setup
+// Improve speed of management and webserver pages
+
 // 114
 // Fix LOCALSERIAL issue
 // Add INDI config so can work in LOCALSERIAL with INDI
+// Fix local serial issues line to serialline
+// Fix for serial.begin() ifdef LOCALSERIAL
+// Fix for using localserial with INDI serial driver for myFocuserPro2
+// Fix case 64: comms.h for check focuser position against maxstep
+// Fix readtemp to read_temp in graphics oled and ascom server temp routines
+// Change debugprint recstr in comms.h
+// Fix define for oledgraphics in focuserconfig.h
+// Implement static pages for ascom server in SPIFFS
+// Add code to handle new static pages in ascom server
+// Make small changes to header portions of all server html pages
 
 // 113
 // Fix Bluetooth running on WEMOS ESP32

@@ -55,6 +55,7 @@ class SetupData
     unsigned long get_focuserpreset(byte);
     unsigned long get_webserverport();
     unsigned long get_ascomalpacaport();
+    int get_webpagerefreshrate();
 
     //__setter
     void set_fposition(unsigned long);
@@ -82,6 +83,7 @@ class SetupData
     void set_focuserpreset(byte, unsigned long);
     void set_webserverport(unsigned long);
     void set_ascomalpacaport(unsigned long);
+    void set_webpagerefreshrate(int);
 
   private:
     byte SavePersitantConfiguration();
@@ -93,6 +95,7 @@ class SetupData
     void StartDelayedUpdate(unsigned long &, unsigned long);
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
+    void StartDelayedUpdate(int &, int);
 
     boolean ReqSaveData_var;    // Flag for request save variable data
     boolean ReqSaveData_per;    // Flag for request save persitant data
@@ -139,4 +142,5 @@ class SetupData
     unsigned long focuserpreset9;
     unsigned long webserverport;
     unsigned long ascomalpacaport;
+    int webpagerefreshrate;
 };

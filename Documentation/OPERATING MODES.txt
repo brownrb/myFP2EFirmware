@@ -4,7 +4,8 @@ ASCOM      						CONTROLLER MODE
 Client running ASCOM Driver    				ACCESSPOINT or STATIONMODE 
  
 ASCOM REMOTE
-Client running ASCOM REMOTE driver   			ASCOM REMOTE SERVER 
+Client running ASCOM REMOTE driver   			ASCOM REMOTE SERVER + ACCESSPOINT
+							or STATIONMODE 
  
 BLUETOOTH 
 Android device running Android Bluetooth app  		BLUETOOTH 
@@ -19,4 +20,5 @@ USB
 Windows device running myFocuserPro2 app  		LOCALSERIAL 
  
 WEB BROWSER 
-Any device (Android, phone, tablet, Linux, Mac)   	ACCESSPOINT or STATIONMODE
+Any device (Android, phone, tablet, Linux, Mac)   	WEBSERVER + ACCESSPOINT 
+							or STATIONMODE

@@ -107,6 +107,7 @@ byte SetupData::LoadConfiguration()
       this->focuserpreset9        = doc_per["focuserpreset9"];
       this->webserverport         = doc_per["webserverport"];
       this->ascomalpacaport       = doc_per["ascomalpcaport"];
+      this->webpagerefreshrate    = doc_per["webpagerefreshrate"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -192,10 +193,11 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset7        = 0;
   this->focuserpreset8        = 0;
   this->focuserpreset9        = 0;
-  this->webserverport         = WEBSERVERPORT;
-  this->ascomalpacaport       = ALPACAPORT;
+  this->webserverport         = WEBSERVERPORT;    // 80
+  this->ascomalpacaport       = ALPACAPORT;       // 4040
+  this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
 
-  this->SavePersitantConfiguration();         // write default values to SPIFFS
+  this->SavePersitantConfiguration();             // write default values to SPIFFS
 }
 
 void SetupData::LoadDefaultVariableData()
@@ -302,6 +304,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["focuserpreset9"]     = this->focuserpreset9;
   doc["webserverport"]      = this->webserverport;
   doc["ascomalpacaport"]    = this->ascomalpacaport;
+  doc["webpagerefreshrate"] = this->webpagerefreshrate;
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
@@ -506,6 +509,11 @@ unsigned long SetupData::get_ascomalpacaport(void)
   return this->ascomalpacaport;
 }
 
+int SetupData::get_webpagerefreshrate(void)
+{
+  return this->webpagerefreshrate;
+}
+
 //__Setter
 
 void SetupData::set_fposition(unsigned long fposition)
@@ -657,6 +665,22 @@ void SetupData::set_webserverport(unsigned long wsp)
 void SetupData::set_ascomalpacaport(unsigned long asp)
 {
   this->StartDelayedUpdate(this->ascomalpacaport, asp);
+}
+
+void SetupData::set_webpagerefreshrate(int rr)
+{
+  this->StartDelayedUpdate(this->webpagerefreshrate, rr);
+}
+
+void SetupData::StartDelayedUpdate(int & org_data, int new_data)
+{
+  if (org_data != new_data)
+  {
+    this->ReqSaveData_per = true;
+    this->SnapShotMillis = millis();
+    org_data = new_data;
+    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+  }
 }
 
 void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_data)

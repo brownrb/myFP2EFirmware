@@ -23,6 +23,8 @@
 #define MSSERVERPORT          6060          // Management interface
 #define MDNSSERVERPORT        7070          // mDNS service
 #define WS_REFRESHRATE        30            // web server page refresh time 30s
+#define MINREFRESHPAGERATE    10            // 10s - too low and the overhead becomes too much for the controller
+#define MAXREFRESHPAGERATE    900           // 15m
 #define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
 #define RUNNING               true
 #define STOPPED               false
@@ -192,7 +194,7 @@
 // ----------------------------------------------------------------------------------------------
 // 2. DEBUGGING                                       // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-//#define DEBUG     1
+#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.
