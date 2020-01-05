@@ -1217,7 +1217,7 @@ void update_joystick2(void)
     DebugPrint("X IN joyval:");
     DebugPrint(joyval);
     joyspeed = map(joyval, 0, (JZEROPOINT - JTHRESHOLD), MSFAST, MSSLOW);
-    Debugprint(", Speed:");
+    DebugPrint(", Speed:");
     DebugPrintln(joyspeed);
     driverboard->setstepdelay(joyspeed);
   }
@@ -1236,7 +1236,7 @@ void update_joystick2(void)
     DebugPrint("X OUT joyval:");
     DebugPrint(joyval);
     joyspeed = map(joyval, 0, (JMAXVALUE - (JZEROPOINT + JTHRESHOLD)), MSSLOW, MSFAST);
-    Debugprint(", Speed:");
+    DebugPrint(", Speed:");
     DebugPrintln(joyspeed);
     driverboard->setstepdelay(joyspeed);
   }
