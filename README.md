@@ -107,9 +107,6 @@ This file manages the Bluetooth serial data for ESP32 chips. It is a modified ve
 #HalfStepperESP32 Library
 This library manages the stepping modes for the ULN2003, L298N, L293DMINI and L9110S driver boards. It is a modified version of the HalfStepper library from Tom Biuso. DO NOT MODIFY THESE FILES. It has been modified to work with ESP8266 and ESP32 chips.
 
-#IRRemoteESP32 Library
-This library manages communication with an Infra-Red controller. The Library is based on one created by Ken Shirriff but has been modified wto work with ESP8266 and ESP32 chips. DO NOT MODIFY THESE FILES.
-
 #myOLED Libary
 This is a special cut down version of the SSD1306AsciiWire library by Bill Greiman. The library has been reduced in size and a number of additional features added. DO NOT MODIFY THESE FILES.
 
@@ -122,7 +119,7 @@ Libraries
 
 * Arduino JSON 6.11.2
 * myOLED as in myFP2ELibs
-* IRRemoteESP32 2.0.1 as in myFP2ELibs
+* IRRemoteESP8266 2.7.1
 * HalfStepperESP32 as in myFP2ELibs
 * Dallas Temperature 3.80
 * Wire [as installed with Arduino 1.8.9
