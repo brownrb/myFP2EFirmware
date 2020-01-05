@@ -48,7 +48,6 @@ The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
 
 * myOLED
-* IRREMOTEESP32
 * HalfStepperESP32
 * myTemperatureProbe
 
@@ -62,6 +61,9 @@ https://github.com/ThingPulse/esp8266-oled-ssd1306
 
 OneWire
 https://github.com/PaulStoffregen/OneWire
+
+IRRemote
+https://github.com/crankyoldgit/IRremoteESP8266
 
 DuckDNS
 https://github.com/ayushsharma82/EasyDDNS

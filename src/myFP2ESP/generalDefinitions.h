@@ -192,9 +192,24 @@
 #define ENABLEDJOYSTICK           8388608
 
 // ----------------------------------------------------------------------------------------------
-// 2. DEBUGGING                                       // do not change - leave this commented out
+// 2. TRACING                                         // do not change - leave this commented out
 // ----------------------------------------------------------------------------------------------
-#define DEBUG     1
+// ArduinoTrace - github.com/bblanchon/ArduinoTrace
+// Copyright Benoit Blanchon 2018-2019
+// Provide a trace fucntion, printing file, line number, function and parameters
+// DEBUG needs to be defined to get output to Serial Port
+// If DEBUG is not defined nothing happens
+#define TRACE() \
+DebugPrint(__FILE__); \
+DebugPrint(':'); \
+DebugPrint(__LINE__); \
+DebugPrint(": "); \
+DebugPrintln(__PRETTY_FUNCTION__);
+
+// ----------------------------------------------------------------------------------------------
+// 3. DEBUGGING                                       // do not change - leave this commented out
+// ----------------------------------------------------------------------------------------------
+//#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

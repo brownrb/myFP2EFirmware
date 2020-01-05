@@ -221,6 +221,7 @@
 #define DIRPIN        26
 #define STEPPIN       27
 #define ENABLEPIN     14
+#define IRPIN         15
 #define HPSWPIN       4
 #define MSFAST        500
 #define MSMED         1000

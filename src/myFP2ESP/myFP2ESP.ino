@@ -250,7 +250,7 @@ void setFeatures()
 #ifdef ROTARYENCODER
   Features = Features + ENABLEDROTARYENCODER;
 #endif
-#ifdef INFRARED
+#ifdef INFRAREDREMOTE
   Features = Features + ENABLEDINFRARED;
 #endif
 #ifdef BACKLASH
@@ -1014,10 +1014,16 @@ void init_homepositionswitch(void)
 // 21: INFRARED REMOTE CONTROLLER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef INFRAREDREMOTE
-#include <IRremoteESP32.h>
-IRrecv irrecv(IRPIN);
-decode_results results;
+
+#include <Arduino.h>
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <IRutils.h>
 #include "irremotemappings.h"
+
+const uint16_t RECV_PIN = IRPIN;
+IRrecv irrecv(RECV_PIN);
+decode_results results;
 
 void update_irremote()
 {
@@ -4806,7 +4812,12 @@ void loop()
       isMoving = 0;
       if ( mySetupData->get_coilpower() == 0 )
       {
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+        // do not release motor if using joystick because it moves 1 step at a time
+        // do nothing
+#else
         driverboard->releasemotor();
+#endif
       }
       MainStateMachine = State_Idle;
       DebugPrintln(F(STATEIDLE));
