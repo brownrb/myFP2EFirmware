@@ -192,7 +192,7 @@
 #define ENABLEDJOYSTICK           8388608
 
 // ----------------------------------------------------------------------------------------------
-// 2. TRACING                                         // do not change - leave this commented out
+// 2. TRACING -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 // ArduinoTrace - github.com/bblanchon/ArduinoTrace
 // Copyright Benoit Blanchon 2018-2019
@@ -207,7 +207,7 @@ DebugPrint(": "); \
 DebugPrintln(__PRETTY_FUNCTION__);
 
 // ----------------------------------------------------------------------------------------------
-// 3. DEBUGGING                                       // do not change - leave this commented out
+// 3. DEBUGGING -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 //#define DEBUG     1
 //#define LOOPTIMETEST 1

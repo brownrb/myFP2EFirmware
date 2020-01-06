@@ -11,7 +11,9 @@
 // Improve speed of management and webserver pages
 // Fix issue with IRREMOTE - change to new library
 // Fix issue with JOYSTICK when moving and release of coil power
+// In State_Idle, when parking, enforce rule of releasemotor only if coilpower is false
 // Add TRACE macro
+// Increase data_per.jsn size to 1023
 
 // 114
 // Fix LOCALSERIAL issue

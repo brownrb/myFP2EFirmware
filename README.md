@@ -49,7 +49,7 @@ To compile you will also need to import these libraries in the folder src/myFP2E
 
 * myOLED
 * HalfStepperESP32
-* myTemperatureProbe
+* myDallasTemperature
 
 Do not edit or replace any of these library files with others.
 

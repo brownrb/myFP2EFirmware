@@ -331,23 +331,23 @@ DriverBoard* driverboard;
 char programVersion[] = "115";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
-unsigned long fcurrentPosition;         // current focuser position
-unsigned long ftargetPosition;          // target position
+unsigned long fcurrentPosition;             // current focuser position
+unsigned long ftargetPosition;              // target position
 unsigned long tmppos;
 boolean displayfound;
 
-byte tprobe1;                           // indicate if there is a probe attached to myFocuserPro2
-byte isMoving;                          // is the motor currently moving
-String ipStr;                           // shared between BT mode and other modes
+byte tprobe1;                               // indicate if there is a probe attached to myFocuserPro2
+byte isMoving;                              // is the motor currently moving
+String ipStr;                               // shared between BT mode and other modes
 
 #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
-#include "ESPQueue.h"                   //  By Steven de Salas
-Queue queue(QUEUELENGTH);               // receive serial queue of commands
+#include "ESPQueue.h"                       //  By Steven de Salas
+Queue queue(QUEUELENGTH);                   // receive serial queue of commands
 #ifdef LOCALSERIAL
-String serialline;                      // buffer for serial data
+String serialline;                          // buffer for serial data
 #endif
 #ifdef BLUETOOTHMODE
-String btline;                          // buffer for serial data
+String btline;                              // buffer for serial data
 #endif
 #endif // #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 
@@ -355,17 +355,17 @@ String btline;                          // buffer for serial data
 IPAddress ESP32IPAddress;
 String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
-WiFiClient myclient;                    // only one client supported, multiple connections denied
+WiFiClient myclient;                        // only one client supported, multiple connections denied
 IPAddress myIP;
 long rssi;
 #endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #ifdef TEMPERATUREPROBE
-#include <OneWire.h>                      // https://github.com/PaulStoffregen/OneWire
+#include <OneWire.h>                        // https://github.com/PaulStoffregen/OneWire
 #include <myDallasTemperature.h>
-OneWire oneWirech1(TEMPPIN);              // setup temperature probe
+OneWire oneWirech1(TEMPPIN);                // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
-DeviceAddress tpAddress;                  // holds address of the temperature probe
+DeviceAddress tpAddress;                    // holds address of the temperature probe
 #endif
 
 #ifdef OLEDTEXT
@@ -4112,7 +4112,7 @@ void setup()
   DebugPrintln(debugonstr);
 #endif
 
-  mySetupData = new SetupData();                // instantiate object SetUpData with SPIFFS file instead of using EEPROM, init SPIFFS
+  mySetupData = new SetupData();                // instantiate object SetUpData with SPIFFS file
 
 #ifdef LOCALSERIAL
   Serial.begin(SERIALPORTSPEED);
@@ -4558,8 +4558,12 @@ void loop()
         {
           if (TimeCheck(TimeStampPark, MotorReleaseDelay))   //Power off after MotorReleaseDelay
           {
-            driverboard->releasemotor();
-            DebugPrintln(F("Idle: release motor"));
+            // need to obey rule - can only release motor if coil power is disabled
+            if ( mySetupData->get_coilpower() == 0 )
+            {
+              driverboard->releasemotor();
+              DebugPrintln(F("Idle: release motor"));
+            }
             Parked = true;
           }
         }
@@ -4810,15 +4814,8 @@ void loop()
 
     case State_FinishedMove:
       isMoving = 0;
-      if ( mySetupData->get_coilpower() == 0 )
-      {
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-        // do not release motor if using joystick because it moves 1 step at a time
-        // do nothing
-#else
-        driverboard->releasemotor();
-#endif
-      }
+      // coil power is turned off after MotorReleaseDelay expired and Parked==true, see State_Idle
+      TRACE();
       MainStateMachine = State_Idle;
       DebugPrintln(F(STATEIDLE));
       break;

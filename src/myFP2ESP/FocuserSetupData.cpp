@@ -64,7 +64,7 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(data);           // ... and print on serial
 
     // Allocate a temporary JsonDocument
-    DynamicJsonDocument doc_per(800);
+    DynamicJsonDocument doc_per(DEFAULTDOCSIZE);
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_per, data);
@@ -113,7 +113,7 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(F("config file persistant data loaded"));
   }
 
-  file = SPIFFS.open(filename_vaiable, "r");
+  file = SPIFFS.open(filename_variable, "r");
   if (!file)
   {
     DebugPrintln(F("no config file variable data found, load default values"));
@@ -127,7 +127,7 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(data);               // ... and print on serial
 
     // Allocate a temporary JsonDocument
-    DynamicJsonDocument doc_var(63);
+    DynamicJsonDocument doc_var(DEFAULTVARDOCSIZE);
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_var, data);
@@ -158,7 +158,7 @@ void SetupData::SetFocuserDefaults(void)
   LoadDefaultVariableData();
 
   SPIFFS.remove(filename_persistant);
-  SPIFFS.remove(filename_vaiable);
+  SPIFFS.remove(filename_variable);
 }
 
 void SetupData::LoadDefaultPersistantData()
@@ -323,10 +323,10 @@ byte SetupData::SavePersitantConfiguration()
 byte SetupData::SaveVariableConfiguration()
 {
   // Delete existing file
-  SPIFFS.remove(filename_vaiable);
+  SPIFFS.remove(filename_variable);
 
   // Open file for writing
-  File file = SPIFFS.open(this->filename_vaiable, "w");
+  File file = SPIFFS.open(this->filename_variable, "w");
   if (!file)
   {
     DebugPrintln(F("Failed to create file for variable data"));
@@ -336,7 +336,7 @@ byte SetupData::SaveVariableConfiguration()
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use arduinojson.org/assistant to compute the capacity.
-  StaticJsonDocument<64> doc;
+  StaticJsonDocument<DEFAULTVARDOCSIZE> doc;
 
   // Set the values in the document
   doc["fpos"] =  this->fposition;                  // last focuser position

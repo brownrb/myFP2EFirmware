@@ -13,13 +13,14 @@
 
 #include "generalDefinitions.h"
 
-#define DEFAULTPOSITION 5000L
-#define DEFAULTMAXSTEPS 80000L
-#define DEFAULTOFF      0
-#define DEFAULTON       1
-#define DEFAULTCELSIUS  1
-#define DEFAULTFAHREN   0
-#define DEFAULTDOCSIZE  1024
+#define DEFAULTPOSITION   5000L
+#define DEFAULTMAXSTEPS   80000L
+#define DEFAULTOFF        0
+#define DEFAULTON         1
+#define DEFAULTCELSIUS    1
+#define DEFAULTFAHREN     0
+#define DEFAULTDOCSIZE    1024
+#define DEFAULTVARDOCSIZE 64
 
 class SetupData
 {
@@ -101,7 +102,7 @@ class SetupData
     boolean ReqSaveData_per;    // Flag for request save persitant data
 
     const String filename_persistant = "/data_per.jsn"; // persistant JSON setup data
-    const String filename_vaiable = "/data_var.jsn";    // variable  JSON setup data
+    const String filename_variable = "/data_var.jsn";    // variable  JSON setup data
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
