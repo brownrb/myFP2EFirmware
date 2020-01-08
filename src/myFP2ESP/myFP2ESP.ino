@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 115
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 116
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -328,7 +328,7 @@ void setFeatures()
 String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "115";
+char programVersion[] = "116";
 char ProgramAuthor[]  = "(c) R BROWN 2019";
 
 unsigned long fcurrentPosition;             // current focuser position

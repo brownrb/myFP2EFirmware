@@ -26,7 +26,7 @@
 
 // This file contains mappings for the various keys of the IRremote
 
-#define KEY_REPEAT      4294967295
+#define KEY_REPEAT      4294967295      // This is the code generated when the key is held down
 #define KEY_CH          16736925        // CH
 #define KEY_CHMINUS     16753245        // CH-
 #define KEY_CHPLUS      16769565        // CH+
@@ -72,7 +72,7 @@
 #define IR_PRESET2      KEY_PLAY
 #define IR_PRESET3      KEY_100PLUS
 #define IR_PRESET4      KEY_200PLUS
-#define IR_PRESET5      -1
+#define IR_PRESET5      -1                // each preset NOT used must have a unique -ve number
 #define IR_PRESET6      -2
 #define IR_PRESET7      -3
 #define IR_PRESET8      -4
