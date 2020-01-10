@@ -131,6 +131,18 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
   }
 }
 
+// destructor
+DriverBoard::~DriverBoard()
+{
+#if ( DRVBRD == PRO2EULN2003   || DRVBRD == PRO2ESP32ULN2003  \
+   || DRVBRD == PRO2EL298N     || DRVBRD == PRO2ESP32L298N    \
+   || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293MINI \
+   || DRVBRD == PRO2EL9110S    || DRVBRD == PRO2ESPL9110S)    \
+   || (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
+  delete mystepper;
+#endif
+}
+
 String DriverBoard::getboardname(void)
 {
   String retstr;

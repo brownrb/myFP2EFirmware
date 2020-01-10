@@ -475,14 +475,16 @@ void update_temp(void)
   if (tprobe1 == 1)
   {
     static unsigned long lasttempconversion = 0;
-    static byte requesttempflag = 0;              // start with request
+    static byte requesttempflag = 0;                      // start with request
     unsigned long tempnow = millis();
 
     // see if the temperature needs updating - done automatically every 1.5s
-    if (((tempnow - lasttempconversion) > TEMPREFRESHRATE) || (tempnow < lasttempconversion))
+
+    //if (((tempnow - lasttempconversion) > TEMPREFRESHRATE) || (tempnow < lasttempconversion))
+    if (TimeCheck(lasttempconversion, TEMPREFRESHRATE))   // see if the temperature needs updating
     {
       static float tempval;
-      static float starttemp;                     // start temperature to use when temperature compensation is enabled
+      static float starttemp;                             // start temperature to use when temperature compensation is enabled
 
       if ( tcchanged != mySetupData->get_tempcompenabled() )
       {
@@ -928,15 +930,18 @@ void update_oledtext_position(void)
 void update_oledtextdisplay(void)
 {
 #ifdef OLEDTEXT
-  static unsigned long currentMillis;
+  //static unsigned long currentMillis;
   static unsigned long olddisplaytimestampNotMoving = millis();
   static byte displaypage = 0;
 
-  currentMillis = millis();                       // see if the display needs updating
-  if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
+  //currentMillis = millis();                         // get snapshot of current time
+
+  // if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
+  if (TimeCheck(olddisplaytimestampNotMoving, (int)mySetupData->get_lcdpagetime() * 1000))   // see if the display needs updating
   {
-    olddisplaytimestampNotMoving = currentMillis; // update the timestamp
-    myoled->clear();                              // clrscr OLED
+    //olddisplaytimestampNotMoving = currentMillis; // update the timestamp
+    olddisplaytimestampNotMoving = millis();
+    myoled->clear();                                // clrscr OLED
     switch (displaypage)
     {
       case 0:   display_oledtext_page0();
@@ -1344,7 +1349,7 @@ void start_mdns_service(void)
 #ifdef MANAGEMENT
 
 #if defined(ESP8266)
-#include <ESP8266webserver.h>
+#include <ESP8266WebServer.h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
@@ -1391,7 +1396,7 @@ bool MANAGEMENT_handleFileRead(String path)
     path += "index.html";                               // If a folder is requested, send the index file
   }
   String contentType = MANAGEMENT_getContentType(path); // Get the MIME type
-  if (SPIFFS.exists(path))                              // If the file exists
+  if ( SPIFFS.exists(path) )                            // If the file exists
   {
     File file = SPIFFS.open(path, "r");                 // Open it
 #ifdef MANAGEMENTFORCEDOWNLOAD
@@ -1399,43 +1404,42 @@ bool MANAGEMENT_handleFileRead(String path)
     mserver.sendHeader("Content-Disposition", "attachment");
 #endif
     size_t sent = mserver.streamFile(file, contentType); // And send it to the client
+    DebugPrint(F("Bytes sent: "));
+    DebugPrintln(String(sent));
     file.close();                                       // Then close the file again
     return true;
   }
-  DebugPrintln("File Not Found");
-  return false;                                         // If the file doesn't exist, return false
+  else
+  {
+    DebugPrintln("File Not Found");
+    return false;                                         // If the file doesn't exist, return false
+  }
 }
 
 void MANAGEMENT_listSPIFFSfiles(void)
 {
+  if ( !SPIFFS.begin())
+  {
+    DebugPrintln("MANAGEMENT_listSPIFFSfiles: Unable to start SPIFFS");
+    return;
+  }
+  // example code taken from FSBrowser
   String path = "/";
   DebugPrintln("MANAGEMENT_listSPIFFSfiles: " + path);
 #if defined(ESP8266)
-  Dir dir = SPIFFS.openDir(path);
-  path = String();
-  String output = "[";
+  String output = "{[";
+  Dir dir = SPIFFS.openDir("/");
   while (dir.next())
   {
-    File entry = dir.openFile("r");
-    if (output != "[")
-    {
-      output += ',';
-    }
-    bool isDir = false;
-    output += "{\"type\":\"";
-    output += (isDir) ? "dir" : "file";
-    output += "\",\"name\":\"";
-    output += String(entry.name()).substring(1);
-    output += "\"}";
-    entry.close();
+    output += "{" + dir.fileName() + "}, ";
   }
-  output += "]";
+  output += "]}";
   mserver.send(200, "text/json", output);
 #else // ESP32
   File root = SPIFFS.open(path);
   path = String();
 
-  String output = "[";
+  String output = "{[";
   if (root.isDirectory())
   {
     File file = root.openNextFile();
@@ -1453,7 +1457,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
       file = root.openNextFile();
     }
   }
-  output += "]";
+  output += "]}";
   mserver.send(200, "text/json", output);
 #endif
 }
@@ -1851,6 +1855,7 @@ void start_management(void)
   if (!SPIFFS.begin())
   {
     DebugPrintln(F("start_management : An Error has occurred starting SPIFFS"));
+    DebugPrintln(F("Start management server: STOPPED"));
     managementserverstate = STOPPED;
     return;
   }
@@ -1866,6 +1871,7 @@ void start_management(void)
   mserver.on("/list", MANAGEMENT_listSPIFFSfiles);
   mserver.begin();
   managementserverstate = RUNNING;
+  DebugPrintln(F("Start management server: STARTED"));
 }
 
 void stop_management(void)
@@ -1882,7 +1888,7 @@ void stop_management(void)
 #ifdef WEBSERVER
 
 #if defined(ESP8266)
-#include <ESP8266webserver->h>
+#include <ESP8266WebServer.h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
@@ -2846,6 +2852,7 @@ void start_webserver(void)
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
+  DebugPrintln(F("Start web server: RUNNING"));
   delay(10);                      // small pause so background tasks can run
 }
 
@@ -2854,6 +2861,7 @@ void stop_webserver(void)
   webserver->close();
   delete webserver;            // free the webserver pointer and associated memory/code
   webserverstate = STOPPED;
+  DebugPrintln(F("Stop web server: STOPPED"));
 }
 // WEBSERVER END ------------------------------------------------------------------------------------
 #endif // #ifdef WEBSERVER
@@ -2863,7 +2871,7 @@ void stop_webserver(void)
 // ----------------------------------------------------------------------------------------------
 #ifdef ASCOMREMOTE
 #if defined(ESP8266)
-#include <ESP8266webserver.h>
+#include <ESP8266WebServer.h>
 #else
 #include <webserver.h>
 #endif // if defined(esp8266)
@@ -3140,9 +3148,9 @@ void ASCOM_getURLParameters()
     }
     if ( str.equals("position") )
     {
-      String str = ascomserver->arg(i);
+      String str1 = ascomserver->arg(i);
       DebugPrint("ASCOMpos RAW:");
-      DebugPrintln(str);
+      DebugPrintln(str1);
       ASCOMpos = ascomserver->arg(i).toInt();      // this returns a long data type
       DebugPrint("ASCOMpos:");
       DebugPrintln(ASCOMpos);
@@ -3935,7 +3943,7 @@ void start_ascomremoteserver(void)
   ASCOM_Create_Setup_Focuser_HomePage();        // create home page for ascom management setup api
 
 #if defined(ESP8266)
-  ascomserver = new ESP8266WebServer(mySetupData->get_wascomalpacaport());
+  ascomserver = new ESP8266WebServer(mySetupData->get_ascomalpacaport());
 #else
   ascomserver = new WebServer(mySetupData->get_ascomalpacaport());
 #endif // if defined(esp8266) 
@@ -3973,14 +3981,16 @@ void start_ascomremoteserver(void)
   ascomserver->begin();
   ascomserverstate = RUNNING;
   delay(10);                     // small pause so background tasks can run
+  DebugPrintln(F("start ascom server: RUNNING"));
 }
 
 void stop_ascomremoteserver(void)
 {
-  DebugPrintln("stop ascom server");
+  DebugPrintln(F("stop ascom server"));
   ascomserver->close();
   delete ascomserver;            // free the ascomserver pointer and associated memory/code
   ascomserverstate = STOPPED;
+  DebugPrintln(F("stop ascom server: STOPPED"));
   delay(10);                     // small pause so background tasks can run
 }
 #endif // ifdef ASCOMREMOTE
@@ -4192,7 +4202,7 @@ void setup()
   DebugPrintln(mySetupData->get_webserverport());
   DebugPrint(F("ascomalpacaserverport= "));
   DebugPrintln(mySetupData->get_ascomalpacaport());
-  DebugPrint(F("webserver page refresh ratet= "));
+  DebugPrint(F("webserver page refresh rate= "));
   DebugPrintln(mySetupData->get_webpagerefreshrate());
 
 #ifdef TEMPERATUREPROBE                         // start temp probe
@@ -4222,6 +4232,8 @@ void setup()
   /* Log on to LAN */
   WiFi.mode(WIFI_STA);
   byte status = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
+  DebugPrint(F("Wifi.begin status code: "));
+  DebufPrintln(String(status));
   delay(1000);                                  // wait 500ms
 
   int attempts = 0;                             // holds the number of attempts/tries
@@ -4338,7 +4350,7 @@ void setup()
 
 #ifdef TEMPERATUREPROBE
   // restore temperature probe resolution setting
-  temp_setresolution(mySetupData->get_tempprecision());
+  // temp_setresolution(mySetupData->get_tempprecision());    // redundant as earlier call to init_temp() sets the precision
   read_temp(1);
 #endif
 

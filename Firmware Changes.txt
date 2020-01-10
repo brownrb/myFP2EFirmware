@@ -1,3 +1,14 @@
+// 116
+// Add ~finalizer for myBoards class
+// Fix logic error in Management server list files for ESP8266
+// Add DebugPrint when starting WiFi.begin()
+// Add DebugPrint to print error message of SPIFFS.begin() fails
+// Change temperature/oled update checks to use TimeCheck()
+// Release memory for servers (webserver and ascomserver) if they are stopped
+// Fix ESP8266 errors in defining WebServers and include files
+// Shorten some names used in SPIFFS file for data_per.jsn
+// Fix error in starting ascomremoteserver for ESP8266
+
 // 115
 // Add duckdns mdns otaupdate etc to management page msindex.html
 // Fix duckdns incorrect define and checks in focuserconfig.h

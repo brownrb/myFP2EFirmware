@@ -21,7 +21,7 @@
 
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
-//#define DRVBRD PRO2EULN2003           // DONE
+#define DRVBRD PRO2EULN2003           // DONE
 //#define DRVBRD PRO2EDRV8825           // DONE
 //#define DRVBRD PRO2EDRV8825BIG
 //#define DRVBRD PRO2EL293DNEMA         // DONE, FULL STEPPING ONLY
@@ -30,7 +30,7 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -235,7 +235,8 @@
 class DriverBoard
 {
   public:
-    DriverBoard(byte);
+    DriverBoard(byte);          // constructor
+    ~DriverBoard(void);         // finalizer
 
     // getter
     byte getmotorspeed(void);

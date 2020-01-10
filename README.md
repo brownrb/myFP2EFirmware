@@ -30,8 +30,10 @@ https://dl.espressif.com/dl/package_esp32_index.json
 Once specified, open the board manager, scroll down to ESP32 and install the latest version
 Then you can specify the target board as **ESP32 Dev** with Flash Size set t 4M (1MB SPIFFS) and upload speed of 115200.
 
-###Note1: Additional JSON files are separated in board manager by using a comma ,
-###Note2: When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to C:\Program Files (x86)\Arduino\libraries.old\WiFi
+###Note1: 
+Additional JSON files are separated in board manager by using a comma ,
+###Note2: 
+When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to C:\Program Files (x86)\Arduino\libraries.old\WiFi
 
 # Additional JSON library Needed
 make sure you install the library ArduinoJson-6.x.xip into the Arduino IDE else firmware will not compile.
