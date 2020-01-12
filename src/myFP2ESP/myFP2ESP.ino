@@ -1468,33 +1468,33 @@ void MANAGEMENT_buildnotfound(void)
   if (!SPIFFS.begin())
   {
     DebugPrintln(F("management: Error occurred when mounting SPIFFS"));
-    DebugPrintln("management: build_default_notfoundpage");
-    MNotFoundPage = "<html><head><title>Management Server: Not found></title></head><body><p>The requested URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+    DebugPrintln(F("management: build_default_notfoundpage"));
+    MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
   }
   else
   {
-    DebugPrintln("management: SPIFFS mounted");
+    DebugPrintln(F("management: SPIFFS mounted"));
     if ( SPIFFS.exists("/msnotfound.html"))
     {
-      DebugPrintln("management: msnotfound.html found in spiffs");
+      DebugPrintln(F("management: msnotfound.html found in spiffs"));
       // open file for read
       File file = SPIFFS.open("/msnotfound.html", "r");
       // read contents into string
-      DebugPrintln("management: read page into string");
+      DebugPrintln(F("management: read page into string"));
       MNotFoundPage = file.readString();
 
-      DebugPrintln("management: processing page start");
+      DebugPrintln(F("management: processing page start"));
       // process for dynamic data
       MNotFoundPage.replace("%MS_IPSTR%", ipStr);
       MNotFoundPage.replace("%MSSERVERPORT%", String(MSSERVERPORT));
       MNotFoundPage.replace("%MSPROGRAMVERSION%", String(programVersion));
       MNotFoundPage.replace("%MSPROGRAMNAME%", String(programName));
-      DebugPrintln("management: processing page done");
+      DebugPrintln(F("management: processing page done"));
     }
     else
     {
-      DebugPrintln("management: build_default_notfoundpage");
-      MNotFoundPage = "<html><head><title>Management Server: Not found></title></head><body><p>The requested URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+      DebugPrintln(F("management: build_default_notfoundpage"));
+      MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
     }
   }
 }
@@ -1513,22 +1513,22 @@ void MANAGEMENT_buildhome(void)
   {
     DebugPrintln(F("management: Error occurred when mounting SPIFFS"));
     // could not read index file from SPIFFS
-    DebugPrintln("management: build_defaulthomepage");
-    MHomePage = "<html><head><title>Management Server:></title></head><body><p>The index file for the Management server was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    DebugPrintln(F("management: build_defaulthomepage"));
+    MHomePage = "<html><head><title>Management Server></title></head><body><p>Management server index file not found</p><p>Did you forget to upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"> </form></p></body></html>";
   }
   else
   {
-    DebugPrintln("management: SPIFFS mounted");
+    DebugPrintln(F("management: SPIFFS mounted"));
     if ( SPIFFS.exists("/msindex.html"))
     {
-      DebugPrintln("management: msindex.html found in spiffs");
+      DebugPrintln(F("management: msindex.html found in spiffs"));
       // open file for read
       File file = SPIFFS.open("/msindex.html", "r");
       // read contents into string
-      DebugPrintln("management: read page into string");
+      DebugPrintln(F("management: read page into string"));
       MHomePage = file.readString();
 
-      DebugPrintln("management: processing page start");
+      DebugPrintln(F("management: processing page start"));
       // process for dynamic data
       MHomePage.replace("%MS_IPSTR%", ipStr);
       MHomePage.replace("%MSSERVERPORT%", String(MSSERVERPORT));
@@ -1653,13 +1653,13 @@ void MANAGEMENT_buildhome(void)
       // display heap memory for tracking memory loss?
       // only esp32?
       MHomePage.replace("%HEAPMEMORY%", String(ESP.getFreeHeap()));
-      DebugPrintln("management: processing page done");
+      DebugPrintln(F("management: processing page done"));
     }
     else
     {
       // could not read index file from SPIFFS
-      DebugPrintln("management: build_defaulthomepage");
-      MHomePage = "<html><head><title>Management Server: > < / title > < / head > <body><p>The index file for the Management server was not found. < / p > <p>Did you forget to upload the data files to SPIFFS ? < / p > < / body > < / html > ";
+      DebugPrintln(F("management: build_defaulthomepage"));
+      MHomePage = "<html><head><title>Management Server></title></head><body><p>The index file for the Management server was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"></form></p></body></html>";
     }
   }
 }
@@ -1668,6 +1668,24 @@ void MANAGEMENT_handleroot(void)
 {
   // code here to handle a put request
   String msg;
+
+  msg = mserver.arg("reboot");
+  if ( msg != "" )
+  {
+    DebugPrintln(F("MANAGEMENT_handleroot: reboot controller: "));
+#ifdef WEBSERVER
+    DebugPrintln(F("Stop webserver"));
+    stop_webserver();
+#endif
+#ifdef ASCOMREMOTE
+    DebugPrintln(F("Stop webserver"));
+    stop_ascomremoteserver();
+#endif
+    String WaitPage = "<html><meta http-equiv=refresh content=\"10\"><head><title>Management Server></title></head><body><p>Please wait. Controller rebooting</p></body></html>";
+    mserver.send(NORMALWEBPAGE, TEXTPAGETYPE, WaitPage );
+    software_Reboot(REBOOTDELAY);
+  }
+
   msg = mserver.arg("startws");
   if ( msg != "" )
   {

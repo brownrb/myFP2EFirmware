@@ -28,6 +28,7 @@
 #define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
 #define RUNNING               true
 #define STOPPED               false
+#define REBOOTDELAY           2000
 #define MotorReleaseDelay     120*1000      // motor release power after 120s
 
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find correct address

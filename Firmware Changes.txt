@@ -8,6 +8,7 @@
 // Fix ESP8266 errors in defining WebServers and include files
 // Shorten some names used in SPIFFS file for data_per.jsn
 // Fix error in starting ascomremoteserver for ESP8266
+// Add reboot controller button in Management Console
 
 // 115
 // Add duckdns mdns otaupdate etc to management page msindex.html
