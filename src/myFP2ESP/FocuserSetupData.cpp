@@ -80,7 +80,7 @@ byte SetupData::LoadConfiguration()
       this->DelayAfterMove        = doc_per["DelayAfterMove"];            // delay after movement is finished (maxval=256)
       this->backlashsteps_in      = doc_per["backlashsteps_in"];          // number of backlash steps to apply for IN moves
       this->backlashsteps_out     = doc_per["backlashsteps_out"];         // number of backlash steps to apply for OUT moves
-      this->backlash_in_enabled   = doc_per["byte backlash_in_enabled"];
+      this->backlash_in_enabled   = doc_per["backlash_in_enabled"];
       this->backlash_out_enabled  = doc_per["backlash_out_enabled"];
       this->tempcoefficient       = doc_per["tempcoefficient"];           // steps per degree temperature coefficient value (maxval=256)
       this->tempprecision         = doc_per["tempprecision"];             // 9 -12
@@ -94,20 +94,20 @@ byte SetupData::LoadConfiguration()
       this->tempcompenabled       = doc_per["tempcompenabled"];           // indicates if temperature compensation is enabled
       this->tcdirection           = doc_per["tcdirection"];
       this->motorSpeed            = doc_per["motorSpeed"];
-      this->displayenabled        =  doc_per["displayenabled"];
-      this->focuserpreset0        = doc_per["focuserpreset0"];
-      this->focuserpreset1        = doc_per["focuserpreset1"];
-      this->focuserpreset2        = doc_per["focuserpreset2"];
-      this->focuserpreset3        = doc_per["focuserpreset3"];
-      this->focuserpreset4        = doc_per["focuserpreset4"];
-      this->focuserpreset5        = doc_per["focuserpreset5"];
-      this->focuserpreset6        = doc_per["focuserpreset6"];
-      this->focuserpreset7        = doc_per["focuserpreset7"];
-      this->focuserpreset8        = doc_per["focuserpreset8"];
-      this->focuserpreset9        = doc_per["focuserpreset9"];
-      this->webserverport         = doc_per["webserverport"];
-      this->ascomalpacaport       = doc_per["ascomalpcaport"];
-      this->webpagerefreshrate    = doc_per["webpagerefreshrate"];
+      this->displayenabled        = doc_per["displayenabled"];
+      this->focuserpreset0        = doc_per["preset0"];
+      this->focuserpreset1        = doc_per["preset1"];
+      this->focuserpreset2        = doc_per["preset2"];
+      this->focuserpreset3        = doc_per["preset3"];
+      this->focuserpreset4        = doc_per["preset4"];
+      this->focuserpreset5        = doc_per["preset5"];
+      this->focuserpreset6        = doc_per["preset6"];
+      this->focuserpreset7        = doc_per["preset7"];
+      this->focuserpreset8        = doc_per["preset8"];
+      this->focuserpreset9        = doc_per["preset9"];
+      this->webserverport         = doc_per["wsport"];
+      this->ascomalpacaport       = doc_per["ascomport"];
+      this->webpagerefreshrate    = doc_per["wprefreshrate"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -193,11 +193,11 @@ void SetupData::LoadDefaultPersistantData()
   this->focuserpreset7        = 0;
   this->focuserpreset8        = 0;
   this->focuserpreset9        = 0;
-  this->webserverport         = WEBSERVERPORT;    // 80
-  this->ascomalpacaport       = ALPACAPORT;       // 4040
-  this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
+  this->webserverport         = WEBSERVERPORT;        // 80
+  this->ascomalpacaport       = ALPACAPORT;           // 4040
+  this->webpagerefreshrate    = WS_REFRESHRATE;       // 30s
 
-  this->SavePersitantConfiguration();             // write default values to SPIFFS
+  this->SavePersitantConfiguration();                 // write default values to SPIFFS
 }
 
 void SetupData::LoadDefaultVariableData()
@@ -292,19 +292,19 @@ byte SetupData::SavePersitantConfiguration()
   doc["tcdirection"]        = this->tcdirection;
   doc["motorSpeed"]         = this->motorSpeed;
   doc["displayenabled"]     = this->displayenabled;
-  doc["focuserpreset0"]     = this->focuserpreset0;
-  doc["focuserpreset1"]     = this->focuserpreset1;
-  doc["focuserpreset2"]     = this->focuserpreset2;
-  doc["focuserpreset3"]     = this->focuserpreset3;
-  doc["focuserpreset4"]     = this->focuserpreset4;
-  doc["focuserpreset5"]     = this->focuserpreset5;
-  doc["focuserpreset6"]     = this->focuserpreset6;
-  doc["focuserpreset7"]     = this->focuserpreset7;
-  doc["focuserpreset8"]     = this->focuserpreset8;
-  doc["focuserpreset9"]     = this->focuserpreset9;
-  doc["webserverport"]      = this->webserverport;
-  doc["ascomalpacaport"]    = this->ascomalpacaport;
-  doc["webpagerefreshrate"] = this->webpagerefreshrate;
+  doc["preset0"]            = this->focuserpreset0;
+  doc["preset1"]            = this->focuserpreset1;
+  doc["preset2"]            = this->focuserpreset2;
+  doc["preset3"]            = this->focuserpreset3;
+  doc["preset4"]            = this->focuserpreset4;
+  doc["preset5"]            = this->focuserpreset5;
+  doc["preset6"]            = this->focuserpreset6;
+  doc["preset7"]            = this->focuserpreset7;
+  doc["preset8"]            = this->focuserpreset8;
+  doc["preset9"]            = this->focuserpreset9;
+  doc["wsport"]             = this->webserverport;
+  doc["ascomport"]          = this->ascomalpacaport;
+  doc["wprefreshrate"]      = this->webpagerefreshrate;
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)

@@ -106,8 +106,9 @@ class SetupData
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
-    unsigned long fposition_org;    // last focuser position
-    byte focuserdirection_org;      // keeps track of last focuser move direction
+    // these are not used in code
+    //unsigned long fposition_org;    // last focuser position
+    //byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
     //dataset_persistant
@@ -141,7 +142,7 @@ class SetupData
     unsigned long focuserpreset7;
     unsigned long focuserpreset8;
     unsigned long focuserpreset9;
-    unsigned long webserverport;
-    unsigned long ascomalpacaport;
-    int webpagerefreshrate;
+    unsigned long webserverport;    // port used by web server
+    unsigned long ascomalpacaport;  // port used by ascom remote server
+    int webpagerefreshrate;         // how long to wait before web page is refreshed in seconds
 };

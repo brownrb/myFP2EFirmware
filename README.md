@@ -30,8 +30,10 @@ https://dl.espressif.com/dl/package_esp32_index.json
 Once specified, open the board manager, scroll down to ESP32 and install the latest version
 Then you can specify the target board as **ESP32 Dev** with Flash Size set t 4M (1MB SPIFFS) and upload speed of 115200.
 
-###Note1: Additional JSON files are separated in board manager by using a comma ,
-###Note2: When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to C:\Program Files (x86)\Arduino\libraries.old\WiFi
+### Note1:  
+Additional JSON files are separated in board manager by using a comma ,  
+### Note2:  
+When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to C:\Program Files (x86)\Arduino\libraries.old\WiFi  
 
 # Additional JSON library Needed
 make sure you install the library ArduinoJson-6.x.xip into the Arduino IDE else firmware will not compile.
@@ -98,19 +100,19 @@ At present these must be in the same folder as the .ino file, but will later mig
 # myBoards.cpp and .h files
 This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There is one constructor for this class which accepts the boardtype, the user should never have to change the main code within the firmware file which sets up the driver boards. All pins mappings for the controller chip, hardware options and the driver board are specified here.
 
-#generalDefinitions.h
+# generalDefinitions.h
 This file contains general definitions for all controllers, such as motor speed, step modes, focuser limits etc.
 
-#ESPQueue.h
+# ESPQueue.h
 This file manages the Bluetooth serial data for ESP32 chips. It is a modified version of the Queue.h file from Steven de Salas. DO NOT MODIFY THIS FILE. It has been modified to work with ESP8266 and ESP32 chips.
 
-#HalfStepperESP32 Library
+# HalfStepperESP32 Library
 This library manages the stepping modes for the ULN2003, L298N, L293DMINI and L9110S driver boards. It is a modified version of the HalfStepper library from Tom Biuso. DO NOT MODIFY THESE FILES. It has been modified to work with ESP8266 and ESP32 chips.
 
-#myOLED Libary
+# myOLED Libary
 This is a special cut down version of the SSD1306AsciiWire library by Bill Greiman. The library has been reduced in size and a number of additional features added. DO NOT MODIFY THESE FILES.
 
-#COMPILE ENVIRONMENT : Tested with 
+# COMPILE ENVIRONMENT : Tested with 
 
 * Arduino IDE 1.8.9
 * ESP8266 Driver Board 2.4.0
@@ -126,16 +128,16 @@ Libraries
 * OneWire 2.3.3
 * EasyDDNS 1.5.2
 
-#Notes:
+# Notes:
 You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
 remove the chip from PCB before re-programming new firmware. Remember to remove WIFI library
 as instructed in PDF when programming ESP32.
 
-#ESP8266 ISSUES
+# ESP8266 ISSUES
 One chip I have boots fine.
 Another chip will not boot properly from 12V only. I need to plug in USB cable, press reset 
 then turn on 12V for it to boot correctly. ESP8266 Arduino lib 2.2.0 does not work with this 
 chip either.
 
-#TODO
+# TODO
 Look at what need to be when chip starts up, do we need a delay reset circuit?

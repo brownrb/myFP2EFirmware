@@ -44,7 +44,7 @@ extern void temp_setresolution(byte);
 #if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 void SendPaket(String str)
 {
-  DebugPrint(sendstr);
+  DebugPrint(SENDSTR);
   DebugPrintln(str);
 #if defined(ACCESSPOINT) || defined(STATIONMODE)  // for Accesspoint or Station mode
   myclient.print(str);
@@ -76,12 +76,12 @@ void ESP_Communication( byte mode )
       break;
 #if defined(BLUETOOTHMODE)
     case BTDATA:
-      receiveString = STARTSTR + queue.pop();
+      receiveString = STARTCMDSTR + queue.pop();
       break;
 #endif
 #if defined(LOCALSERIAL)
     case SERIALDATA:                                    // for Serial
-      receiveString = STARTSTR + queue.pop();
+      receiveString = STARTCMDSTR + queue.pop();
       break;
 #endif
   }
@@ -518,7 +518,7 @@ void processserial()
     char inChar = Serial.read();
     switch ( inChar )
     {
-      case STARTSTR :     // start
+      case STARTCMDSTR :     // start
         serialline = "";
         break;
       case '\r' :
@@ -555,7 +555,7 @@ void processbt()
     char inChar = SerialBT.read();
     switch ( inChar )
     {
-      case STARTSTR :     // start
+      case STARTCMDSTR :     // start
         btline = "";
         break;
       case '\r' :

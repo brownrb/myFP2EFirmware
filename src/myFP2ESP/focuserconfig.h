@@ -50,7 +50,7 @@
 //#define INOUTLEDS 1
 
 // To enable the Infrared remote controller [ESP32 only], uncomment the next line
-#define INFRAREDREMOTE
+//#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 //#define SHOWSTARTSCRN 1
@@ -89,8 +89,8 @@
 //#define MDNSSERVER 8
 
 // Management Server Control Interface [Port 6060] - enabled by default - DO NOT CHANGE
-//#define MANAGEMENT 9
-//#define MANAGEMENTFORCEDOWNLOAD 1
+#define MANAGEMENT 9
+#define MANAGEMENTFORCEDOWNLOAD 1
 
 // To make the firmware return the correct firmware value when talking to a
 // myFocuserpro2 INDI driver [use only for INDI support], uncomment the following line
