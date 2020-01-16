@@ -265,7 +265,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ----------------------------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-//#define DEBUG     1
+#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

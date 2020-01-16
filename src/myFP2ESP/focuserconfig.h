@@ -22,10 +22,10 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
+//#define TEMPERATUREPROBE 1
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
-#define OLEDTEXT 1
+//#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
 //#define OLEDGRAPHICS 1
@@ -78,11 +78,11 @@
 //#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support [Port 4040], uncomment the next line
-#define ASCOMREMOTE 6
+//#define ASCOMREMOTE 6
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 
-#define WEBSERVER 7
+//#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]

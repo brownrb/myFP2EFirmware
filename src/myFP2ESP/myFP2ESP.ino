@@ -126,8 +126,8 @@ char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 #endif
 #ifdef STATIONMODE                          // the controller connects to your network
-char mySSID[64] = "myfp2eap";
-char myPASSWORD[64] = "myfp2eap";
+char mySSID[64] = "myfp2eap";               // you need to set this to your WiFi network SSID
+char myPASSWORD[64] = "myfp2eap";           // and you need to set the correct password 
 #endif
 
 // ----------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ String BLUETOOTHNAME = "MYFP3ESP32BT";      // default name for Bluetooth contro
 // 10: mDNS NAME: Name must be alphabetic chars only, lowercase
 // ----------------------------------------------------------------------------------------------
 #ifdef MDNSSERVER
-char mDNSNAME[] = "myfp2eap";
+char mDNSNAME[] = "myfp2eap";               // mDNS name will be myfp2eap.local
 #endif // #ifdef MDNSSERVER
 
 // ----------------------------------------------------------------------------------------------
