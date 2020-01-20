@@ -77,37 +77,38 @@ byte SetupData::LoadConfiguration()
     {
       this->maxstep               = doc_per["maxstep"];                   // max steps
       this->stepsize              = doc_per["stepsize"];                  // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
-      this->DelayAfterMove        = doc_per["DelayAfterMove"];            // delay after movement is finished (maxval=256)
+      this->DelayAfterMove        = doc_per["delayaftermove"];            // delay after movement is finished (maxval=256)
       this->backlashsteps_in      = doc_per["backlashsteps_in"];          // number of backlash steps to apply for IN moves
       this->backlashsteps_out     = doc_per["backlashsteps_out"];         // number of backlash steps to apply for OUT moves
-      this->backlash_in_enabled   = doc_per["byte backlash_in_enabled"];
+      this->backlash_in_enabled   = doc_per["backlash_in_enabled"];
       this->backlash_out_enabled  = doc_per["backlash_out_enabled"];
       this->tempcoefficient       = doc_per["tempcoefficient"];           // steps per degree temperature coefficient value (maxval=256)
       this->tempprecision         = doc_per["tempprecision"];             // 9 -12
       this->stepmode              = doc_per["stepmode"];
-      this->coilpower             = doc_per["coilpower"];
-      this->reversedirection      = doc_per["reversedirection"];
-      this->stepsizeenabled       = doc_per["stepsizeenabled"];           // if 1, controller returns step size
+      this->coilpower             = doc_per["coilpwr"];
+      this->reversedirection      = doc_per["rdirection"];
+      this->stepsizeenabled       = doc_per["stepsizestate"];             // if 1, controller returns step size
       this->tempmode              = doc_per["tempmode"];                  // temperature display mode, Celcius=1, Fahrenheit=0
       this->lcdupdateonmove       = doc_per["lcdupdateonmove"];           // update position on lcd when moving
       this->lcdpagetime           = doc_per["lcdpagetime"];
-      this->tempcompenabled       = doc_per["tempcompenabled"];           // indicates if temperature compensation is enabled
-      this->tcdirection           = doc_per["tcdirection"];
-      this->motorSpeed            = doc_per["motorSpeed"];
-      this->displayenabled        =  doc_per["displayenabled"];
-      this->focuserpreset0        = doc_per["focuserpreset0"];
-      this->focuserpreset1        = doc_per["focuserpreset1"];
-      this->focuserpreset2        = doc_per["focuserpreset2"];
-      this->focuserpreset3        = doc_per["focuserpreset3"];
-      this->focuserpreset4        = doc_per["focuserpreset4"];
-      this->focuserpreset5        = doc_per["focuserpreset5"];
-      this->focuserpreset6        = doc_per["focuserpreset6"];
-      this->focuserpreset7        = doc_per["focuserpreset7"];
-      this->focuserpreset8        = doc_per["focuserpreset8"];
-      this->focuserpreset9        = doc_per["focuserpreset9"];
-      this->webserverport         = doc_per["webserverport"];
-      this->ascomalpacaport       = doc_per["ascomalpcaport"];
-      this->webpagerefreshrate    = doc_per["webpagerefreshrate"];
+      this->tempcompenabled       = doc_per["tempcompstate"];             // indicates if temperature compensation is enabled
+      this->tcdirection           = doc_per["tcdir"];
+      this->motorSpeed            = doc_per["motorspeed"];
+      this->displayenabled        = doc_per["displaystate"];
+      this->preset0               = doc_per["preset0"];
+      this->preset1               = doc_per["preset1"];
+      this->preset2               = doc_per["preset2"];
+      this->preset3               = doc_per["preset3"];
+      this->preset4               = doc_per["preset4"];
+      this->preset5               = doc_per["preset5"];
+      this->preset6               = doc_per["preset6"];
+      this->preset7               = doc_per["preset7"];
+      this->preset8               = doc_per["preset8"];
+      this->preset9               = doc_per["preset9"];
+      this->webserverport         = doc_per["wsport"];
+      this->ascomalpacaport       = doc_per["ascomport"];
+      this->webpagerefreshrate    = doc_per["wprefreshrate"];
+      this->mdnsport              = doc_per["mdnsport"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -180,23 +181,24 @@ void SetupData::LoadDefaultPersistantData()
   this->tempmode              = DEFAULTCELSIUS;       // default is celsius
   this->tempcompenabled       = DEFAULTOFF;           // temperature compensation disabled
   this->lcdupdateonmove       = DEFAULTON;
-  this->lcdpagetime           = LCDPAGETIMEMIN;       // 2, 3, -- 10
+  this->lcdpagetime           = LCDPAGETIMEMIN;       // 2, 3 -- 10
   this->motorSpeed            = FAST;
   this->displayenabled        = DEFAULTON;
-  this->focuserpreset0        = 0;
-  this->focuserpreset1        = 0;
-  this->focuserpreset2        = 0;
-  this->focuserpreset3        = 0;
-  this->focuserpreset4        = 0;
-  this->focuserpreset5        = 0;
-  this->focuserpreset6        = 0;
-  this->focuserpreset7        = 0;
-  this->focuserpreset8        = 0;
-  this->focuserpreset9        = 0;
+  this->preset0               = 0;
+  this->preset1               = 0;
+  this->preset2               = 0;
+  this->preset3               = 0;
+  this->preset4               = 0;
+  this->preset5               = 0;
+  this->preset6               = 0;
+  this->preset7               = 0;
+  this->preset8               = 0;
+  this->preset9               = 0;
   this->webserverport         = WEBSERVERPORT;    // 80
   this->ascomalpacaport       = ALPACAPORT;       // 4040
   this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
-
+  this->mdnsport              = MDNSSERVERPORT;   // 7070
+  
   this->SavePersitantConfiguration();             // write default values to SPIFFS
 }
 
@@ -262,7 +264,8 @@ byte SetupData::SavePersitantConfiguration()
   File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
   if (!file)
   {
-    DebugPrintln(F("Failed to create file for persitant data"));
+    TRACE();
+    DebugPrintln(F(CREATEFILEFAILSTR));
     return false;
   }
 
@@ -274,7 +277,7 @@ byte SetupData::SavePersitantConfiguration()
   // Set the values in the document
   doc["maxstep"]            = this->maxstep;                    // max steps
   doc["stepsize"]           = this->stepsize;                   // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
-  doc["DelayAfterMove"]     = this->DelayAfterMove;             // delay after movement is finished (maxval=256)
+  doc["delayaftermove"]     = this->DelayAfterMove;             // delay after movement is finished (maxval=256)
   doc["backlashsteps_in"]   = this->backlashsteps_in;           // number of backlash steps to apply for IN moves
   doc["backlashsteps_out"]  = this->backlashsteps_out;          // number of backlash steps to apply for OUT moves
   doc["backlash_in_enabled"] = this->backlash_in_enabled;
@@ -282,39 +285,42 @@ byte SetupData::SavePersitantConfiguration()
   doc["tempcoefficient"]    = this->tempcoefficient;            // steps per degree temperature coefficient value (maxval=256)
   doc["tempprecision"]      = this->tempprecision;
   doc["stepmode"]           = this->stepmode;
-  doc["coilpower"]          = this->coilpower;
-  doc["reversedirection"]   = this->reversedirection;
-  doc["stepsizeenabled"]    = this->stepsizeenabled;            // if 1, controller returns step size
+  doc["coilpwr"]            = this->coilpower;
+  doc["rdirection"]         = this->reversedirection;
+  doc["stepsizestate"]      = this->stepsizeenabled;            // if 1, controller returns step size
   doc["tempmode"]           = this->tempmode;                   // temperature display mode, Celcius=1, Fahrenheit=0
   doc["lcdupdateonmove"]    = this->lcdupdateonmove;            // update position on lcd when moving
   doc["lcdpagetime"]        = this->lcdpagetime;                // *100 to give interval between lcd pages display time
-  doc["tempcompenabled"]    = this->tempcompenabled;            // indicates if temperature compensation is enabled
-  doc["tcdirection"]        = this->tcdirection;
-  doc["motorSpeed"]         = this->motorSpeed;
-  doc["displayenabled"]     = this->displayenabled;
-  doc["focuserpreset0"]     = this->focuserpreset0;
-  doc["focuserpreset1"]     = this->focuserpreset1;
-  doc["focuserpreset2"]     = this->focuserpreset2;
-  doc["focuserpreset3"]     = this->focuserpreset3;
-  doc["focuserpreset4"]     = this->focuserpreset4;
-  doc["focuserpreset5"]     = this->focuserpreset5;
-  doc["focuserpreset6"]     = this->focuserpreset6;
-  doc["focuserpreset7"]     = this->focuserpreset7;
-  doc["focuserpreset8"]     = this->focuserpreset8;
-  doc["focuserpreset9"]     = this->focuserpreset9;
-  doc["webserverport"]      = this->webserverport;
-  doc["ascomalpacaport"]    = this->ascomalpacaport;
-  doc["webpagerefreshrate"] = this->webpagerefreshrate;
+  doc["tempcompstate"]      = this->tempcompenabled;            // indicates if temperature compensation is enabled
+  doc["tcdir"]              = this->tcdirection;
+  doc["motorspeed"]         = this->motorSpeed;
+  doc["displaystate"]       = this->displayenabled;
+  doc["preset0"]            = this->preset0;
+  doc["preset1"]            = this->preset1;
+  doc["preset2"]            = this->preset2;
+  doc["preset3"]            = this->preset3;
+  doc["preset4"]            = this->preset4;
+  doc["preset5"]            = this->preset5;
+  doc["preset6"]            = this->preset6;
+  doc["preset7"]            = this->preset7;
+  doc["preset8"]            = this->preset8;
+  doc["preset9"]            = this->preset9;
+  doc["wsport"]             = this->webserverport;
+  doc["ascomport"]          = this->ascomalpacaport;
+  doc["mdnsport"]           = this->mdnsport;
+  doc["wprefreshrate"]      = this->webpagerefreshrate;
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
   {
-    DebugPrintln("Failed to write to file");
+    TRACE();
+    DebugPrintln(F(WRITEFILEFAILSTR));
     file.close();     // Close the file
     return false;
   }
   else
   {
+    DebugPrintln(F(WRITEFILESUCCESSSTR));
     file.close();     // Close the file
     return true;
   }
@@ -329,7 +335,8 @@ byte SetupData::SaveVariableConfiguration()
   File file = SPIFFS.open(this->filename_variable, "w");
   if (!file)
   {
-    DebugPrintln(F("Failed to create file for variable data"));
+    TRACE();
+    DebugPrintln(F(CREATEFILEFAILSTR));
     return false;
   }
 
@@ -345,12 +352,14 @@ byte SetupData::SaveVariableConfiguration()
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
   {
-    DebugPrintln("Failed to write to file");
+    TRACE();
+    DebugPrintln(F(WRITEFILEFAILSTR));
     file.close();     // Close the file
     return false;
   }
   else
   {
+    DebugPrintln(F(WRITEFILESUCCESSSTR));
     file.close();     // Close the file
     return true;
   }
@@ -474,28 +483,28 @@ unsigned long SetupData::get_focuserpreset(byte idx)
   idx = ( idx > 9 ) ? 9 : idx;
   switch ( idx )
   {
-    case 0: return this->focuserpreset0;
+    case 0: return this->preset0;
       break;
-    case 1: return this->focuserpreset1;
+    case 1: return this->preset1;
       break;
-    case 2: return this->focuserpreset2;
+    case 2: return this->preset2;
       break;
-    case 3: return this->focuserpreset3;
+    case 3: return this->preset3;
       break;
-    case 4: return this->focuserpreset4;
+    case 4: return this->preset4;
       break;
-    case 5: return this->focuserpreset5;
+    case 5: return this->preset5;
       break;
-    case 6: return this->focuserpreset6;
+    case 6: return this->preset6;
       break;
-    case 7: return this->focuserpreset7;
+    case 7: return this->preset7;
       break;
-    case 8: return this->focuserpreset8;
+    case 8: return this->preset8;
       break;
-    case 9: return this->focuserpreset9;
+    case 9: return this->preset9;
       break;
     default:
-      return this->focuserpreset0;
+      return this->preset0;
   }
 }
 
@@ -512,6 +521,11 @@ unsigned long SetupData::get_ascomalpacaport(void)
 int SetupData::get_webpagerefreshrate(void)
 {
   return this->webpagerefreshrate;
+}
+
+unsigned long SetupData::get_mdnsport(void)
+{
+  return this->mdnsport;
 }
 
 //__Setter
@@ -632,27 +646,27 @@ void SetupData::set_focuserpreset(byte idx, unsigned long pos)
   idx = ( idx > 9 ) ? 9 : idx;
   switch ( idx )
   {
-    case 0: this->StartDelayedUpdate(this->focuserpreset0, pos);
+    case 0: this->StartDelayedUpdate(this->preset0, pos);
       break;
-    case 1: this->StartDelayedUpdate(this->focuserpreset1, pos);
+    case 1: this->StartDelayedUpdate(this->preset1, pos);
       break;
-    case 2: this->StartDelayedUpdate(this->focuserpreset2, pos);
+    case 2: this->StartDelayedUpdate(this->preset2, pos);
       break;
-    case 3: this->StartDelayedUpdate(this->focuserpreset3, pos);
+    case 3: this->StartDelayedUpdate(this->preset3, pos);
       break;
-    case 4: this->StartDelayedUpdate(this->focuserpreset4, pos);
+    case 4: this->StartDelayedUpdate(this->preset4, pos);
       break;
-    case 5: this->StartDelayedUpdate(this->focuserpreset5, pos);
+    case 5: this->StartDelayedUpdate(this->preset5, pos);
       break;
-    case 6: this->StartDelayedUpdate(this->focuserpreset6, pos);
+    case 6: this->StartDelayedUpdate(this->preset6, pos);
       break;
-    case 7: this->StartDelayedUpdate(this->focuserpreset7, pos);
+    case 7: this->StartDelayedUpdate(this->preset7, pos);
       break;
-    case 8: this->StartDelayedUpdate(this->focuserpreset8, pos);
+    case 8: this->StartDelayedUpdate(this->preset8, pos);
       break;
-    case 9: this->StartDelayedUpdate(this->focuserpreset9, pos);
+    case 9: this->StartDelayedUpdate(this->preset9, pos);
       break;
-    default: this->StartDelayedUpdate(this->focuserpreset0, pos);
+    default: this->StartDelayedUpdate(this->preset0, pos);
       break;
   }
 }
@@ -670,6 +684,11 @@ void SetupData::set_ascomalpacaport(unsigned long asp)
 void SetupData::set_webpagerefreshrate(int rr)
 {
   this->StartDelayedUpdate(this->webpagerefreshrate, rr);
+}
+
+void SetupData::set_mdnsport(unsigned long port)
+{
+  this->StartDelayedUpdate(this->mdnsport, port);
 }
 
 void SetupData::StartDelayedUpdate(int & org_data, int new_data)

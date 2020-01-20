@@ -1,3 +1,11 @@
+// r117
+// When rebooting, check for MDNS and free resources
+// Fix code in display_oledtext_page2 to display correct port numbers for web/ascom servers
+// Add READWIFICONFIG as a focuser-config parameter - will read SSID and PASSWORD from wificonfig.json file
+// Add change port number for mDNS server to management console
+// Add Start and Stop mDNS server to management console
+// Improve layout of management console and web server pages to reduce code overhead
+
 // 116
 // Add ~finalizer for myBoards class
 // Fix logic error in Management server list files for ESP8266

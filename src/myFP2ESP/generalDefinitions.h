@@ -26,8 +26,10 @@
 #define MINREFRESHPAGERATE    10            // 10s - too low and the overhead becomes too much for the controller
 #define MAXREFRESHPAGERATE    900           // 15m
 #define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
-#define RUNNING               true
-#define STOPPED               false
+#define RUNNING               true          // service state running
+#define STOPPED               false         // service state stopped
+#define MSREBOOTPAGEDELAY     20000         // management service reboot page, time (s) between next page refresh
+#define REBOOTDELAY           2000          // When rebooting controller, delay (2s) from msg to actual reboot
 #define MotorReleaseDelay     120*1000      // motor release power after 120s
 
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find correct address
@@ -38,9 +40,9 @@
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
 #define TEMPREFRESHRATE       3000L         // refresh rate between temperature conversions unless an update is requested via serial command
 #define SERIALPORTSPEED       115200        // 9600, 14400, 19200, 28800, 38400, 57600, 115200
-#define ESPDATA               0
-#define BTDATA                1
-#define SERIALDATA            2
+#define ESPDATA               0             // command has come from tcp/ip
+#define BTDATA                1             // command has come from bluetooth
+#define SERIALDATA            2             // command has come from serial port
 #define QUEUELENGTH           20            // number of commands that can be saved in the serial queue
 
 #define DEFAULTSTEPSIZE       50.0          // This is the default setting for the step size in microns
@@ -73,6 +75,13 @@
 #define FAST                  2
 #endif
 
+// You can set the speed of the motor when performing backlash to SLOW, MED or FAST
+#define BACKLASHSPEED         SLOW
+
+// ----------------------------------------------------------------------------------------------
+// 2: DO NOT CHANGE
+// ----------------------------------------------------------------------------------------------
+
 #ifndef STEP1
 #define STEP1                 1             // stepmodes
 #endif
@@ -101,95 +110,152 @@
 #define STATEIDLE             ">Idle"
 #define STATEINITMOVE         ">InitMove"
 #define EOFSTR                '#'
-#define STARTSTR              ':'
+#define STARTCMDSTR           ':'
 #define PORTSTR               "Port= "
-#define sendstr               "Send= "
-#define serialstartstr        "Serial started"
-#define debugonstr            "Debug on"
-#define bluetoothstartstr     "Bluetooth started"
-#define tprobestr             "Tsensors= "
-#define attemptconnstr        "Attempt connection to= "
-#define apstartfailstr        "Did not connect to AP "
+#define SENDSTR               "Send= "
+#define SERIALSTARTSTR        "Serial started"
+#define DEBUGONSTR            "Debug on"
+#define BLUETOOTHSTARTSTR     "Bluetooth started"
+#define ATTEMPTCONNSTR        "Attempt connection to= "
+#define SERVERREADYSTR        "Server Ready"
+#define STARTSTR              "Start"
+#define ENDSTR                "End"
+#define PROGRESSSTR           "Progress: "
+#define ERRORSTR              "Error= "
+#define READYSTR              "Ready"
+#define SETUPDRVBRDSTR        "Setup drvbrd= "
+#define DRVBRDDONESTR         "Driver board done"
+#define CHECKCPWRSTR          "Check coilpower"
+#define CPWRRELEASEDSTR       "Coil power released"
+#define STARTAPSTR            "Start Access Point"
+#define STARTSMSTR            "Start Station mode"
+#define SETSTATICIPSTR        "Setup Static IP"
+#define ATTEMPTSSTR           "Attempt= "
+#define STARTTCPSERVERSTR     "Start TCP Server"
+#define TCPSERVERSTARTEDSTR   "TCP Server started"
+#define GETLOCALIPSTR         "Get local IP address"
+#define SETUPDUCKDNSSTR       "Setup DuckDNS"
+#define SETUPENDSTR           "Setup end"
+#define STARTOTASERVICESTR    "Start OTA service"
+#define SSIDSTR               "SSID = "
+#define IPADDRESSSTR          "IP   = "
+#define WIFIRESTARTSTR        "Restarting"
+#define WIFIBEGINSTATUSSTR    "Wifi.begin status code: "
+#define CHECKFORTPROBESTR     "Check for Tprobe"
+#define ACCESSPOINTSTR        "Access point: "
+#define STATIONMODESTR        "Station mode: "
+#define CONFIGSAVEDSTR        "new Config saved: "
+#define RELEASEMOTORSTR       "Idle: release motor"
+#define LOOPSTARTSTR          "Loop Start ="
+#define LOOPENDSTR            "Loop End ="
+#define TCPCLIENTCONNECTSTR   "tcp client has connected"
+#define TCPCLIENTDISCONNECTSTR "tcp client has disconnected"
+#define APCONNECTFAILSTR      "Did not connect to AP "
+#define CONNECTEDSTR          "Connected"
+#define I2CDEVICENOTFOUNDSTR  "I2C device not found"
+#define WRITEFILEFAILSTR      "Write to file failed"
+#define WRITEFILESUCCESSSTR   "Write to file OK"
+#define CREATEFILEFAILSTR     "Unable to create file"
+#define CHECKWIFICONFIGFILESTR "check for Wifi config file"
+#define DESERIALIZEERRORSTR   "Deserialization error"
 
-#define serverreadystr        "Server Ready"
-#define startstr              "Start"
-#define endstr                "End"
-#define progressstr           "Progress: "
-#define errorstr              "Error= "
-#define readystr              "Ready"
-#define coilpwrstr            "Coil power  = "
-#define revdirstr             "Reverse Dir = "
-#define tcompstepsstr         "TComp Steps = "
-#define tcompstatestr         "TComp State = "
-#define tcompdirstr           "TComp Dir   = "
-#define backlashinstr         "Backlash In = "
-#define backlashoutstr        "Backlash Out ="
-#define backlashinstepsstr    "Backlash In#= "
-#define backlashoutstepsstr   "Backlash Ou#= "
-#define bluetoothstr          "Bluetooth Mode"
-#define localserialstr        "Local Serial Mode"
-#define currentposstr         "Current Pos = "
-#define targetposstr          "Target Pos  = "
-#define tempstr               "Temperature = "
-#define stepmodestr           "Step Mode   = "
-#define motorspeedstr         "Motor Speed = "
-#define maxstepsstr           "MaxSteps    = "
-#define setupdrvbrdstr        "Setup drvbrd= "
-#define drvbrddonestr         "Driver board done"
-#define tprobenotfoundstr     "Tprobe not found"
-#define startapstr            "Start Access Point"
-#define startsmstr            "Start Station mode"
-#define setstaticipstr        "Setup Static IP"
-#define attemptsstr           "Attempt= "
-#define starttcpserverstr     "Start TCP Server"
-#define tcpserverstartedstr   "TCP Server started"
-#define setupduckdnsstr       "Setup DuckDNS"
-#define setupendstr           "Setup end"
-#define startotaservicestr    "Start OTA service"
-#define ssidstr               "SSID = "
-#define ipaddressstr          "IP   = "
-#define wifirestartstr        "Restarting"
-#define checkfortprobestr     "Check for Tprobe"
-#define accesspointstr        "Access point: "
-#define stationmodestr        "Station mode: "
+#define HPCLOSEDFPNOT0STR     "HP closed, fcurrentPosition !=0"
+#define HPCLOSEDFP0STR        "HP closed, fcurrentPosition=0"
+#define HPOPENFPNOT0STR       "HP Open, fcurrentPosition=0"
+#define HPMOVETILLCLOSEDSTR   "HP MoveIN till closed"
+#define HPMOVEINERRORSTR      "HP MoveIN ERROR: HOMESTEPS exceeded"
+#define HPMOVEINSTEPSSTR      "HP MoveIN stepstaken="
+#define HPMOVEINFINISHEDSTR   "HP MoveIN finished"
+#define HPMOVETILLOPENSTR     "HP Move out till OPEN"
+#define HPMOVEOUTERRORSTR     "HP MoveOUT ERROR: HOMESTEPS exceeded#"
+#define HPMOVEOUTSTEPSSTR     "HP MoveOUT stepstaken="
+#define HPMOVEOUTFINISHEDSTR  "HP MoveOUT ended"
 
+// temperature probe messages
+#define TPROBESTR             "Tsensors= "
+#define TPROBENOTFOUNDSTR     "Tprobe not found"
+#define GETTEMPPROBESSTR      "Get # of Tsensors"
+#define SETTPROBERESSTR       "Set Tprecision to "
+// oled messages
+#define CURRENTPOSSTR         "Current Pos = "
+#define TARGETPOSSTR          "Target Pos  = "
+#define COILPWRSTR            "Coil power  = "
+#define REVDIRSTR             "Reverse Dir = "
+#define STEPMODESTR           "Step Mode   = "
+#define TEMPSTR               "Temperature = "
+#define MOTORSPEEDSTR         "Motor Speed = "
+#define MAXSTEPSSTR           "MaxSteps    = "
+#define TCOMPSTEPSSTR         "TComp Steps = "
+#define TCOMPSTATESTR         "TComp State = "
+#define TCOMPDIRSTR           "TComp Dir   = "
+#define BACKLASHINSTR         "Backlash In = "
+#define BACKLASHOUTSTR        "Backlash Out ="
+#define BACKLASHINSTEPSSTR    "Backlash In#= "
+#define BACKLASHOUTSTEPSSTR   "Backlash Ou#= "
+#define BLUETOOTHSTR          "Bluetooth Mode"
+#define LOCALSERIALSTR        "Local Serial Mode"
+// joystick messages
+#define UPDATEJOYSTICKSTR     "joystick: update joystick"
+#define JOYSTICKVALSTR        "Raw joyval:"
+#define JOYSTICKXINVALSTR     "X IN joyval:"
+#define JOYSTICKSPEEDSTR      ", Speed:"
+#define JOYSTICKXOUTVALSTR    "X OUT joyval:"
 
 // defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
-#define ascomremotestr            "ASCOM Remote: "
-#define jsonstring                "jsonstr = "
-#define webserverstr              "Webserver: "
+#define ASCOMREMOTESTR            "ASCOM Remote: "
+#define WEBSERVERSTR              "Webserver: "
 #define NORMALWEBPAGE             200
 #define BADREQUESTWEBPAGE         400
 #define NOTFOUNDWEBPAGE           404
 #define ASCOMINTERNALSERVERERROR  500
 #define TEXTPAGETYPE              "text/html"
 #define JSONPAGETYPE              "application/json"
+#define FILENOTFOUNDSTR           "File Not Found"
+#define FILEFOUNDSTR              "File found"
+#define SPIFFSNOTSTARTEDSTR       "Unable to start SPIFFS"
+#define BUILDDEFAULTPAGESTR       "build default page"
+#define SPIFFSFILENOTFOUNDSTR     "file not found in spiffs"
+#define READPAGESTR               "read page into string"
+#define PROCESSPAGESTARTSTR       "process page start"
+#define PROCESSPAGEENDSTR         "process page done"
+#define STARTASCOMSERVERSTR       "start ascom server"
+#define STOPASCOMSERVERSTR        "stop ascom server"
+#define STARTWEBSERVERSTR         "start web server"
+#define STOPWEBSERVERSTR          "stop web server"
+#define STOPMDNSSERVERSTR         "stop mdns server"
+#define SERVERSTATESTOPSTR        "STOPPED"
+#define SERVERSTATESTARTSTR       "STARTED"
+#define SERVERSTATERUNSTR         "RUNNING"
+#define SENDPAGESTR               "Send page"
+
+#define MDNSSTARTFAILSTR          "Error setting up MDNS responder!"
+#define MDNSSTARTEDSTR            "mDNS responder started"
 
 // Controller Features
-#define ENABLEDLCD                1
-#define ENABLEDOLED               2
-#define ENABLEDTEMPPROBE          4
-#define ENABLEDHPSW               8
-#define ENABLEDBLUETOOTH          16
-#define ENABLEDSTEPPERPWR         32
-#define ENABLEDPUSHBUTTONS        64
-#define ENABLEDROTARYENCODER      128
-#define ENABLEDINFRARED           256
-#define ENABLEDBACKLASH           512
-#define ENABLEDTFT                1024
-#define ENABLENOKIA               2048
-#define ENABLEKEYPAD              4096
-#define ENABLEDINOUTLEDS          8192
-#define ENABLEDBUZZER             16384
-#define ENABLEDACCESSPOINT        32768
-#define ENABLEDSTATIONMODE        65536
-#define ENABLEDLOCALSERIAL        131072
-#define ENABLEDOTAUPDATES         262144
-#define ENABLEDWEBSERVER          524288
-#define ENABLEDASCOMREMOTE        1048576
-#define ENABLEDSTATICIP           2097152
-#define ENABLEDMDNS               4194304
-#define ENABLEDJOYSTICK           8388608
+#define ENABLEDLCD                1L
+#define ENABLEDOLED               2L
+#define ENABLEDTEMPPROBE          4L
+#define ENABLEDHPSW               8L
+#define ENABLEDBLUETOOTH          16L
+#define ENABLEDSTEPPERPWR         32L
+#define ENABLEDPUSHBUTTONS        64L
+#define ENABLEDROTARYENCODER      128L
+#define ENABLEDINFRARED           256L
+#define ENABLEDBACKLASH           512L
+#define ENABLEDTFT                1024L
+#define ENABLENOKIA               2048L
+#define ENABLEKEYPAD              4096L
+#define ENABLEDINOUTLEDS          8192L
+#define ENABLEDBUZZER             16384L
+#define ENABLEDACCESSPOINT        32768L
+#define ENABLEDSTATIONMODE        65536L
+#define ENABLEDLOCALSERIAL        131072L
+#define ENABLEDOTAUPDATES         262144L
+#define ENABLEDWEBSERVER          524288L
+#define ENABLEDASCOMREMOTE        1048576L
+#define ENABLEDSTATICIP           2097152L
+#define ENABLEDMDNS               4194304L
+#define ENABLEDJOYSTICK           8388608L
 
 // ----------------------------------------------------------------------------------------------
 // 2. TRACING -- DO NOT CHANGE
@@ -209,7 +275,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ----------------------------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-//#define DEBUG     1
+#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

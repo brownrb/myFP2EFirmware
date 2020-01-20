@@ -235,7 +235,8 @@
 class DriverBoard
 {
   public:
-    DriverBoard(byte);
+    DriverBoard(byte);          // constructor
+    ~DriverBoard(void);         // finalizer
 
     // getter
     byte getmotorspeed(void);

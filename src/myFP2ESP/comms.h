@@ -44,7 +44,7 @@ extern void temp_setresolution(byte);
 #if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 void SendPaket(String str)
 {
-  DebugPrint(sendstr);
+  DebugPrint(SENDSTR);
   DebugPrintln(str);
 #if defined(ACCESSPOINT) || defined(STATIONMODE)  // for Accesspoint or Station mode
   myclient.print(str);
