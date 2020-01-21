@@ -1366,18 +1366,27 @@ void start_mdns_service(void)
     MDNS.addService("http", "tcp", MDNSSERVERPORT);
     mdnsserverstate = RUNNING;
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 void stop_mdns_service(void)
 {
   DebugPrintln(F(STOPMDNSSERVERSTR));
+  if ( mdnsserverstate == RUNNING )
+  {
 #if defined(ESP8266)
-  // ignore 
-  // esp8266 library has no end() function to release mdns
+    // ignore
+    // esp8266 library has no end() function to release mdns
 #else
-  MDNS.end();
+    MDNS.end();
 #endif
-  mdnsserverstate = STOPPED;
+    mdnsserverstate = STOPPED;
+  }
+  else
+  {
+    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+  }
+  delay(10);                      // small pause so background tasks can run
 }
 #endif // #ifdef MDNSSERVER
 
@@ -1538,6 +1547,7 @@ void MANAGEMENT_buildnotfound(void)
       MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
     }
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 void MANAGEMENT_handlenotfound(void)
@@ -1707,6 +1717,7 @@ void MANAGEMENT_buildhome(void)
       MHomePage = "<html><head><title>Management Server></title></head><body><p>The index file for the Management server was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"></form></p></body></html>";
     }
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 void MANAGEMENT_handleroot(void)
@@ -1995,14 +2006,22 @@ void start_management(void)
   managementserverstate = RUNNING;
   TRACE();
   DebugPrintln(F(SERVERSTATESTARTSTR));
+  delay(10);                      // small pause so background tasks can run
 }
 
 void stop_management(void)
 {
-  mserver.stop();
-  managementserverstate = STOPPED;
-  TRACE();
-  DebugPrintln(F(SERVERSTATESTOPSTR));
+  if ( managementserverstate == RUNNING )
+  {
+    mserver.stop();
+    managementserverstate = STOPPED;
+    TRACE();
+    DebugPrintln(F(SERVERSTATESTOPSTR));
+  }
+  else
+  {
+    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+  }
 }
 #endif // #ifdef MANAGEMENT
 
@@ -2071,6 +2090,7 @@ void WEBSERVER_buildnotfound(void)
       WNotFoundPage = WNotFoundPage + "</body></html>";
     }
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 void WEBSERVER_handlenotfound(void)
@@ -2080,7 +2100,7 @@ void WEBSERVER_handlenotfound(void)
 
 void WEBSERVER_buildpresets(void)
 {
-    // construct the movepage now
+  // construct the movepage now
   // load not found page from spiffs - wsmove.html
   if (!SPIFFS.begin())
   {
@@ -2119,7 +2139,7 @@ void WEBSERVER_buildpresets(void)
       WPresetsPage.replace("%WSP7BUFFER%", String(mySetupData->get_focuserpreset(7)));
       WPresetsPage.replace("%WSP8BUFFER%", String(mySetupData->get_focuserpreset(8)));
       WPresetsPage.replace("%WSP9BUFFER%", String(mySetupData->get_focuserpreset(9)));
-           
+
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
     else
@@ -2131,6 +2151,7 @@ void WEBSERVER_buildpresets(void)
       WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>The presets file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
     }
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 void WEBSERVER_handlepresets(void)
@@ -2616,6 +2637,7 @@ void WEBSERVER_buildmove(void)
       WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
     }
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 // handles move page of webserver
@@ -2818,6 +2840,7 @@ void WEBSERVER_buildhome(void)
       WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
     }
   }
+  delay(10);                      // small pause so background tasks can run
 }
 
 // handles root page of webserver
@@ -3032,7 +3055,7 @@ void start_webserver(void)
   WEBSERVER_buildpresets();
   webserver->on("/", WEBSERVER_handleroot);
   webserver->on("/move", WEBSERVER_handlemove);
-  webserver->on("/presets", WEBSERVER_handlepresets);  
+  webserver->on("/presets", WEBSERVER_handlepresets);
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
@@ -3042,11 +3065,19 @@ void start_webserver(void)
 
 void stop_webserver(void)
 {
-  webserver->close();
-  delete webserver;            // free the webserver pointer and associated memory/code
-  webserverstate = STOPPED;
-  TRACE();
-  DebugPrintln(F(SERVERSTATESTOPSTR));
+  if ( webserverstate == RUNNING )
+  {
+    webserver->close();
+    delete webserver;            // free the webserver pointer and associated memory/code
+    webserverstate = STOPPED;
+    TRACE();
+    DebugPrintln(F(SERVERSTATESTOPSTR));
+  }
+  else
+  {
+    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+  }
+  delay(10);                      // small pause so background tasks can run
 }
 // WEBSERVER END ------------------------------------------------------------------------------------
 #endif // #ifdef WEBSERVER
@@ -4170,10 +4201,17 @@ void start_ascomremoteserver(void)
 
 void stop_ascomremoteserver(void)
 {
-  DebugPrintln("stop ascom server");
-  ascomserver->close();
-  delete ascomserver;            // free the ascomserver pointer and associated memory/code
-  ascomserverstate = STOPPED;
+  if ( ascomserverstate == RUNNING )
+  {
+    DebugPrintln("stop ascom server");
+    ascomserver->close();
+    delete ascomserver;            // free the ascomserver pointer and associated memory/code
+    ascomserverstate = STOPPED;
+  }
+  else
+  {
+    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+  }
   delay(10);                     // small pause so background tasks can run
 }
 #endif // ifdef ASCOMREMOTE

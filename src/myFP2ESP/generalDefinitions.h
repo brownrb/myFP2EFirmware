@@ -158,6 +158,7 @@
 #define CREATEFILEFAILSTR     "Unable to create file"
 #define CHECKWIFICONFIGFILESTR "check for Wifi config file"
 #define DESERIALIZEERRORSTR   "Deserialization error"
+#define SERVERNOTRUNNINGSTR   "Server NOT running"
 
 #define HPCLOSEDFPNOT0STR     "HP closed, fcurrentPosition !=0"
 #define HPCLOSEDFP0STR        "HP closed, fcurrentPosition=0"

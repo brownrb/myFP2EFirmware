@@ -7,6 +7,8 @@
 // Improve layout of management console and web server pages to reduce code overhead
 // Move focuser presets on webpage to /presets page
 // Add link on main webpage to presets page
+// Check if service is running before attempting to stop service
+// Add check if MANAGEMENT server is defined without ACCESSPOINT or STATIONMODE defined
 
 // 116
 // Add ~finalizer for myBoards class
