@@ -11,22 +11,22 @@
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // (c) Copyright Pieter P - OTA code based on example from Pieter  P.
 
 // ----------------------------------------------------------------------------------------------
 // SPECIAL LICENSE
 // ----------------------------------------------------------------------------------------------
 // This code is released under license. If you copy or write new code based on the code in these files
-// you must include to link to these files AND you must include references to the authors of this code.
+// you MUST include to link to these files AND you MUST include references to the authors of this code.
 
 // ----------------------------------------------------------------------------------------------
 // CONTRIBUTIONS
 // ----------------------------------------------------------------------------------------------
 // It is costly to continue development and purchase boards and components. We need your help to
-// continue development of this project. If you wish to make a contribution in thanks for this project,
-// please use PayPal and send the amount to user rbb1brown@gmail.com (Robert Brown).
+// continue development of this project. Please make a contribution in thanks for this project,
+// and use PayPal to send the amount to user rbb1brown@gmail.com (Robert Brown).
 // All contributions are gratefully accepted.
 
 // ----------------------------------------------------------------------------------------------

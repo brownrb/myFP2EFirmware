@@ -1,11 +1,5 @@
-<html><head></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>(c) R. Brown, Holger M, 2019. All rights reserved<br>IP Address: %WSIPSTR%: Port: %WSWEBSERVERPORT%, Firmware Version=%WSPROGRAMVERSION%<br>Driverboard = %WSPROGRAMNAME%</p>
-<b>Position: </b> %WSCURRENTPOSITION%<br>
-<b>Target  : </b> %WSFTARGETPOSITION%<br>
-<b>IsMoving: </b> = %WSISMOVING%</p>
-
-<p><b>MOVE</b><br>
-<table><tr>
-<td><form action="/move" method="post"><input type="hidden" name="mv" value="-500"><input type="submit" value="-500"></form></td>
+<html><head></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>(c) R. Brown, Holger M, 2019. All rights reserved<br>IP Address: %WSIPSTR%: Port: %WSWEBSERVERPORT%, Firmware Version=%WSPROGRAMVERSION%<br>Driverboard = %WSPROGRAMNAME%</p><b>Position: </b> %WSCURRENTPOSITION%<br><b>Target  : </b> %WSFTARGETPOSITION%<br><b>IsMoving: </b> = %WSISMOVING%</p><p><h3>MOVE</h3></p>
+<table><tr><td><form action="/move" method="post"><input type="hidden" name="mv" value="-500"><input type="submit" value="-500"></form></td>
 <td><form action="/move" method="post"><input type="hidden" name="mv" value="-100"><input type="submit" value="-100"></form></td>
 <td><form action="/move" method="post"><input type="hidden" name="mv" value="-10"><input type="submit" value="-10"></form></td>
 <td><form action="/move" method="post"><input type="hidden" name="mv" value="-1"><input type="submit" value="-1"></form></td>
@@ -14,7 +8,4 @@
 <td><form action="/move" method="post"><input type="hidden" name="mv" value="10"><input type="submit" value="+10"></form></td>
 <td><form action="/move" method="post"><input type="hidden" name="mv" value="100"><input type="submit" value="+100"></form></td>
 <td><form action="/move" method="post"><input type="hidden" name="mv" value="500"><input type="submit" value="+500"></form></td>
-</tr></table>
-
-<p></p>
-<p><form action="/" method="GET"><input type="submit" value="HOMEPAGE"></form></p></body></html>
+</tr></table><p></p><p><form action="/" method="GET"><input type="submit" value="HOMEPAGE"></form></p></body></html>
