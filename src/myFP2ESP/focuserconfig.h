@@ -66,7 +66,7 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-#define ACCESSPOINT 2
+//#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
 //#define STATIONMODE 3
@@ -88,7 +88,7 @@
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
 //#define MDNSSERVER 8
 
-// Management Server Control Interface [Port 6060] - enabled by default - DO NOT CHANGE
+// Management Server Control Interface [Port 6060] - DO NOT CHANGE
 #define MANAGEMENT 9
 #define MANAGEMENTFORCEDOWNLOAD 1
 

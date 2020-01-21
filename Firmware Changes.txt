@@ -5,6 +5,8 @@
 // Add change port number for mDNS server to management console
 // Add Start and Stop mDNS server to management console
 // Improve layout of management console and web server pages to reduce code overhead
+// Move focuser presets on webpage to /presets page
+// Add link on main webpage to presets page
 
 // 116
 // Add ~finalizer for myBoards class

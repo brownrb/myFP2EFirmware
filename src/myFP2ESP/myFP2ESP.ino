@@ -2026,6 +2026,7 @@ WebServer *webserver;
 String WNotFoundPage;
 String WHomePage;
 String WMovePage;
+String WPresetsPage;
 
 void WEBSERVER_buildnotfound(void)
 {
@@ -2077,9 +2078,9 @@ void WEBSERVER_handlenotfound(void)
   webserver->send(NOTFOUNDWEBPAGE, TEXTPAGETYPE, WNotFoundPage);
 }
 
-void WEBSERVER_buildmove(void)
+void WEBSERVER_buildpresets(void)
 {
-  // construct the movepage now
+    // construct the movepage now
   // load not found page from spiffs - wsmove.html
   if (!SPIFFS.begin())
   {
@@ -2087,334 +2088,55 @@ void WEBSERVER_buildmove(void)
     DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
     // could not read move file from SPIFFS
     DebugPrintln(F(BUILDDEFAULTPAGESTR));
-    WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>The presets file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
   }
   else
   {
-    if ( SPIFFS.exists("/wsmove.html"))
+    if ( SPIFFS.exists("/wspresets.html"))
     {
-      DebugPrintln("webserver: wsmove.html found in spiffs");
+      DebugPrintln("webserver: wspresets.html found in spiffs");
       // open file for read
-      File file = SPIFFS.open("/wsmove.html", "r");
+      File file = SPIFFS.open("/wspresets.html", "r");
       // read contents into string
       DebugPrintln(F(READPAGESTR));
-      WMovePage = file.readString();
+      WPresetsPage = file.readString();
 
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      WMovePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
-      WMovePage.replace("%WSIPSTR%", ipStr);
-      WMovePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
-      WMovePage.replace("%WSPROGRAMVERSION%", String(programVersion));
-      WMovePage.replace("%WSPROGRAMNAME%", String(programName));
-      WMovePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
-      WMovePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
-      WMovePage.replace("%WSISMOVING%", String(isMoving));
+      WPresetsPage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
+      WPresetsPage.replace("%WSIPSTR%", ipStr);
+      WPresetsPage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
+      WPresetsPage.replace("%WSPROGRAMVERSION%", String(programVersion));
+      WPresetsPage.replace("%WSPROGRAMNAME%", String(programName));
+
+      WPresetsPage.replace("%WSP0BUFFER%", String(mySetupData->get_focuserpreset(0)));
+      WPresetsPage.replace("%WSP1BUFFER%", String(mySetupData->get_focuserpreset(1)));
+      WPresetsPage.replace("%WSP2BUFFER%", String(mySetupData->get_focuserpreset(2)));
+      WPresetsPage.replace("%WSP3BUFFER%", String(mySetupData->get_focuserpreset(3)));
+      WPresetsPage.replace("%WSP4BUFFER%", String(mySetupData->get_focuserpreset(4)));
+      WPresetsPage.replace("%WSP5BUFFER%", String(mySetupData->get_focuserpreset(5)));
+      WPresetsPage.replace("%WSP6BUFFER%", String(mySetupData->get_focuserpreset(6)));
+      WPresetsPage.replace("%WSP7BUFFER%", String(mySetupData->get_focuserpreset(7)));
+      WPresetsPage.replace("%WSP8BUFFER%", String(mySetupData->get_focuserpreset(8)));
+      WPresetsPage.replace("%WSP9BUFFER%", String(mySetupData->get_focuserpreset(9)));
+           
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
     else
     {
-      // could not read movedex file from SPIFFS
+      // could not read preset file from SPIFFS
       TRACE();
       DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
       DebugPrintln(F(BUILDDEFAULTPAGESTR));
-      WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+      WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>The presets file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
     }
   }
 }
 
-// handles move page of webserver
-// this is called whenever a client requests move
-void WEBSERVER_handlemove()
+void WEBSERVER_handlepresets(void)
 {
-  // if the root page was a HALT request via Submit button
-  String halt_str = webserver->arg("ha");
-  if ( halt_str != "" )
-  {
-    TRACE();
-    DebugPrintln(halt_str);
-    ftargetPosition = fcurrentPosition;
-  }
-
-  // if move
-  String fmv_str = webserver->arg("mv");
-  if ( fmv_str != "" )
-  {
-    long temp = 0;
-    TRACE();
-    DebugPrintln(fmv_str);
-    temp = fmv_str.toInt();
-    long newtemp = (long) fcurrentPosition + temp;
-    newtemp = ( newtemp < 0 ) ? 0 : newtemp;
-    newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
-    ftargetPosition = (unsigned long) newtemp;
-    DebugPrint("Move = "); DebugPrintln(fmv_str);
-    DebugPrint(F(CURRENTPOSSTR));
-    DebugPrintln(fcurrentPosition);
-    DebugPrint(F(TARGETPOSSTR));
-    DebugPrintln(ftargetPosition);
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-    // restore motorspeed just in case
-    driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-  }
-
-  WEBSERVER_buildmove();
-  // send the movepage to a connected client
-  DebugPrintln(F(SENDPAGESTR));
-  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WMovePage );
-  delay(10);                     // small pause so background ESP8266 tasks can run
-}
-
-void WEBSERVER_buildhome(void)
-{
-  // construct the homepage now
-  // load not found page from spiffs - wsindex.html
-  if (!SPIFFS.begin())
-  {
-    TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
-    // could not read index file from SPIFFS
-    DebugPrintln(BUILDDEFAULTPAGESTR);
-    WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
-  }
-  else
-  {
-    if ( SPIFFS.exists("/wsindex.html"))
-    {
-      DebugPrintln("webserver: wsindex.html found in spiffs");
-      // open file for read
-      File file = SPIFFS.open("/wsindex.html", "r");
-      // read contents into string
-      DebugPrintln(F(READPAGESTR));
-      WHomePage = file.readString();
-
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
-      // process for dynamic data
-      WHomePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
-      WHomePage.replace("%WSIPSTR%", ipStr);
-      WHomePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
-      WHomePage.replace("%WSPROGRAMVERSION%", String(programVersion));
-      WHomePage.replace("%WSPROGRAMNAME%", String(programName));
-      WHomePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
-      WHomePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
-      WHomePage.replace("%WSMAXSTEP%", String(mySetupData->get_maxstep()));
-      WHomePage.replace("%WSISMOVING%", String(isMoving));
-#ifdef TEMPERATUREPROBE
-      WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1)));
-#else
-      WHomePage.replace("%WSTEMPERATURE%", "20.000");
-#endif
-      WHomePage.replace("%WSTEMPPRECISION%", String(mySetupData->get_tempprecision()));
-      String smbuffer = String(mySetupData->get_stepmode());
-      switch ( mySetupData->get_stepmode() )
-      {
-        case 1:
-          smbuffer = WS_SM1CHECKED;
-          smbuffer = smbuffer + WS_SM2UNCHECKED;
-          smbuffer = smbuffer + WS_SM4UNCHECKED;
-          smbuffer = smbuffer + WS_SM8UNCHECKED;
-          smbuffer = smbuffer + WS_SM16UNCHECKED;
-          smbuffer = smbuffer + WS_SM32UNCHECKED;
-          break;
-        case 2 :
-          smbuffer = WS_SM1UNCHECKED;
-          smbuffer = smbuffer + WS_SM2CHECKED;
-          smbuffer = smbuffer + WS_SM4UNCHECKED;
-          smbuffer = smbuffer + WS_SM8UNCHECKED;
-          smbuffer = smbuffer + WS_SM16UNCHECKED;
-          smbuffer = smbuffer + WS_SM32UNCHECKED;
-          break;
-        case 4 :
-          smbuffer = WS_SM1UNCHECKED;
-          smbuffer = smbuffer + WS_SM2UNCHECKED;
-          smbuffer = smbuffer + WS_SM4CHECKED;
-          smbuffer = smbuffer + WS_SM8UNCHECKED;
-          smbuffer = smbuffer + WS_SM16UNCHECKED;
-          smbuffer = smbuffer + WS_SM32UNCHECKED;
-          break;
-        case 8 :
-          smbuffer = WS_SM1UNCHECKED;
-          smbuffer = smbuffer + WS_SM2UNCHECKED;
-          smbuffer = smbuffer + WS_SM4UNCHECKED;
-          smbuffer = smbuffer + WS_SM8CHECKED;
-          smbuffer = smbuffer + WS_SM16UNCHECKED;
-          smbuffer = smbuffer + WS_SM32UNCHECKED;
-          break;
-        case 16 :
-          smbuffer = WS_SM1UNCHECKED;
-          smbuffer = smbuffer + WS_SM2UNCHECKED;
-          smbuffer = smbuffer + WS_SM4UNCHECKED;
-          smbuffer = smbuffer + WS_SM8UNCHECKED;
-          smbuffer = smbuffer + WS_SM16CHECKED;
-          smbuffer = smbuffer + WS_SM32UNCHECKED;
-          break;
-        case 32 :
-          smbuffer = WS_SM1UNCHECKED;
-          smbuffer = smbuffer + WS_SM2UNCHECKED;
-          smbuffer = smbuffer + WS_SM4UNCHECKED;
-          smbuffer = smbuffer + WS_SM8UNCHECKED;
-          smbuffer = smbuffer + WS_SM16UNCHECKED;
-          smbuffer = smbuffer + WS_SM32CHECKED;
-          break;
-        default :
-          smbuffer = WS_SM1CHECKED;
-          smbuffer = smbuffer + WS_SM2UNCHECKED;
-          smbuffer = smbuffer + WS_SM4UNCHECKED;
-          smbuffer = smbuffer + WS_SM8UNCHECKED;
-          smbuffer = smbuffer + WS_SM16UNCHECKED;
-          smbuffer = smbuffer + WS_SM32UNCHECKED;
-          break;
-      }
-      WHomePage.replace("%WSSMBUFFER%", smbuffer);
-      String msbuffer = String(mySetupData->get_motorSpeed());
-      switch ( mySetupData->get_motorSpeed() )
-      {
-        case 0:
-          msbuffer = WS_MSSLOWCHECKED;
-          msbuffer = msbuffer + WS_MSMEDUNCHECKED;
-          msbuffer = msbuffer + WS_MSFASTUNCHECKED;
-          break;
-        case 1:
-          msbuffer = WS_MSSLOWUNCHECKED;
-          msbuffer = msbuffer + WS_MSMEDCHECKED;
-          msbuffer = msbuffer + WS_MSFASTUNCHECKED;
-          break;
-        case 2:
-          msbuffer = WS_MSSLOWUNCHECKED;
-          msbuffer = msbuffer + WS_MSMEDUNCHECKED;
-          msbuffer = msbuffer + WS_MSFASTCHECKED;
-          break;
-        default:
-          msbuffer = WS_MSSLOWUNCHECKED;
-          msbuffer = msbuffer + WS_MSMEDUNCHECKED;
-          msbuffer = msbuffer + WS_MSFASTCHECKED;
-          break;
-      }
-      WHomePage.replace("%WSMSBUFFER%", msbuffer);
-      String cpbuffer;
-      if ( !mySetupData->get_coilpower() )
-      {
-        cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" > ";
-      }
-      else
-      {
-        cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked> ";
-      }
-      WHomePage.replace("%WSCPBUFFER%", cpbuffer);
-      String rdbuffer;
-      if ( !mySetupData->get_reversedirection() )
-      {
-        rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" > ";
-      }
-      else
-      {
-        rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
-      }
-      WHomePage.replace("%WSRDBUFFER%", rdbuffer);
-      WHomePage.replace("%WSP0BUFFER%", String(mySetupData->get_focuserpreset(0)));
-      WHomePage.replace("%WSP1BUFFER%", String(mySetupData->get_focuserpreset(1)));
-      WHomePage.replace("%WSP2BUFFER%", String(mySetupData->get_focuserpreset(2)));
-      WHomePage.replace("%WSP3BUFFER%", String(mySetupData->get_focuserpreset(3)));
-      WHomePage.replace("%WSP4BUFFER%", String(mySetupData->get_focuserpreset(4)));
-      WHomePage.replace("%WSP5BUFFER%", String(mySetupData->get_focuserpreset(5)));
-      WHomePage.replace("%WSP6BUFFER%", String(mySetupData->get_focuserpreset(6)));
-      WHomePage.replace("%WSP7BUFFER%", String(mySetupData->get_focuserpreset(7)));
-      WHomePage.replace("%WSP8BUFFER%", String(mySetupData->get_focuserpreset(8)));
-      WHomePage.replace("%WSP9BUFFER%", String(mySetupData->get_focuserpreset(9)));
-      DebugPrintln(F(PROCESSPAGEENDSTR));
-    }
-    else
-    {
-      // could not read index file from SPIFFS
-      TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
-      DebugPrintln(F(BUILDDEFAULTPAGESTR));
-      WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
-    }
-  }
-}
-
-// handles root page of webserver
-// this is called whenever a client requests home page of sebserver
-void WEBSERVER_handleroot()
-{
-  // if the root page was a HALT request via Submit button
-  String halt_str = webserver->arg("ha");
-  if ( halt_str != "" )
-  {
-    DebugPrint("root() -halt:");
-    DebugPrintln(halt_str);
-    ftargetPosition = fcurrentPosition;
-  }
-
-  // if set focuser position
-  String fp_str;
-  fp_str = webserver->arg("setpos");
-  if ( fp_str != "" )
-  {
-    DebugPrint("setpos:");
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("fp");
-    if ( fp != "" )
-    {
-      long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      temp = (temp < 0) ? 0 : temp;
-      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
-      fcurrentPosition = ftargetPosition;
-    }
-  }
-
-  // if goto focuser position
-  fp_str = webserver->arg("gotopos");
-  if ( fp_str != "" )
-  {
-    DebugPrint("gotopos:");
-    DebugPrintln(fp_str);
-    String fp = webserver->arg("fp");
-    if ( fp != "" )
-    {
-      long temp = 0;
-      DebugPrint("fp:");
-      DebugPrintln(fp);
-      temp = fp.toInt();
-      temp = (temp < 0) ? 0 : temp;
-      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-    }
-  }
-
-  // if update of maxsteps
-  String fmax_str = webserver->arg("fm");
-  if ( fmax_str != "" )
-  {
-    long temp = 0;
-    DebugPrint("root() -maxsteps:");
-    DebugPrintln(fmax_str);
-    temp = fmax_str.toInt();
-    if ( temp < (long) fcurrentPosition )             // if maxstep is less than focuser position
-    {
-      temp = (long) fcurrentPosition + 1;
-    }
-    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
-    {
-      temp = FOCUSERLOWERLIMIT;
-    }
-    if ( temp > (long) mySetupData->get_maxstep() )   // if higher than max value
-    {
-      temp = (long) mySetupData->get_maxstep();
-    }
-    mySetupData->set_maxstep((unsigned long)temp);
-  }
-
   // if set focuser preset 0
-  fp_str = webserver->arg("setp0");
+  String fp_str = webserver->arg("setp0");
   if ( fp_str != "" )
   {
     DebugPrint("setp0:");
@@ -2843,6 +2565,339 @@ void WEBSERVER_handleroot()
     }
   }
 
+  WEBSERVER_buildpresets();
+  // send the presetspage to a connected client
+  DebugPrintln(F(SENDPAGESTR));
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WPresetsPage );
+  delay(10);                     // small pause so background ESP8266 tasks can run
+}
+
+void WEBSERVER_buildmove(void)
+{
+  // construct the movepage now
+  // load not found page from spiffs - wsmove.html
+  if (!SPIFFS.begin())
+  {
+    TRACE();
+    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    // could not read move file from SPIFFS
+    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+  }
+  else
+  {
+    if ( SPIFFS.exists("/wsmove.html"))
+    {
+      DebugPrintln("webserver: wsmove.html found in spiffs");
+      // open file for read
+      File file = SPIFFS.open("/wsmove.html", "r");
+      // read contents into string
+      DebugPrintln(F(READPAGESTR));
+      WMovePage = file.readString();
+
+      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      // process for dynamic data
+      WMovePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
+      WMovePage.replace("%WSIPSTR%", ipStr);
+      WMovePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
+      WMovePage.replace("%WSPROGRAMVERSION%", String(programVersion));
+      WMovePage.replace("%WSPROGRAMNAME%", String(programName));
+      WMovePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+      WMovePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
+      WMovePage.replace("%WSISMOVING%", String(isMoving));
+      DebugPrintln(F(PROCESSPAGEENDSTR));
+    }
+    else
+    {
+      // could not read move file from SPIFFS
+      TRACE();
+      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
+      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    }
+  }
+}
+
+// handles move page of webserver
+// this is called whenever a client requests move
+void WEBSERVER_handlemove()
+{
+  // if the root page was a HALT request via Submit button
+  String halt_str = webserver->arg("ha");
+  if ( halt_str != "" )
+  {
+    TRACE();
+    DebugPrintln(halt_str);
+    ftargetPosition = fcurrentPosition;
+  }
+
+  // if move
+  String fmv_str = webserver->arg("mv");
+  if ( fmv_str != "" )
+  {
+    long temp = 0;
+    TRACE();
+    DebugPrintln(fmv_str);
+    temp = fmv_str.toInt();
+    long newtemp = (long) fcurrentPosition + temp;
+    newtemp = ( newtemp < 0 ) ? 0 : newtemp;
+    newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
+    ftargetPosition = (unsigned long) newtemp;
+    DebugPrint("Move = "); DebugPrintln(fmv_str);
+    DebugPrint(F(CURRENTPOSSTR));
+    DebugPrintln(fcurrentPosition);
+    DebugPrint(F(TARGETPOSSTR));
+    DebugPrintln(ftargetPosition);
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+    // restore motorspeed just in case
+    driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+  }
+
+  WEBSERVER_buildmove();
+  // send the movepage to a connected client
+  DebugPrintln(F(SENDPAGESTR));
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WMovePage );
+  delay(10);                     // small pause so background ESP8266 tasks can run
+}
+
+void WEBSERVER_buildhome(void)
+{
+  // construct the homepage now
+  // load not found page from spiffs - wsindex.html
+  if (!SPIFFS.begin())
+  {
+    TRACE();
+    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    // could not read index file from SPIFFS
+    DebugPrintln(BUILDDEFAULTPAGESTR);
+    WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+  }
+  else
+  {
+    if ( SPIFFS.exists("/wsindex.html"))
+    {
+      DebugPrintln("webserver: wsindex.html found in spiffs");
+      // open file for read
+      File file = SPIFFS.open("/wsindex.html", "r");
+      // read contents into string
+      DebugPrintln(F(READPAGESTR));
+      WHomePage = file.readString();
+
+      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      // process for dynamic data
+      WHomePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
+      WHomePage.replace("%WSIPSTR%", ipStr);
+      WHomePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
+      WHomePage.replace("%WSPROGRAMVERSION%", String(programVersion));
+      WHomePage.replace("%WSPROGRAMNAME%", String(programName));
+      WHomePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+      WHomePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
+      WHomePage.replace("%WSMAXSTEP%", String(mySetupData->get_maxstep()));
+      WHomePage.replace("%WSISMOVING%", String(isMoving));
+#ifdef TEMPERATUREPROBE
+      WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1)));
+#else
+      WHomePage.replace("%WSTEMPERATURE%", "20.000");
+#endif
+      WHomePage.replace("%WSTEMPPRECISION%", String(mySetupData->get_tempprecision()));
+      String smbuffer = String(mySetupData->get_stepmode());
+      switch ( mySetupData->get_stepmode() )
+      {
+        case 1:
+          smbuffer = WS_SM1CHECKED;
+          smbuffer = smbuffer + WS_SM2UNCHECKED;
+          smbuffer = smbuffer + WS_SM4UNCHECKED;
+          smbuffer = smbuffer + WS_SM8UNCHECKED;
+          smbuffer = smbuffer + WS_SM16UNCHECKED;
+          smbuffer = smbuffer + WS_SM32UNCHECKED;
+          break;
+        case 2 :
+          smbuffer = WS_SM1UNCHECKED;
+          smbuffer = smbuffer + WS_SM2CHECKED;
+          smbuffer = smbuffer + WS_SM4UNCHECKED;
+          smbuffer = smbuffer + WS_SM8UNCHECKED;
+          smbuffer = smbuffer + WS_SM16UNCHECKED;
+          smbuffer = smbuffer + WS_SM32UNCHECKED;
+          break;
+        case 4 :
+          smbuffer = WS_SM1UNCHECKED;
+          smbuffer = smbuffer + WS_SM2UNCHECKED;
+          smbuffer = smbuffer + WS_SM4CHECKED;
+          smbuffer = smbuffer + WS_SM8UNCHECKED;
+          smbuffer = smbuffer + WS_SM16UNCHECKED;
+          smbuffer = smbuffer + WS_SM32UNCHECKED;
+          break;
+        case 8 :
+          smbuffer = WS_SM1UNCHECKED;
+          smbuffer = smbuffer + WS_SM2UNCHECKED;
+          smbuffer = smbuffer + WS_SM4UNCHECKED;
+          smbuffer = smbuffer + WS_SM8CHECKED;
+          smbuffer = smbuffer + WS_SM16UNCHECKED;
+          smbuffer = smbuffer + WS_SM32UNCHECKED;
+          break;
+        case 16 :
+          smbuffer = WS_SM1UNCHECKED;
+          smbuffer = smbuffer + WS_SM2UNCHECKED;
+          smbuffer = smbuffer + WS_SM4UNCHECKED;
+          smbuffer = smbuffer + WS_SM8UNCHECKED;
+          smbuffer = smbuffer + WS_SM16CHECKED;
+          smbuffer = smbuffer + WS_SM32UNCHECKED;
+          break;
+        case 32 :
+          smbuffer = WS_SM1UNCHECKED;
+          smbuffer = smbuffer + WS_SM2UNCHECKED;
+          smbuffer = smbuffer + WS_SM4UNCHECKED;
+          smbuffer = smbuffer + WS_SM8UNCHECKED;
+          smbuffer = smbuffer + WS_SM16UNCHECKED;
+          smbuffer = smbuffer + WS_SM32CHECKED;
+          break;
+        default :
+          smbuffer = WS_SM1CHECKED;
+          smbuffer = smbuffer + WS_SM2UNCHECKED;
+          smbuffer = smbuffer + WS_SM4UNCHECKED;
+          smbuffer = smbuffer + WS_SM8UNCHECKED;
+          smbuffer = smbuffer + WS_SM16UNCHECKED;
+          smbuffer = smbuffer + WS_SM32UNCHECKED;
+          break;
+      }
+      WHomePage.replace("%WSSMBUFFER%", smbuffer);
+      String msbuffer = String(mySetupData->get_motorSpeed());
+      switch ( mySetupData->get_motorSpeed() )
+      {
+        case 0:
+          msbuffer = WS_MSSLOWCHECKED;
+          msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+          msbuffer = msbuffer + WS_MSFASTUNCHECKED;
+          break;
+        case 1:
+          msbuffer = WS_MSSLOWUNCHECKED;
+          msbuffer = msbuffer + WS_MSMEDCHECKED;
+          msbuffer = msbuffer + WS_MSFASTUNCHECKED;
+          break;
+        case 2:
+          msbuffer = WS_MSSLOWUNCHECKED;
+          msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+          msbuffer = msbuffer + WS_MSFASTCHECKED;
+          break;
+        default:
+          msbuffer = WS_MSSLOWUNCHECKED;
+          msbuffer = msbuffer + WS_MSMEDUNCHECKED;
+          msbuffer = msbuffer + WS_MSFASTCHECKED;
+          break;
+      }
+      WHomePage.replace("%WSMSBUFFER%", msbuffer);
+      String cpbuffer;
+      if ( !mySetupData->get_coilpower() )
+      {
+        cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" > ";
+      }
+      else
+      {
+        cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked> ";
+      }
+      WHomePage.replace("%WSCPBUFFER%", cpbuffer);
+      String rdbuffer;
+      if ( !mySetupData->get_reversedirection() )
+      {
+        rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" > ";
+      }
+      else
+      {
+        rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
+      }
+      WHomePage.replace("%WSRDBUFFER%", rdbuffer);
+      DebugPrintln(F(PROCESSPAGEENDSTR));
+    }
+    else
+    {
+      // could not read index file from SPIFFS
+      TRACE();
+      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
+      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    }
+  }
+}
+
+// handles root page of webserver
+// this is called whenever a client requests home page of sebserver
+void WEBSERVER_handleroot()
+{
+  // if the root page was a HALT request via Submit button
+  String halt_str = webserver->arg("ha");
+  if ( halt_str != "" )
+  {
+    DebugPrint("root() -halt:");
+    DebugPrintln(halt_str);
+    ftargetPosition = fcurrentPosition;
+  }
+
+  // if set focuser position
+  String fp_str;
+  fp_str = webserver->arg("setpos");
+  if ( fp_str != "" )
+  {
+    DebugPrint("setpos:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("fp");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+      fcurrentPosition = ftargetPosition;
+    }
+  }
+
+  // if goto focuser position
+  fp_str = webserver->arg("gotopos");
+  if ( fp_str != "" )
+  {
+    DebugPrint("gotopos:");
+    DebugPrintln(fp_str);
+    String fp = webserver->arg("fp");
+    if ( fp != "" )
+    {
+      long temp = 0;
+      DebugPrint("fp:");
+      DebugPrintln(fp);
+      temp = fp.toInt();
+      temp = (temp < 0) ? 0 : temp;
+      ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+#if defined(JOYSTICK1) || defined(JOYSTICK2)
+      // restore motorspeed just in case
+      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
+#endif
+    }
+  }
+
+  // if update of maxsteps
+  String fmax_str = webserver->arg("fm");
+  if ( fmax_str != "" )
+  {
+    long temp = 0;
+    DebugPrint("root() -maxsteps:");
+    DebugPrintln(fmax_str);
+    temp = fmax_str.toInt();
+    if ( temp < (long) fcurrentPosition )             // if maxstep is less than focuser position
+    {
+      temp = (long) fcurrentPosition + 1;
+    }
+    if ( temp < FOCUSERLOWERLIMIT )                   // do not set it less then 1024
+    {
+      temp = FOCUSERLOWERLIMIT;
+    }
+    if ( temp > (long) mySetupData->get_maxstep() )   // if higher than max value
+    {
+      temp = (long) mySetupData->get_maxstep();
+    }
+    mySetupData->set_maxstep((unsigned long)temp);
+  }
+
   // if update motorspeed
   String fms_str = webserver->arg("ms");
   if ( fms_str != "" )
@@ -2974,9 +3029,10 @@ void start_webserver(void)
   WEBSERVER_buildnotfound();
   WEBSERVER_buildhome();
   WEBSERVER_buildmove();
-
+  WEBSERVER_buildpresets();
   webserver->on("/", WEBSERVER_handleroot);
   webserver->on("/move", WEBSERVER_handlemove);
+  webserver->on("/presets", WEBSERVER_handlepresets);  
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
