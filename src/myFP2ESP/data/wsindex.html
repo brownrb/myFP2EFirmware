@@ -1,2 +1,36 @@
-<html><head></head><meta http-equiv=refresh content="%WSREFRESHRATE%"><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>(c) R. Brown, Holger M, 2019. All rights reserved<br>IP Address: %WSIPSTR%: Port: %WSWEBSERVERPORT%, Firmware Version=%WSPROGRAMVERSION%<br>Driverboard = %WSPROGRAMNAME%</p><p><form action="/" method="post"><b>Position </b><input type="text" name="fp" size ="15" value="%WSCURRENTPOSITION%"> <input type="submit" name="setpos" value="Set"> <input type="submit" name="gotopos" value="Goto"> (Target = %WSFTARGETPOSITION%)</form><b><form action="/" method="post">MaxSteps </b><input type="text" name="fm" size ="15" value=%WSMAXSTEP%> <input type="submit" value="Set"></form></p><form action="/" method="post" ><b>Move: </b><input type="radio" name="mv" value="-500" > -500 <input type="radio" name="mv" value="-100" > -100 <input type="radio" name="mv" value="-10" > -10 <input type="radio" name="mv" value="-1" > -1 <input type="radio" name="mv" value="0" Checked > 0 <input type="radio" name="mv" value="1" > 1 <input type="radio" name="mv" value="10" > 10 <input type="radio" name="mv" value="100" > 100 <input type="radio" name="mv" value="500" > 500 <input type="hidden" name="mv" value="true"><input type="submit" value="MOVE"></form></p><p><form action="/" method="post"><b>IsMoving</b> = %WSISMOVING% <input type="hidden" name="ha" value="true"><input type="submit" value="HALT"></form></p><p><form action="/" method="post"><b>Temp</b> = %WSTEMPERATURE%, <b>Temp Resolution </b><input type="text" name="tr" size ="3" value="%WSTEMPPRECISION%"> <input type="submit" value="Set"></form></p><p><form action="/" method="post" ><b>Stepmode </b> %WSSMBUFFER%  <input type="hidden" name="sm" value="true"><input type="submit" value="Set"></form></p><p><form action="/" method="post" ><b>Motorspeed: </b> %WSMSBUFFER% <input type="hidden" name="ms" value="true"><input type="submit" value="Set"></form></p><p><form action="/" method="post"><b>Coilpower </b> %WSCPBUFFER% <input type="hidden" name="cp" value="true"><input type="submit" value="Set"></form><b><form action="/" method="post">Reverse Direction </b> %WSRDBUFFER% <input type="hidden" name="rd" value="true"></td><td><input type="submit" value="Set"></form></p><p><form action="/presets" method="GET"><input type="submit" value="PRESETS"></form></p>
-<p><form action="/" method="GET"><input type="submit" value="HOMEPAGE"></form></p></body></html>
+<html><head></head><meta http-equiv=refresh content="%WSREFRESHRATE%"><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>(c) R. Brown, Holger M, 2019. All rights reserved<br>IP Address: %WSIPSTR%: Port: %WSWEBSERVERPORT%, Firmware Version=%WSPROGRAMVERSION%<br>Driverboard = %WSPROGRAMNAME%</p><p><form action="/" method="post"><b>Position </b><span id="POSITION">%WSCURRENTPOSITION%</span> <input type="text" name="fp" size ="15" value="%WSCURRENTPOSITION%"> <input type="submit" name="setpos" value="Set"> <input type="submit" name="gotopos" value="Goto"> (Target = %WSFTARGETPOSITION%)</form><b><form action="/" method="post">MaxSteps </b><input type="text" name="fm" size ="15" value=%WSMAXSTEP%> <input type="submit" value="Set"></form></p><p><form action="/" method="post"><b>IsMoving</b> = <span id="ISMOVING">%WSISMOVING%</span> <input type="hidden" name="ha" value="true"><input type="submit" value="HALT"></form></p><p><form action="/" method="post"><b>Temp</b> = %WSTEMPERATURE%, <b>Temp Resolution </b><input type="text" name="tr" size ="3" value="%WSTEMPPRECISION%"> <input type="submit" value="Set"></form></p><p><form action="/" method="post" ><b>Stepmode </b> %WSSMBUFFER%  <input type="hidden" name="sm" value="true"><input type="submit" value="Set"></form></p><p><form action="/" method="post" ><b>Motorspeed: </b> %WSMSBUFFER% <input type="hidden" name="ms" value="true"><input type="submit" value="Set"></form></p><p><form action="/" method="post"><b>Coilpower </b> %WSCPBUFFER% <input type="hidden" name="cp" value="true"><input type="submit" value="Set"></form><b><form action="/" method="post">Reverse Direction </b> %WSRDBUFFER% <input type="hidden" name="rd" value="true"><input type="submit" value="Set"></form></p><p><table><tr><td><form action="/move" method="GET"><input type="submit" value="MOVE-PAGE"></form></td><td><form action="/presets" method="GET"><input type="submit" value="PRESETS-PAGE"></form></td><td><form action="/" method="GET"><input type="submit" value="HOME-PAGE"></form></td></tr></table></p>
+
+<script>
+function getposition() {
+ var xhttp = new XMLHttpRequest();
+ xhttp.onreadystatechange = function() {
+ if (this.readyState == 4 && this.status == 200) {
+  document.getElementById("POSITION").innerHTML = this.responseText;
+}
+};
+xhttp.open("GET", "position", true);
+xhttp.send();
+}
+
+setInterval(function(){	
+getposition();
+}, 1500);
+</script>
+
+<script>
+function getismoving() {
+ var xhttp = new XMLHttpRequest();
+ xhttp.onreadystatechange = function() {
+ if (this.readyState == 4 && this.status == 200) {
+  document.getElementById("ISMOVING").innerHTML = this.responseText;
+}
+};
+xhttp.open("GET", "ismoving", true);
+xhttp.send();
+}
+
+setInterval(function(){	
+getismoving();
+}, 666);
+</script>
+</body></html>

@@ -2128,6 +2128,9 @@ void WEBSERVER_buildpresets(void)
       WPresetsPage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
       WPresetsPage.replace("%WSPROGRAMVERSION%", String(programVersion));
       WPresetsPage.replace("%WSPROGRAMNAME%", String(programName));
+      WPresetsPage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+      WPresetsPage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
+      WPresetsPage.replace("%WSISMOVING%", String(isMoving));
 
       WPresetsPage.replace("%WSP0BUFFER%", String(mySetupData->get_focuserpreset(0)));
       WPresetsPage.replace("%WSP1BUFFER%", String(mySetupData->get_focuserpreset(1)));
@@ -2156,6 +2159,15 @@ void WEBSERVER_buildpresets(void)
 
 void WEBSERVER_handlepresets(void)
 {
+  // if the root page was a HALT request via Submit button
+  String halt_str = webserver->arg("ha");
+  if ( halt_str != "" )
+  {
+    TRACE();
+    DebugPrintln(halt_str);
+    ftargetPosition = fcurrentPosition;
+  }
+
   // if set focuser preset 0
   String fp_str = webserver->arg("setp0");
   if ( fp_str != "" )
@@ -2713,7 +2725,16 @@ void WEBSERVER_buildhome(void)
       WHomePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
       WHomePage.replace("%WSPROGRAMVERSION%", String(programVersion));
       WHomePage.replace("%WSPROGRAMNAME%", String(programName));
-      WHomePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+      // if this is a GOTO command then make this target else make current
+      String fp_str = webserver->arg("gotopos");
+      if ( fp_str != "" )
+      {
+        WHomePage.replace("%WSCURRENTPOSITION%", String(ftargetPosition));
+      }
+      else
+      {
+        WHomePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+      }
       WHomePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
       WHomePage.replace("%WSMAXSTEP%", String(mySetupData->get_maxstep()));
       WHomePage.replace("%WSISMOVING%", String(isMoving));
@@ -2841,6 +2862,16 @@ void WEBSERVER_buildhome(void)
     }
   }
   delay(10);                      // small pause so background tasks can run
+}
+
+void WEBSERVER_handleposition()
+{
+  webserver->send(200, "text/plane", String(fcurrentPosition)); //Send position value only to client ajax request
+}
+
+void WEBSERVER_handleismoving()
+{
+  webserver->send(200, "text/plane", String(isMoving)); //Send isMoving value only to client ajax request
 }
 
 // handles root page of webserver
@@ -3012,28 +3043,6 @@ void WEBSERVER_handleroot()
     mySetupData->set_tempprecision(temp);
   }
 
-  // if move
-  String fmv_str = webserver->arg("mv");
-  if ( fmv_str != "" )
-  {
-    unsigned long temp = 0;
-    DebugPrint("root() -move:");
-    DebugPrintln(fmv_str);
-    temp = fmv_str.toInt();
-    ftargetPosition = fcurrentPosition + temp;
-    DebugPrint("Move = "); DebugPrintln(fmv_str);
-    DebugPrint("Current = "); DebugPrint(fcurrentPosition);
-    DebugPrint(", Target = "); DebugPrintln(ftargetPosition);
-    if ( ftargetPosition > mySetupData->get_maxstep() )
-    {
-      ftargetPosition = mySetupData->get_maxstep();
-    }
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-    // restore motorspeed just in case
-    driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
-  }
-
   WEBSERVER_buildhome();
   // send the homepage to a connected client
   DebugPrintln(F(SENDPAGESTR));
@@ -3056,6 +3065,8 @@ void start_webserver(void)
   webserver->on("/", WEBSERVER_handleroot);
   webserver->on("/move", WEBSERVER_handlemove);
   webserver->on("/presets", WEBSERVER_handlepresets);
+  webserver->on("/position", WEBSERVER_handleposition);
+  webserver->on("/ismoving", WEBSERVER_handleismoving);
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
