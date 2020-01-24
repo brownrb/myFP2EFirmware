@@ -328,7 +328,7 @@ void setFeatures()
 String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "118";
+char programVersion[] = "117";
 char ProgramAuthor[]  = "(c) R BROWN 2020";
 
 unsigned long fcurrentPosition;             // current focuser position
