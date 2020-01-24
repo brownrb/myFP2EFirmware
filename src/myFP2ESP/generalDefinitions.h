@@ -59,12 +59,6 @@
 #define HPSWOPEN              0             // hpsw states refelect status of switch
 #define HPSWCLOSED            1
 
-// You can set the speed of the motor when performing backlash to SLOW, MED or FAST
-#define BACKLASHSPEED         SLOW
-
-#define moving_in             false
-#define moving_out            !moving_in
-
 #ifndef SLOW
 #define SLOW                  0             // motorspeeds
 #endif
@@ -81,6 +75,10 @@
 // ----------------------------------------------------------------------------------------------
 // 2: DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
+
+
+#define moving_in             false
+#define moving_out            !moving_in
 
 #ifndef STEP1
 #define STEP1                 1             // stepmodes
@@ -153,6 +151,7 @@
 #define APCONNECTFAILSTR      "Did not connect to AP "
 #define CONNECTEDSTR          "Connected"
 #define I2CDEVICENOTFOUNDSTR  "I2C device not found"
+
 #define WRITEFILEFAILSTR      "Write to file failed"
 #define WRITEFILESUCCESSSTR   "Write to file OK"
 #define CREATEFILEFAILSTR     "Unable to create file"
@@ -213,6 +212,7 @@
 #define JSONPAGETYPE              "application/json"
 #define FILENOTFOUNDSTR           "File Not Found"
 #define FILEFOUNDSTR              "File found"
+
 #define SPIFFSNOTSTARTEDSTR       "Unable to start SPIFFS"
 #define BUILDDEFAULTPAGESTR       "build default page"
 #define SPIFFSFILENOTFOUNDSTR     "file not found in spiffs"
@@ -224,6 +224,7 @@
 #define STARTWEBSERVERSTR         "start web server"
 #define STOPWEBSERVERSTR          "stop web server"
 #define STOPMDNSSERVERSTR         "stop mdns server"
+
 #define SERVERSTATESTOPSTR        "STOPPED"
 #define SERVERSTATESTARTSTR       "STARTED"
 #define SERVERSTATERUNSTR         "RUNNING"

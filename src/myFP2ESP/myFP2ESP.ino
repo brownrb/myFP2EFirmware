@@ -126,8 +126,8 @@ char mySSID[64] = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 #endif
 #ifdef STATIONMODE                          // the controller connects to your network
-char mySSID[64] = "myfp2eap";
-char myPASSWORD[64] = "myfp2eap";
+char mySSID[64] = "myfp2eap";               // you need to set this to your WiFi network SSID
+char myPASSWORD[64] = "myfp2eap";           // and you need to set the correct password 
 #endif
 
 // ----------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ String BLUETOOTHNAME = "MYFP3ESP32BT";      // default name for Bluetooth contro
 // 10: mDNS NAME: Name must be alphabetic chars only, lowercase
 // ----------------------------------------------------------------------------------------------
 #ifdef MDNSSERVER
-char mDNSNAME[] = "myfp2eap";
+char mDNSNAME[] = "myfp2eap";               // mDNS name will be myfp2eap.local
 #endif // #ifdef MDNSSERVER
 
 // ----------------------------------------------------------------------------------------------
@@ -475,15 +475,14 @@ void update_temp(void)
   if (tprobe1 == 1)
   {
     static unsigned long lasttempconversion = 0;
-    static byte requesttempflag = 0;              // start with request
+    static byte requesttempflag = 0;                      // start with request
     unsigned long tempnow = millis();
 
     // see if the temperature needs updating - done automatically every 1.5s
-    // if (((tempnow - lasttempconversion) > TEMPREFRESHRATE) || (tempnow < lasttempconversion))
     if (TimeCheck(lasttempconversion, TEMPREFRESHRATE))   // see if the temperature needs updating
     {
       static float tempval;
-      static float starttemp;                     // start temperature to use when temperature compensation is enabled
+      static float starttemp;                             // start temperature to use when temperature compensation is enabled
 
       if ( tcchanged != mySetupData->get_tempcompenabled() )
       {
@@ -1450,7 +1449,7 @@ bool MANAGEMENT_handleFileRead(String path)
     path += "index.html";                               // If a folder is requested, send the index file
   }
   String contentType = MANAGEMENT_getContentType(path); // Get the MIME type
-  if (SPIFFS.exists(path))                              // If the file exists
+  if ( SPIFFS.exists(path) )                            // If the file exists
   {
     File file = SPIFFS.open(path, "r");                 // Open it
 #ifdef MANAGEMENTFORCEDOWNLOAD
@@ -2149,7 +2148,6 @@ void WEBSERVER_buildpresets(void)
       WPresetsPage.replace("%WSP7BUFFER%", String(mySetupData->get_focuserpreset(7)));
       WPresetsPage.replace("%WSP8BUFFER%", String(mySetupData->get_focuserpreset(8)));
       WPresetsPage.replace("%WSP9BUFFER%", String(mySetupData->get_focuserpreset(9)));
-
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
     else
@@ -2220,6 +2218,7 @@ void WEBSERVER_handlepresets(void)
 
   // if set focuser preset 1
   fp_str = webserver->arg("setp1");
+
   if ( fp_str != "" )
   {
     DebugPrint("setp1:");
@@ -3105,7 +3104,7 @@ void stop_webserver(void)
 // ----------------------------------------------------------------------------------------------
 #ifdef ASCOMREMOTE
 #if defined(ESP8266)
-#include <ESP8266webserver.h>
+#include <ESP8266WebServer.h>
 #else
 #include <webserver.h>
 #endif // if defined(esp8266)
@@ -3382,9 +3381,9 @@ void ASCOM_getURLParameters()
     }
     if ( str.equals("position") )
     {
-      String str = ascomserver->arg(i);
+      String str1 = ascomserver->arg(i);
       DebugPrint("ASCOMpos RAW:");
-      DebugPrintln(str);
+      DebugPrintln(str1);
       ASCOMpos = ascomserver->arg(i).toInt();      // this returns a long data type
       DebugPrint("ASCOMpos:");
       DebugPrintln(ASCOMpos);
@@ -4215,6 +4214,7 @@ void start_ascomremoteserver(void)
   ascomserver->begin();
   ascomserverstate = RUNNING;
   delay(10);                     // small pause so background tasks can run
+  DebugPrintln(F("start ascom server: RUNNING"));
 }
 
 void stop_ascomremoteserver(void)
@@ -4343,6 +4343,7 @@ void software_Reboot(int Reboot_delay)
 #ifdef MANAGEMENT
   stop_management();
 #endif
+
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   if ( myclient.connected() )
   {
@@ -4495,7 +4496,7 @@ void setup()
   DebugPrintln(mySetupData->get_webserverport());
   DebugPrint(F("ascomalpacaserverport= "));
   DebugPrintln(mySetupData->get_ascomalpacaport());
-  DebugPrint(F("webserver page refresh ratet= "));
+  DebugPrint(F("webserver page refresh rate= "));
   DebugPrintln(mySetupData->get_webpagerefreshrate());
   DebugPrint(F("mdnsserverport= "));
   DebugPrintln(mySetupData->get_mdnsport());
@@ -4652,7 +4653,7 @@ void setup()
 
 #ifdef TEMPERATUREPROBE
   // restore temperature probe resolution setting
-  // temp_setresolution(mySetupData->get_tempprecision());
+  // temp_setresolution(mySetupData->get_tempprecision());    // redundant as earlier call to init_temp() sets the precision
   read_temp(1);
 #endif
 
