@@ -5,8 +5,8 @@
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved. 
+// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
 #include <Arduino.h>
@@ -75,6 +75,7 @@
 // ----------------------------------------------------------------------------------------------
 // 2: DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
+
 
 #define moving_in             false
 #define moving_out            !moving_in
@@ -151,6 +152,13 @@
 #define CONNECTEDSTR          "Connected"
 #define I2CDEVICENOTFOUNDSTR  "I2C device not found"
 
+#define WRITEFILEFAILSTR      "Write to file failed"
+#define WRITEFILESUCCESSSTR   "Write to file OK"
+#define CREATEFILEFAILSTR     "Unable to create file"
+#define CHECKWIFICONFIGFILESTR "check for Wifi config file"
+#define DESERIALIZEERRORSTR   "Deserialization error"
+#define SERVERNOTRUNNINGSTR   "Server NOT running"
+
 #define HPCLOSEDFPNOT0STR     "HP closed, fcurrentPosition !=0"
 #define HPCLOSEDFP0STR        "HP closed, fcurrentPosition=0"
 #define HPOPENFPNOT0STR       "HP Open, fcurrentPosition=0"
@@ -203,6 +211,8 @@
 #define TEXTPAGETYPE              "text/html"
 #define JSONPAGETYPE              "application/json"
 #define FILENOTFOUNDSTR           "File Not Found"
+#define FILEFOUNDSTR              "File found"
+
 #define SPIFFSNOTSTARTEDSTR       "Unable to start SPIFFS"
 #define BUILDDEFAULTPAGESTR       "build default page"
 #define SPIFFSFILENOTFOUNDSTR     "file not found in spiffs"
@@ -213,6 +223,8 @@
 #define STOPASCOMSERVERSTR        "stop ascom server"
 #define STARTWEBSERVERSTR         "start web server"
 #define STOPWEBSERVERSTR          "stop web server"
+#define STOPMDNSSERVERSTR         "stop mdns server"
+
 #define SERVERSTATESTOPSTR        "STOPPED"
 #define SERVERSTATESTARTSTR       "STARTED"
 #define SERVERSTATERUNSTR         "RUNNING"

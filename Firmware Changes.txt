@@ -1,3 +1,25 @@
+// r117
+// Update copyright notice to include year 2020
+// When rebooting, check for MDNS and free resources
+// Fix code in display_oledtext_page2 to display correct port numbers for web/ascom servers
+// Add READWIFICONFIG as a focuser-config parameter - will read SSID and PASSWORD from wificonfig.json file
+// Add change port number for mDNS server to management console
+// Add Start and Stop mDNS server to management console
+// Check if service is running before attempting to stop service
+// Add check if MANAGEMENT server is defined without ACCESSPOINT or STATIONMODE defined
+// Improve layout of management console and web server pages to reduce code overhead
+// Move focuser presets on webpage to /presets page
+// Add link on main webpage to presets page
+// remove un-needed CRLF and spaces from data/*.html pages
+// Add dynamic web page update to webserver /move page xhttp
+// Add HALT to webserver /move page
+// Add focuser position and ismoving to presets webpage, add dynamic web page update xhhtp
+// Add ismoving dynamic update to webserver home page xhttp
+// Add halt button and move button to focuser presets web page
+// Add presets button to move web page
+// Delete move buttons from main web server page (they are on /move)
+// Add support for OLED 1.3" displays using SSH1306 driver chip
+
 // 116
 // Add ~finalizer for myBoards class
 // Fix logic error in Management server list files for ESP8266

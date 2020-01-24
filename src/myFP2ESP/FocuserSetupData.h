@@ -5,8 +5,8 @@
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
 #include <Arduino.h>
@@ -57,6 +57,7 @@ class SetupData
     unsigned long get_webserverport();
     unsigned long get_ascomalpacaport();
     int get_webpagerefreshrate();
+    unsigned long get_mdnsport();
 
     //__setter
     void set_fposition(unsigned long);
@@ -85,6 +86,7 @@ class SetupData
     void set_webserverport(unsigned long);
     void set_ascomalpacaport(unsigned long);
     void set_webpagerefreshrate(int);
+    void set_mdnsport(unsigned long);
 
   private:
     byte SavePersitantConfiguration();
@@ -132,17 +134,18 @@ class SetupData
     byte tcdirection;               // direction in which to apply temperature compensation
     byte motorSpeed;                // speed of motor, slow, medium or fast
     byte displayenabled;            // if 1, display is enabled
-    unsigned long focuserpreset0;   // focuser presets can be used with software or ir-remote controller
-    unsigned long focuserpreset1;
-    unsigned long focuserpreset2;
-    unsigned long focuserpreset3;
-    unsigned long focuserpreset4;
-    unsigned long focuserpreset5;
-    unsigned long focuserpreset6;
-    unsigned long focuserpreset7;
-    unsigned long focuserpreset8;
-    unsigned long focuserpreset9;
-    unsigned long webserverport;    // port used by web server
-    unsigned long ascomalpacaport;  // port used by ascom remote server
-    int webpagerefreshrate;         // how long to wait before web page is refreshed in seconds
+    unsigned long preset0;          // focuser presets can be used with software or ir-remote controller
+    unsigned long preset1;
+    unsigned long preset2;
+    unsigned long preset3;
+    unsigned long preset4;
+    unsigned long preset5;
+    unsigned long preset6;
+    unsigned long preset7;
+    unsigned long preset8;
+    unsigned long preset9;
+    unsigned long webserverport;
+    unsigned long ascomalpacaport;
+    int webpagerefreshrate;
+    unsigned long mdnsport;
 };

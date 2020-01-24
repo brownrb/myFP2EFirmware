@@ -5,8 +5,8 @@
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2019. All Rights Reserved.
-// (c) Copyright Holger M, 2019. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
 #include <Arduino.h>
@@ -82,13 +82,13 @@
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 
-//#define WEBSERVER 7
+#define WEBSERVER 7
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
 //#define MDNSSERVER 8
 
-// Management Server Control Interface [Port 6060] - enabled by default - DO NOT CHANGE
+// Management Server Control Interface [Port 6060] - DO NOT CHANGE
 #define MANAGEMENT 9
 #define MANAGEMENTFORCEDOWNLOAD 1
 
@@ -100,8 +100,29 @@
 // To enable DUCKDNS [STATIONMODE only]
 //#define USEDUCKDNS 1
 
+// to enable reading SSID and PASSWORD 
+// from SPIFFS file wificonfig at boot time, uncomment the following file
+//#define READWIFICONFIG 1
+
+// ----------------------------------------------------------------------------------------------------------
+// 3: SPECIFY OLED DISPLAY TYPE
+// ----------------------------------------------------------------------------------------------------------
+// only uncomment one of the following OLEDxxxx lines depending upon your lcd type
+// For the OLED 128x64 0.96" display using the SSD1306 driver, uncomment the following line
+#define USE_SSD1306   1
+
+// For the OLED 128x64 1.3" display using the SSH1306 driver, uncomment the following line
+//#define USE_SSH1306   2
+
+// DO NOT CHANGE
+#ifdef OLEDDISPLAY
+#if !defined(USE_SSD1306) && !defined(USE_SSH1306)
+#halt //Error - you can must define either USE_SSD1306 or USE_SSH1306 is using an OLEDDISPLAY
+#endif
+#endif
+
 // ------------------------------------------------------------------------------
-// 3: DO NOT CHANGE: OPTIONS DRIVER BOARD CHECKS
+// 4: DO NOT CHANGE: OPTIONS DRIVER BOARD CHECKS
 // ------------------------------------------------------------------------------
 
 #ifndef DRVBRD
@@ -271,6 +292,12 @@
 #ifdef INDI
 #ifndef LOCALSERIAL
 #halt // ERROR Cannot enable INDI without also enabling LOCALSERIAL
+#endif
+#endif
+
+#ifdef MANAGEMENT
+#if !defined(ACCESSPOINT) && !defined(STATIONMODE)
+#halt // ERROR You must have ACCESSPOINT or STATIONMODE defined to enable the MANAGEMENT console
 #endif
 #endif
 
