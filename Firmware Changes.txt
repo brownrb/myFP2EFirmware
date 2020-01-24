@@ -1,6 +1,7 @@
 // r118
 // Add support for OLED 1.3" displays using SSH1106 driver chip to OLEDGRAPHICS
 // Fix check for OLED display types and driver types
+// Fix issue with OLED not working on PRO2ESP32R3WEMOS board
 
 // r117
 // Update copyright notice to include year 2020

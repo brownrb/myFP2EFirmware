@@ -25,10 +25,10 @@
 //#define TEMPERATUREPROBE 1
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
-//#define OLEDTEXT 1
+#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
-#define OLEDGRAPHICS 1
+//#define OLEDGRAPHICS 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -107,12 +107,12 @@
 // ----------------------------------------------------------------------------------------------------------
 // 3: SPECIFY OLED DISPLAY TYPE
 // ----------------------------------------------------------------------------------------------------------
-// only uncomment one of the following OLEDxxxx lines depending upon your lcd type
+// only uncomment one of the following USE_SSxxxx lines depending upon your lcd type
 // For the OLED 128x64 0.96" display using the SSD1306 driver, uncomment the following line
-//#define USE_SSD1306   1
+#define USE_SSD1306   1
 
 // For the OLED 128x64 1.3" display using the SSH1106 driver, uncomment the following line
-#define USE_SSH1106   2
+//#define USE_SSH1106   2
 
 // DO NOT CHANGE
 #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
