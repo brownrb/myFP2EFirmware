@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 117
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 118
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -127,7 +127,7 @@ char myPASSWORD[64] = "myfp2eap";
 #endif
 #ifdef STATIONMODE                          // the controller connects to your network
 char mySSID[64] = "myfp2eap";               // you need to set this to your WiFi network SSID
-char myPASSWORD[64] = "myfp2eap";           // and you need to set the correct password 
+char myPASSWORD[64] = "myfp2eap";           // and you need to set the correct password
 #endif
 
 // ----------------------------------------------------------------------------------------------
@@ -328,8 +328,8 @@ void setFeatures()
 String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "117";
-char ProgramAuthor[]  = "(c) R BROWN 2019";
+char programVersion[] = "118";
+char ProgramAuthor[]  = "(c) R BROWN 2020";
 
 unsigned long fcurrentPosition;             // current focuser position
 unsigned long ftargetPosition;              // target position
@@ -376,9 +376,16 @@ SSD1306AsciiWire* myoled;
 #endif // #ifdef OLEDTEXT
 
 #ifdef OLEDGRAPHICS
-#include <SSD1306Wire.h>
+#include <Wire.h>
 #include "images.h"
-SSD1306Wire *myoled;
+#ifdef USE_SSD1306                          // For the OLED 128x64 0.96" display using the SSD1306 driver
+#include <SSD1306Wire.h>
+SSD1306Wire* myoled;
+#endif
+#ifdef USE_SSH1106                          // For the OLED 128x64 1.3" display using the SSH1106 driver
+#include <SH1106Wire.h>
+SH1106Wire* myoled;
+#endif
 #endif // #ifdef OLEDGRAPHICS
 
 int packetsreceived;
@@ -690,7 +697,12 @@ boolean Init_OLED(void)
     DebugPrint(F("I2C device found at address "));
     DebugPrintln(OLED_ADDR, HEX);
     displayfound = true;
+#ifdef USE_SSD1306                    // For the OLED 128x64 0.96" display using the SSD1306 driver 
     myoled = new SSD1306Wire(OLED_ADDR , I2CDATAPIN, I2CCLKPIN);
+#endif
+#ifdef USE_SSH1106                    // For the OLED 128x64 1.3" display using the SSH1106 driver
+    myoled = new SH1106Wire(OLED_ADDR , I2CDATAPIN, I2CCLKPIN);
+#endif
     myoled->init();
     myoled->flipScreenVertically();
     myoled->setFont(ArialMT_Plain_10);
@@ -1001,12 +1013,12 @@ void init_oledtextdisplay(void)
     myoled = new SSD1306AsciiWire();
     // Setup the OLED
 #ifdef USE_SSD1306
-  // For the OLED 128x64 0.96" display using the SSD1306 driver
-  myoled->begin(&Adafruit128x64, OLED_ADDR);
+    // For the OLED 128x64 0.96" display using the SSD1306 driver
+    myoled->begin(&Adafruit128x64, OLED_ADDR);
 #endif
-#ifdef USE_SSH1306
-  // For the OLED 128x64 1.3" display using the SSH1306 driver
-  myoled->begin(&SH1106_128x64, OLED_ADDR);
+#ifdef USE_SSH1106
+    // For the OLED 128x64 1.3" display using the SSH1106 driver
+    myoled->begin(&SH1106_128x64, OLED_ADDR);
 #endif
     myoled->set400kHz();
     myoled->setFont(Adafruit5x7);

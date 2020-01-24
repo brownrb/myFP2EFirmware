@@ -28,7 +28,7 @@
 //#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
-//#define OLEDGRAPHICS 1
+#define OLEDGRAPHICS 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -109,15 +109,21 @@
 // ----------------------------------------------------------------------------------------------------------
 // only uncomment one of the following OLEDxxxx lines depending upon your lcd type
 // For the OLED 128x64 0.96" display using the SSD1306 driver, uncomment the following line
-#define USE_SSD1306   1
+//#define USE_SSD1306   1
 
-// For the OLED 128x64 1.3" display using the SSH1306 driver, uncomment the following line
-//#define USE_SSH1306   2
+// For the OLED 128x64 1.3" display using the SSH1106 driver, uncomment the following line
+#define USE_SSH1106   2
 
 // DO NOT CHANGE
-#ifdef OLEDDISPLAY
-#if !defined(USE_SSD1306) && !defined(USE_SSH1306)
-#halt //Error - you can must define either USE_SSD1306 or USE_SSH1306 is using an OLEDDISPLAY
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(USE_SSD1306) && defined(USE_SSH1106)
+#halt //Error - you can must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
+#endif
+#endif
+
+#ifndef USE_SSD1306
+#ifndef USE_SSH1106
+#halt //Error - you  must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
 #endif
 #endif
 
