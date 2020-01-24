@@ -1001,7 +1001,14 @@ void init_oledtextdisplay(void)
     displayfound = true;
     myoled = new SSD1306AsciiWire();
     // Setup the OLED
-    myoled->begin(&Adafruit128x64, OLED_ADDR);
+#ifdef USE_SSD1306
+  // For the OLED 128x64 0.96" display using the SSD1306 driver
+  myoled->begin(&Adafruit128x64, OLED_ADDR);
+#endif
+#ifdef USE_SSH1306
+  // For the OLED 128x64 1.3" display using the SSH1306 driver
+  myoled->begin(&SH1106_128x64, OLED_ADDR);
+#endif
     myoled->set400kHz();
     myoled->setFont(Adafruit5x7);
     myoled->clear();                          // clrscr OLED

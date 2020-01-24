@@ -104,8 +104,25 @@
 // from SPIFFS file wificonfig at boot time, uncomment the following file
 //#define READWIFICONFIG 1
 
+// ----------------------------------------------------------------------------------------------------------
+// 3: SPECIFY OLED DISPLAY TYPE
+// ----------------------------------------------------------------------------------------------------------
+// only uncomment one of the following OLEDxxxx lines depending upon your lcd type
+// For the OLED 128x64 0.96" display using the SSD1306 driver, uncomment the following line
+#define USE_SSD1306   1
+
+// For the OLED 128x64 1.3" display using the SSH1306 driver, uncomment the following line
+//#define USE_SSH1306   2
+
+// DO NOT CHANGE
+#ifdef OLEDDISPLAY
+#if !defined(USE_SSD1306) && !defined(USE_SSH1306)
+#halt //Error - you can must define either USE_SSD1306 or USE_SSH1306 is using an OLEDDISPLAY
+#endif
+#endif
+
 // ------------------------------------------------------------------------------
-// 3: DO NOT CHANGE: OPTIONS DRIVER BOARD CHECKS
+// 4: DO NOT CHANGE: OPTIONS DRIVER BOARD CHECKS
 // ------------------------------------------------------------------------------
 
 #ifndef DRVBRD
