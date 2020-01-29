@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 117
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 118
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -328,7 +328,7 @@ void setFeatures()
 String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "117";
+char programVersion[] = "118";
 char ProgramAuthor[]  = "(c) R BROWN 2020";
 
 unsigned long fcurrentPosition;             // current focuser position
@@ -1606,39 +1606,39 @@ void MANAGEMENT_buildhome(void)
       MHomePage.replace("%MSPROGRAMVERSION%", String(programVersion));
       MHomePage.replace("%MSPROGRAMNAME%", String(programName));
 #ifdef BLUETOOTHMODE
-      MHomePage.replace("%MSCONTROLLERMODE%", "Bluetooth : " + String(BLUETOOTHNAME));
+      MHomePage.replace("%MSCONTROLLERMODE%", "BLUETOOTH : " + String(BLUETOOTHNAME));
 #endif
 #ifdef ACCESSPOINT
-      MHomePage.replace("%MSCONTROLLERMODE%", "Access point");
+      MHomePage.replace("%MSCONTROLLERMODE%", "ACCESSPOINT");
 #endif
 #ifdef STATIONMODE
-      MHomePage.replace("%MSCONTROLLERMODE%", "Station mode");
+      MHomePage.replace("%MSCONTROLLERMODE%", "STATIONMODE");
 #endif
 #ifdef LOCALSERIAL
-      MHomePage.replace("%MSCONTROLLERMODE%", "Local Serial");
+      MHomePage.replace("%MSCONTROLLERMODE%", "LOCALSERIAL");
 #endif
       // %WSTATUS%
 #ifdef WEBSERVER
       if ( webserverstate == RUNNING )
       {
-        MHomePage.replace("%WSTATUS%", "RUNNING");
+        MHomePage.replace("%WSTATUS%", String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%WSTATUS%", "STOPPED");
+        MHomePage.replace("%WSTATUS%", String(SERVERSTATESTOPSTR));
       }
       MHomePage.replace("%WSREFRESHRATE%", "<form action=\"/\" method =\"post\">Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"> </form>");
       MHomePage.replace("%WSPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\">");
       if ( webserverstate == RUNNING)
       {
-        MHomePage.replace("%WSBUTTON%", "<input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>");
+        MHomePage.replace("%WSBUTTON%", String(STOPWSSTR));
       }
       else
       {
-        MHomePage.replace("%WSBUTTON%", "<input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>");
+        MHomePage.replace("%WSBUTTON%", String(STARTWSSTR));
       }
 #else
-      MHomePage.replace("%WSTATUS%", "Web server not defined in firmware");
+      MHomePage.replace("%WSTATUS%", String(NOTDEFINEDSTR));
       MHomePage.replace("%WSREFRESHRATE%", "Refresh Rate: " + String(mySetupData->get_webpagerefreshrate()));
       MHomePage.replace("%WSPORT%", "Port: " + String(mySetupData->get_webserverport()));
       MHomePage.replace("%WSBUTTON%", " ");
@@ -1646,23 +1646,23 @@ void MANAGEMENT_buildhome(void)
 #ifdef ASCOMREMOTE
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ASTATUS%", "RUNNING");
+        MHomePage.replace("%ASTATUS%", String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%ASTATUS%", "STOPPED");
+        MHomePage.replace("%ASTATUS%", String(SERVERSTATESTOPSTR)));
       }
       MHomePage.replace("%ASPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\">");
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ASBUTTON%", "<input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>");
+        MHomePage.replace("%ASBUTTON%", String(STOPASSTR));
       }
       else
       {
-        MHomePage.replace("%ASBUTTON%", "<input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form>");
+        MHomePage.replace("%ASBUTTON%", String(STARTASSTR));
       }
 #else
-      MHomePage.replace("%ASTATUS%", "ASCOM REMOTE server not defined in firmware");
+      MHomePage.replace("%ASTATUS%", String(NOTDEFINEDSTR));
       MHomePage.replace("%ASPORT%", "Port: " + String(mySetupData->get_ascomalpacaport()));
       MHomePage.replace("%ASBUTTON%", " ");
 #endif
@@ -1670,26 +1670,26 @@ void MANAGEMENT_buildhome(void)
 #ifdef OTAUPDATES
       if ( otaupdatestate == RUNNING )
       {
-        MHomePage.replace("%OTAUSTATUS%", "RUNNING");
+        MHomePage.replace("%OTAUSTATUS%", String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%OTAUSTATUS%", "STOPPED");
+        MHomePage.replace("%OTAUSTATUS%", String(SERVERSTATESTOPSTR)));
       }
 #else
-      MHomePage.replace("%OTAUSTATUS%", "OTAUPDATES not defined in firmware");
+      MHomePage.replace("%OTAUSTATUS%", String(NOTDEFINEDSTR));
 #endif
 #ifdef USEDUCKDNS
       if ( duckdnsstate == RUNNING )
       {
-        MHomePage.replace("%DUCKDNSSTATUS%", "RUNNING");
+        MHomePage.replace("%DUCKDNSSTATUS%", String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%DUCKDNSSTATUS%", "STOPPED");
+        MHomePage.replace("%DUCKDNSSTATUS%", String(SERVERSTATESTOPSTR)));
       }
 #else
-      MHomePage.replace("%DUCKDNSSTATUS%", "DUCKDNS not defined in firmware");
+      MHomePage.replace("%DUCKDNSSTATUS%", String(NOTDEFINEDSTR));
 #endif
       if ( staticip == STATICIPON )
       {
@@ -1702,25 +1702,40 @@ void MANAGEMENT_buildhome(void)
 #ifdef MDNSSERVER
       if ( mdnsserverstate == RUNNING)
       {
-        MHomePage.replace("%MDNSSTATUS%", "RUNNING");
+        MHomePage.replace("%MDNSSTATUS%", String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%MDNSSTATUS%", "STOPPED");
+        MHomePage.replace("%MDNSSTATUS%", String(SERVERSTATESTOPSTR));
       }
-      MHomePage.replace("%MDNSPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\">");
+      MHomePage.replace("%MDNSPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\">");
       if ( mdnsserverstate == RUNNING)
       {
-        MHomePage.replace("%MDNSBUTTON%", "<input type=\"hidden\" name=\"stopmdns\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>");
+        MHomePage.replace("%MDNSBUTTON%", String(MDNSTOPSTR));
       }
       else
       {
-        MHomePage.replace("%MDNSBUTTON%", "<input type=\"hidden\" name=\"startmdns\" value=\"true\"><input type=\"submit\" value=\"START\"></form>");
+        MHomePage.replace("%MDNSBUTTON%", MDNSSTARTSTR);
       }
 #else
-      MHomePage.replace("%MDNSSTATUS%", "mDNS server not defined in firmware");
-      MHomePage.replace("%MDNSPORT%", String(mySetupData->get_mdnsport()));
+      MHomePage.replace("%MDNSSTATUS%", String(NOTDEFINEDSTR));
+      MHomePage.replace("%MDNSPORT%", "Port: " + String(mySetupData->get_mdnsport()));
       MHomePage.replace("%MDNSBUTTON%", " ");
+#endif
+      // display
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+      if ( mySetupData->get_displayenabled() == 1 )
+      {
+        // checked already
+        MHomePage.replace("%DISPLAY%", String(DISPLAYONSTR));
+      }
+      else
+      {
+        // not checked
+        MHomePage.replace("%DISPLAY%", String(DISPLAYOFFSTR));
+      }
+#else
+      MHomePage.replace("%DISPLAY%", String(NOTDEFINEDSTR));
 #endif
       // display heap memory for tracking memory loss?
       // only esp32?
@@ -1865,33 +1880,26 @@ void MANAGEMENT_handleroot(void)
       DebugPrint("wr:");
       DebugPrintln(wr);
       newrate = wr.toInt();
-      if ( webserverstate == STOPPED )
+      int currentrate = mySetupData->get_webpagerefreshrate();
+      if ( newrate == currentrate)
       {
-        int currentrate = mySetupData->get_webpagerefreshrate();
-        if ( newrate == currentrate)
-        {
-          // port is the same so do not bother to change it
-          DebugPrintln("wr error: new page refresh rate = current page refresh rate");
-        }
-        else
-        {
-          if ( newrate < MINREFRESHPAGERATE )
-          {
-            DebugPrintln("wr error: Page refresh rate too low");
-            newrate = MINREFRESHPAGERATE;
-          }
-          else if ( newrate > MAXREFRESHPAGERATE )
-          {
-            DebugPrintln("wr error: Page refresh rate too high");
-            newrate = MAXREFRESHPAGERATE;
-          }
-          DebugPrintln("New page refresh rate = " + String(newrate));
-          mySetupData->set_webpagerefreshrate(newrate);                  // assign new refresh rate and save it
-        }
+        // port is the same so do not bother to change it
+        DebugPrintln("wr error: new page refresh rate = current page refresh rate");
       }
       else
       {
-        DebugPrintln("Attempt to change webserver refresh rate when webserver running");
+        if ( newrate < MINREFRESHPAGERATE )
+        {
+          DebugPrintln("wr error: Page refresh rate too low");
+          newrate = MINREFRESHPAGERATE;
+        }
+        else if ( newrate > MAXREFRESHPAGERATE )
+        {
+          DebugPrintln("wr error: Page refresh rate too high");
+          newrate = MAXREFRESHPAGERATE;
+        }
+        DebugPrintln("New page refresh rate = " + String(newrate));
+        mySetupData->set_webpagerefreshrate(newrate);                  // assign new refresh rate and save it
       }
     }
   }
@@ -1991,7 +1999,27 @@ void MANAGEMENT_handleroot(void)
       }
     }
   }
-
+  // if update display state
+  String d_str = mserver.arg("di");
+  if ( d_str != "" )
+  {
+    DebugPrint("Set display state: ");
+    DebugPrintln(d_str);
+    if ( d_str == "don" )
+    {
+      mySetupData->set_displayenabled(1);
+#ifdef OLEDTEXT
+      myoled->Display_On();
+#endif
+    }
+    else
+    {
+      mySetupData->set_displayenabled(0);
+#ifdef OLEDTEXT
+      myoled->Display_Off();
+#endif
+    }
+  }
   MANAGEMENT_buildhome();
 
   // send the homepage to a connected client
@@ -2868,6 +2896,21 @@ void WEBSERVER_buildhome(void)
         rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
       }
       WHomePage.replace("%WSRDBUFFER%", rdbuffer);
+      // display
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+      if ( mySetupData->get_displayenabled() == 1 )
+      {
+        // checked already
+        WHomePage.replace("%DISPLAY%", String(DISPLAYONSTR));
+      }
+      else
+      {
+        // not checked
+        WHomePage.replace("%DISPLAY%", String(DISPLAYOFFSTR));
+      }
+#else
+      WHomePage.replace("%DISPLAY%", String(NOTDEFINEDSTR));
+#endif
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
     else
@@ -3059,6 +3102,28 @@ void WEBSERVER_handleroot()
       temp = 12;
     }
     mySetupData->set_tempprecision(temp);
+  }
+
+  // if update display state
+  String d_str = webserver->arg("di");
+  if ( d_str != "" )
+  {
+    DebugPrint("root() -set display state: ");
+    DebugPrintln(d_str);
+    if ( d_str == "don" )
+    {
+      mySetupData->set_displayenabled(1);
+#ifdef OLEDTEXT
+      myoled->Display_On();
+#endif
+    }
+    else
+    {
+      mySetupData->set_displayenabled(0);
+#ifdef OLEDTEXT
+      myoled->Display_Off();
+#endif
+    }
   }
 
   WEBSERVER_buildhome();

@@ -1,3 +1,9 @@
+// r118
+// Add Display Enable/Disable to management console and  Web-server
+// Change Web-server default refresh rate to 60s [now using dynamic page update]
+// Reduce number of strings used in Management server and  Web-server
+// Add IP/DRVBRD info to Move webpage to make consistent with other web pages
+
 // r117
 // Update copyright notice to include year 2020
 // When rebooting, check for MDNS and free resources
@@ -11,10 +17,10 @@
 // Move focuser presets on webpage to /presets page
 // Add link on main webpage to presets page
 // remove un-needed CRLF and spaces from data/*.html pages
-// Add dynamic web page update to webserver /move page xhttp
-// Add HALT to webserver /move page
+// Add dynamic web page update to  Web-server /move page xhttp
+// Add HALT to  Web-server /move page
 // Add focuser position and ismoving to presets webpage, add dynamic web page update xhhtp
-// Add ismoving dynamic update to webserver home page xhttp
+// Add ismoving dynamic update to  Web-server home page xhttp
 // Add halt button and move button to focuser presets web page
 // Add presets button to move web page
 // Delete move buttons from main web server page (they are on /move)
@@ -29,8 +35,8 @@
 // Add DebugPrint when starting WiFi.begin()
 // Add DebugPrint to print error message of SPIFFS.begin() fails
 // Change temperature/oled update checks to use TimeCheck()
-// Release memory for servers (webserver and ascomserver) if they are stopped
-// Fix ESP8266 errors in defining WebServers and include files
+// Release memory for servers ( Web-server and ascomserver) if they are stopped
+// Fix ESP8266 errors in defining  Web-servers and include files
 // Shorten some names used in SPIFFS file for data_per.jsn
 // Fix error in starting ascomremoteserver for ESP8266
 // Add reboot controller button in Management Console
@@ -46,10 +52,10 @@
 // Rename otaserverstate to otaupdatestate
 // Add code in management server to handle duckdns state
 // Add refreshrate for webpages into management console
-// Add /move page to webserver
-// Add range check for focuser position and presets on webserver
+// Add /move page to  Web-server
+// Add range check for focuser position and presets on  Web-server
 // Add range check for focuser position and maxsteps on ascom server setup
-// Improve speed of management and webserver pages
+// Improve speed of management and  Web-server pages
 // Fix issue with IRREMOTE - change to new library
 // Fix issue with JOYSTICK when moving and release of coil power
 // In State_Idle, when parking, enforce rule of releasemotor only if coilpower is false
@@ -73,7 +79,7 @@
 // 113
 // Fix Bluetooth running on WEMOS ESP32
 // Fix LOCALSERIAL compilation errors
-// Move WEBSERVERPORT to SPIFFS and allow MANAGEMENT SERVER to change the webserver port
+// Move  Web-serverPORT to SPIFFS and allow MANAGEMENT SERVER to change the  Web-server port
 
 // 112
 // Add management interface on port 6060
@@ -90,7 +96,7 @@
 // Add focuser presets [0-9] to use with software or infrared remote controller - stored in SPIFFS
 // Add options for a different joystick (2-Axis PS2 Arduino style)
 // Restore motorspeed before move [in case joystick has changed the speed]. 
-// ascomserver, comms, infraredremote, joystick, webserver
+// ascomserver, comms, infraredremote, joystick,  Web-server
 
 // 109
 // Add ASCOM REMOTE ALPACA Management interface
@@ -104,7 +110,7 @@
 
 // 106
 // For revision 4 ESP32 boards, add HOME POSITION SWITCH
-// Add mDNS for STATIONMODE/WEBSERVER
+// Add mDNS for STATIONMODE/ Web-server
 // For revision 4 ESP32 boards, add HOME POSITION SWITCH to PCB
 // Add define for HOMEPOSITIONSWITCH
 // Add definitions into generalDefinitions.h and myBoards.h for HPSW
@@ -113,17 +119,17 @@
 // 105 04 November 2019
 // Add ASCOM Alpaca REMOTE support
 // code reduction/speed improvement in comms
-// separation of ascomserver, comms, display, temperature, webserver definitions and code into separate files
+// separation of ascomserver, comms, display, temperature,  Web-server definitions and code into separate files
 
 // 104 02 November 2019
-// Improve webserver support
-// webserver: add halt button to webserver
-// webserver: add setpos and gotopos buttons for position
-// webserver: fix bug for value of focuser position when updated
-// webserver: add board information and copyright
-// webserver: fix bug in motorspeed
-// webserver: add define for refresh rate of page
-// bracket ConnectionStatus in loop() if using ascom remote or webserver
+// Improve  Web-server support
+//  Web-server: add halt button to  Web-server
+//  Web-server: add setpos and gotopos buttons for position
+//  Web-server: fix bug for value of focuser position when updated
+//  Web-server: add board information and copyright
+//  Web-server: fix bug in motorspeed
+//  Web-server: add define for refresh rate of page
+// bracket ConnectionStatus in loop() if using ascom remote or  Web-server
 // add requirement to have either ACCESSPOINT or STATIONMODE defined
 // add requirement to have either ACCESSPOINT or STATIONMODE or BLUETOOTHMODE or LOCALSERIAL defined
 // implement controller features: Case 58: Get controller features
@@ -131,13 +137,13 @@
 // fix error in stepmode for PRO2ESP32DRV8825
 // fix setstepperspeed in DriverBoard constructor for PRO2EULN2003
 // fix error in oled display I2C begin, use DRVBRD == instead of defined()
-// improve stepper motor speed on webserver
+// improve stepper motor speed on  Web-server
 // fix error in case 30 as there is potential issue
 // oleltext: Change displaypage2 to show controller mode being used
-// esp_comms() now disabled if using ascom remote or webserver
+// esp_comms() now disabled if using ascom remote or  Web-server
 
 // 103
-// Add Webserver
+// Add  Web-server
 
 // 102
 // Add PRO2ESP32R3WEMOS

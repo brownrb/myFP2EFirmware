@@ -22,7 +22,7 @@
 #define WEBSERVERPORT         80            // Web server port
 #define MSSERVERPORT          6060          // Management interface
 #define MDNSSERVERPORT        7070          // mDNS service
-#define WS_REFRESHRATE        30            // web server page refresh time 30s
+#define WS_REFRESHRATE        60            // web server page refresh time 60s
 #define MINREFRESHPAGERATE    10            // 10s - too low and the overhead becomes too much for the controller
 #define MAXREFRESHPAGERATE    900           // 15m
 #define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
@@ -232,6 +232,16 @@
 
 #define MDNSSTARTFAILSTR          "Error setting up MDNS responder!"
 #define MDNSSTARTEDSTR            "mDNS responder started"
+
+#define STOPWSSTR                 "<input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
+#define STARTWSSTR                "<input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define STOPASSTR                 "<input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
+#define STARTASSTR                "<input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define MDNSTOPSTR                "<input type=\"hidden\" name=\"stopmdns\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
+#define MDNSSTARTSTR              "<input type=\"hidden\" name=\"startmdns\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define DISPLAYONSTR              "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"doff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
+#define DISPLAYOFFSTR             "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"don\"><input type=\"submit\" value=\"Turn On\"></form>"
+#define NOTDEFINEDSTR             "Not defined in firmware"
 
 // Controller Features
 #define ENABLEDLCD                1L
