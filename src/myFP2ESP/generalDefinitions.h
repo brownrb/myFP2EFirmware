@@ -205,13 +205,18 @@
 #define ASCOMREMOTESTR            "ASCOM Remote: "
 #define WEBSERVERSTR              "Webserver: "
 #define NORMALWEBPAGE             200
+#define FILEUPLOADSUCCESS         300
 #define BADREQUESTWEBPAGE         400
 #define NOTFOUNDWEBPAGE           404
-#define ASCOMINTERNALSERVERERROR  500
+#define INTERNALSERVERERROR       500
+
 #define TEXTPAGETYPE              "text/html"
+#define PLAINTEXTPAGETYPE         "text/plain"
+#define JSONTEXTPAGETYPE          "text/json"
 #define JSONPAGETYPE              "application/json"
 #define FILENOTFOUNDSTR           "File Not Found"
 #define FILEFOUNDSTR              "File found"
+#define CANNOTCREATEFILESTR       "Unable to create file"
 
 #define SPIFFSNOTSTARTEDSTR       "Unable to start SPIFFS"
 #define BUILDDEFAULTPAGESTR       "build default page"
@@ -232,6 +237,32 @@
 
 #define MDNSSTARTFAILSTR          "Error setting up MDNS responder!"
 #define MDNSSTARTEDSTR            "mDNS responder started"
+
+#define MYIPSTR                   "%IPSTR%"
+#define MSPORTSTR                 "%MSSERVERPORT%"
+#define MSVERSIONSTR              "%MSPROGRAMVERSION%"
+#define MSNAMESTR                 "%MSPROGRAMNAME%"
+#define MSMODESTR                 "%MSCONTROLLERMODE%"
+#define MSSTATUSSTR               "%WSTATUS%"
+#define WSREFRESHSTR              "%WSREFRESHRATE%"
+#define WSPORTSTR                 "%WSPORT%"
+#define WSBUTTONSTR               "%WSBUTTON%"
+#define ASSTATUSSTR               "%ASTATUS%"
+#define ASPORTSTR                 "%ASPORT%"
+#define ASBUTTONSTR               "%ASBUTTON%"
+#define OTASTATUSSTR              "%OTAUSTATUS%"
+#define DUCKDNSSTATUSSTR          "%DUCKDNSSTATUS%"
+#define IPSTATUSSTR               "%IPSTATUS%"
+#define MDNSSTATUSSTR             "%MDNSSTATUS%"
+#define MDNSPORTSTR               "%MDNSPORT%"
+#define MDNSBUTTONSTR             "%MDNSBUTTON%"
+#define DISPLAYSTR                "%DISPLAY%"
+#define WSVERSIONSTR              "%WSPROGRAMVERSION%"
+#define WSNAMESTR                 "%WSPROGRAMNAME%"
+#define WSCURRENTSTR              "%WSCURRENTPOSITION%"
+#define WSTARGETSTR               "%WSFTARGETPOSITION%"
+#define WSISMOVINGSTR             "%WSISMOVING%"
+#define WSMAXSTEPSTR              "%WSMAXSTEP%"
 
 #define STOPWSSTR                 "<input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
 #define STARTWSSTR                "<input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"

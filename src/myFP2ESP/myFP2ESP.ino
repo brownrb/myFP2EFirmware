@@ -13,7 +13,7 @@
 // ----------------------------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
-// (c) Copyright Pieter P - OTA code based on example from Pieter  P.
+// (c) Copyright Pieter P - OTA code and SPIFFs file handling/upload based on examples
 
 // ----------------------------------------------------------------------------------------------
 // SPECIAL LICENSE
@@ -41,6 +41,7 @@
 // PCB BOARDS
 // ----------------------------------------------------------------------------------------------
 // The PCB's are available as GERBER files.
+// https://sourceforge.net/projects/myfocuserpro2-esp32/files/PCB%20Gerber%20Files/
 //
 // L293D Shield  https://www.ebay.com/itm/L293D-Motor-Drive-Shield-Wifi-Module-For-Arduino-NodeMcu-Lua-ESP8266-ESP-12E/292619874436
 // ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
@@ -1427,9 +1428,11 @@ WebServer mserver(MSSERVERPORT);
 
 String MHomePage;
 String MNotFoundPage;
+String MUploadPage;
+File fsUploadFile;
 
 // convert the file extension to the MIME type
-String MANAGEMENT_getContentType(String filename)
+String MANAGEMENT_getcontenttype(String filename)
 {
   String retval = "text/plain";
   if (filename.endsWith(".html"))
@@ -1453,20 +1456,24 @@ String MANAGEMENT_getContentType(String filename)
 }
 
 // send the right file to the client (if it exists)
-bool MANAGEMENT_handleFileRead(String path)
+bool MANAGEMENT_handlefileread(String path)
 {
   DebugPrintln("handleFileRead: " + path);
   if (path.endsWith("/"))
   {
     path += "index.html";                               // If a folder is requested, send the index file
   }
-  String contentType = MANAGEMENT_getContentType(path); // Get the MIME type
+  String contentType = MANAGEMENT_getcontenttype(path); // Get the MIME type
   if ( SPIFFS.exists(path) )                            // If the file exists
   {
     File file = SPIFFS.open(path, "r");                 // Open it
 #ifdef MANAGEMENTFORCEDOWNLOAD
-    mserver.sendHeader("Content-Type", "application/octet-stream");
-    mserver.sendHeader("Content-Disposition", "attachment");
+    if ( path.indexOf(".html") == -1)
+    {
+      // if not an html file, force download : html files will be displayed in browser
+      mserver.sendHeader("Content-Type", "application/octet-stream");
+      mserver.sendHeader("Content-Disposition", "attachment");
+    }
 #endif
     mserver.streamFile(file, contentType);              // And send it to the client
     file.close();                                       // Then close the file again
@@ -1499,7 +1506,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
     output += "{" + dir.fileName() + "}, ";
   }
   output += "]}";
-  mserver.send(200, "text/json", output);
+  mserver.send(NORMALWEBPAGE, String(JSONTEXTPAGETYPE), output);
 #else // ESP32
   File root = SPIFFS.open(path);
   path = String();
@@ -1523,7 +1530,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
     }
   }
   output += "]}";
-  mserver.send(200, "text/json", output);
+  mserver.send(NORMALWEBPAGE, String(JSONTEXTPAGETYPE), output);
 #endif
 }
 
@@ -1551,10 +1558,10 @@ void MANAGEMENT_buildnotfound(void)
       TRACE();
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      MNotFoundPage.replace("%MS_IPSTR%", ipStr);
-      MNotFoundPage.replace("%MSSERVERPORT%", String(MSSERVERPORT));
-      MNotFoundPage.replace("%MSPROGRAMVERSION%", String(programVersion));
-      MNotFoundPage.replace("%MSPROGRAMNAME%", String(programName));
+      MNotFoundPage.replace(String(MYIPSTR), ipStr);
+      MNotFoundPage.replace(String(MSPORTSTR), String(MSSERVERPORT));
+      MNotFoundPage.replace(String(MSVERSIONSTR), String(programVersion));
+      MNotFoundPage.replace(String(MSNAMESTR), String(programName));
       TRACE();
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
@@ -1573,6 +1580,92 @@ void MANAGEMENT_handlenotfound(void)
   mserver.send(NOTFOUNDWEBPAGE, TEXTPAGETYPE, MNotFoundPage);
 }
 
+void MANAGEMENT_buildupload(void)
+{
+  // load not found page from spiffs - wsupload.html
+  if (!SPIFFS.begin())
+  {
+    TRACE();
+    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    MUploadPage = "<html><head><title>Management Server></title></head><body><p>msupload.html not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+  }
+  else
+  {
+    if ( SPIFFS.exists("/msupload.html"))
+    {
+      // open file for read
+      File file = SPIFFS.open("/msupload.html", "r");
+      // read contents into string
+      TRACE();
+      DebugPrintln(F(READPAGESTR));
+      MUploadPage = file.readString();
+
+      TRACE();
+      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      // process for dynamic data
+      MUploadPage.replace(String(MYIPSTR), ipStr);
+      MUploadPage.replace(String(MSPORTSTR), String(MSSERVERPORT));
+      MUploadPage.replace(String(MSVERSIONSTR), String(programVersion));
+      MUploadPage.replace(String(MSNAMESTR), String(programName));
+      TRACE();
+      DebugPrintln(F(PROCESSPAGEENDSTR));
+    }
+    else
+    {
+      TRACE();
+      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
+      MUploadPage = "<html><head><title>Management Server></title></head><body><p>msupload.html not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+    }
+  }
+  delay(10);                      // small pause so background tasks can run
+}
+
+void MANAGEMENT_displayfileupload(void)
+{
+  mserver.send(NORMALWEBPAGE, TEXTPAGETYPE, MUploadPage);
+}
+
+void MANAGEMENT_handlefileupload(void)
+{
+  HTTPUpload& upload = mserver.upload();
+  if (upload.status == UPLOAD_FILE_START)
+  {
+    String filename = upload.filename;
+    if (!filename.startsWith("/"))
+    {
+      filename = "/" + filename;
+    }
+    DebugPrint("handleFileUpload Name: ");
+    DebugPrintln(filename);
+    fsUploadFile = SPIFFS.open(filename, "w");
+    filename = String();
+  }
+  else if (upload.status == UPLOAD_FILE_WRITE)
+  {
+    if (fsUploadFile)
+    {
+      fsUploadFile.write(upload.buf, upload.currentSize);
+    }
+  }
+  else if (upload.status == UPLOAD_FILE_END)
+  {
+    if (fsUploadFile)
+    {
+      // If the file was successfully created
+      fsUploadFile.close();
+      DebugPrint("handleFileUpload Size: ");
+      DebugPrintln(upload.totalSize);
+      mserver.sendHeader("Location", "/mssuccess.html");
+      mserver.send(301);
+    }
+    else
+    {
+      mserver.send(INTERNALSERVERERROR, String(PLAINTEXTPAGETYPE), String(CANNOTCREATEFILESTR));
+    }
+  }
+}
+
 void MANAGEMENT_buildhome(void)
 {
   // constructs home page of management server
@@ -1584,7 +1677,7 @@ void MANAGEMENT_buildhome(void)
     TRACE();
     DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
     DebugPrintln(F(BUILDDEFAULTPAGESTR));
-    MHomePage = "<html><head><title>Management Server></title></head><body><p>Management server index file not found</p><p>Did you forget to upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"> </form></p></body></html>";
+    MHomePage = "<html><head><title>Management Server></title></head><body><p>msindex.html not found</p><p>Did you upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"> </form></p></body></html>";
   }
   else
   {
@@ -1601,141 +1694,141 @@ void MANAGEMENT_buildhome(void)
 
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      MHomePage.replace("%MS_IPSTR%", ipStr);
-      MHomePage.replace("%MSSERVERPORT%", String(MSSERVERPORT));
-      MHomePage.replace("%MSPROGRAMVERSION%", String(programVersion));
-      MHomePage.replace("%MSPROGRAMNAME%", String(programName));
+      MHomePage.replace(String(MYIPSTR), ipStr);
+      MHomePage.replace(String(MSPORTSTR), String(MSSERVERPORT));
+      MHomePage.replace(String(MSVERSIONSTR), String(programVersion));
+      MHomePage.replace(String(MSNAMESTR), String(programName));
 #ifdef BLUETOOTHMODE
-      MHomePage.replace("%MSCONTROLLERMODE%", "BLUETOOTH : " + String(BLUETOOTHNAME));
+      MHomePage.replace(String(MSMODESTR), "BLUETOOTH : " + String(BLUETOOTHNAME));
 #endif
 #ifdef ACCESSPOINT
-      MHomePage.replace("%MSCONTROLLERMODE%", "ACCESSPOINT");
+      MHomePage.replace(String(MSMODESTR), "ACCESSPOINT");
 #endif
 #ifdef STATIONMODE
-      MHomePage.replace("%MSCONTROLLERMODE%", "STATIONMODE");
+      MHomePage.replace(String(MSMODESTR), "STATIONMODE");
 #endif
 #ifdef LOCALSERIAL
-      MHomePage.replace("%MSCONTROLLERMODE%", "LOCALSERIAL");
+      MHomePage.replace(String(MSMODESTR), "LOCALSERIAL");
 #endif
       // %WSTATUS%
 #ifdef WEBSERVER
       if ( webserverstate == RUNNING )
       {
-        MHomePage.replace("%WSTATUS%", String(SERVERSTATERUNSTR));
+        MHomePage.replace(String(MSSTATUSSTR), String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%WSTATUS%", String(SERVERSTATESTOPSTR));
+        MHomePage.replace(String(MSSTATUSSTR), String(SERVERSTATESTOPSTR));
       }
-      MHomePage.replace("%WSREFRESHRATE%", "<form action=\"/\" method =\"post\">Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"> </form>");
-      MHomePage.replace("%WSPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\">");
+      MHomePage.replace(String(WSREFRESHSTR), "<form action=\"/\" method =\"post\">Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"> </form>");
+      MHomePage.replace(String(WSPORTSTR), "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\">");
       if ( webserverstate == RUNNING)
       {
-        MHomePage.replace("%WSBUTTON%", String(STOPWSSTR));
+        MHomePage.replace(String(WSBUTTONSTR), String(STOPWSSTR));
       }
       else
       {
-        MHomePage.replace("%WSBUTTON%", String(STARTWSSTR));
+        MHomePage.replace(String(WSBUTTONSTR), String(STARTWSSTR));
       }
 #else
-      MHomePage.replace("%WSTATUS%", String(NOTDEFINEDSTR));
-      MHomePage.replace("%WSREFRESHRATE%", "Refresh Rate: " + String(mySetupData->get_webpagerefreshrate()));
-      MHomePage.replace("%WSPORT%", "Port: " + String(mySetupData->get_webserverport()));
-      MHomePage.replace("%WSBUTTON%", " ");
+      MHomePage.replace(String(MSSTATUSSTR), String(NOTDEFINEDSTR));
+      MHomePage.replace(String(WSSREFRESHSTR), "Refresh Rate: " + String(mySetupData->get_webpagerefreshrate()));
+      MHomePage.replace(String(WSPORTSTR), "Port: " + String(mySetupData->get_webserverport()));
+      MHomePage.replace(String(WSBUTTONSTR), " ");
 #endif
 #ifdef ASCOMREMOTE
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ASTATUS%", String(SERVERSTATERUNSTR));
+        MHomePage.replace(String(ASSTATUSSTR), String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%ASTATUS%", String(SERVERSTATESTOPSTR)));
+        MHomePage.replace(String(ASSTATUSSTR), String(SERVERSTATESTOPSTR));
       }
-      MHomePage.replace("%ASPORT%", "<form action=\"/\" method =\"post\" >Port: <input type=\"text\" name= \"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\">");
+      MHomePage.replace(String(ASPORTSTR), "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\">");
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ASBUTTON%", String(STOPASSTR));
+        MHomePage.replace(String(ASBUTTONSTR), String(STOPASSTR));
       }
       else
       {
-        MHomePage.replace("%ASBUTTON%", String(STARTASSTR));
+        MHomePage.replace(String(ASBUTTONSTR), String(STARTASSTR));
       }
 #else
-      MHomePage.replace("%ASTATUS%", String(NOTDEFINEDSTR));
-      MHomePage.replace("%ASPORT%", "Port: " + String(mySetupData->get_ascomalpacaport()));
-      MHomePage.replace("%ASBUTTON%", " ");
+      MHomePage.replace(String(ASSTATUSSTR), String(NOTDEFINEDSTR));
+      MHomePage.replace(String(ASPORTSTR), "Port: " + String(mySetupData->get_ascomalpacaport()));
+      MHomePage.replace(String(ASBUTTONSTR), " ");
 #endif
 
 #ifdef OTAUPDATES
       if ( otaupdatestate == RUNNING )
       {
-        MHomePage.replace("%OTAUSTATUS%", String(SERVERSTATERUNSTR));
+        MHomePage.replace(String(OTASTATUSSTR), String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%OTAUSTATUS%", String(SERVERSTATESTOPSTR)));
+        MHomePage.replace(String(OTASTATUSSTR), String(SERVERSTATESTOPSTR)));
       }
 #else
-      MHomePage.replace("%OTAUSTATUS%", String(NOTDEFINEDSTR));
+      MHomePage.replace(String(OTASTATUSSTR), String(NOTDEFINEDSTR));
 #endif
 #ifdef USEDUCKDNS
       if ( duckdnsstate == RUNNING )
       {
-        MHomePage.replace("%DUCKDNSSTATUS%", String(SERVERSTATERUNSTR));
+        MHomePage.replace(String(DUCKDNSSTATUSSTR), String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%DUCKDNSSTATUS%", String(SERVERSTATESTOPSTR)));
+        MHomePage.replace(String(DUCKDNSSTATUSSTR), String(SERVERSTATESTOPSTR)));
       }
 #else
-      MHomePage.replace("%DUCKDNSSTATUS%", String(NOTDEFINEDSTR));
+      MHomePage.replace(String(DUCKDNSSTATUSSTR), String(NOTDEFINEDSTR));
 #endif
       if ( staticip == STATICIPON )
       {
-        MHomePage.replace("%IPSTATUS%", "ON");
+        MHomePage.replace(String(IPSTATUSSTR), "ON");
       }
       else
       {
-        MHomePage.replace("%IPSTATUS%", "OFF");
+        MHomePage.replace(String(IPSTATUSSTR), "OFF");
       }
 #ifdef MDNSSERVER
       if ( mdnsserverstate == RUNNING)
       {
-        MHomePage.replace("%MDNSSTATUS%", String(SERVERSTATERUNSTR));
+        MHomePage.replace(String(MDNSSTATUSSTR), String(SERVERSTATERUNSTR));
       }
       else
       {
-        MHomePage.replace("%MDNSSTATUS%", String(SERVERSTATESTOPSTR));
+        MHomePage.replace(String(MDNSSTATUSSTR), String(SERVERSTATESTOPSTR));
       }
-      MHomePage.replace("%MDNSPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\">");
+      MHomePage.replace(String(MDNSPORTSTR), "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\">");
       if ( mdnsserverstate == RUNNING)
       {
-        MHomePage.replace("%MDNSBUTTON%", String(MDNSTOPSTR));
+        MHomePage.replace(String(MDNSBUTTONSTR), String(MDNSTOPSTR));
       }
       else
       {
-        MHomePage.replace("%MDNSBUTTON%", MDNSSTARTSTR);
+        MHomePage.replace(String(MDNSBUTTONSTR), MDNSSTARTSTR);
       }
 #else
-      MHomePage.replace("%MDNSSTATUS%", String(NOTDEFINEDSTR));
-      MHomePage.replace("%MDNSPORT%", "Port: " + String(mySetupData->get_mdnsport()));
-      MHomePage.replace("%MDNSBUTTON%", " ");
+      MHomePage.replace(String(MDNSSTATUSSTR), String(NOTDEFINEDSTR));
+      MHomePage.replace(String(MDNSPORTSTR), "Port: " + String(mySetupData->get_mdnsport()));
+      MHomePage.replace(String(MDNSBUTTONSTR), " ");
 #endif
       // display
 #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
       if ( mySetupData->get_displayenabled() == 1 )
       {
         // checked already
-        MHomePage.replace("%DISPLAY%", String(DISPLAYONSTR));
+        MHomePage.replace(String(DISPLAYSTR), String(DISPLAYONSTR));
       }
       else
       {
         // not checked
-        MHomePage.replace("%DISPLAY%", String(DISPLAYOFFSTR));
+        MHomePage.replace(String(DISPLAYSTR), String(DISPLAYOFFSTR));
       }
 #else
-      MHomePage.replace("%DISPLAY%", String(NOTDEFINEDSTR));
+      MHomePage.replace(String(DISPLAYSTR), String(NOTDEFINEDSTR));
 #endif
       // display heap memory for tracking memory loss?
       // only esp32?
@@ -1747,7 +1840,7 @@ void MANAGEMENT_buildhome(void)
       // could not read index file from SPIFFS
       TRACE();
       DebugPrintln(F(BUILDDEFAULTPAGESTR));
-      MHomePage = "<html><head><title>Management Server></title></head><body><p>The index file for the Management server was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"></form></p></body></html>";
+      MHomePage = "<html><head><title>Management Server></title></head><body><p>msindex.html not found</p><p>Did you upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"></form></p></body></html>";
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -2040,14 +2133,19 @@ void start_management(void)
   }
   MANAGEMENT_buildnotfound();
   MANAGEMENT_buildhome();
+  MANAGEMENT_buildupload();
   mserver.on("/", MANAGEMENT_handleroot);
+  mserver.on("/list", MANAGEMENT_listSPIFFSfiles);
+  mserver.on("/upload", HTTP_GET, MANAGEMENT_displayfileupload);
+  mserver.on("/upload", HTTP_POST, []() {
+    mserver.send(NORMALWEBPAGE);
+  }, MANAGEMENT_handlefileupload );
   mserver.onNotFound([]() {                         // if the client requests any URI
-    if (!MANAGEMENT_handleFileRead(mserver.uri()))  // send file if it exists
+    if (!MANAGEMENT_handlefileread(mserver.uri()))  // send file if it exists
     {
       MANAGEMENT_handlenotfound();                  // otherwise, respond with a 404 (Not Found) error
     }
   });
-  mserver.on("/list", MANAGEMENT_listSPIFFSfiles);
   mserver.begin();
   managementserverstate = RUNNING;
   TRACE();
@@ -2119,10 +2217,10 @@ void WEBSERVER_buildnotfound(void)
 
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      WNotFoundPage.replace("%WSIPSTR%", ipStr);
-      WNotFoundPage.replace("%WEBSERVERPORT%", String(mySetupData->get_webserverport()));
-      WNotFoundPage.replace("%WSPROGRAMVERSION%", String(programVersion));
-      WNotFoundPage.replace("%WSPROGRAMNAME%", String(programName));
+      WNotFoundPage.replace(String(MYIPSTR), ipStr);
+      WNotFoundPage.replace(String(WSPORTSTR), String(mySetupData->get_webserverport()));
+      WNotFoundPage.replace(String(WSVERSIONSTR), String(programVersion));
+      WNotFoundPage.replace(String(WSNAMESTR), String(programName));
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
     else
@@ -2146,15 +2244,15 @@ void WEBSERVER_handlenotfound(void)
 
 void WEBSERVER_buildpresets(void)
 {
-  // construct the movepage now
-  // load not found page from spiffs - wsmove.html
+  // construct the presetspage now
+  // load not found page from spiffs - wspresets.html
   if (!SPIFFS.begin())
   {
     TRACE();
     DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
     // could not read move file from SPIFFS
     DebugPrintln(F(BUILDDEFAULTPAGESTR));
-    WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>The presets file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>wspresets.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
   }
   else
   {
@@ -2169,14 +2267,14 @@ void WEBSERVER_buildpresets(void)
 
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      WPresetsPage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
-      WPresetsPage.replace("%WSIPSTR%", ipStr);
-      WPresetsPage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
-      WPresetsPage.replace("%WSPROGRAMVERSION%", String(programVersion));
-      WPresetsPage.replace("%WSPROGRAMNAME%", String(programName));
-      WPresetsPage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
-      WPresetsPage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
-      WPresetsPage.replace("%WSISMOVING%", String(isMoving));
+      WPresetsPage.replace(String(WSREFRESHSTR), String(mySetupData->get_webpagerefreshrate()));
+      WPresetsPage.replace(String(MYIPSTR), ipStr);
+      WPresetsPage.replace(String(WSPORTSTR), String(mySetupData->get_webserverport()));
+      WPresetsPage.replace(String(WSVERSIONSTR), String(programVersion));
+      WPresetsPage.replace(String(WSNAMESTR), String(programName));
+      WPresetsPage.replace(String(WSCURRENTSTR), String(fcurrentPosition));
+      WPresetsPage.replace(String(WSTARGETSTR), String(ftargetPosition));
+      WPresetsPage.replace(String(WSISMOVINGSTR), String(isMoving));
 
       WPresetsPage.replace("%WSP0BUFFER%", String(mySetupData->get_focuserpreset(0)));
       WPresetsPage.replace("%WSP1BUFFER%", String(mySetupData->get_focuserpreset(1)));
@@ -2196,7 +2294,7 @@ void WEBSERVER_buildpresets(void)
       TRACE();
       DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
       DebugPrintln(F(BUILDDEFAULTPAGESTR));
-      WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>The presets file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+      WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>wspresets.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -2661,7 +2759,7 @@ void WEBSERVER_buildmove(void)
     DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
     // could not read move file from SPIFFS
     DebugPrintln(F(BUILDDEFAULTPAGESTR));
-    WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    WMovePage = "<html><head><title>Web Server:></title></head><body><p>wsmove.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
   }
   else
   {
@@ -2676,14 +2774,14 @@ void WEBSERVER_buildmove(void)
 
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      WMovePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
-      WMovePage.replace("%WSIPSTR%", ipStr);
-      WMovePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
-      WMovePage.replace("%WSPROGRAMVERSION%", String(programVersion));
-      WMovePage.replace("%WSPROGRAMNAME%", String(programName));
-      WMovePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
-      WMovePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
-      WMovePage.replace("%WSISMOVING%", String(isMoving));
+      WMovePage.replace(String(WSREFRESHSTR), String(mySetupData->get_webpagerefreshrate()));
+      WMovePage.replace(String(MYIPSTR), ipStr);
+      WMovePage.replace(String(WSPORTSTR), String(mySetupData->get_webserverport()));
+      WMovePage.replace(String(WSVERSIONSTR), String(programVersion));
+      WMovePage.replace(String(WSNAMESTR), String(programName));
+      WMovePage.replace(String(WSCURRENTSTR), String(fcurrentPosition));
+      WMovePage.replace(String(WSTARGETSTR), String(ftargetPosition));
+      WMovePage.replace(String(WSISMOVINGSTR), String(isMoving));
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
     else
@@ -2692,7 +2790,7 @@ void WEBSERVER_buildmove(void)
       TRACE();
       DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
       DebugPrintln(F(BUILDDEFAULTPAGESTR));
-      WMovePage = "<html><head><title>Web Server:></title></head><body><p>The move file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+      WMovePage = "<html><head><title>Web Server:></title></head><body><p>wsmove.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -2751,7 +2849,7 @@ void WEBSERVER_buildhome(void)
     DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
     // could not read index file from SPIFFS
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+    WHomePage = "<html><head><title>Web Server:></title></head><body><p>wsindex.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
   }
   else
   {
@@ -2766,24 +2864,24 @@ void WEBSERVER_buildhome(void)
 
       DebugPrintln(F(PROCESSPAGESTARTSTR));
       // process for dynamic data
-      WHomePage.replace("%WSREFRESHRATE%", String(mySetupData->get_webpagerefreshrate()));
-      WHomePage.replace("%WSIPSTR%", ipStr);
-      WHomePage.replace("%WSWEBSERVERPORT%", String(mySetupData->get_webserverport()));
-      WHomePage.replace("%WSPROGRAMVERSION%", String(programVersion));
-      WHomePage.replace("%WSPROGRAMNAME%", String(programName));
+      WHomePage.replace(String(WSREFRESHSTR), String(mySetupData->get_webpagerefreshrate()));
+      WHomePage.replace(String(MYIPSTR), ipStr);
+      WHomePage.replace(String(WSPORTSTR), String(mySetupData->get_webserverport()));
+      WHomePage.replace(String(WSVERSIONSTR), String(programVersion));
+      WHomePage.replace(String(WSNAMESTR), String(programName));
       // if this is a GOTO command then make this target else make current
       String fp_str = webserver->arg("gotopos");
       if ( fp_str != "" )
       {
-        WHomePage.replace("%WSCURRENTPOSITION%", String(ftargetPosition));
+        WHomePage.replace(String(WSCURRENTSTR), String(ftargetPosition));
       }
       else
       {
-        WHomePage.replace("%WSCURRENTPOSITION%", String(fcurrentPosition));
+        WHomePage.replace(String(WSCURRENTSTR), String(fcurrentPosition));
       }
-      WHomePage.replace("%WSFTARGETPOSITION%", String(ftargetPosition));
-      WHomePage.replace("%WSMAXSTEP%", String(mySetupData->get_maxstep()));
-      WHomePage.replace("%WSISMOVING%", String(isMoving));
+      WHomePage.replace(String(WSTARGETSTR), String(ftargetPosition));
+      WHomePage.replace(String(WSMAXSTEPSTR), String(mySetupData->get_maxstep()));
+      WHomePage.replace(String(WSISMOVINGSTR), String(isMoving));
 #ifdef TEMPERATUREPROBE
       WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1)));
 #else
@@ -2901,15 +2999,15 @@ void WEBSERVER_buildhome(void)
       if ( mySetupData->get_displayenabled() == 1 )
       {
         // checked already
-        WHomePage.replace("%DISPLAY%", String(DISPLAYONSTR));
+        WHomePage.replace(String(DISPLAYSTR), String(DISPLAYONSTR));
       }
       else
       {
         // not checked
-        WHomePage.replace("%DISPLAY%", String(DISPLAYOFFSTR));
+        WHomePage.replace(String(DISPLAYSTR), String(DISPLAYOFFSTR));
       }
 #else
-      WHomePage.replace("%DISPLAY%", String(NOTDEFINEDSTR));
+      WHomePage.replace(String(DISPLAYSTR), "Display " + String(NOTDEFINEDSTR));
 #endif
       DebugPrintln(F(PROCESSPAGEENDSTR));
     }
@@ -2919,7 +3017,7 @@ void WEBSERVER_buildhome(void)
       TRACE();
       DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
       DebugPrintln(F(BUILDDEFAULTPAGESTR));
-      WHomePage = "<html><head><title>Web Server:></title></head><body><p>The index file for the webserver was not found.</p><p>Did you forget to upload the data files to SPIFFS?</p></body></html>";
+      WHomePage = "<html><head><title>Web Server:></title></head><body><p>wsindex.html</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
     }
   }
   delay(10);                      // small pause so background tasks can run

@@ -3,6 +3,9 @@
 // Change Web-server default refresh rate to 60s [now using dynamic page update]
 // Reduce number of strings used in Management server and  Web-server
 // Add IP/DRVBRD info to Move webpage to make consistent with other web pages
+// Fix port number in webserver notfound page
+// Convert dynamic web page constants to strings into generaldefinitions.h
+// Add file upload to SPIFFs into management server
 
 // r117
 // Update copyright notice to include year 2020
