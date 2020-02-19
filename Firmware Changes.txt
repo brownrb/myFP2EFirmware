@@ -1,4 +1,5 @@
 // r118
+// Display temperature on OLED and Webserver according to tempmode state (C or F)
 // Add Display Enable/Disable to management console and  Web-server
 // Change Web-server default refresh rate to 60s [now using dynamic page update]
 // Reduce number of strings used in Management server and  Web-server

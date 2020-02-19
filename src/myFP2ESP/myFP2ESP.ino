@@ -796,11 +796,31 @@ void display_oledtext_page0(void)           // displaylcd screen
     //Temperature
     myoled->print(F(TEMPSTR));
 #ifdef TEMPERATUREPROBE
-    myoled->print(String(read_temp(0), 2));
+    if ( mySetupData->get_tempmode() == 1)
+    {
+      // celsius
+      myoled->print(String(read_temp(0), 2));
+      myoled->print(" c");
+    }
+    else
+    {
+      // fahrenheit
+      // (0°C × 9/5) + 32 = 32°F
+      float ft = read_temp(0);
+      ft = (ft * 1.8) + 32;
+      myoled->print(String(ft, 2));
+      myoled->print(" f");
+    }
 #else
-    myoled->print("20.0");
+    if ( mySetupData->get_tempmode() == 1)
+    {
+      myoled->print("20.00 c");
+    }
+    else
+    {
+      myoled->print("68.00 f");
+    }
 #endif
-    myoled->print(" c");
     myoled->clearToEOL();
     myoled->println();
 
@@ -2883,9 +2903,25 @@ void WEBSERVER_buildhome(void)
       WHomePage.replace(String(WSMAXSTEPSTR), String(mySetupData->get_maxstep()));
       WHomePage.replace(String(WSISMOVINGSTR), String(isMoving));
 #ifdef TEMPERATUREPROBE
-      WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1)));
+      if ( mySetupData->get_tempmode() == 1)
+      {
+        WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1), 2));
+      }
+      else
+      {
+        float ft = read_temp(1);
+        ft = (ft * 1.8) + 32;
+        WHomePage.replace("%WSTEMPERATURE%", String(ft, 2));
+      }
 #else
-      WHomePage.replace("%WSTEMPERATURE%", "20.000");
+      if ( mySetupData->get_tempmode() == 1)
+      {
+        WHomePage.replace("%WSTEMPERATURE%", "20.00");
+      }
+      else
+      {
+        WHomePage.replace("%WSTEMPERATURE%", "68.00");
+      }
 #endif
       WHomePage.replace("%WSTEMPPRECISION%", String(mySetupData->get_tempprecision()));
       String smbuffer = String(mySetupData->get_stepmode());

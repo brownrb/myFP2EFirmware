@@ -8,8 +8,8 @@
 // ----------------------------------------------------------------------------------------------
 // YOU MUST SELECT (uncomment one) the correct chip model that matches your PCB
 //#define CHIPMODEL WEMOS
-#define CHIPMODEL NODEMCUV1
-//#define CHIPMODEL ESP32WROOM
+//#define CHIPMODEL NODEMCUV1
+#define CHIPMODEL ESP32WROOM
 
 // Hardware Definitions of All Pins used byeach CPU board
 // Option pins listed first (temperature etc), followed by driver board pins and definitions
