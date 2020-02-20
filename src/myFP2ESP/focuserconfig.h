@@ -22,7 +22,7 @@
 // Enable or disable the specific hardware below
 
 // To enable temperature probe, uncomment the next line
-//#define TEMPERATUREPROBE 1
+#define TEMPERATUREPROBE 1
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
 #define OLEDTEXT 1
