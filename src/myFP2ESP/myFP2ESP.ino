@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 118
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 119
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -329,7 +329,7 @@ void setFeatures()
 String programName;
 DriverBoard* driverboard;
 
-char programVersion[] = "118";
+char programVersion[] = "119";
 char ProgramAuthor[]  = "(c) R BROWN 2020";
 
 unsigned long fcurrentPosition;             // current focuser position
@@ -394,6 +394,7 @@ int packetssent;
 bool mdnsserverstate;
 bool webserverstate;
 bool ascomserverstate;
+bool ascomdiscoverystate;
 bool managementserverstate;
 bool otaupdatestate;
 bool duckdnsstate;
@@ -3321,6 +3322,10 @@ void stop_webserver(void)
 #endif // if defined(esp8266)
 
 #include "ascomserver.h"
+// Implement ASCOM ALPACA DISCOVERY PROTOCOL
+#include <WiFiUdp.h>
+WiFiUDP ASCOMDISCOVERYUdp;
+char packetBuffer[255];           //buffer to hold incoming UDP packet
 
 String Focuser_Setup_HomePage;    //  url:/setup/v1/focuser/0/setup
 unsigned int ASCOMClientID;
@@ -3337,6 +3342,64 @@ ESP8266WebServer *ascomserver;
 #else
 WebServer *ascomserver;
 #endif // if defined(esp8266)
+
+// ASCOM ALPCACA REMOTE DISCOVERY
+void checkASCOMALPACADiscovery()
+{
+  // (c) Daniel VanNoord
+  // https://github.com/DanielVanNoord/AlpacaDiscoveryTests/blob/master/Alpaca8266/Alpaca8266.ino
+  // if there's data available, read a packet
+  int packetSize = ASCOMDISCOVERYUdp.parsePacket();
+  if (packetSize)
+  {
+    DebugPrint("ASCOM ALPACA Discovery: Rcd packet size: ");
+    DebugPrintln(packetSize);
+    DebugPrint("From ");
+    IPAddress remoteIp = ASCOMDISCOVERYUdp.remoteIP();
+    DebugPrint(remoteIp);
+    DebugPrint(", on port ");
+    DebugPrintln(ASCOMDISCOVERYUdp.remotePort());
+
+    // read the packet into packetBufffer
+    int len = ASCOMDISCOVERYUdp.read(packetBuffer, 255);
+    if (len > 0)
+    {
+      packetBuffer[len] = 0;      //Ensure that it is null terminated
+    }
+    DebugPrint("Contents: ");
+    DebugPrintln(packetBuffer);
+
+    if (len < 16)                 // No undersized packets allowed
+    {
+      DebugPrintln(F("Packet is undersized"));
+      return;
+    }
+
+    if (strncmp("alpacadiscovery1", packetBuffer, 16) != 0)    // 0-14 "alpacdiscovery", 15 ASCII Version number
+    {
+      DebugPrintln(F("Packet is not correct format"));
+      return;
+    }
+
+    String strresponse = "{\"alpacaport\":" + String(mySetupData->get_ascomalpacaport()) + "}";
+    uint8_t response[36] = { 0 };
+    len = strresponse.length();
+    DebugPrintln("Response : " + strresponse);
+    // copy to response
+    for ( int i = 0; i < len; i++ )
+    {
+      response[i] = (uint8_t) strresponse[i];
+    }
+
+    ASCOMDISCOVERYUdp.beginPacket(ASCOMDISCOVERYUdp.remoteIP(), ASCOMDISCOVERYUdp.remotePort());
+#if defined(ESP8266)
+    ASCOMDISCOVERYUdp.write(response, len);
+#else
+    ASCOMDISCOVERYUdp.write(response, len);
+#endif
+    ASCOMDISCOVERYUdp.endPacket();
+  }
+}
 
 // Construct pages for /setup
 
@@ -3881,7 +3944,7 @@ void ASCOM_handleapiconfigureddevices()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":[{\"DeviceName\":" + String(ASCOMNAME) + ",\"DeviceType\":\"focuser\",\"DeviceNumber\":0,\"UniqueID\":\"7e239e71-d304-4e7e-acda-3ff2e2b68515\"}]," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":[{\"DeviceName\":" + String(ASCOMNAME) + ",\"DeviceType\":\"focuser\",\"DeviceNumber\":0,\"UniqueID\":\"" + String(ASCOMGUID) + "\"}]," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
@@ -4392,6 +4455,11 @@ void start_ascomremoteserver(void)
   ascomserver = new WebServer(mySetupData->get_ascomalpacaport());
 #endif // if defined(esp8266) 
 
+  if ( ascomdiscoverystate == STOPPED )
+  {
+    ASCOMDISCOVERYUdp.begin(ASCOMDISCOVERYPORT);
+    ascomdiscoverystate = RUNNING;
+  }
   ascomserver->on("/", ASCOM_handleRoot);        // handle root access
   ascomserver->onNotFound(ASCOM_handleNotFound); // handle url not found 404
 
@@ -4424,7 +4492,7 @@ void start_ascomremoteserver(void)
   ascomserver->on("/api/v1/focuser/0/supportedactions", HTTP_GET, ASCOM_handlesupportedactionsget);
   ascomserver->begin();
   ascomserverstate = RUNNING;
-  delay(10);                     // small pause so background tasks can run
+  delay(10);                        // small pause so background tasks can run
   DebugPrintln(F("start ascom server: RUNNING"));
 }
 
@@ -4434,14 +4502,25 @@ void stop_ascomremoteserver(void)
   {
     DebugPrintln("stop ascom server");
     ascomserver->close();
-    delete ascomserver;            // free the ascomserver pointer and associated memory/code
+    delete ascomserver;             // free the ascomserver pointer and associated memory/code
     ascomserverstate = STOPPED;
+    ASCOMDISCOVERYUdp.stop();       // stop discovery service
   }
   else
   {
     DebugPrintln(F(SERVERNOTRUNNINGSTR));
   }
-  delay(10);                     // small pause so background tasks can run
+
+  if ( ascomdiscoverystate == STOPPED )
+  {
+    ASCOMDISCOVERYUdp.stop();
+    ascomdiscoverystate = STOPPED;
+  }
+  else
+  {
+    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+  }
+  delay(10);                        // small pause so background tasks can run
 }
 #endif // ifdef ASCOMREMOTE
 // ASCOM REMOTE END -----------------------------------------------------------------------------
@@ -4871,6 +4950,7 @@ void setup()
   mdnsserverstate = STOPPED;
   webserverstate = STOPPED;
   ascomserverstate = STOPPED;
+  ascomdiscoverystate = STOPPED;
   managementserverstate = STOPPED;
   otaupdatestate = STOPPED;
   duckdnsstate = STOPPED;
@@ -5012,6 +5092,7 @@ void loop()
   if ( ascomserverstate == RUNNING)
   {
     ascomserver->handleClient();
+    checkASCOMALPACADiscovery();
   }
 #endif
 

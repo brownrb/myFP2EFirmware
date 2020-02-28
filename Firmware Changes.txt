@@ -1,3 +1,7 @@
+// r119
+// Add alpacadiscovery protocol support (UDP port 32227, IPv4)
+// Move ASCOMGUID into ascom definitions rather than hard coded
+
 // r118
 // Display temperature on OLED and Webserver according to tempmode state (C or F)
 // Add Display Enable/Disable to management console and  Web-server
