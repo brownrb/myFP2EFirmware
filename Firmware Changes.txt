@@ -1,6 +1,12 @@
 // r119
 // Add alpacadiscovery protocol support (UDP port 32227, IPv4)
 // Move ASCOMGUID into ascom definitions rather than hard coded
+// Fix setfeatures
+// Fix stepmode
+// On Webserver - Add ability to change TCPIP port - Needs to be tested
+// Add tcpip port to LCD display
+// Fix code in management server to check for updated port numbers that change
+// Increase SPIFF file size for data_per.jsn
 
 // r118
 // Display temperature on OLED and Webserver according to tempmode state (C or F)

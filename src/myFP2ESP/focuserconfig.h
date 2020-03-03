@@ -90,7 +90,7 @@
 
 // Management Server Control Interface [Port 6060] - DO NOT CHANGE
 #define MANAGEMENT 9
-#define MANAGEMENTFORCEDOWNLOAD 1
+//#define MANAGEMENTFORCEDOWNLOAD 1
 
 // To make the firmware return the correct firmware value when talking to a
 // myFocuserpro2 INDI driver [use only for INDI support], uncomment the following line

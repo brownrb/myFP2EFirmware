@@ -344,16 +344,22 @@ void ESP_Communication( byte mode )
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG)
       paramval = DRV8825TEPMODE;            // stepmopde set by jumpers
 #endif
-#if (DRVBRD == PRO2ESP32DRV8825)
-      paramval = (paramval < STEP1 ) ? STEP1 : paramval;
-      paramval = (paramval > STEP32 ) ? STEP32 : paramval;
+#if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS)
+      if( paramval < STEP1 )
+      {
+        paramval = STEP1;
+      }
+      else if( paramval > STEP32 )
+      {
+        paramval = STEP32;
+      }
 #endif
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
       paramval = STEP1;
 #endif
       // this is the proper way to do this
-      driverboard->setstepmode((byte) paramval);
-      mySetupData->set_stepmode(driverboard->getstepmode());
+      driverboard->setstepmode(paramval);
+      mySetupData->set_stepmode(paramval);
       break;
     case 31: // set focuser position
       if ( isMoving == 0 )
