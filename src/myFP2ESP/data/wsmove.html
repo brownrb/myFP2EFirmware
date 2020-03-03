@@ -1,4 +1,4 @@
-<html><head></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>&copy; R. Brown, Holger M, 2019-2020. All rights reserved<br>IP Address: %IPSTR%: Port: %WSPORT%, Firmware Version=%WSPROGRAMVERSION%<br>Driverboard = %WSPROGRAMNAME%</p><b>Position is : </b><span id="POSITION">%WSCURRENTPOSITION%</span><br><b>Target  : </b> %WSFTARGETPOSITION%<br><b>IsMoving: </b> <span id="ISMOVING">%WSISMOVING%</span></p>
+<html><head></head><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>&copy; R. Brown, Holger M, 2019-2020. All rights reserved<br>IP Address: %IP%: Port: %PORT%, Firmware Version=%VER%<br>Driverboard = %NAME%</p><b>Position is : </b><span id="POSITION">%CPOS%</span><br><b>Target  : </b> %TPOS%<br><b>IsMoving: </b> <span id="ISMOVING">%MOVING%</span></p>
 <script>
 function getposition(){
 var xhttp = new XMLHttpRequest();

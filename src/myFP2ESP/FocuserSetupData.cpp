@@ -109,6 +109,7 @@ byte SetupData::LoadConfiguration()
       this->ascomalpacaport       = doc_per["ascomport"];
       this->webpagerefreshrate    = doc_per["wprefreshrate"];
       this->mdnsport              = doc_per["mdnsport"];
+      this->tcpipport             = doc_per["tcpipport"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -198,6 +199,7 @@ void SetupData::LoadDefaultPersistantData()
   this->ascomalpacaport       = ALPACAPORT;       // 4040
   this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
   this->mdnsport              = MDNSSERVERPORT;   // 7070
+  this->tcpipport             = SERVERPORT;       // 2020
   
   this->SavePersitantConfiguration();             // write default values to SPIFFS
 }
@@ -309,6 +311,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["ascomport"]          = this->ascomalpacaport;
   doc["mdnsport"]           = this->mdnsport;
   doc["wprefreshrate"]      = this->webpagerefreshrate;
+  doc["tcpipport"]          = this->tcpipport;
 
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0)
@@ -528,6 +531,11 @@ unsigned long SetupData::get_mdnsport(void)
   return this->mdnsport;
 }
 
+unsigned long SetupData::get_tcpipport(void)
+{
+  return this->tcpipport;
+}
+
 //__Setter
 
 void SetupData::set_fposition(unsigned long fposition)
@@ -689,6 +697,11 @@ void SetupData::set_webpagerefreshrate(int rr)
 void SetupData::set_mdnsport(unsigned long port)
 {
   this->StartDelayedUpdate(this->mdnsport, port);
+}
+
+void SetupData::set_tcpipport(unsigned long port)
+{
+  this->StartDelayedUpdate(this->tcpipport, port);
 }
 
 void SetupData::StartDelayedUpdate(int & org_data, int new_data)

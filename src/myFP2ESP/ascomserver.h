@@ -44,6 +44,8 @@
 #define AS_MSFASTCHECKED          "<input type=\"radio\" name=\"ms\" value=\"2\" Checked> Fast"
 #define AS_MSFASTUNCHECKED        "<input type=\"radio\" name=\"ms\" value=\"2\"> Fast"
 
+#define ASCOMDISCOVERYPORT        32227
+#define ASCOMGUID                 "7e239e71-d304-4e7e-acda-3ff2e2b68515"
 #define ASCOMMAXIMUMARGS          10
 #define ASCOMSUCCESS              0
 #define ASCOMNOTIMPLEMENTED       0x400

@@ -19,7 +19,7 @@
 #define DEFAULTON         1
 #define DEFAULTCELSIUS    1
 #define DEFAULTFAHREN     0
-#define DEFAULTDOCSIZE    1024
+#define DEFAULTDOCSIZE    2048
 #define DEFAULTVARDOCSIZE 64
 
 class SetupData
@@ -58,6 +58,7 @@ class SetupData
     unsigned long get_ascomalpacaport();
     int get_webpagerefreshrate();
     unsigned long get_mdnsport();
+    unsigned long get_tcpipport();
 
     //__setter
     void set_fposition(unsigned long);
@@ -87,6 +88,7 @@ class SetupData
     void set_ascomalpacaport(unsigned long);
     void set_webpagerefreshrate(int);
     void set_mdnsport(unsigned long);
+    void set_tcpipport(unsigned long);
 
   private:
     byte SavePersitantConfiguration();
@@ -148,4 +150,5 @@ class SetupData
     unsigned long ascomalpacaport;
     int webpagerefreshrate;
     unsigned long mdnsport;
+    unsigned long tcpipport;
 };
