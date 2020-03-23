@@ -20,6 +20,9 @@
 #include "FocuserSetupData.h"
 #include "generalDefinitions.h"
 
+
+//__ Constructor ________________________________________
+
 SetupData::SetupData(void)
 {
   DebugPrintln("Constructor Setupdata");
@@ -39,6 +42,20 @@ SetupData::SetupData(void)
   else
   {
     DebugPrintln("SPIFFS mounted");
+
+#if defined(ESP8266)
+    DebugPrint(F("list files on SPIFFS: "));
+    String str = "";
+    Dir dir = SPIFFS.openDir("/");
+    while(dir.next())
+    {
+      str = dir.fileName() + ": " + dir.fileSize() + "  ";
+      Serial.print(str);
+    }
+    Serial.println(F("...done"));
+#else
+    this->ListDir("/", 0);    
+#endif
   }
 
   this->LoadConfiguration();
@@ -48,6 +65,7 @@ SetupData::SetupData(void)
 byte SetupData::LoadConfiguration()
 {
   byte retval = 0;
+  char data[512];
 
   // Open file for reading
   File file = SPIFFS.open(filename_persistant, "r");
@@ -64,7 +82,7 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(data);           // ... and print on serial
 
     // Allocate a temporary JsonDocument
-    DynamicJsonDocument doc_per(DEFAULTDOCSIZE);
+    StaticJsonDocument<DEFAULTDOCSIZE> doc_per;
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_per, data);
@@ -95,7 +113,11 @@ byte SetupData::LoadConfiguration()
       this->tcdirection           = doc_per["tcdir"];
       this->motorSpeed            = doc_per["motorspeed"];
       this->displayenabled        = doc_per["displaystate"];
-      this->preset0               = doc_per["preset0"];
+      for(int i= 0; i<10; i++)
+      {
+        this->preset[i]           = doc_per["preset"][i];
+      }
+/*      this->preset0               = doc_per["preset0"];
       this->preset1               = doc_per["preset1"];
       this->preset2               = doc_per["preset2"];
       this->preset3               = doc_per["preset3"];
@@ -104,7 +126,8 @@ byte SetupData::LoadConfiguration()
       this->preset6               = doc_per["preset6"];
       this->preset7               = doc_per["preset7"];
       this->preset8               = doc_per["preset8"];
-      this->preset9               = doc_per["preset9"];
+      this->preset9               = doc_per["preset9"];*/
+
       this->webserverport         = doc_per["wsport"];
       this->ascomalpacaport       = doc_per["ascomport"];
       this->webpagerefreshrate    = doc_per["wprefreshrate"];
@@ -129,7 +152,7 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(data);               // ... and print on serial
 
     // Allocate a temporary JsonDocument
-    DynamicJsonDocument doc_var(DEFAULTVARDOCSIZE);
+    StaticJsonDocument<DEFAULTVARDOCSIZE> doc_var;
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_var, data);
@@ -185,7 +208,12 @@ void SetupData::LoadDefaultPersistantData()
   this->lcdpagetime           = LCDPAGETIMEMIN;       // 2, 3 -- 10
   this->motorSpeed            = FAST;
   this->displayenabled        = DEFAULTON;
-  this->preset0               = 0;
+  for(int i= 0; i<10; i++)
+  {
+    this->preset[i]       = 0;
+  }
+
+/*  this->preset0               = 0;
   this->preset1               = 0;
   this->preset2               = 0;
   this->preset3               = 0;
@@ -194,7 +222,7 @@ void SetupData::LoadDefaultPersistantData()
   this->preset6               = 0;
   this->preset7               = 0;
   this->preset8               = 0;
-  this->preset9               = 0;
+  this->preset9               = 0;*/
   this->webserverport         = WEBSERVERPORT;    // 80
   this->ascomalpacaport       = ALPACAPORT;       // 4040
   this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
@@ -297,6 +325,12 @@ byte SetupData::SavePersitantConfiguration()
   doc["tcdir"]              = this->tcdirection;
   doc["motorspeed"]         = this->motorSpeed;
   doc["displaystate"]       = this->displayenabled;
+
+  for(int i=0; i<10; i++)
+  {
+    doc["preset"][i]        = this->preset[i];                  //Json array for presets
+  }
+/*  
   doc["preset0"]            = this->preset0;
   doc["preset1"]            = this->preset1;
   doc["preset2"]            = this->preset2;
@@ -306,7 +340,8 @@ byte SetupData::SavePersitantConfiguration()
   doc["preset6"]            = this->preset6;
   doc["preset7"]            = this->preset7;
   doc["preset8"]            = this->preset8;
-  doc["preset9"]            = this->preset9;
+  doc["preset9"]            = this->preset9;*/
+  
   doc["wsport"]             = this->webserverport;
   doc["ascomport"]          = this->ascomalpacaport;
   doc["mdnsport"]           = this->mdnsport;
@@ -482,6 +517,9 @@ byte SetupData::get_displayenabled()
 
 unsigned long SetupData::get_focuserpreset(byte idx)
 {
+  return this->preset[idx % 10];
+  
+/*
   idx = idx & 0x0f;     // get least significant nibble
   idx = ( idx > 9 ) ? 9 : idx;
   switch ( idx )
@@ -509,6 +547,7 @@ unsigned long SetupData::get_focuserpreset(byte idx)
     default:
       return this->preset0;
   }
+  */
 }
 
 unsigned long SetupData::get_webserverport(void)
@@ -650,6 +689,9 @@ void SetupData::set_displayenabled(byte displaystate)
 
 void SetupData::set_focuserpreset(byte idx, unsigned long pos)
 {
+  this->preset[idx % 10] = pos;
+
+/*  
   idx = idx & 0x0f;     // get least significant nibble
   idx = ( idx > 9 ) ? 9 : idx;
   switch ( idx )
@@ -677,6 +719,7 @@ void SetupData::set_focuserpreset(byte idx, unsigned long pos)
     default: this->StartDelayedUpdate(this->preset0, pos);
       break;
   }
+  */
 }
 
 void SetupData::set_webserverport(unsigned long wsp)
@@ -747,3 +790,52 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
     DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
   }
 }
+
+
+void SetupData::ListDir(const char * dirname, uint8_t levels)
+{
+  DebugPrint(F("Listing directory: {"));
+
+#if defined(ESP8266)
+  File root = SPIFFS.open(dirname,"r"); 
+#else
+  File root = SPIFFS.open(dirname);
+#endif
+
+  if(!root)
+    DebugPrintln(F(" - failed to open directory"));
+  else
+  {
+    if(!root.isDirectory())
+      DebugPrintln(F(" - not a directory"));
+    else
+    {
+      File file = root.openNextFile();
+
+      int i=0;
+      while(file)
+      {
+        if(file.isDirectory())
+        {
+          DebugPrint(F("  DIR : "));
+          DebugPrintln(file.name());
+          if(levels)
+            this->ListDir(file.name(), levels -1);           
+        } 
+        else 
+        {
+          DebugPrint(file.name());
+          DebugPrint(F(":"));
+          DebugPrint(file.size());
+          if ((++i % 6) == 0)
+            DebugPrintln("");
+          else
+            DebugPrint(F("  "));
+        }
+        file = root.openNextFile();
+      }
+      DebugPrintln("}");
+    }
+  }
+}
+

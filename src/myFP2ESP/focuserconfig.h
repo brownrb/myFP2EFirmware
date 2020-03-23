@@ -53,10 +53,10 @@
 //#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
-//#define SHOWSTARTSCRN 1
+#define SHOWSTARTSCRN 1
 
 // To display Splash screen graphic, uncomment the next line
-//#define SPLASHSCREEN 1
+#define SPLASHSCREEN 1
 
 // ----------------------------------------------------------------------------------------------
 // 2: SPECIFY THE CONTROLLER MODE HERE - THERE ARE RESTRICTIONS ON WHAT CAN BE COMBINED TOGETHER
@@ -102,7 +102,7 @@
 
 // to enable reading SSID and PASSWORD 
 // from SPIFFS file wificonfig at boot time, uncomment the following file
-//#define READWIFICONFIG 1
+#define READWIFICONFIG 1
 
 // ----------------------------------------------------------------------------------------------------------
 // 3: SPECIFY OLED DISPLAY TYPE

@@ -3434,12 +3434,13 @@ void stop_webserver(void)
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
 #else
-#include <webserver.h>
+#include "webserver.h"
 #endif // if defined(esp8266)
 
 #include "ascomserver.h"
 // Implement ASCOM ALPACA DISCOVERY PROTOCOL
 #include <WiFiUdp.h>
+
 WiFiUDP ASCOMDISCOVERYUdp;
 char packetBuffer[255];           //buffer to hold incoming UDP packet
 
@@ -4774,7 +4775,8 @@ void steppermotormove(byte dir )                // direction move_in, move_out ^
 
 bool readwificonfig( char* xSSID, char* xPASSWORD)
 {
-  const String filename = "/wificonfig.json";
+//  const String filename = "/wificonfig.json";
+  const char filename[] = "/wificonfig.json";  
   String SSID;
   String PASSWORD;
   boolean status = false;
@@ -4827,6 +4829,9 @@ void stop_tcpipserver()
   tcpipserverstate = STOPPED;
 }
 #endif
+
+
+//_______________________________________________ setup()
 
 void setup()
 {
