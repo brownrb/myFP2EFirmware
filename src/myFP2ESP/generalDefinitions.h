@@ -9,11 +9,12 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-#include <Arduino.h>
+
 
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
 
+#include <Arduino.h>
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
@@ -59,15 +60,10 @@
 #define HPSWOPEN              0             // hpsw states refelect status of switch
 #define HPSWCLOSED            1
 
-#ifndef SLOW
+
 #define SLOW                  0             // motorspeeds
-#endif
-#ifndef MED
 #define MED                   1
-#endif
-#ifndef FAST
 #define FAST                  2
-#endif
 
 // You can set the speed of the motor when performing backlash to SLOW, MED or FAST
 #define BACKLASHSPEED         SLOW
@@ -76,124 +72,119 @@
 // 2: DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-
 #define moving_in             false
 #define moving_out            !moving_in
 
-#ifndef STEP1
 #define STEP1                 1             // stepmodes
-#endif
-#ifndef STEP2
 #define STEP2                 2
-#endif
-#ifndef STEP4
 #define STEP4                 4
-#endif
-#ifndef STEP8
 #define STEP8                 8
-#endif
-#ifndef STEP16
 #define STEP16                16
-#endif
-#ifndef STEP32
 #define STEP32                32
-#endif
 
-#define STATEMOVINGSTR        ">Moving"
-#define STATEAPPLYBACKLASH    ">ApplyBacklash"
-#define STATESETHOMEPOSITION  ">SetHomePosition"
-#define STATEFINDHOMEPOSITION ">FindHomePosition#"
-#define STATEDELAYAFTERMOVE   ">DelayAfterMove"
-#define STATEFINISHEDMOVE     ">FinishedMove"
-#define STATEIDLE             ">Idle"
-#define STATEINITMOVE         ">InitMove"
 #define EOFSTR                '#'
 #define STARTCMDSTR           ':'
-#define PORTSTR               "Port= "
-#define SENDSTR               "Send= "
-#define SERIALSTARTSTR        "Serial started"
-#define DEBUGONSTR            "Debug on"
-#define BLUETOOTHSTARTSTR     "Bluetooth started"
-#define ATTEMPTCONNSTR        "Attempt connection to= "
-#define SERVERREADYSTR        "Server Ready"
-#define STARTSTR              "Start"
-#define ENDSTR                "End"
-#define PROGRESSSTR           "Progress: "
-#define ERRORSTR              "Error= "
-#define READYSTR              "Ready"
-#define SETUPDRVBRDSTR        "Setup drvbrd= "
-#define DRVBRDDONESTR         "Driver board done"
-#define CHECKCPWRSTR          "Check coilpower"
-#define CPWRRELEASEDSTR       "Coil power released"
-#define STARTAPSTR            "Start Access Point"
-#define STARTSMSTR            "Start Station mode"
-#define SETSTATICIPSTR        "Setup Static IP"
-#define ATTEMPTSSTR           "Attempt= "
-#define STARTTCPSERVERSTR     "Start TCP Server"
-#define TCPSERVERSTARTEDSTR   "TCP Server started"
-#define GETLOCALIPSTR         "Get local IP address"
-#define SETUPDUCKDNSSTR       "Setup DuckDNS"
-#define SETUPENDSTR           "Setup end"
-#define STARTOTASERVICESTR    "Start OTA service"
-#define SSIDSTR               "SSID = "
-#define IPADDRESSSTR          "IP   = "
-#define WIFIRESTARTSTR        "Restarting"
-#define WIFIBEGINSTATUSSTR    "Wifi.begin status code: "
-#define CHECKFORTPROBESTR     "Check for Tprobe"
-#define ACCESSPOINTSTR        "Access point: "
-#define STATIONMODESTR        "Station mode: "
-#define CONFIGSAVEDSTR        "new Config saved: "
-#define RELEASEMOTORSTR       "Idle: release motor"
-#define LOOPSTARTSTR          "Loop Start ="
-#define LOOPENDSTR            "Loop End ="
-#define TCPCLIENTCONNECTSTR   "tcp client has connected"
-#define TCPCLIENTDISCONNECTSTR "tcp client has disconnected"
-#define APCONNECTFAILSTR      "Did not connect to AP "
-#define CONNECTEDSTR          "Connected"
-#define I2CDEVICENOTFOUNDSTR  "I2C device not found"
 
-#define WRITEFILEFAILSTR      "Write to file failed"
-#define WRITEFILESUCCESSSTR   "Write to file OK"
-#define CREATEFILEFAILSTR     "Unable to create file"
-#define CHECKWIFICONFIGFILESTR "check for Wifi config file"
-#define DESERIALIZEERRORSTR   "Deserialization error"
-#define SERVERNOTRUNNINGSTR   "Server NOT running"
+extern const char* programVersion;
+extern const char* ProgramAuthor;
 
-#define HPCLOSEDFPNOT0STR     "HP closed, fcurrentPosition !=0"
-#define HPCLOSEDFP0STR        "HP closed, fcurrentPosition=0"
-#define HPOPENFPNOT0STR       "HP Open, fcurrentPosition=0"
-#define HPMOVETILLCLOSEDSTR   "HP MoveIN till closed"
-#define HPMOVEINERRORSTR      "HP MoveIN ERROR: HOMESTEPS exceeded"
-#define HPMOVEINSTEPSSTR      "HP MoveIN stepstaken="
-#define HPMOVEINFINISHEDSTR   "HP MoveIN finished"
-#define HPMOVETILLOPENSTR     "HP Move out till OPEN"
-#define HPMOVEOUTERRORSTR     "HP MoveOUT ERROR: HOMESTEPS exceeded#"
-#define HPMOVEOUTSTEPSSTR     "HP MoveOUT stepstaken="
-#define HPMOVEOUTFINISHEDSTR  "HP MoveOUT ended"
+
+extern const char* STATEMOVINGSTR;
+extern const char* STATEAPPLYBACKLASH;
+extern const char* STATESETHOMEPOSITION;
+extern const char* STATEFINDHOMEPOSITION;
+extern const char* STATEDELAYAFTERMOVE;
+extern const char* STATEFINISHEDMOVE;
+extern const char* STATEIDLE;
+extern const char* STATEINITMOVE;
+extern const char* PORTSTR;
+extern const char* SENDSTR;
+extern const char* SERIALSTARTSTR;
+extern const char* DEBUGONSTR;
+extern const char* BLUETOOTHSTARTSTR;
+extern const char* ATTEMPTCONNSTR;
+extern const char* APSTARTFAILSTR;
+extern const char* SERVERREADYSTR;
+extern const char* STARTSTR;
+extern const char* ENDSTR;
+extern const char* PROGRESSSTR;
+extern const char* ERRORSTR;
+extern const char* READYSTR;
+extern const char* SETUPDRVBRDSTR;
+extern const char* DRVBRDDONESTR;
+extern const char* CHECKCPWRSTR;
+extern const char* CPWRRELEASEDSTR;
+extern const char* STARTAPSTR;
+extern const char* STARTSMSTR;
+extern const char* SETSTATICIPSTR;
+extern const char* ATTEMPTSSTR;
+extern const char* STARTTCPSERVERSTR;
+extern const char* TCPSERVERSTARTEDSTR;
+extern const char* GETLOCALIPSTR;
+extern const char* SETUPDUCKDNSSTR;
+extern const char* SETUPENDSTR;
+extern const char* STARTOTASERVICESTR;
+extern const char* SSIDSTR;
+extern const char* IPADDRESSSTR;
+extern const char* WIFIRESTARTSTR;
+extern const char* WIFIBEGINSTATUSSTR;
+extern const char* CHECKFORTPROBESTR;
+extern const char* ACCESSPOINTSTR;
+extern const char* STATIONMODESTR;
+extern const char* CONFIGSAVEDSTR;
+extern const char* RELEASEMOTORSTR;
+extern const char* LOOPSTARTSTR;
+extern const char* LOOPENDSTR;
+extern const char* TCPCLIENTCONNECTSTR;
+extern const char* TCPCLIENTDISCONNECTSTR;
+extern const char* APCONNECTFAILSTR;
+extern const char* CONNECTEDSTR;
+extern const char* I2CDEVICENOTFOUNDSTR;
+
+extern const char* WRITEFILEFAILSTR;
+extern const char* WRITEFILESUCCESSSTR;
+extern const char* CREATEFILEFAILSTR;
+extern const char* CHECKWIFICONFIGFILESTR;
+extern const char* DESERIALIZEERRORSTR;
+extern const char* SERVERNOTRUNNINGSTR;
+
+extern const char* HPCLOSEDFPNOT0STR;
+extern const char* HPCLOSEDFP0STR;
+extern const char* HPOPENFPNOT0STR;
+extern const char* HPMOVETILLCLOSEDSTR;
+extern const char* HPMOVEINERRORSTR;
+extern const char* HPMOVEINSTEPSSTR;
+extern const char* HPMOVEINFINISHEDSTR;
+extern const char* HPMOVETILLOPENSTR;
+extern const char* HPMOVEOUTERRORSTR;
+extern const char* HPMOVEOUTSTEPSSTR;
+extern const char* HPMOVEOUTFINISHEDSTR;
 
 // temperature probe messages
-#define TPROBESTR             "Tsensors= "
-#define TPROBENOTFOUNDSTR     "Tprobe not found"
-#define GETTEMPPROBESSTR      "Get # of Tsensors"
-#define SETTPROBERESSTR       "Set Tprecision to "
+extern const char* TPROBESTR;
+extern const char* TPROBENOTFOUNDSTR;
+extern const char* GETTEMPPROBESSTR;
+extern const char* SETTPROBERESSTR;
 // oled messages
-#define CURRENTPOSSTR         "Current Pos = "
-#define TARGETPOSSTR          "Target Pos  = "
-#define COILPWRSTR            "Coil power  = "
-#define REVDIRSTR             "Reverse Dir = "
-#define STEPMODESTR           "Step Mode   = "
-#define TEMPSTR               "Temperature = "
-#define MOTORSPEEDSTR         "Motor Speed = "
-#define MAXSTEPSSTR           "MaxSteps    = "
-#define TCOMPSTEPSSTR         "TComp Steps = "
-#define TCOMPSTATESTR         "TComp State = "
-#define TCOMPDIRSTR           "TComp Dir   = "
-#define BACKLASHINSTR         "Backlash In = "
-#define BACKLASHOUTSTR        "Backlash Out ="
-#define BACKLASHINSTEPSSTR    "Backlash In#= "
-#define BACKLASHOUTSTEPSSTR   "Backlash Ou#= "
-#define BLUETOOTHSTR          "Bluetooth Mode"
-#define LOCALSERIALSTR        "Local Serial Mode"
+
+extern const char* CURRENTPOSSTR;
+extern const char* TARGETPOSSTR;
+extern const char* COILPWRSTR;
+extern const char* REVDIRSTR;
+extern const char* STEPMODESTR;
+extern const char* TEMPSTR;
+extern const char* MOTORSPEEDSTR;
+extern const char* MAXSTEPSSTR;
+extern const char* TCOMPSTEPSSTR;
+extern const char* TCOMPSTATESTR;
+extern const char* TCOMPDIRSTR;
+extern const char* BACKLASHINSTR;
+extern const char* BACKLASHOUTSTR;
+extern const char* BACKLASHINSTEPSSTR;
+extern const char* BACKLASHOUTSTEPSSTR;
+extern const char* BLUETOOTHSTR;
+extern const char* LOCALSERIALSTR;
+
 // joystick messages
 #define UPDATEJOYSTICKSTR     "joystick: update joystick"
 #define JOYSTICKVALSTR        "Raw joyval:"

@@ -9,11 +9,10 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-#include "myBoardTypes.h"
-
 #ifndef myBoards_h
 #define myBoards_h
 
+#include "myBoardTypes.h"
 // ----------------------------------------------------------------------------------------------
 // 1: BOARD DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
@@ -30,21 +29,21 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-//#define DRVBRD PRO2ESP32DRV8825
+#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
-#define DRVBRD PRO2ESP32R3WEMOS
+//#define DRVBRD PRO2ESP32R3WEMOS
 
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
 #define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266
 
 // stepper motor steps per full revolution using full steps
 // WARNING: USE THE CORRECT ONE - IF YOU THEN CHANGE STEPMODE THE STEPS MOVED WILL BE INVALID
-#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
+//#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
 //#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
-//#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
+#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
 //#define STEPSPERREVOLUTION 1028        // 17HS13-0404S-PG5
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 //#define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
@@ -232,21 +231,22 @@
 // DRIVER BOARD CLASS : DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
+extern  const char* DRVBRD_ID;
+
 class DriverBoard
 {
   public:
     DriverBoard(byte);          // constructor
-    ~DriverBoard(void);         // finalizer
-
+    
     // getter
     byte getmotorspeed(void);
     byte getstepmode(void);
     int getstepdelay(void);
-    String getboardname(void);
+//    String getboardname(void);
 
     // setter
     void setstepdelay(int);
-    void setstepmode(byte);
+    void setstepmode(const byte);
     void movemotor(byte);
     void enablemotor(void);
     void releasemotor(void);

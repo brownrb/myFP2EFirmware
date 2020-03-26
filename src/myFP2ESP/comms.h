@@ -19,15 +19,14 @@ extern unsigned long fcurrentPosition;         // current focuser position
 extern unsigned long ftargetPosition;          // target position
 extern byte isMoving;
 extern String ipStr;
-extern char programVersion[];
-extern String programName;
+extern const char* programVersion;
+
 extern DriverBoard* driverboard;
 extern char mySSID[64];
 extern void software_Reboot(int);
 
 #ifdef OLEDTEXT
-extern void update_oledtext_position(void);
-extern SSD1306AsciiWire* myoled;
+extern OLED_TEXT *myoled;
 #endif
 #ifdef TEMPERATUREPROBE
 extern float read_temp(byte);
@@ -111,7 +110,7 @@ void ESP_Communication( byte mode )
 #endif
       break;
     case 4: // get firmware name
-      SendPaket('F' + programName + '\r' + '\n' + String(programVersion) + EOFSTR);
+      SendPaket('F' + DRVBRD_ID + '\r' + '\n' + String(programVersion) + EOFSTR);
       break;
     case 6: // get temperature
 #if defined(TEMPERATUREPROBE)
@@ -255,7 +254,7 @@ void ESP_Communication( byte mode )
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         ftargetPosition = (unsigned long)WorkString.toInt();
         ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
-        update_oledtext_position();
+        myoled->update_oledtext_position();
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
         // restore motorspeed just in case
         driverboard->setmotorspeed(mySetupData->get_motorSpeed());

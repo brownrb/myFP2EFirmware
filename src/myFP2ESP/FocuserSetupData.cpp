@@ -117,17 +117,6 @@ byte SetupData::LoadConfiguration()
       {
         this->preset[i]           = doc_per["preset"][i];
       }
-/*      this->preset0               = doc_per["preset0"];
-      this->preset1               = doc_per["preset1"];
-      this->preset2               = doc_per["preset2"];
-      this->preset3               = doc_per["preset3"];
-      this->preset4               = doc_per["preset4"];
-      this->preset5               = doc_per["preset5"];
-      this->preset6               = doc_per["preset6"];
-      this->preset7               = doc_per["preset7"];
-      this->preset8               = doc_per["preset8"];
-      this->preset9               = doc_per["preset9"];*/
-
       this->webserverport         = doc_per["wsport"];
       this->ascomalpacaport       = doc_per["ascomport"];
       this->webpagerefreshrate    = doc_per["wprefreshrate"];
@@ -212,17 +201,6 @@ void SetupData::LoadDefaultPersistantData()
   {
     this->preset[i]       = 0;
   }
-
-/*  this->preset0               = 0;
-  this->preset1               = 0;
-  this->preset2               = 0;
-  this->preset3               = 0;
-  this->preset4               = 0;
-  this->preset5               = 0;
-  this->preset6               = 0;
-  this->preset7               = 0;
-  this->preset8               = 0;
-  this->preset9               = 0;*/
   this->webserverport         = WEBSERVERPORT;    // 80
   this->ascomalpacaport       = ALPACAPORT;       // 4040
   this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
@@ -330,18 +308,6 @@ byte SetupData::SavePersitantConfiguration()
   {
     doc["preset"][i]        = this->preset[i];                  //Json array for presets
   }
-/*  
-  doc["preset0"]            = this->preset0;
-  doc["preset1"]            = this->preset1;
-  doc["preset2"]            = this->preset2;
-  doc["preset3"]            = this->preset3;
-  doc["preset4"]            = this->preset4;
-  doc["preset5"]            = this->preset5;
-  doc["preset6"]            = this->preset6;
-  doc["preset7"]            = this->preset7;
-  doc["preset8"]            = this->preset8;
-  doc["preset9"]            = this->preset9;*/
-  
   doc["wsport"]             = this->webserverport;
   doc["ascomport"]          = this->ascomalpacaport;
   doc["mdnsport"]           = this->mdnsport;
@@ -518,36 +484,6 @@ byte SetupData::get_displayenabled()
 unsigned long SetupData::get_focuserpreset(byte idx)
 {
   return this->preset[idx % 10];
-  
-/*
-  idx = idx & 0x0f;     // get least significant nibble
-  idx = ( idx > 9 ) ? 9 : idx;
-  switch ( idx )
-  {
-    case 0: return this->preset0;
-      break;
-    case 1: return this->preset1;
-      break;
-    case 2: return this->preset2;
-      break;
-    case 3: return this->preset3;
-      break;
-    case 4: return this->preset4;
-      break;
-    case 5: return this->preset5;
-      break;
-    case 6: return this->preset6;
-      break;
-    case 7: return this->preset7;
-      break;
-    case 8: return this->preset8;
-      break;
-    case 9: return this->preset9;
-      break;
-    default:
-      return this->preset0;
-  }
-  */
 }
 
 unsigned long SetupData::get_webserverport(void)
@@ -690,36 +626,6 @@ void SetupData::set_displayenabled(byte displaystate)
 void SetupData::set_focuserpreset(byte idx, unsigned long pos)
 {
   this->preset[idx % 10] = pos;
-
-/*  
-  idx = idx & 0x0f;     // get least significant nibble
-  idx = ( idx > 9 ) ? 9 : idx;
-  switch ( idx )
-  {
-    case 0: this->StartDelayedUpdate(this->preset0, pos);
-      break;
-    case 1: this->StartDelayedUpdate(this->preset1, pos);
-      break;
-    case 2: this->StartDelayedUpdate(this->preset2, pos);
-      break;
-    case 3: this->StartDelayedUpdate(this->preset3, pos);
-      break;
-    case 4: this->StartDelayedUpdate(this->preset4, pos);
-      break;
-    case 5: this->StartDelayedUpdate(this->preset5, pos);
-      break;
-    case 6: this->StartDelayedUpdate(this->preset6, pos);
-      break;
-    case 7: this->StartDelayedUpdate(this->preset7, pos);
-      break;
-    case 8: this->StartDelayedUpdate(this->preset8, pos);
-      break;
-    case 9: this->StartDelayedUpdate(this->preset9, pos);
-      break;
-    default: this->StartDelayedUpdate(this->preset0, pos);
-      break;
-  }
-  */
 }
 
 void SetupData::set_webserverport(unsigned long wsp)

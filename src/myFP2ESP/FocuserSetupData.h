@@ -138,18 +138,7 @@ class SetupData
     byte motorSpeed;                // speed of motor, slow, medium or fast
     byte displayenabled;            // if 1, display is enabled
 
-    unsigned long preset[10];
-/*    
-    unsigned long preset0;          // focuser presets can be used with software or ir-remote controller
-    unsigned long preset1;
-    unsigned long preset2;
-    unsigned long preset3;
-    unsigned long preset4;
-    unsigned long preset5;
-    unsigned long preset6;
-    unsigned long preset7;
-    unsigned long preset8;
-    unsigned long preset9;*/
+    unsigned long preset[10];       // focuser presets can be used with software or ir-remote controller
     unsigned long webserverport;
     unsigned long ascomalpacaport;
     int webpagerefreshrate;

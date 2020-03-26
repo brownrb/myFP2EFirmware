@@ -123,11 +123,11 @@
 // 1. For access point mode this is the network you connect to
 // 2. For station mode, change these to match your network details
 #ifdef ACCESSPOINT                          // your computer connects to this accesspoint
-char mySSID[64] = "myfp2eap";
+char mySSID[64]     = "myfp2eap";
 char myPASSWORD[64] = "myfp2eap";
 #endif
 #ifdef STATIONMODE                          // the controller connects to your network
-char mySSID[64] = "myfp2eap";               // you need to set this to your WiFi network SSID
+char mySSID[64]     = "myfp2eap";               // you need to set this to your WiFi network SSID
 char myPASSWORD[64] = "myfp2eap";           // and you need to set the correct password
 #endif
 
@@ -244,25 +244,15 @@ DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                      // holds address of the temperature probe
 #endif
 
-#ifdef OLEDTEXT
-#include <Wire.h>                             // needed for I2C => OLED display
-#include <mySSD1306Ascii.h>
-#include <mySSD1306AsciiWire.h>
-SSD1306AsciiWire* myoled;
-#endif // #ifdef OLEDTEXT
+#include "displays.h"
 
-#ifdef OLEDGRAPHICS
-#include <Wire.h>
-#include "images.h"
-#ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
-#include <SSD1306Wire.h>
-SSD1306Wire* myoled;
+#ifdef OLEDTEXT
+OLED_TEXT *myoled;
+#elif OLEDGRAPHICS
+OLED_GRAPHIC *myoled;
+#else
+OLED_NON *myoled;
 #endif
-#ifdef USE_SSH1106                            // For the OLED 128x64 1.3" display using the SSH1106 driver
-#include <SH1106Wire.h>
-SH1106Wire* myoled;
-#endif
-#endif // #ifdef OLEDGRAPHICS
 
 // ----------------------------------------------------------------------------------------------
 // 15: CONTROLLER FEATURES -- DO NOT CHANGE
@@ -350,31 +340,28 @@ void setFeatures()
 // ----------------------------------------------------------------------------------------------
 
 //  StateMachine definition
-#define State_Idle              0
-#define State_InitMove          1
-#define State_ApplyBacklash     2
-#define State_Moving            3
-#define State_DelayAfterMove    4
-#define State_FinishedMove      5
-#define State_SetHomePosition   6
-#define State_FindHomePosition  7
-#define move_in                 0
-#define move_out                1
-#define oled_off                0
-#define oled_on                 1
-#define oled_stay               2
+enum StateMachineStates
+{
+  State_Idle,
+  State_InitMove,
+  State_ApplyBacklash,
+  State_ApplyBacklash2,
+  State_Moving,
+  State_DelayAfterMove,
+  State_FinishedMove,
+  State_SetHomePosition,
+  State_FindHomePosition
+};
+
 //           reversedirection
 //__________________________________
 //               0   |   1
 //__________________________________
-//move_out  1||  1   |   0
-//move_in   0||  0   |   1
+//moving_out  1||  1   |   0
+//moving_in   0||  0   |   1
 
-String programName;
+const char* programName = DRVBRD_ID;
 DriverBoard* driverboard;
-
-char programVersion[] = "119";
-char ProgramAuthor[]  = "(c) R BROWN 2020";
 
 unsigned long fcurrentPosition;             // current focuser position
 unsigned long ftargetPosition;              // target position
@@ -554,514 +541,6 @@ void update_temp(void)
   } // end of if tprobe
 }
 #endif // TEMPERATUREPROBE
-
-// ----------------------------------------------------------------------------------------------
-// 19A: OLED GRAPHICS DISPLAY - CHANGE AT YOUR OWN PERIL
-// ----------------------------------------------------------------------------------------------
-// Enclose function code in #ifdef - #endif so function declarations are visible
-
-void Update_OledGraphics(byte new_status)
-{
-#if defined(OLEDGRAPHICS)
-  static byte current_status = oled_on;
-
-  if ( displayfound)
-  {
-    switch (new_status)
-    {
-      case oled_off:
-        current_status = new_status;
-        myoled->clear();
-        myoled->display();
-        break;
-      case oled_stay:
-        if (current_status == oled_on)
-          oled_draw_main_update();
-        break;
-      case oled_on:
-      default:
-        oled_draw_main_update();
-        current_status = new_status;
-        break;
-    }
-  }
-#endif
-}
-
-void oledgraphicmsg(String str, int val, boolean clrscr)
-{
-#if defined(OLEDGRAPHICS)
-  static byte linecount = 0;
-
-  myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-  myoled->setFont(ArialMT_Plain_10);
-
-  if (displayfound)
-  {
-    if (clrscr == true)
-    {
-      myoled->clear();
-      linecount = 0;
-    }
-    if (val != -1)
-    {
-      str += String(val);
-    }
-    myoled->drawString(0, linecount * 12, str);
-    myoled->display();
-    linecount++;
-  }
-#endif
-}
-
-void oled_draw_Wifi(int j)
-{
-#if defined(OLEDGRAPHICS)
-  if ( displayfound == true)
-  {
-    myoled->clear();
-    myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-    myoled->setFont(ArialMT_Plain_10);
-    myoled->drawString(64, 0, "SSID: " + String(mySSID));
-    myoled->drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits); // draw wifi logo
-
-    for (int i = 1; i < 10; i++)
-      myoled->drawXbm(12 * i, 56, 8, 8, (i == j) ? activeSymbol : inactiveSymbol);
-
-    myoled->display();
-  }
-#endif
-}
-
-void oled_draw_main_update(void)
-{
-#if defined(OLEDGRAPHICS)
-  if (displayfound == true)
-  {
-    myoled->clear();
-    myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-    myoled->setFont(ArialMT_Plain_10);
-    myoled->drawString(64, 0, driverboard->getboardname());
-    myoled->drawString(64, 12, "IP= " + ipStr);
-
-    myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-#ifdef TEMPERATUREPROBE
-    String tmbuffer = String(read_temp(0), 2);
-#else
-    String tmbuffer = "20.0";
-#endif
-    myoled->drawString(54, 54, "TEMP:" + tmbuffer + " C");
-    myoled->drawString(0, 54, "BL:" + String(mySetupData->get_backlashsteps_out()));
-    //myoled->drawString(24, 54, "SM:" + String(driverboard->getstepmode()));
-
-    myoled->setTextAlignment(TEXT_ALIGN_CENTER);
-    myoled->setFont(ArialMT_Plain_24);
-
-    char dir = (mySetupData->get_focuserdirection() == move_in ) ? '<' : '>';
-    myoled->drawString(64, 28, String(fcurrentPosition, DEC) + ":" +  String(fcurrentPosition % driverboard->getstepmode(), DEC) + ' ' + dir); // Print currentPosition
-    myoled->display();
-  }
-#endif
-}
-
-boolean Init_OLED(void)
-{
-#if defined(OLEDGRAPHICS)
-  Wire.begin();
-  Wire.setClock(400000L);                               // 400 kHZ max. speed on I2C
-
-#ifdef  DEBUG
-  //Scan all I2C addresses for device detection
-  Serial.print ("Scan for devices on I2C: ");
-  for (int i = 0; i < 128; i++)
-  {
-    Wire.beginTransmission(i);
-    if (!Wire.endTransmission ())
-    {
-      Serial.print(" 0x");
-      Serial.print(i, HEX);
-    }
-  }
-  Serial.println("");
-#endif
-
-  Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
-  if (Wire.endTransmission() != 0)
-  {
-    DebugPrintln(F("no I2C device found"));
-    displayfound = false;
-  }
-  else
-  {
-    DebugPrint(F("I2C device found at address "));
-    DebugPrintln(OLED_ADDR, HEX);
-    displayfound = true;
-#ifdef USE_SSD1306                    // For the OLED 128x64 0.96" display using the SSD1306 driver 
-    myoled = new SSD1306Wire(OLED_ADDR , I2CDATAPIN, I2CCLKPIN);
-#endif
-#ifdef USE_SSH1106                    // For the OLED 128x64 1.3" display using the SSH1106 driver
-    myoled = new SH1106Wire(OLED_ADDR , I2CDATAPIN, I2CCLKPIN);
-#endif
-    myoled->init();
-    myoled->flipScreenVertically();
-    myoled->setFont(ArialMT_Plain_10);
-    myoled->setTextAlignment(TEXT_ALIGN_LEFT);
-    myoled->clear();
-#if defined(SHOWSTARTSCRN)
-    myoled->drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
-    myoled->drawString(0, 12, ProgramAuthor);
-#endif
-    myoled->display();
-  }
-#endif
-  return displayfound;
-}
-
-// ----------------------------------------------------------------------------------------------
-// 19B: OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL
-// ----------------------------------------------------------------------------------------------
-#ifdef OLEDTEXT
-#endif // #ifdef OLEDTEXT
-// Enclose function code in #ifdef - #endif so function declarations are visible
-
-void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    if ( clrscr == true)                      // clear the screen?
-    {
-      myoled->clear();
-      myoled->setCursor(0, 0);
-    }
-    if ( nl == true )                         // need to print a new line?
-    {
-      if ( val != -1)                         // need to print a value?
-      {
-        myoled->print(str);
-        myoled->println(val);
-      }
-      else
-      {
-        myoled->println(str);
-      }
-    }
-    else
-    {
-      myoled->print(str);
-      if ( val != -1 )
-      {
-        myoled->print(val);
-      }
-    }
-  }
-#endif // OLEDTEXT
-}
-
-void display_oledtext_page0(void)           // displaylcd screen
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    char tempString[20];
-    myoled->home();
-    myoled->print(F(CURRENTPOSSTR));
-    myoled->print(fcurrentPosition);
-    myoled->clearToEOL();
-
-    myoled->println();
-    myoled->print(F(TARGETPOSSTR));
-    myoled->print(ftargetPosition);
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(COILPWRSTR));
-    myoled->print(mySetupData->get_coilpower());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(REVDIRSTR));
-    myoled->print(mySetupData->get_reversedirection());
-    myoled->clearToEOL();
-    myoled->println();
-
-    // stepmode setting
-    myoled->print(F(STEPMODESTR));
-    myoled->print(mySetupData->get_stepmode());
-    myoled->clearToEOL();
-    myoled->println();
-
-    //Temperature
-    myoled->print(F(TEMPSTR));
-#ifdef TEMPERATUREPROBE
-    if ( mySetupData->get_tempmode() == 1)
-    {
-      // celsius
-      myoled->print(String(read_temp(0), 2));
-      myoled->print(" c");
-    }
-    else
-    {
-      // fahrenheit
-      // (0°C × 9/5) + 32 = 32°F
-      float ft = read_temp(0);
-      ft = (ft * 1.8) + 32;
-      myoled->print(String(ft, 2));
-      myoled->print(" f");
-    }
-#else
-    if ( mySetupData->get_tempmode() == 1)
-    {
-      myoled->print("20.00 c");
-    }
-    else
-    {
-      myoled->print("68.00 f");
-    }
-#endif
-    myoled->clearToEOL();
-    myoled->println();
-
-    //Motor Speed
-    myoled->print(F(MOTORSPEEDSTR));
-    myoled->print(mySetupData->get_motorSpeed());
-    myoled->clearToEOL();
-    myoled->println();
-
-    //MaxSteps
-    myoled->print(F(MAXSTEPSSTR));
-    ltoa(mySetupData->get_maxstep(), tempString, 10);
-    myoled->print(tempString);
-    myoled->clearToEOL();
-    myoled->println();
-  }
-#endif
-}
-
-void display_oledtext_page1(void)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    // temperature compensation
-    myoled->print(F(TCOMPSTEPSSTR));
-    myoled->print(mySetupData->get_tempcoefficient());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(TCOMPSTATESTR));
-    myoled->print(mySetupData->get_tempcompenabled());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(TCOMPDIRSTR));
-    myoled->print(mySetupData->get_tcdirection());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(BACKLASHINSTR));
-    myoled->print(mySetupData->get_backlash_in_enabled());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(BACKLASHOUTSTR));
-    myoled->print(mySetupData->get_backlash_out_enabled());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(BACKLASHINSTEPSSTR));
-    myoled->print(mySetupData->get_backlashsteps_in());
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(BACKLASHOUTSTEPSSTR));
-    myoled->print(mySetupData->get_backlashsteps_out());
-    myoled->clearToEOL();
-    myoled->println();
-  }
-#endif
-}
-
-void display_oledtext_page2(void)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
-    myoled->setCursor(0, 0);
-#if defined(ACCESSPOINT)
-    myoled->print(F(ACCESSPOINTSTR));
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(F(PORTSTR));
-    myoled->print(mySetupData->get_tcpipport());
-    myoled->clearToEOL();
-    myoled->println();
-#endif
-#if defined(STATIONMODE)
-    myoled->print(F(STATIONMODESTR));
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(F(PORTSTR));
-    myoled->print(mySetupData->get_tcpipport());
-    myoled->clearToEOL();
-    myoled->println();
-#endif
-    myoled->print(F(SSIDSTR));
-    myoled->print(mySSID);
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(F(IPADDRESSSTR));
-    myoled->print(ipStr);
-    myoled->clearToEOL();
-    myoled->println();
-#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
-
-#if defined(WEBSERVER)
-    //myoled->setCursor(0, 0);
-    myoled->print(F(WEBSERVERSTR));
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(F(IPADDRESSSTR));
-    myoled->print(ipStr);
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(PORTSTR);
-    myoled->print(String(mySetupData->get_webserverport()));
-    myoled->clearToEOL();
-    myoled->println();
-#endif // webserver
-#if defined(ASCOMREMOTE)
-    myoled->print(F(ASCOMREMOTESTR));
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(F(IPADDRESSSTR));
-    myoled->print(ipStr);
-    myoled->clearToEOL();
-    myoled->println();
-    myoled->print(PORTSTR);
-    myoled->print(String(mySetupData->get_ascomalpacaport()));
-    myoled->clearToEOL();
-    myoled->println();
-#endif
-
-#if defined(BLUETOOTHMODE)
-    myoled->setCursor(0, 0);
-    myoled->print(F(BLUETOOTHSTR));
-    myoled->clearToEOL();
-    myoled->println();
-#endif
-
-#if defined(LOCALSERIAL)
-    myoled->setCursor(0, 0);
-    myoled->println(F(LOCALSERIALSTR));
-#endif
-  }
-#endif // #ifdef OLEDTEXT
-}
-
-void update_oledtext_position(void)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    myoled->setCursor(0, 0);
-    myoled->print(F(CURRENTPOSSTR));
-    myoled->print(fcurrentPosition);
-    myoled->clearToEOL();
-    myoled->println();
-
-    myoled->print(F(TARGETPOSSTR));
-    myoled->print(ftargetPosition);
-    myoled->clearToEOL();
-    myoled->println();
-  }
-#endif
-}
-
-void update_oledtextdisplay(void)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    static unsigned long currentMillis;
-    static unsigned long olddisplaytimestampNotMoving = millis();
-    static byte displaypage = 0;
-
-    currentMillis = millis();                       // see if the display needs updating
-    // if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
-    if (TimeCheck(olddisplaytimestampNotMoving, (int)mySetupData->get_lcdpagetime() * 1000))   // see if the display needs updating
-    {
-      olddisplaytimestampNotMoving = currentMillis; // update the timestamp
-      myoled->clear();                              // clrscr OLED
-      switch (displaypage)
-      {
-        case 0:   display_oledtext_page0();
-          break;
-        case 1:   display_oledtext_page1();
-          break;
-        case 2:   display_oledtext_page2();
-          break;
-        default:  display_oledtext_page0();
-          break;
-      }
-      displaypage++;
-      displaypage = (displaypage > 2) ? 0 : displaypage;
-    }
-  }
-#endif
-}
-
-void init_oledtextdisplay(void)
-{
-#ifdef OLEDTEXT
-#if defined(ESP8266)
-#if (DRVBRD == PRO2EL293DNEMA) || (DRVBRD == PRO2EL293D28BYJ48)
-  Wire.begin(I2CDATAPIN, I2CCLKPIN);      // l293d esp8266 shield
-  DebugPrintln(F("Setup PRO2EL293DNEMA/PRO2EL293D28BYJ48 I2C"));
-#else
-  DebugPrintln(F("Setup esp8266 I2C"));
-  Wire.begin();
-#endif
-#else
-  DebugPrintln(F("Setup esp32 I2C"));
-  Wire.begin(I2CDATAPIN, I2CCLKPIN);        // esp32
-#endif
-  Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
-  if (Wire.endTransmission() != 0)
-  {
-    TRACE();
-    DebugPrintln(F(I2CDEVICENOTFOUNDSTR));
-    displayfound = false;
-  }
-  else
-  {
-    displayfound = true;
-    myoled = new SSD1306AsciiWire();
-    // Setup the OLED
-#ifdef USE_SSD1306
-    // For the OLED 128x64 0.96" display using the SSD1306 driver
-    myoled->begin(&Adafruit128x64, OLED_ADDR);
-#endif
-#ifdef USE_SSH1106
-    // For the OLED 128x64 1.3" display using the SSH1106 driver
-    myoled->begin(&SH1106_128x64, OLED_ADDR);
-#endif
-    myoled->set400kHz();
-    myoled->setFont(Adafruit5x7);
-    myoled->clear();                          // clrscr OLED
-    myoled->Display_Normal();                 // black on white
-    myoled->Display_On();                     // display ON
-    myoled->Display_Rotate(0);                // portrait, not rotated
-    myoled->Display_Bright();
-#ifdef SHOWSTARTSCRN
-    myoled->println(programName);             // print startup screen
-    myoled->println(programVersion);
-    myoled->println(ProgramAuthor);
-#endif // showstartscreen
-  }
-#endif // OLEDTEXT
-}
 
 // ----------------------------------------------------------------------------------------------
 // 20: HOMEPOSITION SWITCH - CHANGE AT YOUR OWN PERIL
@@ -4651,7 +4130,7 @@ void stop_ascomremoteserver(void)
 void start_otaservice()
 {
   DebugPrintln(F(STARTOTASERVICESTR));
-  oledtextmsg(STARTOTASERVICESTR, -1, false, true);
+  myoled->oledtextmsg(STARTOTASERVICESTR, -1, false, true);
   ArduinoOTA.setHostname(OTAName);                      // Start the OTA service
   ArduinoOTA.setPassword(OTAPassword);
 
@@ -4708,7 +4187,7 @@ void start_otaservice()
 void init_duckdns(void)
 {
   DebugPrintln(F(SETUPDUCKDNSSTR));
-  oledtextmsg(SETUPDUCKDNSSTR, -1, false, true);
+  myoled->oledtextmsg(SETUPDUCKDNSSTR, -1, false, true);
   EasyDDNS.service("duckdns");                  // Enter your DDNS Service Name - "duckdns" / "noip"
   delay(5);
   EasyDDNS.client(duckdnsdomain, duckdnstoken); // Enter ddns Domain & Token | Example - "esp.duckdns.org","1234567"
@@ -4737,7 +4216,7 @@ byte TimeCheck(unsigned long x, unsigned long Delay)
 
 void software_Reboot(int Reboot_delay)
 {
-  oledtextmsg(WIFIRESTARTSTR, -1, true, false);
+  myoled->oledtextmsg(WIFIRESTARTSTR, -1, true, false);
 #ifdef MDNSSERVER
   stop_mdns_service();
 #endif
@@ -4762,14 +4241,14 @@ void software_Reboot(int Reboot_delay)
 }
 
 // STEPPER MOTOR ROUTINES
-void steppermotormove(byte dir )                // direction move_in, move_out ^ reverse direction
+void steppermotormove(byte dir )                // direction moving_in, moving_out ^ reverse direction
 {
 #ifdef INOUTLEDS
-  ( dir == move_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
+  ( dir == moving_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
 #endif
   driverboard->movemotor(dir);
 #ifdef INOUTLEDS
-  ( dir == move_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
+  ( dir == moving_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
 #endif
 }
 
@@ -4869,10 +4348,11 @@ void setup()
 
   displayfound = false;
 #ifdef OLEDTEXT
-  init_oledtextdisplay();
-#endif
-#if defined(OLEDGRAPHICS)
-  displayfound = Init_OLED();
+    myoled = new OLED_TEXT;
+#elif OLEDGRAPHICS
+  myoled = new OLED_GRAPHIC();      
+#else
+    myoled = new OLED_NON;      // create Object for non OLED
 #endif
 
   delay(100);                                   // keep delays small otherwise issue with ASCOM
@@ -4940,7 +4420,7 @@ void setup()
 #endif
 
 #ifdef ACCESSPOINT
-  oledtextmsg(STARTAPSTR, -1, true, true);
+  myoled->oledtextmsg(STARTAPSTR, -1, true, true);
   DebugPrintln(F(STARTAPSTR));
   WiFi.config(ip, dns, gateway, subnet);
   WiFi.mode(WIFI_AP);
@@ -4950,44 +4430,45 @@ void setup()
   // this is setup as a station connecting to an existing wifi network
 #ifdef STATIONMODE
   DebugPrintln(F(STARTSMSTR));
-  oledtextmsg(STARTSMSTR, -1, false, true);
+  myoled->oledtextmsg(STARTSMSTR, -1, false, true);
   if (staticip == STATICIPON)                   // if staticip then set this up before starting
   {
     DebugPrintln(F(SETSTATICIPSTR));
-    oledtextmsg(SETSTATICIPSTR, -1, false, true);
+    myoled->oledtextmsg(SETSTATICIPSTR, -1, false, true);
     WiFi.config(ip, dns, gateway, subnet);
     delay(5);
   }
 
-  /* Log on to LAN */
+  // Log on to LAN
   WiFi.mode(WIFI_STA);
   byte status = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
   DebugPrint(F(WIFIBEGINSTATUSSTR));
   DebugPrintln(String(status));
   delay(1000);                                  // wait 500ms
 
-  int attempts = 0;                             // holds the number of attempts/tries
-  while (WiFi.status() != WL_CONNECTED)
+  for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
   {
     DebugPrint(F(ATTEMPTCONNSTR));
     DebugPrintln(mySSID);
     DebugPrint(F(ATTEMPTSSTR));
     DebugPrint(attempts);
     delay(1000);                                // wait 1s
-    attempts++;                                 // add 1 to attempt counter to start WiFi
-    oledtextmsg(ATTEMPTSSTR, attempts, false, true);
-    if (attempts > 10)                          // if this attempt is 11 or more tries
+
+    myoled->oled_draw_Wifi(attempts);
+    myoled->oledtextmsg(ATTEMPTSSTR, attempts, false, true);
+    if (attempts > 9)                          // if this attempt is 10 or more tries
     {
       DebugPrintln(F(APCONNECTFAILSTR));
       DebugPrintln(F(WIFIRESTARTSTR));
-      oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
+      myoled->oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
+	    myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
       delay(2000);
       software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
   }
 #endif // end STATIONMODE
 
-  oledtextmsg(CONNECTEDSTR, -1, true, true);
+  myoled->oledtextmsg(CONNECTEDSTR, -1, true, true);
   delay(100);                                   // keep delays small else issue with ASCOM
 
   tcpipserverstate = STOPPED;
@@ -5002,13 +4483,13 @@ void setup()
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
   DebugPrintln(F(STARTTCPSERVERSTR));
-  oledtextmsg(STARTTCPSERVERSTR, -1, false, true);
+  myoled->oledtextmsg(STARTTCPSERVERSTR, -1, false, true);
   start_tcpipserver();
   DebugPrintln(F(GETLOCALIPSTR));
   ESP32IPAddress = WiFi.localIP();
   delay(100);                                   // keep delays small else issue with ASCOM
   DebugPrintln(F(TCPSERVERSTARTEDSTR));
-  oledtextmsg(TCPSERVERSTARTEDSTR, -1, false, true);
+  myoled->oledtextmsg(TCPSERVERSTARTEDSTR, -1, false, true);
 
   // set packet counts to 0
   packetsreceived = 0;
@@ -5034,13 +4515,12 @@ void setup()
 
   DebugPrint(F(SETUPDRVBRDSTR));
   DebugPrintln(DRVBRD);
-  oledtextmsg(SETUPDRVBRDSTR, DRVBRD, true, true);
+  myoled->oledtextmsg(SETUPDRVBRDSTR, DRVBRD, true, true);
 
   driverboard = new DriverBoard(DRVBRD);
-  // setup firmware filename
-  programName = driverboard->getboardname();
+
   DebugPrintln(F(DRVBRDDONESTR));
-  oledtextmsg(DRVBRDDONESTR, -1, false, true);
+  myoled->oledtextmsg(DRVBRDDONESTR, -1, false, true);
   delay(5);
 
   // range check focuser variables
@@ -5127,7 +4607,7 @@ void setup()
   DebugPrint(F(TARGETPOSSTR));
   DebugPrintln(ftargetPosition);
   DebugPrintln(F(SETUPENDSTR));
-  oledtextmsg(SETUPENDSTR, -1, false, true);
+  myoled->oledtextmsg(SETUPENDSTR, -1, false, true);
 
 #ifdef INOUTLEDS
   digitalWrite(INLEDPIN, 0);
@@ -5148,12 +4628,22 @@ void loop()
   static unsigned long TimeStampPark = millis();
   static byte Parked = false;
   static byte updatecount = 0;
+
+  static connection_status ConnectionStatus = disconnected;
+  static oled_state oled = oled_on;
+
+/*
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   static byte ConnectionStatus = 0;
 #endif
+*/
+
 #ifdef HOMEPOSITIONSWITCH
   static byte stepstaken       = 0;
 #endif
+
+
+
 
 #ifdef LOOPTIMETEST
   DebugPrint(F(LOOPSTARTSTR));
@@ -5161,6 +4651,36 @@ void loop()
 #endif
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
+if (ConnectionStatus == disconnected)
+  {
+    myclient = myserver.available();
+    if (myclient)
+    {
+      DebugPrintln(F("tcp client has connected"));
+      if (myclient.connected())
+        ConnectionStatus = connected;
+    }
+  }
+  else
+  {
+    // is data available from the client request
+    if (myclient.connected())
+    {
+      if (myclient.available())
+      {
+        ESP_Communication(ESPDATA); // Wifi communication
+      }
+    }
+    else
+    {
+        DebugPrintln(F("tcp client has disconnected"));
+        myclient.stop();
+        ConnectionStatus = disconnected;
+        oled = oled_on;
+    }
+  }
+
+/*
   if (ConnectionStatus < 2)
   {
     myclient = myserver.available();
@@ -5196,7 +4716,7 @@ void loop()
     {
       ConnectionStatus = 1;
     }
-  }
+  }*/
 #endif // defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #ifdef BLUETOOTHMODE
@@ -5274,7 +4794,8 @@ void loop()
         byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
         if ( status == true )
         {
-          Update_OledGraphics(oled_off);                // Display off after config saved
+//          Update_OledGraphics(oled_off);                // Display off after config saved
+          oled = oled_off;
           DebugPrint(F(CONFIGSAVEDSTR));
           DebugPrintln(status);
         }
@@ -5292,15 +4813,11 @@ void loop()
         update_irremote();
 #endif
         if (mySetupData->get_displayenabled() == 1)
-        {
-          Update_OledGraphics(oled_stay);
-          update_oledtextdisplay();
-        }
+          myoled->update_oledtextdisplay();
         else
-        {
-          Update_OledGraphics(oled_off);
-        }
-
+          oled = oled_off;
+              
+        myoled->Update_Oled(oled, ConnectionStatus);
 #ifdef TEMPERATUREPROBE
         update_temp();
 #endif // temperatureprobe
@@ -5323,7 +4840,7 @@ void loop()
 
     case State_InitMove:
       isMoving = 1;
-      DirOfTravel = (ftargetPosition > fcurrentPosition) ? move_out : move_in;
+      DirOfTravel = (ftargetPosition > fcurrentPosition) ? moving_out : moving_in;
       driverboard->enablemotor();
       if (mySetupData->get_focuserdirection() == DirOfTravel)
       {
@@ -5335,7 +4852,7 @@ void loop()
       {
         // move is in opposite direction, check for backlash enabled
         // get backlash settings
-        if ( DirOfTravel == move_in)
+        if ( DirOfTravel == moving_in)
         {
           backlash_count = mySetupData->get_backlashsteps_in();
           backlash_enabled = mySetupData->get_backlash_in_enabled();
@@ -5389,7 +4906,7 @@ void loop()
     case State_Moving:
       if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
       {
-        (DirOfTravel == move_out ) ? fcurrentPosition++ : fcurrentPosition--;
+        (DirOfTravel == moving_out ) ? fcurrentPosition++ : fcurrentPosition--;
         steppermotormove(DirOfTravel);
 
         if ( mySetupData->get_displayenabled() == 1)
@@ -5401,7 +4918,7 @@ void loop()
             if ( updatecount > LCDUPDATEONMOVE )
             {
               updatecount = 0;
-              update_oledtext_position();
+              myoled->update_oledtext_position();
             }
           }
         }
@@ -5464,7 +4981,7 @@ void loop()
             if ( updatecount > LCDUPDATEONMOVE )
             {
               updatecount = 0;
-              update_oledtext_position();
+              myoled->update_oledtext_position();
             }
           }
         }
@@ -5555,7 +5072,8 @@ void loop()
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
-        Update_OledGraphics(oled_on);                   // display on after move
+//        Update_OledGraphics(oled_on);                   // display on after move
+        oled = oled_on;
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle
         MainStateMachine = State_FinishedMove;
