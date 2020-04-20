@@ -36,6 +36,8 @@
 //#define DRVBRD PRO2ESP32L9110S
 //#define DRVBRD PRO2ESP32R3WEMOS
 
+
+
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
 #define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266
 
@@ -48,6 +50,7 @@
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 //#define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
 //#define STEPSPERREVOLUTION 1036        // NEMA16HS13-0604S-PG5
+
 
 // do not change, required for L293D motor shield
 #define UNIPOLAR28BYJ48   1
@@ -231,13 +234,14 @@
 // DRIVER BOARD CLASS : DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-extern  const char* DRVBRD_ID;
+extern const char* DRVBRD_ID;
+extern volatile SemaphoreHandle_t timerSemaphore;
 
 class DriverBoard
 {
   public:
     DriverBoard(byte);          // constructor
-    
+    void initmove(bool,unsigned long);   
     // getter
     byte getmotorspeed(void);
     byte getstepmode(void);

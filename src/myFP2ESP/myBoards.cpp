@@ -13,6 +13,7 @@
 #include "generalDefinitions.h"
 #include "myBoards.h"
 
+
 // ____ESP8266 Boards
 #if DRVBRD == WEMOSDRV8825
   const char* DRVBRD_ID = "WEMOSDRV8825";
@@ -32,9 +33,11 @@
   const char* DRVBRD_ID = "PRO2EL293DMINI";
 #elif  DRVBRD == PRO2EL9110S
   const char* DRVBRD_ID = "PRO2EL9110S";
+
 // ____ESP32 Boards
 #elif  DRVBRD == PRO2ESP32DRV8825
   const char* DRVBRD_ID = "PRO2ESP32DRV8825";
+  
 #elif  DRVBRD == PRO2ESP32ULN2003
   const char* DRVBRD_ID = "PRO2ESP32ULN2003";
 #elif  DRVBRD == PRO2ESP32L298N
@@ -49,6 +52,49 @@
   const char* DRVBRD_ID = "UNKNOWN";
 #endif
 
+
+#define LED 2
+
+// Stop button is attached to PIN 0 (IO0)
+#define BTN_STOP_ALARM    0
+
+
+bool flag = false;
+bool toggle = false;
+
+hw_timer_t * timer = NULL;
+volatile SemaphoreHandle_t timerSemaphore;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+volatile unsigned long stepcount = 0;
+
+
+//______________ code section _____
+
+void IRAM_ATTR onTimer()
+{
+  // Increment the counter and set the time of ISR
+//  portENTER_CRITICAL_ISR(&timerMux);
+
+  if (stepcount) 
+  {
+    digitalWrite(STEPPIN, 0);
+    toggle = (toggle == true) ? false : true;
+    digitalWrite(LED, toggle);  
+    stepcount--;
+    flag = true;
+    digitalWrite(STEPPIN, 1);    
+  }
+  else
+  {
+    if (flag == true)
+    {
+      digitalWrite(LED, 0);       // debug LED off
+      flag = false;
+      xSemaphoreGiveFromISR(timerSemaphore, NULL);    // fire up semaphore
+    }
+  }
+}
 
 DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 {
@@ -69,6 +115,12 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
       pinMode(MS1, OUTPUT);
       pinMode(MS2, OUTPUT);
       pinMode(MS3, OUTPUT);
+
+      pinMode(LED, OUTPUT);      
+
+// Create semaphore to inform us when the timer has fired
+      timerSemaphore = xSemaphoreCreateBinary();
+
       break;
 
 #elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
@@ -275,6 +327,34 @@ void DriverBoard::movemotor(byte dir)
       delayMicroseconds(this->stepdelay);
 #endif
 }
+
+
+void DriverBoard::initmove(bool dir, unsigned long steps)
+{
+
+  stepcount = steps;
+
+  digitalWrite(DIRPIN, dir);
+  digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver
+  digitalWrite(STEPPIN, 1);  
+  delay(1);
+
+ // Use 1st timer of 4 (counted from zero).
+  // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
+  // info).
+  timer = timerBegin(0, 80, true);
+
+  // Attach onTimer function to our timer.
+  timerAttachInterrupt(timer, &onTimer, true);
+
+  // Set alarm to call onTimer function every second (value in microseconds).
+  // Repeat the alarm (third parameter)
+  timerAlarmWrite(timer, 1000, true);  // 50 ms
+
+  // Start an alarm
+  timerAlarmEnable(timer);
+}
+
 
 int DriverBoard::getstepdelay(void)
 {

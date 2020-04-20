@@ -18,7 +18,7 @@
 extern unsigned long fcurrentPosition;         // current focuser position
 extern unsigned long ftargetPosition;          // target position
 extern byte isMoving;
-extern String ipStr;
+extern char ipStr[];
 extern const char* programVersion;
 
 extern DriverBoard* driverboard;
@@ -40,22 +40,64 @@ extern void temp_setresolution(byte);
 // ----------------------------------------------------------------------------------------------
 // CODE
 // ----------------------------------------------------------------------------------------------
+
 #if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
-void SendPaket(String str)
+
+void SendMessage(const char *str)
 {
   DebugPrint(SENDSTR);
   DebugPrintln(str);
+
 #if defined(ACCESSPOINT) || defined(STATIONMODE)  // for Accesspoint or Station mode
   myclient.print(str);
   packetssent++;
-#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
-#if defined(BLUETOOTHMODE)  // for bluetooth
+#elif defined(BLUETOOTHMODE)  // for bluetooth
   SerialBT.print(str);
-#endif
-#if defined(LOCALSERIAL)
+#elif defined(LOCALSERIAL)
   Serial.print(str);
-#endif
+#endif  
 }
+
+void SendPaket(const char token, const char *str)
+{
+  char buffer[32];
+
+  snprintf(buffer, sizeof(buffer), "%c%s%c", token,  str, EOFSTR);
+  SendMessage(buffer);
+}
+
+void SendPaket(const char token, const unsigned char val)
+{
+  char buffer[32];
+
+  snprintf(buffer, sizeof(buffer), "%c%u%c", token,  val, EOFSTR);
+  SendMessage(buffer);
+}
+
+void SendPaket(const char token, const int val)
+{
+  char buffer[32];
+
+  snprintf(buffer, sizeof(buffer), "%c%i%c", token,  val, EOFSTR);
+  SendMessage(buffer);
+}
+
+void SendPaket(const char token, const unsigned long val)
+{
+  char buffer[32];
+
+  snprintf(buffer, sizeof(buffer), "%c%lu%c", token,  val, EOFSTR);
+  SendMessage(buffer);
+}
+
+void SendPaket(const char token, const float val, int i)    // i => decimal place
+{
+  char buffer[32];
+
+  snprintf(buffer, sizeof(buffer), "%c%.2f%c", token,  val, EOFSTR);
+  SendMessage(buffer);
+}
+
 
 void ESP_Communication( byte mode )
 {
@@ -64,178 +106,170 @@ void ESP_Communication( byte mode )
   String WorkString = "";
   long paramval = 0;
 
-  switch ( mode )
-  {
-    case ESPDATA:
-      // for Accesspoint or Station mode
+  
+#if defined(BLUETOOTHMODE)
+      receiveString = STARTCMDSTR + queue.pop();
+#elif defined(LOCALSERIAL)
+      receiveString = STARTCMDSTR + queue.pop();
+#else   // for Accesspoint or Station mode
       packetsreceived++;
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
       receiveString = myclient.readStringUntil(EOFSTR);    // read until terminator
 #endif
-      break;
-#if defined(BLUETOOTHMODE)
-    case BTDATA:
-      receiveString = STARTCMDSTR + queue.pop();
-      break;
-#endif
-#if defined(LOCALSERIAL)
-    case SERIALDATA:                                    // for Serial
-      receiveString = STARTCMDSTR + queue.pop();
-      break;
-#endif
-  }
 
   receiveString += EOFSTR;                                 // put back terminator
   String cmdstr = receiveString.substring(1, 3);
   cmdval = cmdstr.toInt();                              // convert command to an integer
   DebugPrint("recstr=" + receiveString + "  ");
-  //  DebugPrintln("cmdstr=" + cmdstr);
+
   switch (cmdval)
   {
     // all the get go first followed by set
     case 0: // get focuser position
-      SendPaket('P' + String(fcurrentPosition) + EOFSTR);
+      SendPaket('P', fcurrentPosition);
       break;
     case 1: // ismoving
-      SendPaket('I' + String(isMoving) + EOFSTR);
+      SendPaket('I', isMoving);
       break;
     case 2: // get controller status
-      SendPaket("EOK#");
+      SendPaket('E',"OK");      
       break;
     case 3: // get firmware version
 #ifdef INDI
-      SendPaket("F291#");
+      SendPaket('F', "291");      
 #else
-      SendPaket('F' + String(programVersion) + EOFSTR);
+      SendPaket('F', programVersion);
 #endif
       break;
     case 4: // get firmware name
-      SendPaket('F' + DRVBRD_ID + '\r' + '\n' + String(programVersion) + EOFSTR);
+      char buffer[32];
+      snprintf(buffer, sizeof(buffer), "%s\r\n%s",  DRVBRD_ID, programVersion );
+      SendPaket('F', buffer);
       break;
     case 6: // get temperature
 #if defined(TEMPERATUREPROBE)
-      SendPaket('Z' + String(read_temp(0), 3) + EOFSTR);
+      SendPaket('Z', read_temp(0), 3);     
 #else
-      SendPaket("Z20.00#");
+      SendPaket('Z',"20.00");      
 #endif
       break;
     case 8: // get maxStep
-      SendPaket('M' + String(mySetupData->get_maxstep()) + EOFSTR);
+      SendPaket('M', mySetupData->get_maxstep());
+
       break;
     case 10: // get maxIncrement
-      SendPaket('Y' + String(mySetupData->get_maxstep()) + EOFSTR);
+      SendPaket('Y', mySetupData->get_maxstep());   
       break;
     case 11: // get coilpower
-      SendPaket('O' + String(mySetupData->get_coilpower()) + EOFSTR);
+      SendPaket('O',mySetupData->get_coilpower());      
       break;
     case 13: // get reverse direction setting, 00 off, 01 on
-      SendPaket('R' + String(mySetupData->get_reversedirection()) + EOFSTR);
+      SendPaket('R', mySetupData->get_reversedirection());      
       break;
     case 21: // get temp probe resolution
-      SendPaket('Q' + String(mySetupData->get_tempprecision()) + EOFSTR);
+      SendPaket('Q',mySetupData->get_tempprecision());      
       break;
     case 24: // get status of temperature compensation (enabled | disabled)
-      SendPaket('1' + String(mySetupData->get_tempcompenabled()) + EOFSTR);
+      SendPaket('1',mySetupData->get_tempcompenabled());      
       break;
     case 25: // get IF temperature compensation is available
 #if defined(TEMPERATUREPROBE)
-      SendPaket("A1#"); // this focuser supports temperature compensation
+      SendPaket('A',"1"); // this focuser supports temperature compensation
 #else
-      SendPaket("A0#");
+      SendPaket('A',"0");      
 #endif
       break;
     case 26: // get temperature coefficient steps/degree
-      SendPaket('B' + String(mySetupData->get_tempcoefficient()) + EOFSTR);
+      SendPaket('B',mySetupData->get_tempcoefficient());      
       break;
     case 29: // get stepmode
-      SendPaket('S' + String(mySetupData->get_stepmode()) + EOFSTR);
+      SendPaket('S', mySetupData->get_stepmode());
       break;
     case 32: // get if stepsize is enabled
-      SendPaket('U' + String(mySetupData->get_stepsizeenabled()) + EOFSTR);
+      SendPaket('U', mySetupData->get_stepsizeenabled());
       break;
     case 33: // get stepsize
-      SendPaket('T' + String(mySetupData->get_stepsize()) + EOFSTR);
+      SendPaket('T',mySetupData->get_stepsize(), 3);        // ????????????? check format
       break;
     case 34: // get the time that an LCD screen is displayed for
-      SendPaket('X' + String(mySetupData->get_lcdpagetime()) + EOFSTR);
+      SendPaket('X', mySetupData->get_lcdpagetime());
       break;
     case 37: // get displaystatus
-      SendPaket('D' + String(mySetupData->get_displayenabled()) + EOFSTR);
+      SendPaket('D', mySetupData->get_displayenabled());
       break;
     case 38: // :38#   Dxx#      Get Temperature mode 1=Celsius, 0=Fahrenheight
-      SendPaket('b' + String(mySetupData->get_tempmode()) + EOFSTR);
+      SendPaket('b', mySetupData->get_tempmode());
       break;
     case 39: // get the new motor position (target) XXXXXX
-      SendPaket('N' + String(ftargetPosition) + EOFSTR);
+      SendPaket('N', ftargetPosition);
       break;
     case 43: // get motorspeed
-      SendPaket('C' + String(mySetupData->get_motorSpeed()) + EOFSTR);
+      SendPaket('C', mySetupData->get_motorSpeed());
       break;
     case 49: // aXXXXX
-      SendPaket("ab552efd#");
+      SendPaket('a', "b552efd");      
       break;
     case 51: // return ESP8266Wifi Controller IP Address
-      SendPaket('d' + ipStr + EOFSTR);
+      SendPaket('d', ipStr);      
       break;
     case 52: // return ESP32 Controller number of TCP packets sent
-      SendPaket('e' + String(packetssent) + EOFSTR);
+      SendPaket('e', packetssent);
       break;
     case 53: // return ESP32 Controller number of TCP packets received
-      SendPaket('f' + String(packetsreceived) + EOFSTR);
+      SendPaket('f', packetsreceived);
       break;
     case 54: // return ESP32 Controller SSID
 #ifdef LOCALSERIAL
-      SendPaket("gSERIAL#");
+      SendPaket('g', "SERIAL");     
 #endif
 #ifdef BLUETOOTH
-      SendPaket("gBLUETOOTH#");
+      SendPaket('g', "BLUETOOTH");      
 #endif
 #if !defined(LOCALSERIAL) && !defined(BLUETOOTHMODE)
-      SendPaket('g' + String(mySSID) + EOFSTR);
+      SendPaket('g', mySSID);
 #endif
       break;
     case 55: // get motorspeed delay for current speed setting
-      SendPaket('0' + String(driverboard->getstepdelay()) + EOFSTR);
+      SendPaket('0', driverboard->getstepdelay());
       break;
     case 58: // get controller features
-      SendPaket('m' + String(Features) + EOFSTR);
+      SendPaket('m', Features);      
       break;
     case 62: // get update of position on lcd when moving (00=disable, 01=enable)
-      SendPaket('L' + String(mySetupData->get_lcdupdateonmove()) + EOFSTR);
+      SendPaket('L', mySetupData->get_lcdupdateonmove());
       break;
     case 63: // get status of home position switch (0=off, 1=closed, position 0)
 #ifdef HOMEPOSITIONSWITCH
-      SendPaket('H' + String(digitalRead(HPSWPIN)) + EOFSTR);
+      SendPaket('H', digitalRead(HPSWPIN));
 #else
-      SendPaket("H0#");
+      SendPaket('H',"0");
 #endif
       break;
     case 72: // get DelayAfterMove
-      SendPaket('3' + String(mySetupData->get_DelayAfterMove()) + EOFSTR);
+      SendPaket('3', mySetupData->get_DelayAfterMove());
       break;
     case 74: // get backlash in enabled status
-      SendPaket((mySetupData->get_backlash_in_enabled() == 0) ? "40#" : "41#");
+      SendPaket('4', mySetupData->get_backlash_in_enabled());
       break;
     case 76: // get backlash OUT enabled status
-      SendPaket((mySetupData->get_backlash_out_enabled() == 0) ? "50#" : "51#");
+      SendPaket('5', mySetupData->get_backlash_out_enabled());
       break;
     case 78: // return number of backlash steps IN
-      SendPaket('6' + String(mySetupData->get_backlashsteps_in()) + EOFSTR);
+      SendPaket('6', mySetupData->get_backlashsteps_in());
       break;
     case 80: // return number of backlash steps OUT
-      SendPaket('7' + String(mySetupData->get_backlashsteps_out()) + EOFSTR);
+      SendPaket('7', mySetupData->get_backlashsteps_out());
       break;
     case 83: // get if there is a temperature probe
-      SendPaket('c' + String(tprobe1) + EOFSTR);
+      SendPaket('c', tprobe1);
       break;
     case 87: // get tc direction
-      SendPaket('k' + String(mySetupData->get_tcdirection()) + EOFSTR);
+      SendPaket('k', mySetupData->get_tcdirection());
       break;
     case 91: // get focuserpreset [0-9]
       {
         byte preset = (byte) (receiveString[3] - '0');
         preset = (preset > 9) ? 9 : preset;
-        SendPaket('h' + String(mySetupData->get_focuserpreset(preset)) + EOFSTR);
+        SendPaket('h', mySetupData->get_focuserpreset(preset));        
       }
       break;
 
@@ -471,13 +505,13 @@ void ESP_Communication( byte mode )
       //ignore
       break;
     case 45: // get motorspeedchange threshold value
-      SendPaket("G200#");
+      SendPaket('G', "200");
       break;
     case 46: // enable/Disable motorspeed change when moving
       //ignore
       break;
     case 47: // get motorspeedchange enabled? on/off
-      SendPaket("J0#");
+      SendPaket('J', "0");
       break;
     case 57: // set Super Slow Jogging Speed
       // ignore
@@ -489,16 +523,16 @@ void ESP_Communication( byte mode )
       // ignore
       break;
     case 66: // get jogging state enabled/disabled
-      SendPaket("K0#");
+      SendPaket('K', "0");      
       break;
     case 67: // set jogging direction, 0=IN, 1=OUT
       // ignore
       break;
     case 68: // get jogging direction, 0=IN, 1=OUT
-      SendPaket("V0#");
+      SendPaket('V', "0");
       break;
     case 89:
-      SendPaket("91#");
+      SendPaket('9', "1");
       break;
   }
 }

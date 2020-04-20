@@ -74,6 +74,7 @@
 
 #define moving_in             false
 #define moving_out            !moving_in
+#define moving_main           moving_in               
 
 #define STEP1                 1             // stepmodes
 #define STEP2                 2

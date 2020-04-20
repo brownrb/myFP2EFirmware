@@ -360,7 +360,10 @@ enum StateMachineStates
 //moving_out  1||  1   |   0
 //moving_in   0||  0   |   1
 
-const char* programName = DRVBRD_ID;
+
+
+#define programName  DRVBRD_ID
+
 DriverBoard* driverboard;
 
 unsigned long fcurrentPosition;             // current focuser position
@@ -370,7 +373,10 @@ boolean  displayfound;
 
 byte   tprobe1;                               // indicate if there is a probe attached to myFocuserPro2
 byte   isMoving;                              // is the motor currently moving
-String ipStr;                                 // shared between BT mode and other modes
+//String ipStr;                                 // shared between BT mode and other modes
+char ipStr[16];
+const char ip_zero[] = "0.0.0.0";
+
 
 int  packetsreceived;
 int  packetssent;
@@ -4504,10 +4510,14 @@ void setup()
   DebugPrintln(SERVERPORT);
   DebugPrintln(F(SERVERREADYSTR));
   myIP = WiFi.localIP();
-  ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
+//  ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
+  snprintf(ipStr, sizeof(ipStr), "%i.%i.%i.%i",  myIP[0], myIP[1], myIP[2], myIP[3]);
+
+
 #else
   // it is Bluetooth so set some globals
-  ipStr = "0.0.0.0";
+//  ipStr = "0.0.0.0";
+  ipStr = ip_zero;      // "0.0.0.0"
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
   // assign to current working values
@@ -4617,33 +4627,27 @@ void setup()
 
 //_____________________ loop()___________________________________________
 
-//void IRAM_ATTR loop() // ESP32
+extern volatile unsigned long stepcount;
+
 void loop()
 {
-  static byte MainStateMachine = State_Idle;
+  static StateMachineStates MainStateMachine = State_Idle;
   static byte backlash_count = 0;
-  static byte backlash_enabled = 0;
+  static bool backlash_enabled = 0;
   static byte DirOfTravel = mySetupData->get_focuserdirection();
   static unsigned long TimeStampDelayAfterMove = 0;
   static unsigned long TimeStampPark = millis();
-  static byte Parked = false;
+  static bool Parked = mySetupData->get_coilpower();
   static byte updatecount = 0;
 
   static connection_status ConnectionStatus = disconnected;
   static oled_state oled = oled_on;
-
-/*
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
-  static byte ConnectionStatus = 0;
-#endif
-*/
+  static uint32_t steps = 0;
+  static bool flag = false;
 
 #ifdef HOMEPOSITIONSWITCH
   static byte stepstaken       = 0;
 #endif
-
-
-
 
 #ifdef LOOPTIMETEST
   DebugPrint(F(LOOPSTARTSTR));
@@ -4679,44 +4683,6 @@ if (ConnectionStatus == disconnected)
         oled = oled_on;
     }
   }
-
-/*
-  if (ConnectionStatus < 2)
-  {
-    myclient = myserver.available();
-    if (myclient)
-    {
-      DebugPrintln(F(TCPCLIENTCONNECTSTR));
-      if (myclient.connected())
-      {
-        ConnectionStatus = 2;
-      }
-    }
-    else
-    {
-      if (ConnectionStatus)
-      {
-        DebugPrintln(F(TCPCLIENTDISCONNECTSTR));
-        myclient.stop();
-        ConnectionStatus = 0;
-      }
-    }
-  }
-  else
-  {
-    // is data available from the client request
-    if (myclient.connected())
-    {
-      if (myclient.available())
-      {
-        ESP_Communication(ESPDATA);
-      }
-    }
-    else
-    {
-      ConnectionStatus = 1;
-    }
-  }*/
 #endif // defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #ifdef BLUETOOTHMODE
@@ -4791,13 +4757,13 @@ if (ConnectionStatus == disconnected)
       else
       {
         // focuser stationary. isMoving is 0
-        byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
-        if ( status == true )
+//        byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
+//        if ( status == true )
+        if(mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel)) // save config if needed)
         {
 //          Update_OledGraphics(oled_off);                // Display off after config saved
           oled = oled_off;
-          DebugPrint(F(CONFIGSAVEDSTR));
-          DebugPrintln(status);
+          DebugPrint(F(CONFIGSAVEDSTR));                  
         }
 
 #ifdef PUSHBUTTONS
@@ -4840,16 +4806,18 @@ if (ConnectionStatus == disconnected)
 
     case State_InitMove:
       isMoving = 1;
+      backlash_count = 0;
       DirOfTravel = (ftargetPosition > fcurrentPosition) ? moving_out : moving_in;
-      driverboard->enablemotor();
+
       if (mySetupData->get_focuserdirection() == DirOfTravel)
       {
         // move is in same direction, ignore backlash
-        MainStateMachine = State_Moving;
-        DebugPrintln(STATEMOVINGSTR);
+//        MainStateMachine = State_Moving;
+//        DebugPrintln(STATEMOVINGSTR);
       }
       else
       {
+        mySetupData->set_focuserdirection(DirOfTravel);
         // move is in opposite direction, check for backlash enabled
         // get backlash settings
         if ( DirOfTravel == moving_in)
@@ -4863,33 +4831,68 @@ if (ConnectionStatus == disconnected)
           backlash_enabled = mySetupData->get_backlash_out_enabled();
         }
         // backlash needs to be applied, so get backlash values and states
-#ifdef BACKLASH
+#if (BACKLASH == 1)
         // if backlask was defined then follow the backlash rules
         // if backlash has been enabled then apply it
-        if ( backlash_enabled == 1 )
+        if ( backlash_enabled == true )
         {
           // apply backlash
           // save new direction of travel
-          mySetupData->set_focuserdirection(DirOfTravel);
+//          mySetupData->set_focuserdirection(DirOfTravel);
           //driverboard->setmotorspeed(BACKLASHSPEED);
-          MainStateMachine = State_ApplyBacklash;
+//          MainStateMachine = State_ApplyBacklash;
           DebugPrint(F(STATEAPPLYBACKLASH));
+          DebugPrint(backlash_count);
+          DebugPrint(F(" "));          
         }
         else
         {
           // do not apply backlash, go straight to moving
-          MainStateMachine = State_Moving;
-          DebugPrint(STATEMOVINGSTR);
+            backlash_count = 0;
+//          MainStateMachine = State_Moving;
+//          DebugPrintln(STATEMOVINGSTR);
+        }
+
+#elif (BACKLASH == 2)
+        if (DirOfTravel == moving_main)
+        {
+          // do not apply backlash, go straight to moving
+//          MainStateMachine = State_Moving;
+//          DebugPrintln(STATEMOVINGSTR);
+        }
+        else
+        {
+          uint32_t bl = mySetupData->get_backlashsteps_in();
+          uint32_t sm = mySetupData->get_stepmode();
+
+          if (DirOfTravel == moving_out)
+            backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
+          else
+            backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
+          
+//          m_bl = backlash_count;
+//          MainStateMachine = State_ApplyBacklash;
+//          MainStateMachine = State_Moving;          
+//          DebugPrint(STATEAPPLYBACKLASH);
+//          DebugPrintln(backlash_count);
+//          DebugPrint(F(" "));                    
         }
 #else
         // ignore backlash
-        MainStateMachine = State_Moving;
-        DebugPrint(STATEMOVINGSTR);
+//        MainStateMachine = State_Moving;
+//        DebugPrint(STATEMOVINGSTR);
 #endif
       }
+      
+      steps = (fcurrentPosition > ftargetPosition) ? fcurrentPosition - ftargetPosition : ftargetPosition - fcurrentPosition;
+      driverboard->initmove(DirOfTravel, steps + backlash_count);
+      MainStateMachine = State_Moving;
+      DebugPrint(STATEMOVINGSTR);
+      DebugPrint(steps);      
       break;
-
+/*
     case State_ApplyBacklash:
+    
       if ( backlash_count )
       {
         steppermotormove(DirOfTravel);
@@ -4902,26 +4905,38 @@ if (ConnectionStatus == disconnected)
         DebugPrintln(STATEMOVINGSTR);
       }
       break;
+*/
+//_______________________________State_Moving
 
     case State_Moving:
-      if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
+
+//      if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
+      if (xSemaphoreTake(timerSemaphore, 0) != pdTRUE)  
       {
-        (DirOfTravel == moving_out ) ? fcurrentPosition++ : fcurrentPosition--;
-        steppermotormove(DirOfTravel);
+//        (DirOfTravel == moving_out ) ? fcurrentPosition++ : fcurrentPosition--;
+//        steppermotormove(DirOfTravel);
+//        fcurrentPosition = ftargetPosition;
+
+        if (stepcount < steps)
+        {
+          if (ftargetPosition > fcurrentPosition)
+            fcurrentPosition = ftargetPosition - stepcount;
+          else
+            fcurrentPosition = ftargetPosition + stepcount;
+            
+        }
 
         if ( mySetupData->get_displayenabled() == 1)
         {
           updatecount++;
           if ( updatecount > LCDUPDATEONMOVE )
           {
-            updatecount++;
-            if ( updatecount > LCDUPDATEONMOVE )
-            {
               updatecount = 0;
               myoled->update_oledtext_position();
-            }
           }
         }
+
+
 #ifdef HOMEPOSITIONSWITCH
         // if switch state = CLOSED and currentPosition != 0
         // need to back OUT a little till switch opens and then set position to 0
@@ -4977,19 +4992,32 @@ if (ConnectionStatus == disconnected)
           updatecount++;
           if ( updatecount > LCDUPDATEONMOVE )
           {
-            updatecount++;
-            if ( updatecount > LCDUPDATEONMOVE )
-            {
               updatecount = 0;
               myoled->update_oledtext_position();
-            }
           }
         }
       }
       else
       {
-        MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(F(STATEDELAYAFTERMOVE));
+#if (BACKLASH == 2)
+        if (DirOfTravel != moving_main)
+        {
+          DirOfTravel ^= 1;
+          mySetupData->set_focuserdirection(DirOfTravel);
+//          backlash_count = m_bl; // Backlash retour
+          TimeStampDelayAfterMove = millis();
+          flag = true;
+          MainStateMachine = State_ApplyBacklash2;
+          DebugPrint(F(">State_ApplyBacklash2 "));
+          DebugPrintln(backlash_count);          
+        }
+        else
+#endif        
+        {
+          MainStateMachine = State_DelayAfterMove;
+          DebugPrintln(F(STATEDELAYAFTERMOVE));
+        }
+//#endif
       }
       break;
 
@@ -5068,6 +5096,28 @@ if (ConnectionStatus == disconnected)
       DebugPrintln(F(STATEDELAYAFTERMOVE));
       break;
 
+  //__ ApplyBacklash2 ___________________________________________________________________
+  case State_ApplyBacklash2:
+
+    if (TimeCheck(TimeStampDelayAfterMove, 250))
+    {
+      if (flag == true)   // init moving
+      {
+        driverboard->initmove(DirOfTravel, backlash_count);
+        flag = false;
+        DebugPrintln(F("init move "));        
+      }
+
+      if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)      
+      {
+        TimeStampDelayAfterMove = millis();
+        MainStateMachine = State_DelayAfterMove;
+        DebugPrintln(F(STATEDELAYAFTERMOVE));
+      }
+    }
+    break;
+
+
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
@@ -5084,7 +5134,7 @@ if (ConnectionStatus == disconnected)
     case State_FinishedMove:
       isMoving = 0;
       // coil power is turned off after MotorReleaseDelay expired and Parked==true, see State_Idle
-      TRACE();
+//      TRACE();
       MainStateMachine = State_Idle;
       DebugPrintln(F(STATEIDLE));
       break;
@@ -5100,3 +5150,4 @@ if (ConnectionStatus == disconnected)
   DebugPrintln(millis());
 #endif
 } // end Loop()
+

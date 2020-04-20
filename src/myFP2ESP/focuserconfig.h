@@ -75,7 +75,7 @@
 //#define LOCALSERIAL 4
 
 // To enable OTA updates, uncomment the next line [only works in STATIONMODE]
-//#define OTAUPDATES 5
+#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support [Port 4040], uncomment the next line
 //#define ASCOMREMOTE 6

@@ -10,7 +10,7 @@
 // ----------------------------------------------------------------------------------------------
 
 const char* programVersion        = "119";
-const char* ProgramAuthor         = "(c) R BROWN 2020";
+const char* ProgramAuthor         = "(c) R BROWN 2020 h120";
 
 
 const char* STATEMOVINGSTR        = ">Moving";

@@ -29,7 +29,7 @@
 extern SetupData *mySetupData;
 extern unsigned long fcurrentPosition;      // current focuser position
 extern unsigned long ftargetPosition;       // target position
-extern String ipStr;                        // ip address
+extern char  ipStr[];                        // ip address
 extern char mySSID[];
 extern DriverBoard* driverboard;
 extern float read_temp(byte);

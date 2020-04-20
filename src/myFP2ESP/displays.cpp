@@ -191,7 +191,8 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
     setFont(ArialMT_Plain_10);
 //    drawString(64, 0, driverboard->getboardname());
     drawString(64, 0, DRVBRD_ID);
-    drawString(64, 12, "IP= " + ipStr);
+    snprintf(buffer, sizeof(buffer), "IP= %s", ipStr);
+    drawString(64, 12, buffer);
   }
   else
   {
