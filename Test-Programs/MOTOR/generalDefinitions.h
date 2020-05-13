@@ -15,7 +15,6 @@
 #define generalDefinitions_h
 
 #include <Arduino.h>
-
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
@@ -58,14 +57,9 @@
 #define LCDPAGETIMEMAX        10            // 10s maximum lcd page display time
 #define DEFAULTSAVETIME       30000         // default time to wait before saving data to SPIFFS
 #define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
-//#define HPSWOPEN              0             // hpsw states refelect status of switch
-//#define HPSWCLOSED            1
+#define HPSWOPEN              0             // hpsw states refelect status of switch
+#define HPSWCLOSED            1
 
-#ifdef HOMEPOSITIONSWITCH
-#define HPS_alert             !((bool)digitalRead(HPSWPIN))
-#else
-#define HPS_alert             false
-#endif
 
 #define SLOW                  0             // motorspeeds
 #define MED                   1

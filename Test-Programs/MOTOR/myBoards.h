@@ -36,8 +36,6 @@
 //#define DRVBRD PRO2ESP32L9110S
 //#define DRVBRD PRO2ESP32R3WEMOS
 
-
-
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
 #define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266
 
@@ -50,7 +48,6 @@
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 //#define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
 //#define STEPSPERREVOLUTION 1036        // NEMA16HS13-0604S-PG5
-
 
 // do not change, required for L293D motor shield
 #define UNIPOLAR28BYJ48   1
@@ -190,8 +187,7 @@
 #define INLEDPIN      18
 #define OUTLEDPIN     19
 #define IRPIN         15
-//#define HPSWPIN       4
-#define HPSWPIN       0       //_HM 04.05.2020 for debug only, need to be removed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#define HPSWPIN       4
 #define MS1           27
 #define MS2           26
 #define MS3           25
@@ -235,15 +231,13 @@
 // DRIVER BOARD CLASS : DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-extern const char* DRVBRD_ID;
-extern volatile SemaphoreHandle_t timerSemaphore;
+extern  const char* DRVBRD_ID;
 
 class DriverBoard
 {
   public:
     DriverBoard(byte);          // constructor
-    void initmove(bool,unsigned long); 
-    uint32_t  halt(void);      
+    
     // getter
     byte getmotorspeed(void);
     byte getstepmode(void);
@@ -253,13 +247,13 @@ class DriverBoard
     // setter
     void setstepdelay(int);
     void setstepmode(const byte);
-    void movemotor(byte);
+    bool movemotor(void);
+    void inittravel(bool, int);
     void enablemotor(void);
     void releasemotor(void);
     void setmotorspeed(byte);
 
   private:
-
 #if ( DRVBRD == PRO2EULN2003   || DRVBRD == PRO2ESP32ULN2003  \
    || DRVBRD == PRO2EL298N     || DRVBRD == PRO2ESP32L298N    \
    || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293MINI \
@@ -273,5 +267,14 @@ class DriverBoard
     byte boardtype;
     byte stepmode;
     int stepdelay;                                // time in milliseconds to wait between pulses when moving
+
+
+
+    hw_timer_t * timer = NULL;
+    volatile SemaphoreHandle_t timerSemaphore;
+    portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+    volatile uint32_t isrCounter = 0;
+    volatile uint32_t lastIsrAt = 0;
 };
 #endif

@@ -99,12 +99,13 @@ void SendPaket(const char token, const float val, int i)    // i => decimal plac
 }
 
 
-void ESP_Communication( byte mode )
+bool ESP_Communication( byte mode )
 {
   byte cmdval;
   String receiveString = "";
   String WorkString = "";
   long paramval = 0;
+  bool halt_alert = false;
 
   
 #if defined(BLUETOOTHMODE)
@@ -363,7 +364,8 @@ void ESP_Communication( byte mode )
 #endif
       break;
     case 27: // stop a move - like a Halt
-      ftargetPosition = fcurrentPosition;
+//      ftargetPosition = fcurrentPosition;
+      halt_alert = true;
       break;
     case 30: // set step mode
       WorkString = receiveString.substring(3, receiveString.length() - 1);
@@ -535,6 +537,7 @@ void ESP_Communication( byte mode )
       SendPaket('9', "1");
       break;
   }
+  return halt_alert;
 }
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 

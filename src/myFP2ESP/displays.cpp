@@ -78,6 +78,8 @@ void OLED_NON::update_oledtext_position(void){}
 void OLED_NON::update_oledtextdisplay(void){}
 void OLED_NON::Update_Oled(const oled_state x, const connection_status y){}
 void OLED_NON::oled_draw_reboot(void){}
+//void OLED_NON::println(const char *c){}
+
 
 OLED_NON::OLED_NON()
 {
@@ -420,6 +422,7 @@ void OLED_TEXT::Update_OledText(void)
   }
 }
 
+/*
 void OLED_TEXT::UpdatePositionOledText(void)
 {
   setCursor(0, 0);
@@ -429,6 +432,21 @@ void OLED_TEXT::UpdatePositionOledText(void)
   print(TARGETPOSSTR);
   println(ftargetPosition);
 //  display();
+}
+*/
+
+void OLED_TEXT::update_oledtext_position(void)
+{
+  setCursor(0, 0);
+  print(CURRENTPOSSTR);
+  print(fcurrentPosition);
+  clearToEOL();
+  println();
+
+  print(TARGETPOSSTR);
+  print(ftargetPosition);
+  clearToEOL();
+  println();
 }
 
 
@@ -648,19 +666,6 @@ void OLED_TEXT::display_oledtext_page2(void)
 #endif
 }
 
-void OLED_TEXT::update_oledtext_position(void)
-{
-  setCursor(0, 0);
-  print(CURRENTPOSSTR);
-  print(fcurrentPosition);
-  clearToEOL();
-  println();
-
-  print(TARGETPOSSTR);
-  print(ftargetPosition);
-  clearToEOL();
-  println();
-}
 
 void OLED_TEXT::update_oledtextdisplay(void)
 {

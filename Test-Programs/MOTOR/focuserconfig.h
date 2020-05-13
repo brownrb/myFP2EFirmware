@@ -32,10 +32,10 @@
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
-#define HOMEPOSITIONSWITCH 1
+//#define HOMEPOSITIONSWITCH 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 2
+//#define BACKLASH 2
 
 // To enable In and Out Pushbuttons [ESP32 only], uncomment the next line
 //#define PUSHBUTTONS 1
@@ -75,7 +75,7 @@
 //#define LOCALSERIAL 4
 
 // To enable OTA updates, uncomment the next line [only works in STATIONMODE]
-#define OTAUPDATES 5
+//#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support [Port 4040], uncomment the next line
 //#define ASCOMREMOTE 6

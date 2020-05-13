@@ -344,11 +344,11 @@ enum StateMachineStates
 {
   State_Idle,
   State_InitMove,
-  State_ApplyBacklash,
+//  State_ApplyBacklash,
   State_ApplyBacklash2,
   State_Moving,
   State_DelayAfterMove,
-  State_FinishedMove,
+//  State_FinishedMove,
   State_SetHomePosition,
   State_FindHomePosition
 };
@@ -552,6 +552,7 @@ void update_temp(void)
 // 20: HOMEPOSITION SWITCH - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef HOMEPOSITIONSWITCH
+/*
 volatile int hpswstate;
 
 void IRAM_ATTR hpsw_isr()
@@ -568,7 +569,7 @@ void init_homepositionswitch(void)
   // setup interrupt, falling, when switch is closed, pin goes low
   attachInterrupt(HPSWPIN, hpsw_isr, CHANGE);
   hpswstate = 0;
-}
+}*/
 #endif // #ifdef HOMEPOSITIONSWITCH
 
 // ----------------------------------------------------------------------------------------------
@@ -4560,11 +4561,12 @@ void setup()
   // set features
   setFeatures();
 
+/*
   // setup home position switch
 #ifdef HOMEPOSITIONSWITCH
   init_homepositionswitch();
 #endif
-
+*/
   // Setup infra red remote
 #ifdef INFRAREDREMOTE
   init_irremote();
@@ -4627,23 +4629,23 @@ void setup()
 
 //_____________________ loop()___________________________________________
 
-extern volatile unsigned long stepcount;
+extern volatile uint32_t stepcount;     // number of steps to go in timer interrupt service routine 
 
 void loop()
 {
   static StateMachineStates MainStateMachine = State_Idle;
-  static byte backlash_count = 0;
-  static bool backlash_enabled = 0;
-  static byte DirOfTravel = mySetupData->get_focuserdirection();
-  static unsigned long TimeStampDelayAfterMove = 0;
-  static unsigned long TimeStampPark = millis();
+  static uint32_t backlash_count = 0;
+  static bool DirOfTravel = (bool) mySetupData->get_focuserdirection();
+  static uint32_t TimeStampDelayAfterMove = 0;
+  static uint32_t TimeStampPark = millis();
   static bool Parked = mySetupData->get_coilpower();
-  static byte updatecount = 0;
+  static uint8_t updatecount = 0;
 
   static connection_status ConnectionStatus = disconnected;
   static oled_state oled = oled_on;
   static uint32_t steps = 0;
   static bool flag = false;
+  static bool halt_alert = false;  
 
 #ifdef HOMEPOSITIONSWITCH
   static byte stepstaken       = 0;
@@ -4672,7 +4674,7 @@ if (ConnectionStatus == disconnected)
     {
       if (myclient.available())
       {
-        ESP_Communication(ESPDATA); // Wifi communication
+        halt_alert = ESP_Communication(ESPDATA); // Wifi communication
       }
     }
     else
@@ -4693,7 +4695,7 @@ if (ConnectionStatus == disconnected)
   // if there is a command from Bluetooth
   if ( queue.count() >= 1 )                 // check for serial command
   {
-    ESP_Communication(BTDATA);
+     halt_alert = ESP_Communication(BTDATA);
   }
 #endif // ifdef Bluetoothmode
 
@@ -4705,7 +4707,7 @@ if (ConnectionStatus == disconnected)
   }
   if ( queue.count() >= 1 )                 // check for serial command
   {
-    ESP_Communication(SERIALDATA);
+     halt_alert = ESP_Communication(SERIALDATA);
   }
 #endif // ifdef LOCALSERIAL
 
@@ -4809,27 +4811,25 @@ if (ConnectionStatus == disconnected)
       backlash_count = 0;
       DirOfTravel = (ftargetPosition > fcurrentPosition) ? moving_out : moving_in;
 
-      if (mySetupData->get_focuserdirection() == DirOfTravel)
-      {
-        // move is in same direction, ignore backlash
-//        MainStateMachine = State_Moving;
-//        DebugPrintln(STATEMOVINGSTR);
-      }
-      else
+      if (mySetupData->get_focuserdirection() != DirOfTravel)
       {
         mySetupData->set_focuserdirection(DirOfTravel);
         // move is in opposite direction, check for backlash enabled
         // get backlash settings
+#ifdef BACKLASH        
         if ( DirOfTravel == moving_in)
-        {
-          backlash_count = mySetupData->get_backlashsteps_in();
-          backlash_enabled = mySetupData->get_backlash_in_enabled();
+        {        
+          if (mySetupData->get_backlash_in_enabled())
+            backlash_count = mySetupData->get_backlashsteps_in();
         }
         else
         {
-          backlash_count = mySetupData->get_backlashsteps_out();
-          backlash_enabled = mySetupData->get_backlash_out_enabled();
+          if (mySetupData->get_backlash_out_enabled())
+            backlash_count = mySetupData->get_backlashsteps_out();
         }
+#endif      
+
+/*
         // backlash needs to be applied, so get backlash values and states
 #if (BACKLASH == 1)
         // if backlask was defined then follow the backlash rules
@@ -4849,294 +4849,155 @@ if (ConnectionStatus == disconnected)
         {
           // do not apply backlash, go straight to moving
             backlash_count = 0;
-//          MainStateMachine = State_Moving;
-//          DebugPrintln(STATEMOVINGSTR);
         }
+*/
 
-#elif (BACKLASH == 2)
-        if (DirOfTravel == moving_main)
+#if (BACKLASH == 2)
+        if (DirOfTravel != moving_main && backlash_count)
         {
-          // do not apply backlash, go straight to moving
-//          MainStateMachine = State_Moving;
-//          DebugPrintln(STATEMOVINGSTR);
-        }
-        else
-        {
-          uint32_t bl = mySetupData->get_backlashsteps_in();
           uint32_t sm = mySetupData->get_stepmode();
+          uint32_t bl = backlash_count * sm;
+          DebugPrint(F("bl: "));                    
+          DebugPrint(bl);          
+          DebugPrint(F(" "));                    
 
           if (DirOfTravel == moving_out)
             backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
           else
             backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
-          
-//          m_bl = backlash_count;
-//          MainStateMachine = State_ApplyBacklash;
-//          MainStateMachine = State_Moving;          
-//          DebugPrint(STATEAPPLYBACKLASH);
-//          DebugPrintln(backlash_count);
-//          DebugPrint(F(" "));                    
+            
+          DebugPrint(F("backlash_count: "));                    
+          DebugPrint(backlash_count);
+          DebugPrint(F(" "));                    
         }
-#else
-        // ignore backlash
-//        MainStateMachine = State_Moving;
-//        DebugPrint(STATEMOVINGSTR);
 #endif
       }
       
       steps = (fcurrentPosition > ftargetPosition) ? fcurrentPosition - ftargetPosition : ftargetPosition - fcurrentPosition;
-      driverboard->initmove(DirOfTravel, steps + backlash_count);
-      MainStateMachine = State_Moving;
       DebugPrint(STATEMOVINGSTR);
       DebugPrint(steps);      
+
+      driverboard->initmove(DirOfTravel, steps + backlash_count);
+      MainStateMachine = State_Moving;
       break;
-/*
-    case State_ApplyBacklash:
-    
-      if ( backlash_count )
-      {
-        steppermotormove(DirOfTravel);
-        backlash_count--;
-      }
-      else
-      {
-        //driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-        MainStateMachine = State_Moving;
-        DebugPrintln(STATEMOVINGSTR);
-      }
-      break;
-*/
+
 //_______________________________State_Moving
 
     case State_Moving:
 
-//      if ( fcurrentPosition != ftargetPosition )      // must come first else cannot halt
-      if (xSemaphoreTake(timerSemaphore, 0) != pdTRUE)  
+      if (xSemaphoreTake(timerSemaphore, 0) != pdTRUE)          // still on  track?
       {
-//        (DirOfTravel == moving_out ) ? fcurrentPosition++ : fcurrentPosition--;
-//        steppermotormove(DirOfTravel);
-//        fcurrentPosition = ftargetPosition;
+
+        if(halt_alert)            // halt command received => stop moving
+        {
+          halt_alert = false;     // reset alert flag
+          driverboard->halt();
+          MainStateMachine = State_DelayAfterMove;
+          DebugPrintln(F(STATEDELAYAFTERMOVE));     
+        }
 
         if (stepcount < steps)
         {
           if (ftargetPosition > fcurrentPosition)
             fcurrentPosition = ftargetPosition - stepcount;
           else
-            fcurrentPosition = ftargetPosition + stepcount;
-            
+            fcurrentPosition = ftargetPosition + stepcount;            
         }
 
-        if ( mySetupData->get_displayenabled() == 1)
+        if (mySetupData->get_displayenabled() == 1)
         {
           updatecount++;
           if ( updatecount > LCDUPDATEONMOVE )
           {
               updatecount = 0;
               myoled->update_oledtext_position();
-          }
-        }
-
-
-#ifdef HOMEPOSITIONSWITCH
-        // if switch state = CLOSED and currentPosition != 0
-        // need to back OUT a little till switch opens and then set position to 0
-        if ( (hpswstate == HPSWCLOSED) && (fcurrentPosition != 0) )
-        {
-          isMoving = 1;
-          fcurrentPosition = ftargetPosition = 0;
-          MainStateMachine = State_SetHomePosition;
-          DebugPrintln(F(HPCLOSEDFPNOT0STR));
-          DebugPrintln(F(STATESETHOMEPOSITION));
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-          myoled->clear();
-          myoled->println(HPCLOSEDFP0STR);
-#endif  // OLEDTEXT
-#endif  // SHOWHPSWMSGS
-        }
-        // else if switch state = CLOSED and Position = 0
-        // need to back OUT a little till switch opens and then set position to 0
-        else if ( (hpswstate == HPSWCLOSED) && (fcurrentPosition == 0) )
-        {
-          isMoving = 1;
-          fcurrentPosition = ftargetPosition = 0;
-          MainStateMachine = State_SetHomePosition;
-          DebugPrintln(F(HPCLOSEDFP0STR));
-          DebugPrintln(F(STATESETHOMEPOSITION));
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-          myoled->clear();
-          myoled->println(HPCLOSEDFP0STR);
-#endif // OLEDTEXT
-#endif // SHOWHPSWMSGS
-        }
-        // else if switchstate = OPEN and Position = 0
-        // need to move IN a little till switch CLOSES then
-        else if ( (hpswstate == HPSWOPEN) && (fcurrentPosition == 0))
-        {
-          isMoving = 1;
-          fcurrentPosition = ftargetPosition = 0;
-          MainStateMachine = State_FindHomePosition;
-          DebugPrintln(F(HPOPENFPNOT0STR));
-          DebugPrintln(F(STATEFINDHOMEPOSITION));
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-          myoled->clear();
-          myoled->println(HPOPENFPNOT0STR);
-#endif  // OLEDTEXT
-#endif  // SHOWHPSWMSGS
-        }
-#endif // HOMEPOSITIONSWITCH
-        if ( mySetupData->get_displayenabled() == 1)
-        {
-          updatecount++;
-          if ( updatecount > LCDUPDATEONMOVE )
-          {
-              updatecount = 0;
-              myoled->update_oledtext_position();
-          }
+          }  // !!!!!!!!!!!!!!!!!!!  no support for  Graphic OLED Mode !!!!!!!!!!!!!!!!!!!!!!!
         }
       }
       else
       {
+
+//#ifdef HOMEPOSITIONSWITCH
+        // if switch state = CLOSED and currentPosition != 0
+
+        if (HPS_alert)                         // home position sensor activated?
+        {     
+          if(fcurrentPosition > 0) 
+            DebugPrintln(HPCLOSEDFPNOT0STR);
+          else
+            DebugPrintln(HPCLOSEDFP0STR);
+              
+          DebugPrintln(STATESETHOMEPOSITION);
+          fcurrentPosition = ftargetPosition = 0;
+//        MainStateMachine = State_SetHomePosition;
+
+#ifdef SHOWHPSWMSGS
+          myoled->clear();
+          myoled->println(HPCLOSEDFP0STR);
+#endif  // SHOWHPSWMSGS
+        } 
+//#endif // HOMEPOSITIONSWITCH
+
 #if (BACKLASH == 2)
-        if (DirOfTravel != moving_main)
+        else if (DirOfTravel != moving_main && backlash_count)
         {
-          DirOfTravel ^= 1;
+          DirOfTravel = moving_main;                     // switch direction of travel
           mySetupData->set_focuserdirection(DirOfTravel);
-//          backlash_count = m_bl; // Backlash retour
           TimeStampDelayAfterMove = millis();
-          flag = true;
-          MainStateMachine = State_ApplyBacklash2;
-          DebugPrint(F(">State_ApplyBacklash2 "));
-          DebugPrintln(backlash_count);          
-        }
-        else
-#endif        
-        {
-          MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(F(STATEDELAYAFTERMOVE));
-        }
-//#endif
+
+          if (fcurrentPosition > 0 || DirOfTravel == moving_out) 
+          {
+            DebugPrint(F(">State_ApplyBacklash2 "));
+            DebugPrintln(backlash_count);
+            MainStateMachine = State_ApplyBacklash2;
+            break;
+          }
+        }       
+#endif                
+        MainStateMachine = State_DelayAfterMove;
+        DebugPrintln(F(STATEDELAYAFTERMOVE));     
       }
       break;
 
-    case State_FindHomePosition:            // move in till home position switch closes
-#ifdef HOMEPOSITIONSWITCH
-      driverboard->setmotorspeed(SLOW);
-      stepstaken = 0;
-      DebugPrintln(F(HPMOVETILLCLOSEDSTR));
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-      myoled->println(HPMOVETILLCLOSEDSTR);
-#endif // OLEDTEXT
-#endif // SHOWHPSWMSGS
-      while ( hpswstate == HPSWOPEN )
-      {
-        // step IN till switch closes
-        steppermotormove(DirOfTravel);
-        stepstaken++;
-        if ( stepstaken > HOMESTEPS )       // this prevents the endless loop if the hpsw is not connected or is faulty
-        {
-          DebugPrint(F(HPMOVEINERRORSTR));
-          break;
-        }
-      }
-      DebugPrint(F(HPMOVEINSTEPSSTR));
-      DebugPrint(stepstaken);
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-      myoled->clear();
-      myoled->println(HPCLOSEDFP0STR);
-#endif  // OLEDTEXT
-#endif  // SHOWHPSWMSGS
-      DebugPrint(F(HPMOVEINFINISHEDSTR));
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif  // HOMEPOSITIONSWITCH
-      MainStateMachine = State_SetHomePosition;
-      DebugPrint(F(STATESETHOMEPOSITION));
-      break;
+//_______________________________ApplyBacklash2
 
-    case State_SetHomePosition:             // move out till home position switch opens
-#ifdef HOMEPOSITIONSWITCH
-      driverboard->setmotorspeed(SLOW);
-      stepstaken = 0;
-      DebugPrintln(F(HPMOVETILLOPENSTR));
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-      myoled->println(HPMOVETILLOPENSTR);
-#endif // OLEDTEXT
-#endif // SHOWHPSWMSGS
-      // if the previous moveIN failed at HOMESTEPS and HPSWITCH is still open then the
-      // following while() code will drop through and have no effect and position = 0
-      while ( hpswstate == HPSWCLOSED )
-      {
-        // step out till switch opens
-        DirOfTravel = !DirOfTravel;
-        steppermotormove(DirOfTravel);
-        stepstaken++;
-        if ( stepstaken > HOMESTEPS )       // this prevents the endless loop if the hpsw is not connected or is faulty
-        {
-          DebugPrintln(F(HPMOVEOUTERRORSTR));
-          break;
-        }
-      }
-      DebugPrint(F(HPMOVEOUTSTEPSSTR));
-      DebugPrintln(stepstaken);
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-      DebugPrintln(F(HPMOVEOUTFINISHEDSTR));
-#ifdef SHOWHPSWMSGS
-#ifdef OLEDTEXT
-      myoled->clear();
-      myoled->println(HPMOVEOUTFINISHEDSTR);
-#endif  // OLEDTEXT
-#endif  // SHOWHPSWMSGS
-#endif  // HOMEPOSITIONSWITCH
-      MainStateMachine = State_DelayAfterMove;
-      DebugPrintln(F(STATEDELAYAFTERMOVE));
-      break;
-
-  //__ ApplyBacklash2 ___________________________________________________________________
   case State_ApplyBacklash2:
 
-    if (TimeCheck(TimeStampDelayAfterMove, 250))
+    if (TimeCheck(TimeStampDelayAfterMove, 250))      // 250ms delay 
     {
-      if (flag == true)   // init moving
+      if (flag == true)                               // init moving back
       {
-        driverboard->initmove(DirOfTravel, backlash_count);
-        flag = false;
-        DebugPrintln(F("init move "));        
+        DebugPrint(F(">BL2: "));        
+        driverboard->initmove(DirOfTravel, backlash_count);   // init job for the timer ISR
+        flag = false;                                 // mark job is done for the next turn
       }
-
-      if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)      
+      else if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)  // wait for message "well done" from timer ISR 
       {
         TimeStampDelayAfterMove = millis();
         MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(F(STATEDELAYAFTERMOVE));
+        DebugPrintln(STATEDELAYAFTERMOVE);
       }
     }
+    else
+      flag = true;      // init flag
+        
     break;
 
+//_______________________________State_DelayAfterMove
 
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
-//        Update_OledGraphics(oled_on);                   // display on after move
+        ftargetPosition = fcurrentPosition;             // need in case of halt_alert exception 
         oled = oled_on;
+        isMoving = 0;
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle
-        MainStateMachine = State_FinishedMove;
-        DebugPrintln(F(STATEFINISHEDMOVE));
+        MainStateMachine = State_Idle;        
+        DebugPrint(F(">State_Idle "));
+//        DebugPrintln(STATEFINISHEDMOVE);
       }
-      break;
-
-    case State_FinishedMove:
-      isMoving = 0;
-      // coil power is turned off after MotorReleaseDelay expired and Parked==true, see State_Idle
-//      TRACE();
-      MainStateMachine = State_Idle;
-      DebugPrintln(F(STATEIDLE));
       break;
 
     default:
