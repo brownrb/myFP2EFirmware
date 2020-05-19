@@ -5473,14 +5473,14 @@ void loop()
 
     case State_FindHomePosition:            // move in till home position switch closes
 #ifdef HOMEPOSITIONSWITCH
-      driverboard->setmotorspeed(SLOW);
-      stepstaken = 0;
-      DebugPrintln(F(HPMOVETILLCLOSEDSTR));
 #ifdef SHOWHPSWMSGS
 #ifdef OLEDTEXT
       myoled->println(HPMOVETILLCLOSEDSTR);
 #endif // OLEDTEXT
 #endif // SHOWHPSWMSGS
+      driverboard->setmotorspeed(SLOW);
+      stepstaken = 0;
+      DebugPrintln(F(HPMOVETILLCLOSEDSTR));
       while ( hpswstate == HPSWOPEN )
       {
         // step IN till switch closes
@@ -5491,6 +5491,7 @@ void loop()
           DebugPrint(F(HPMOVEINERRORSTR));
           break;
         }
+        hpswstate = !(digitalRead(HPSWPIN));    // read state of HPSW
       }
       DebugPrint(F(HPMOVEINSTEPSSTR));
       DebugPrint(stepstaken);
@@ -5509,9 +5510,6 @@ void loop()
 
     case State_SetHomePosition:             // move out till home position switch opens
 #ifdef HOMEPOSITIONSWITCH
-      driverboard->setmotorspeed(SLOW);
-      stepstaken = 0;
-      DebugPrintln(F(HPMOVETILLOPENSTR));
 #ifdef SHOWHPSWMSGS
 #ifdef OLEDTEXT
       myoled->println(HPMOVETILLOPENSTR);
@@ -5519,17 +5517,28 @@ void loop()
 #endif // SHOWHPSWMSGS
       // if the previous moveIN failed at HOMESTEPS and HPSWITCH is still open then the
       // following while() code will drop through and have no effect and position = 0
+      driverboard->setmotorspeed(SLOW);
+      stepstaken = 0;
+      DebugPrintln(F(HPMOVETILLOPENSTR));
+      // step out till switch opens
+      DirOfTravel = !DirOfTravel;
       while ( hpswstate == HPSWCLOSED )
       {
-        // step out till switch opens
-        DirOfTravel = !DirOfTravel;
-        steppermotormove(DirOfTravel);
+        if ( mySetupData->get_reversedirection() == 0 )
+        {
+          steppermotormove(DirOfTravel);
+        }
+        else
+        {
+          steppermotormove(!DirOfTravel);
+        }
         stepstaken++;
         if ( stepstaken > HOMESTEPS )       // this prevents the endless loop if the hpsw is not connected or is faulty
         {
           DebugPrintln(F(HPMOVEOUTERRORSTR));
           break;
         }
+        hpswstate = !(digitalRead(HPSWPIN));    // read state of HPSW
       }
       DebugPrint(F(HPMOVEOUTSTEPSSTR));
       DebugPrintln(stepstaken);
