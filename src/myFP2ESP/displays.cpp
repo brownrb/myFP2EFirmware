@@ -19,18 +19,18 @@
 #include "focuserconfig.h"
 #include "FocuserSetupData.h"
 #include "images.h"
+#include "generalDefinitions.h"
+#include "displays.h"
 
 
 
 //#ifdef OLEDTEXT
-/*#include <Wire.h>                           // needed for I2C => OLED display text-only
-#include <mySSD1306Ascii.h>
-#include <mySSD1306AsciiWire.h>
-*/
+//#include <Wire.h>                           // needed for I2C => OLED display text-only
+//#include <mySSD1306Ascii.h>
+//#include <mySSD1306AsciiWire.h>
+
 //#endif // #ifdef OLEDTEXT
 
-#include "generalDefinitions.h"
-#include "displays.h"
 
 
 extern bool TimeCheck(unsigned long, unsigned long);
@@ -449,7 +449,6 @@ void OLED_TEXT::update_oledtext_position(void)
   println();
 }
 
-
 OLED_TEXT::OLED_TEXT(void)
 {
 
@@ -469,7 +468,7 @@ OLED_TEXT::OLED_TEXT(void)
   if (Wire.endTransmission() != 0)
   {
     TRACE();
-    DebugPrintln(F(I2CDEVICENOTFOUNDSTR));
+    DebugPrintln(I2CDEVICENOTFOUNDSTR);
     displayfound = false;
   }
   else
@@ -499,7 +498,6 @@ OLED_TEXT::OLED_TEXT(void)
 #endif // showstartscreen
   }
 }
-
 
 // ----------------------------------------------------------------------------------------------
 // 19B: OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL

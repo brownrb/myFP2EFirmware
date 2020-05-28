@@ -409,15 +409,15 @@ void init_temp(void)
   pinMode(TEMPPIN, INPUT);                // Configure GPIO pin for temperature probe
   DebugPrintln(CHECKFORTPROBESTR);
   sensor1.begin();                        // start the temperature sensor1
-  DebugPrintln(F(GETTEMPPROBESSTR));
+  DebugPrintln(GETTEMPPROBESSTR);
   tprobe1 = sensor1.getDeviceCount();     // should return 1 if probe connected
-  DebugPrint(F(TPROBESTR));
+  DebugPrint(TPROBESTR);
   DebugPrintln(tprobe1);
   if (sensor1.getAddress(tpAddress, 0) == true)
   {
     tprobe1 = 1;
     sensor1.setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
-    DebugPrint(F(SETTPROBERESSTR));
+    DebugPrint(SETTPROBERESSTR);
     switch (mySetupData->get_tempprecision())
     {
       case 9: DebugPrintln(F("0.5"));
@@ -454,7 +454,7 @@ float read_temp(byte new_measurement)
   }
 
   float result = sensor1.getTempCByIndex(0);  // get channel 1 temperature, always in celsius
-  DebugPrint(F(TEMPSTR));
+  DebugPrint(TEMPSTR);
   DebugPrintln(result);
   if (result > -40.0 && result < 80.0)
   {
@@ -720,17 +720,17 @@ void update_joystick1(void)
   int joyspeed;
   int joyval;
 
-  DebugPrintln(F(UPDATEJOYSTICKSTR));
+  DebugPrintln(UPDATEJOYSTICKSTR);
   joyval = analogRead(JOYINOUTPIN);
-  DebugPrint(F(JOYSTICKVALSTR));
+  DebugPrint(JOYSTICKVALSTR);
   DebugPrintln(joyval);
   if ( joyval < (JZEROPOINT - JTHRESHOLD) )
   {
     ftargetPosition--;                            // move IN
-    DebugPrint(F(JOYSTICKXINVALSTR));
+    DebugPrint(JOYSTICKXINVALSTR);
     DebugPrint(joyval);
     joyspeed = map(joyval, 0, (JZEROPOINT - JTHRESHOLD), MSFAST, MSSLOW);
-    DebugPrint(F(JOYSTICKSPEEDSTR));
+    DebugPrint(JOYSTICKSPEEDSTR);
     DebugPrintln(joyspeed);
     driverboard->setstepdelay(joyspeed);
   }
@@ -746,10 +746,10 @@ void update_joystick1(void)
     {
       joyval = JZEROPOINT - joyval;
     }
-    DebugPrint(F(JOYSTICKXOUTVALSTR));
+    DebugPrint(JOYSTICKXOUTVALSTR);
     DebugPrint(joyval);
     joyspeed = map(joyval, 0, (JMAXVALUE - (JZEROPOINT + JTHRESHOLD)), MSSLOW, MSFAST);
-    DebugPrint(F(JOYSTICKSPEEDSTR));
+    DebugPrint(JOYSTICKSPEEDSTR);
     DebugPrintln(joyspeed);
     driverboard->setstepdelay(joyspeed);
   }
@@ -777,15 +777,15 @@ void update_joystick2(void)
   int joyval;
 
   joyval = analogRead(JOYINOUTPIN);               // range is 0 - 4095, midpoint is 2047
-  DebugPrint(F(JOYSTICKVALSTR));
+  DebugPrint(JOYSTICKVALSTR);
   DebugPrintln(joyval);
   if ( joyval < (JZEROPOINT - JTHRESHOLD) )
   {
     ftargetPosition--;                            // move IN
-    DebugPrint(F(JOYSTICKXINVALSTR));
+    DebugPrint(JOYSTICKXINVALSTR);
     DebugPrint(joyval);
     joyspeed = map(joyval, 0, (JZEROPOINT - JTHRESHOLD), MSFAST, MSSLOW);
-    DebugPrint(F(JOYSTICKSPEEDSTR));
+    DebugPrint(JOYSTICKSPEEDSTR));
     DebugPrintln(joyspeed);
     driverboard->setstepdelay(joyspeed);
   }
@@ -801,10 +801,10 @@ void update_joystick2(void)
     {
       joyval = JZEROPOINT - joyval;
     }
-    DebugPrint(F(JOYSTICKXOUTVALSTR));
+    DebugPrint(JOYSTICKXOUTVALSTR);
     DebugPrint(joyval);
     joyspeed = map(joyval, 0, (JMAXVALUE - (JZEROPOINT + JTHRESHOLD)), MSSLOW, MSFAST);
-    DebugPrint(F(JOYSTICKSPEEDSTR));
+    DebugPrint(JOYSTICKSPEEDSTR);
     DebugPrintln(joyspeed);
     driverboard->setstepdelay(joyspeed);
   }
@@ -887,12 +887,12 @@ void start_mdns_service(void)
   if (!MDNS.begin(mDNSNAME))                      // ESP32 does not support IPaddress parameter
 #endif
   {
-    DebugPrintln(F(MDNSSTARTFAILSTR));
+    DebugPrintln(MDNSSTARTFAILSTR);
     mdnsserverstate = STOPPED;
   }
   else
   {
-    DebugPrintln(F(MDNSSTARTEDSTR));
+    DebugPrintln(MDNSSTARTEDSTR);
     // Add service to MDNS-SD, MDNS.addService(service, proto, port)
     MDNS.addService("http", "tcp", MDNSSERVERPORT);
     mdnsserverstate = RUNNING;
@@ -902,7 +902,7 @@ void start_mdns_service(void)
 
 void stop_mdns_service(void)
 {
-  DebugPrintln(F(STOPMDNSSERVERSTR));
+  DebugPrintln(STOPMDNSSERVERSTR);
   if ( mdnsserverstate == RUNNING )
   {
 #if defined(ESP8266)
@@ -915,7 +915,7 @@ void stop_mdns_service(void)
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR));
   }
   delay(10);                      // small pause so background tasks can run
 }
@@ -994,7 +994,7 @@ bool MANAGEMENT_handlefileread(String path)
   else
   {
     TRACE();
-    DebugPrintln(F(FILENOTFOUNDSTR));
+    DebugPrintln(FILENOTFOUNDSTR);
     return false;                                         // If the file doesn't exist, return false
   }
 }
@@ -1004,7 +1004,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
   if ( !SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
     return;
   }
   // example code taken from FSBrowser
@@ -1052,8 +1052,8 @@ void MANAGEMENT_buildnotfound(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
   }
   else
@@ -1064,23 +1064,23 @@ void MANAGEMENT_buildnotfound(void)
       File file = SPIFFS.open("/msnotfound.html", "r");
       // read contents into string
       TRACE();
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       MNotFoundPage = file.readString();
 
       TRACE();
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       MNotFoundPage.replace("%IP%", ipStr);
       MNotFoundPage.replace("%PORT%", String(MSSERVERPORT));
       MNotFoundPage.replace("%VER%", String(programVersion));
       MNotFoundPage.replace("%NAME%", String(programName));
       TRACE();
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
+      DebugPrintln(SSPIFFSFILENOTFOUNDSTR);
       MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
     }
   }
@@ -1098,8 +1098,8 @@ void MANAGEMENT_buildupload(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MUploadPage = "<html><head><title>Management Server></title></head><body><p>msupload.html not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
   }
   else
@@ -1110,23 +1110,23 @@ void MANAGEMENT_buildupload(void)
       File file = SPIFFS.open("/msupload.html", "r");
       // read contents into string
       TRACE();
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       MUploadPage = file.readString();
 
       TRACE();
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       MUploadPage.replace("%IP%", ipStr);
       MUploadPage.replace("%PORT%", String(MSSERVERPORT));
       MUploadPage.replace("%VER%", String(programVersion));
       MUploadPage.replace("%NAME%", String(programName));
       TRACE();
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
+      DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       MUploadPage = "<html><head><title>Management Server></title></head><body><p>msupload.html not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
     }
   }
@@ -1187,8 +1187,8 @@ void MANAGEMENT_buildhome(void)
   {
     // could not read index file from SPIFFS
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MHomePage = "<html><head><title>Management Server></title></head><body><p>msindex.html not found</p><p>Did you upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"> </form></p></body></html>";
   }
   else
@@ -1197,14 +1197,14 @@ void MANAGEMENT_buildhome(void)
     if ( SPIFFS.exists("/msindex.html"))
     {
       TRACE();
-      DebugPrintln(F(FILEFOUNDSTR));
+      DebugPrintln(FILEFOUNDSTR);
       // open file for read
       File file = SPIFFS.open("/msindex.html", "r");
       // read contents into string
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       MHomePage = file.readString();
 
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       MHomePage.replace("%IP%", ipStr);
       MHomePage.replace("%PORT%", String(MSSERVERPORT));
@@ -1369,13 +1369,13 @@ void MANAGEMENT_buildhome(void)
       // display heap memory for tracking memory loss?
       // only esp32?
       MHomePage.replace("%HEAP%", String(ESP.getFreeHeap()));
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       // could not read index file from SPIFFS
       TRACE();
-      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      DebugPrintln(BUILDDEFAULTPAGESTR);
       MHomePage = "<html><head><title>Management Server></title></head><body><p>msindex.html not found</p><p>Did you upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"></form></p></body></html>";
     }
   }
@@ -1473,7 +1473,7 @@ void MANAGEMENT_handleroot(void)
   msg = mserver.arg("settsport");
   if ( msg != "" )
   {
-    DebugPrint("set tcpip server port: ");
+    DebugPrint(F("set tcpip server port: "));
     DebugPrintln(msg);
     String tp = mserver.arg("tp");                      // process new webserver port number
     if ( tp != "" )
@@ -1488,25 +1488,25 @@ void MANAGEMENT_handleroot(void)
         if ( newport == currentport)
         {
           // port is the same so do not bother to change it
-          DebugPrintln("tp error: new Port = current port");
+          DebugPrintln(F("tp error: new Port = current port"));
         }
         else
         {
           if ( newport == MSSERVERPORT )                              // if same as management server
           {
-            DebugPrintln("wp error: new Port = MSSERVERPORT");
+            DebugPrintln(F("wp error: new Port = MSSERVERPORT"));
           }
           else if ( newport == mySetupData->get_ascomalpacaport() )   // if same as ASCOM REMOTE server
           {
-            DebugPrintln("wp error: new Port = ALPACAPORT");
+            DebugPrintln(F("wp error: new Port = ALPACAPORT"));
           }
           else if ( newport == mySetupData->get_mdnsport() )          // if same as mDNS server
           {
-            DebugPrintln("wp error: new Port = MDNSSERVERPORT");
+            DebugPrintln(F("wp error: new Port = MDNSSERVERPORT"));
           }
           else if ( newport == mySetupData->get_webserverport() )     // if same as mDNS server
           {
-            DebugPrintln("wp error: new Port = WEBSERVERPORT");
+            DebugPrintln(F("wp error: new Port = WEBSERVERPORT"));
           }
           else
           {
@@ -1517,7 +1517,7 @@ void MANAGEMENT_handleroot(void)
       }
       else
       {
-        DebugPrintln("Attempt to change tcpipserver port when tcpipserver running");
+        DebugPrintln(F("Attempt to change tcpipserver port when tcpipserver running"));
       }
     }
   }
@@ -1526,7 +1526,7 @@ void MANAGEMENT_handleroot(void)
   msg = mserver.arg("setwsport");
   if ( msg != "" )
   {
-    DebugPrint("set web server port: ");
+    DebugPrint(F("set web server port: "));
     DebugPrintln(msg);
     String wp = mserver.arg("wp");                      // process new webserver port number
     if ( wp != "" )
@@ -1570,7 +1570,7 @@ void MANAGEMENT_handleroot(void)
       }
       else
       {
-        DebugPrintln("Attempt to change webserver port when webserver running");
+        DebugPrintln(F("Attempt to change webserver port when webserver running"));
       }
     }
   }
@@ -1749,8 +1749,8 @@ void start_management(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(SERVERSTATESTOPSTR);
     managementserverstate = STOPPED;
     return;
   }
@@ -1772,7 +1772,7 @@ void start_management(void)
   mserver.begin();
   managementserverstate = RUNNING;
   TRACE();
-  DebugPrintln(F(SERVERSTATESTARTSTR));
+  DebugPrintln(SERVERSTATESTARTSTR);
   delay(10);                      // small pause so background tasks can run
 }
 
@@ -1783,11 +1783,11 @@ void stop_management(void)
     mserver.stop();
     managementserverstate = STOPPED;
     TRACE();
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(SERVERSTATESTOPSTR);
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
 }
 #endif // #ifdef MANAGEMENT
@@ -1820,8 +1820,8 @@ void WEBSERVER_buildnotfound(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WNotFoundPage = "<html><head><title>Web Server: Not found></title></head><body>";
     WNotFoundPage = WNotFoundPage + "<p>The requested URL was not found</p>";
     WNotFoundPage = WNotFoundPage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p>";
@@ -1835,22 +1835,22 @@ void WEBSERVER_buildnotfound(void)
       // open file for read
       File file = SPIFFS.open("/wsnotfound.html", "r");
       // read contents into string
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       WNotFoundPage = file.readString();
 
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       WNotFoundPage.replace("%IP%", ipStr);
       WNotFoundPage.replace("%PORT%", String(mySetupData->get_webserverport()));
       WNotFoundPage.replace("%VER%", String(programVersion));
       WNotFoundPage.replace("%NAME%", String(programName));
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
-      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      DebugPrintln(SPIFFSFILENOTFOUNDSTR);
+      DebugPrintln(BUILDDEFAULTPAGESTR);
       WNotFoundPage = "<html><head><title>Web Server: Not found></title></head><body>";
       WNotFoundPage = WNotFoundPage + "<p>The requested URL was not found</p>";
       WNotFoundPage = WNotFoundPage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p>";
@@ -1872,9 +1872,9 @@ void WEBSERVER_buildpresets(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
     // could not read move file from SPIFFS
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>wspresets.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
   }
   else
@@ -1885,10 +1885,10 @@ void WEBSERVER_buildpresets(void)
       // open file for read
       File file = SPIFFS.open("/wspresets.html", "r");
       // read contents into string
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       WPresetsPage = file.readString();
 
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       WPresetsPage.replace("%RATE%", String(mySetupData->get_webpagerefreshrate()));
       WPresetsPage.replace("%IP%", ipStr);
@@ -1909,14 +1909,14 @@ void WEBSERVER_buildpresets(void)
       WPresetsPage.replace("%WSP7%", String(mySetupData->get_focuserpreset(7)));
       WPresetsPage.replace("%WSP8%", String(mySetupData->get_focuserpreset(8)));
       WPresetsPage.replace("%WSP9%", String(mySetupData->get_focuserpreset(9)));
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       // could not read preset file from SPIFFS
       TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
-      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      DebugPrintln(SPIFFSFILENOTFOUNDSTR);
+      DebugPrintln(BUILDDEFAULTPAGESTR);
       WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>wspresets.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
     }
   }
@@ -2367,7 +2367,7 @@ void WEBSERVER_handlepresets(void)
 
   WEBSERVER_buildpresets();
   // send the presetspage to a connected client
-  DebugPrintln(F(SENDPAGESTR));
+  DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WPresetsPage );
   delay(10);                     // small pause so background ESP8266 tasks can run
 }
@@ -2379,9 +2379,9 @@ void WEBSERVER_buildmove(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
     // could not read move file from SPIFFS
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WMovePage = "<html><head><title>Web Server:></title></head><body><p>wsmove.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
   }
   else
@@ -2392,10 +2392,10 @@ void WEBSERVER_buildmove(void)
       // open file for read
       File file = SPIFFS.open("/wsmove.html", "r");
       // read contents into string
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       WMovePage = file.readString();
 
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       WMovePage.replace("%RATE%", String(mySetupData->get_webpagerefreshrate()));
       WMovePage.replace("%IP%", ipStr);
@@ -2405,14 +2405,14 @@ void WEBSERVER_buildmove(void)
       WMovePage.replace("%CPOS%", String(fcurrentPosition));
       WMovePage.replace("%TPOS%", String(ftargetPosition));
       WMovePage.replace("%MOVING%", String(isMoving));
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       // could not read move file from SPIFFS
       TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
-      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      DebugPrintln(SPIFFSFILENOTFOUNDSTR);
+      DebugPrintln(BUILDDEFAULTPAGESTR);
       WMovePage = "<html><head><title>Web Server:></title></head><body><p>wsmove.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
     }
   }
@@ -2445,9 +2445,9 @@ void WEBSERVER_handlemove()
     newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
     ftargetPosition = (unsigned long) newtemp;
     DebugPrint("Move = "); DebugPrintln(fmv_str);
-    DebugPrint(F(CURRENTPOSSTR));
+    DebugPrint(CURRENTPOSSTR);
     DebugPrintln(fcurrentPosition);
-    DebugPrint(F(TARGETPOSSTR));
+    DebugPrint(TARGETPOSSTR);
     DebugPrintln(ftargetPosition);
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
     // restore motorspeed just in case
@@ -2457,7 +2457,7 @@ void WEBSERVER_handlemove()
 
   WEBSERVER_buildmove();
   // send the movepage to a connected client
-  DebugPrintln(F(SENDPAGESTR));
+  DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WMovePage );
   delay(10);                     // small pause so background ESP8266 tasks can run
 }
@@ -2469,7 +2469,7 @@ void WEBSERVER_buildhome(void)
   if (!SPIFFS.begin())
   {
     TRACE();
-    DebugPrintln(F(SPIFFSNOTSTARTEDSTR));
+    DebugPrintln(SPIFFSNOTSTARTEDSTR);
     // could not read index file from SPIFFS
     DebugPrintln(BUILDDEFAULTPAGESTR);
     WHomePage = "<html><head><title>Web Server:></title></head><body><p>wsindex.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
@@ -2482,10 +2482,10 @@ void WEBSERVER_buildhome(void)
       // open file for read
       File file = SPIFFS.open("/wsindex.html", "r");
       // read contents into string
-      DebugPrintln(F(READPAGESTR));
+      DebugPrintln(READPAGESTR);
       WHomePage = file.readString();
 
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       WHomePage.replace("%RATE%", String(mySetupData->get_webpagerefreshrate()));
       WHomePage.replace("%IP%", ipStr);
@@ -2648,14 +2648,14 @@ void WEBSERVER_buildhome(void)
 #else
       WHomePage.replace("%OLED%", "Display not defined");
 #endif
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
       // could not read index file from SPIFFS
       TRACE();
-      DebugPrintln(F(SPIFFSFILENOTFOUNDSTR));
-      DebugPrintln(F(BUILDDEFAULTPAGESTR));
+      DebugPrintln(SPIFFSFILENOTFOUNDSTR);
+      DebugPrintln(BUILDDEFAULTPAGESTR);
       WHomePage = "<html><head><title>Web Server:></title></head><body><p>wsindex.html</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
     }
   }
@@ -2865,14 +2865,14 @@ void WEBSERVER_handleroot()
 
   WEBSERVER_buildhome();
   // send the homepage to a connected client
-  DebugPrintln(F(SENDPAGESTR));
+  DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WHomePage );
   delay(10);                     // small pause so background ESP8266 tasks can run
 }
 
 void start_webserver(void)
 {
-  DebugPrintln(F(STARTWEBSERVERSTR));
+  DebugPrintln(STARTWEBSERVERSTR);
 #if defined(ESP8266)
   webserver = new ESP8266WebServer(mySetupData->get_webserverport());
 #else
@@ -2890,7 +2890,7 @@ void start_webserver(void)
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
-  DebugPrintln(F(SERVERSTATESTARTSTR));
+  DebugPrintln(SERVERSTATESTARTSTR);
   delay(10);                      // small pause so background tasks can run
 }
 
@@ -2902,11 +2902,11 @@ void stop_webserver(void)
     delete webserver;            // free the webserver pointer and associated memory/code
     webserverstate = STOPPED;
     TRACE();
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(SERVERSTATESTOPSTR);
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
   delay(10);                      // small pause so background tasks can run
 }
@@ -2974,13 +2974,13 @@ void checkASCOMALPACADiscovery()
 
     if (len < 16)                 // No undersized packets allowed
     {
-      DebugPrintln(F("Packet is undersized"));
+      DebugPrintln("Packet is undersized");
       return;
     }
 
     if (strncmp("alpacadiscovery1", packetBuffer, 16) != 0)    // 0-14 "alpacdiscovery", 15 ASCII Version number
     {
-      DebugPrintln(F("Packet is not correct format"));
+      DebugPrintln("Packet is not correct format");
       return;
     }
 
@@ -3323,7 +3323,7 @@ void ASCOM_handle_setup()
   if (!SPIFFS.begin())
   {
     DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
-    DebugPrintln("ascomserver: build_default_homepage");
+    DebugPrintln(F("ascomserver: build_default_homepage"));
     AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
     AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
     AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
@@ -3351,7 +3351,7 @@ void ASCOM_handle_setup()
     else
     {
       DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
-      DebugPrintln("ascomserver: build_default_homepage");
+      DebugPrintln(F("ascomserver: build_default_homepage"));
       AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
       AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
       AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
@@ -4007,7 +4007,7 @@ void ASCOM_handleRoot()
   if (!SPIFFS.begin())
   {
     DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
-    DebugPrintln("ascomserver: build_default_homepage");
+    DebugPrintln(F("ascomserver: build_default_homepage"));
     AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
     AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
     AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
@@ -4035,7 +4035,7 @@ void ASCOM_handleRoot()
     else
     {
       DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
-      DebugPrintln("ascomserver: build_default_homepage");
+      DebugPrintln(F("ascomserver: build_default_homepage"));
       AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
       AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
       AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
@@ -4096,7 +4096,7 @@ void start_ascomremoteserver(void)
   ascomserver->begin();
   ascomserverstate = RUNNING;
   delay(10);                        // small pause so background tasks can run
-  DebugPrintln(F("start ascom server: RUNNING"));
+  DebugPrintln("start ascom server: RUNNING");
 }
 
 void stop_ascomremoteserver(void)
@@ -4111,7 +4111,7 @@ void stop_ascomremoteserver(void)
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
 
   if ( ascomdiscoverystate == STOPPED )
@@ -4121,7 +4121,7 @@ void stop_ascomremoteserver(void)
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
   delay(10);                        // small pause so background tasks can run
 }
@@ -4136,27 +4136,27 @@ void stop_ascomremoteserver(void)
 
 void start_otaservice()
 {
-  DebugPrintln(F(STARTOTASERVICESTR));
+  DebugPrintln(STARTOTASERVICESTR);
   myoled->oledtextmsg(STARTOTASERVICESTR, -1, false, true);
   ArduinoOTA.setHostname(OTAName);                      // Start the OTA service
   ArduinoOTA.setPassword(OTAPassword);
 
   ArduinoOTA.onStart([]()
   {
-    DebugPrintln(F(STARTSTR));
+    DebugPrintln(STARTSTR);
   });
   ArduinoOTA.onEnd([]()
   {
-    DebugPrintln(F(ENDSTR));
+    DebugPrintln(ENDSTR);
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
   {
-    DebugPrint(F(PROGRESSSTR));
+    DebugPrint(PROGRESSSTR);
     DebugPrintln((progress / (total / 100)));
   });
   ArduinoOTA.onError([](ota_error_t error)
   {
-    DebugPrint(F(ERRORSTR));
+    DebugPrint(ERRORSTR);
     DebugPrintln(error);
     if (error == OTA_AUTH_ERROR)
     {
@@ -4180,7 +4180,7 @@ void start_otaservice()
     }
   });
   ArduinoOTA.begin();
-  DebugPrintln(F(READYSTR));
+  DebugPrintln(READYSTR);
   otaupdatestate = RUNNING;
 }
 #endif // #if defined(OTAUPDATES)
@@ -4193,7 +4193,7 @@ void start_otaservice()
 
 void init_duckdns(void)
 {
-  DebugPrintln(F(SETUPDUCKDNSSTR));
+  DebugPrintln(SETUPDUCKDNSSTR);
   myoled->oledtextmsg(SETUPDUCKDNSSTR, -1, false, true);
   EasyDDNS.service("duckdns");                  // Enter your DDNS Service Name - "duckdns" / "noip"
   delay(5);
@@ -4267,12 +4267,12 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
   String PASSWORD;
   boolean status = false;
 
-  DebugPrintln(F(CHECKWIFICONFIGFILESTR));
+  DebugPrintln(CHECKWIFICONFIGFILESTR);
   File f = SPIFFS.open(filename, "r");                          // file open to read
   if (!f)
   {
     TRACE();
-    DebugPrintln(F(FILENOTFOUNDSTR));
+    DebugPrintln(FILENOTFOUNDSTR);
   }
   else
   {
@@ -4285,7 +4285,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
     if (error)
     {
       TRACE();
-      DebugPrintln(F(DESERIALIZEERRORSTR));
+      DebugPrintln(DESERIALIZEERRORSTR);
     }
     else
     {
@@ -4428,7 +4428,7 @@ void setup()
 
 #ifdef ACCESSPOINT
   myoled->oledtextmsg(STARTAPSTR, -1, true, true);
-  DebugPrintln(F(STARTAPSTR));
+  DebugPrintln(STARTAPSTR));
   WiFi.config(ip, dns, gateway, subnet);
   WiFi.mode(WIFI_AP);
   WiFi.softAP(mySSID, myPASSWORD);
@@ -4436,11 +4436,11 @@ void setup()
 
   // this is setup as a station connecting to an existing wifi network
 #ifdef STATIONMODE
-  DebugPrintln(F(STARTSMSTR));
+  DebugPrintln(STARTSMSTR);
   myoled->oledtextmsg(STARTSMSTR, -1, false, true);
   if (staticip == STATICIPON)                   // if staticip then set this up before starting
   {
-    DebugPrintln(F(SETSTATICIPSTR));
+    DebugPrintln(SETSTATICIPSTR);
     myoled->oledtextmsg(SETSTATICIPSTR, -1, false, true);
     WiFi.config(ip, dns, gateway, subnet);
     delay(5);
@@ -4449,15 +4449,15 @@ void setup()
   // Log on to LAN
   WiFi.mode(WIFI_STA);
   byte status = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
-  DebugPrint(F(WIFIBEGINSTATUSSTR));
+  DebugPrint(WIFIBEGINSTATUSSTR);
   DebugPrintln(String(status));
   delay(1000);                                  // wait 500ms
 
   for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
   {
-    DebugPrint(F(ATTEMPTCONNSTR));
+    DebugPrint(ATTEMPTCONNSTR);
     DebugPrintln(mySSID);
-    DebugPrint(F(ATTEMPTSSTR));
+    DebugPrint(ATTEMPTSSTR);
     DebugPrint(attempts);
     delay(1000);                                // wait 1s
 
@@ -4465,8 +4465,8 @@ void setup()
     myoled->oledtextmsg(ATTEMPTSSTR, attempts, false, true);
     if (attempts > 9)                          // if this attempt is 10 or more tries
     {
-      DebugPrintln(F(APCONNECTFAILSTR));
-      DebugPrintln(F(WIFIRESTARTSTR));
+      DebugPrintln(APCONNECTFAILSTR);
+      DebugPrintln(WIFIRESTARTSTR);
       myoled->oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
 	    myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
       delay(2000);
@@ -4489,13 +4489,13 @@ void setup()
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Starting TCP Server
-  DebugPrintln(F(STARTTCPSERVERSTR));
+  DebugPrintln(STARTTCPSERVERSTR);
   myoled->oledtextmsg(STARTTCPSERVERSTR, -1, false, true);
   start_tcpipserver();
-  DebugPrintln(F(GETLOCALIPSTR));
+  DebugPrintln(GETLOCALIPSTR);
   ESP32IPAddress = WiFi.localIP();
   delay(100);                                   // keep delays small else issue with ASCOM
-  DebugPrintln(F(TCPSERVERSTARTEDSTR));
+  DebugPrintln(TCPSERVERSTARTEDSTR);
   myoled->oledtextmsg(TCPSERVERSTARTEDSTR, -1, false, true);
 
   // set packet counts to 0
@@ -4503,13 +4503,13 @@ void setup()
   packetssent = 0;
 
   // connection established
-  DebugPrint(F(SSIDSTR));
+  DebugPrint(SSIDSTR);
   DebugPrintln(mySSID);
-  DebugPrint(F(IPADDRESSSTR));
+  DebugPrint(IPADDRESSSTR);
   DebugPrintln(WiFi.localIP());
   DebugPrint(PORTSTR);
   DebugPrintln(SERVERPORT);
-  DebugPrintln(F(SERVERREADYSTR));
+  DebugPrintln(SERVERREADYSTR);
   myIP = WiFi.localIP();
 //  ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
   snprintf(ipStr, sizeof(ipStr), "%i.%i.%i.%i",  myIP[0], myIP[1], myIP[2], myIP[3]);
@@ -4524,13 +4524,13 @@ void setup()
   // assign to current working values
   ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
 
-  DebugPrint(F(SETUPDRVBRDSTR));
+  DebugPrint(SETUPDRVBRDSTR);
   DebugPrintln(DRVBRD);
   myoled->oledtextmsg(SETUPDRVBRDSTR, DRVBRD, true, true);
 
   driverboard = new DriverBoard(DRVBRD);
 
-  DebugPrintln(F(DRVBRDDONESTR));
+  DebugPrintln(DRVBRDDONESTR);
   myoled->oledtextmsg(DRVBRDDONESTR, -1, false, true);
   delay(5);
 
@@ -4549,11 +4549,11 @@ void setup()
   driverboard->setmotorspeed(mySetupData->get_motorSpeed());  // restore motorspeed
   driverboard->setstepmode(mySetupData->get_stepmode());      // restore stepmode
 
-  DebugPrintln(F(CHECKCPWRSTR));
+  DebugPrintln(CHECKCPWRSTR);
   if (mySetupData->get_coilpower() == 0)
   {
     driverboard->releasemotor();
-    DebugPrintln(F(CPWRRELEASEDSTR));
+    DebugPrintln(CPWRRELEASEDSTR);
   }
 
   delay(5);
@@ -4614,11 +4614,11 @@ void setup()
   init_duckdns();
 #endif
 
-  DebugPrint(F(CURRENTPOSSTR));
+  DebugPrint(CURRENTPOSSTR);
   DebugPrintln(fcurrentPosition);
-  DebugPrint(F(TARGETPOSSTR));
+  DebugPrint(TARGETPOSSTR);
   DebugPrintln(ftargetPosition);
-  DebugPrintln(F(SETUPENDSTR));
+  DebugPrintln(SETUPENDSTR);
   myoled->oledtextmsg(SETUPENDSTR, -1, false, true);
 
 #ifdef INOUTLEDS
@@ -4652,7 +4652,7 @@ void loop()
 #endif
 
 #ifdef LOOPTIMETEST
-  DebugPrint(F(LOOPSTARTSTR));
+  DebugPrint(LOOPSTARTSTR);
   DebugPrintln(millis());
 #endif
 
@@ -4750,10 +4750,10 @@ if (ConnectionStatus == disconnected)
         isMoving = 1;
         driverboard->enablemotor();
         MainStateMachine = State_InitMove;
-        DebugPrint(F(STATEINITMOVE));
-        DebugPrint(F(CURRENTPOSSTR));
+        DebugPrint(STATEINITMOVE);
+        DebugPrint(CURRENTPOSSTR);
         DebugPrintln(fcurrentPosition);
-        DebugPrint(F(TARGETPOSSTR));
+        DebugPrint(TARGETPOSSTR);
         DebugPrintln(ftargetPosition);
       }
       else
@@ -4765,7 +4765,7 @@ if (ConnectionStatus == disconnected)
         {
 //          Update_OledGraphics(oled_off);                // Display off after config saved
           oled = oled_off;
-          DebugPrint(F(CONFIGSAVEDSTR));                  
+          DebugPrint(CONFIGSAVEDSTR);                  
         }
 
 #ifdef PUSHBUTTONS
@@ -4798,7 +4798,7 @@ if (ConnectionStatus == disconnected)
             if ( mySetupData->get_coilpower() == 0 )
             {
               driverboard->releasemotor();
-              DebugPrintln(F(RELEASEMOTORSTR));
+              DebugPrintln(RELEASEMOTORSTR);
             }
             Parked = true;
           }
@@ -4841,7 +4841,7 @@ if (ConnectionStatus == disconnected)
 //          mySetupData->set_focuserdirection(DirOfTravel);
           //driverboard->setmotorspeed(BACKLASHSPEED);
 //          MainStateMachine = State_ApplyBacklash;
-          DebugPrint(F(STATEAPPLYBACKLASH));
+          DebugPrint(STATEAPPLYBACKLASH);
           DebugPrint(backlash_count);
           DebugPrint(F(" "));          
         }
@@ -4885,7 +4885,8 @@ if (ConnectionStatus == disconnected)
 
     case State_Moving:
 
-      if (xSemaphoreTake(timerSemaphore, 0) != pdTRUE)          // still on  track?
+      if (timerSemaphore == false)
+//      if (xSemaphoreTake(timerSemaphore, 0) != pdTRUE)          // still on  track?
       {
 
         if(halt_alert)            // halt command received => stop moving
@@ -4893,7 +4894,7 @@ if (ConnectionStatus == disconnected)
           halt_alert = false;     // reset alert flag
           driverboard->halt();
           MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(F(STATEDELAYAFTERMOVE));     
+          DebugPrintln(STATEDELAYAFTERMOVE);     
         }
 
         if (stepcount < steps)
@@ -4955,7 +4956,7 @@ if (ConnectionStatus == disconnected)
         }       
 #endif                
         MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(F(STATEDELAYAFTERMOVE));     
+        DebugPrintln(STATEDELAYAFTERMOVE);     
       }
       break;
 
@@ -4971,7 +4972,8 @@ if (ConnectionStatus == disconnected)
         driverboard->initmove(DirOfTravel, backlash_count);   // init job for the timer ISR
         flag = false;                                 // mark job is done for the next turn
       }
-      else if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)  // wait for message "well done" from timer ISR 
+      else if (timerSemaphore == true)  // wait for message "well done" from timer ISR       
+//      else if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)  // wait for message "well done" from timer ISR 
       {
         TimeStampDelayAfterMove = millis();
         MainStateMachine = State_DelayAfterMove;
@@ -5007,7 +5009,7 @@ if (ConnectionStatus == disconnected)
   }
 
 #ifdef LOOPTIMETEST
-  DebugPrint(F(LOOPENDSTR));
+  DebugPrint(LOOPENDSTR);
   DebugPrintln(millis());
 #endif
 } // end Loop()

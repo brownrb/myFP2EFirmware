@@ -191,6 +191,7 @@ extern const char* BACKLASHINSTEPSSTR;
 extern const char* BACKLASHOUTSTEPSSTR;
 extern const char* BLUETOOTHSTR;
 extern const char* LOCALSERIALSTR;
+extern const char* SSPIFFSFILENOTFOUNDSTR;
 
 // joystick messages
 #define UPDATEJOYSTICKSTR     "joystick: update joystick"

@@ -272,8 +272,8 @@ byte SetupData::SavePersitantConfiguration()
   File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
   if (!file)
   {
-    TRACE();
-    DebugPrintln(F(CREATEFILEFAILSTR));
+//    TRACE();
+    DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
 
@@ -318,13 +318,13 @@ byte SetupData::SavePersitantConfiguration()
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
-    DebugPrintln(F(WRITEFILEFAILSTR));
+    DebugPrintln(WRITEFILEFAILSTR);
     file.close();     // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    DebugPrintln(WRITEFILESUCCESSSTR);
     file.close();     // Close the file
     return true;
   }
@@ -340,7 +340,7 @@ byte SetupData::SaveVariableConfiguration()
   if (!file)
   {
     TRACE();
-    DebugPrintln(F(CREATEFILEFAILSTR));
+    DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
 
@@ -357,13 +357,13 @@ byte SetupData::SaveVariableConfiguration()
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
-    DebugPrintln(F(WRITEFILEFAILSTR));
+    DebugPrintln(WRITEFILEFAILSTR);
     file.close();     // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    DebugPrintln(WRITEFILESUCCESSSTR);
     file.close();     // Close the file
     return true;
   }

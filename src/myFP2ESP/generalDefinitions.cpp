@@ -108,3 +108,4 @@ const char* BACKLASHINSTEPSSTR  =  "Backlash In#= ";
 const char* BACKLASHOUTSTEPSSTR =  "Backlash Ou#= ";
 const char* BLUETOOTHSTR        =  "Bluetooth Mode";
 const char* LOCALSERIALSTR      =  "Local Serial Mode";
+const char* SSPIFFSFILENOTFOUNDSTR = "SSPIFFS file not found";

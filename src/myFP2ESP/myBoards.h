@@ -19,7 +19,7 @@
 // Uncomment only your board - ONLY ONE BOARD SHOULD BE UNCOMMENTED
 
 // ESP8266 Boards
-//#define DRVBRD WEMOSDRV8825
+#define DRVBRD WEMOSDRV8825
 //#define DRVBRD PRO2EULN2003           // DONE
 //#define DRVBRD PRO2EDRV8825           // DONE
 //#define DRVBRD PRO2EDRV8825BIG
@@ -29,7 +29,7 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -74,9 +74,9 @@
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
-#define TEMPPIN       4
-#define I2CDATAPIN    2
-#define I2CCLKPIN     1
+#define TEMPPIN       2//4
+#define I2CDATAPIN    SDA
+#define I2CCLKPIN     SCL
 #define DIRPIN        13                // D7 GPIOP13
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
@@ -236,7 +236,8 @@
 // ----------------------------------------------------------------------------------------------
 
 extern const char* DRVBRD_ID;
-extern volatile SemaphoreHandle_t timerSemaphore;
+//extern volatile SemaphoreHandle_t timerSemaphore;
+extern volatile bool timerSemaphore;
 
 class DriverBoard
 {

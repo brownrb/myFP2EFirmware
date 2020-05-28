@@ -32,7 +32,7 @@
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
-#define HOMEPOSITIONSWITCH 1
+//#define HOMEPOSITIONSWITCH 1
 
 // To enable backlash in this firmware, uncomment the next line
 #define BACKLASH 2

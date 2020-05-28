@@ -55,14 +55,20 @@
 
 
 
-// Stop button is attached to PIN 0 (IO0)
-//#define BTN_STOP_ALARM    0
+#if defined(ESP8266)  
+#include "ESP8266TimerInterrupt.h"
+#define ESP_ISR_ATTR    ICACHE_RAM_ATTR
+  ESP8266Timer ITimer;
+#else
+#define ESP_ISR_ATTR    IRAM_ATTR
+  hw_timer_t * timer = NULL;
+//  portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+//  volatile SemaphoreHandle_t timerSemaphore;
+#endif 
 
-hw_timer_t * timer = NULL;
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-volatile SemaphoreHandle_t timerSemaphore;
-volatile uint32_t stepcount = 0;
-bool stepdir;
+  volatile bool timerSemaphore = false;
+  volatile uint32_t stepcount = 0;
+  bool stepdir;
 
 
 //_______________ Timer Interrupt
@@ -78,7 +84,10 @@ stepcount   HPS_altert    stepdir           action
     !0        true        moving_out        step
 */
 
-void IRAM_ATTR onTimer()
+
+//_________________Timer ISR  (Interrupt Service Routine)______________________
+
+void ESP_ISR_ATTR onTimer()
 {
   static bool toggle = false;
   static bool  mjob = false;      // motor job is running or not
@@ -99,7 +108,8 @@ void IRAM_ATTR onTimer()
       stepcount = 0;              // just in case HPS_alert was fired up
       digitalWrite(LED, 0);       // debug LED off, stop blinling
       mjob = false;               // wait, and do nothing
-      xSemaphoreGiveFromISR(timerSemaphore, NULL);    // fire up semaphore
+//      xSemaphoreGiveFromISR(timerSemaphore, NULL);    // fire up semaphore
+      timerSemaphore = true;
     }
   }
 }
@@ -130,7 +140,7 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
       digitalWrite(STEPPIN, 0);
 
 // Create semaphore to inform us when the timer has fired
-      timerSemaphore = xSemaphoreCreateBinary();
+//      timerSemaphore = xSemaphoreCreateBinary();
 
       break;
 
@@ -206,7 +216,9 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 #endif
   } while(0);
 
+#ifdef HOMEPOSITIONSWITCH
   pinMode(HPSWPIN, INPUT_PULLUP);   // init home position sensor
+#endif
 }
 
 byte DriverBoard::getstepmode(void)
@@ -344,9 +356,13 @@ void DriverBoard::movemotor(byte dir)
 
 uint32_t DriverBoard::halt(void)
 {
+#if defined(ESP8266) 
+  ITimer.detachInterrupt();
+#else    
   timerAlarmDisable(timer);		// stop alarm
   timerDetachInterrupt(timer);	// detach interrupt
   timerEnd(timer);			// end timer
+#endif  
   DebugPrint(F(">halt_alert "));
   delay(10);
   return stepcount;
@@ -365,6 +381,11 @@ void DriverBoard::initmove(bool dir, unsigned long steps)
   DebugPrint(F(":"));  
   DebugPrint(steps);
   DebugPrint(F(" "));
+  
+#if defined(ESP8266) 
+  if (ITimer.attachInterruptInterval(3000, onTimer) == false)
+    DebugPrint(F("Can't set ITimer correctly. Select another freq. or interval"));
+#else
 
   // Use 1st timer of 4 (counted from zero).
   // Set 80 divider for prescaler (see ESP32 Technical Reference Manual)
@@ -372,10 +393,10 @@ void DriverBoard::initmove(bool dir, unsigned long steps)
   timerAttachInterrupt(timer, &onTimer, true);  // Attach onTimer function to our timer.
 
   // Set alarm to call onTimer function every second (value in microseconds).
-  // Repeat the alarm (third parameter)
-  
+  // Repeat the alarm (third parameter) 
   timerAlarmWrite(timer, 3000, true);   // timer for ISR = 3 ms
   timerAlarmEnable(timer);              // start timer alarm
+#endif  
 }
 
 
