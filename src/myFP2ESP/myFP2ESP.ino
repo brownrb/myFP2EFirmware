@@ -1880,6 +1880,22 @@ void MANAGEMENT_buildhome(void)
 #else
       MHomePage.replace("%OLED%", "Not defined");
 #endif
+      // temperature
+#if defined(TEMPERATUREPROBE)
+      // Celcius=1, Fahrenheit=0
+      if ( mySetupData->get_tempmode() == 1 )
+      {
+        // celsius - Change to Fahrenheit
+        MHomePage.replace("%TEMP%", String(DISPLAYFSTR));
+      }
+      else
+      {
+        // Fahrenheit - change to celsius
+        MHomePage.replace("%TEMP%", String(DISPLAYCSTR));
+      }
+#else
+      MHomePage.replace("%TEMP%", "Tem[ probe not defined");
+#endif
       // display heap memory for tracking memory loss?
       // only esp32?
       MHomePage.replace("%HEAP%", String(ESP.getFreeHeap()));
@@ -2229,6 +2245,7 @@ void MANAGEMENT_handleroot(void)
       }
     }
   }
+  
   // if update display state
   String d_str = mserver.arg("di");
   if ( d_str != "" )
@@ -2250,6 +2267,29 @@ void MANAGEMENT_handleroot(void)
 #endif
     }
   }
+  
+  // if temp mode update
+  String t_str = mserver.arg("tm");
+  if ( t_str != "" )
+  {
+    DebugPrint("Set temp mode: ");
+    DebugPrintln(d_str);
+    if ( t_str == "cel" )
+    {
+      mySetupData->set_tempmode(1);
+#ifdef OLEDTEXT
+      myoled->Display_On();
+#endif
+    }
+    else if ( t_str == "fah" )
+    {
+      mySetupData->set_tempmode(0);
+#ifdef OLEDTEXT
+      myoled->Display_Off();
+#endif
+    }
+  }
+  
   MANAGEMENT_buildhome();
 
   // send the homepage to a connected client
@@ -3022,22 +3062,24 @@ void WEBSERVER_buildhome(void)
 #ifdef TEMPERATUREPROBE
       if ( mySetupData->get_tempmode() == 1)
       {
-        WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1), 2));
+        String tpstr = String(read_temp(1), 2) + " c";
+        WHomePage.replace("%TEMP%", tpstr);
       }
       else
       {
         float ft = read_temp(1);
         ft = (ft * 1.8) + 32;
-        WHomePage.replace("%WSTEMPERATURE%", String(ft, 2));
+        String tpstr = String(ft, 2) + " f";
+        WHomePage.replace("%TEMP%", tpstr);
       }
 #else
       if ( mySetupData->get_tempmode() == 1)
       {
-        WHomePage.replace("%TEMP%", "20.00");
+        WHomePage.replace("%TEMP%", "20.00 c");
       }
       else
       {
-        WHomePage.replace("%TEMP%", "68.00");
+        WHomePage.replace("%TEMP%", "68.00 f");
       }
 #endif
       WHomePage.replace("%TPRN%", String(mySetupData->get_tempprecision()));
@@ -3151,13 +3193,11 @@ void WEBSERVER_buildhome(void)
 #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
       if ( mySetupData->get_displayenabled() == 1 )
       {
-        // checked already
-        WHomePage.replace("%OLED%", "OFF");
+        WHomePage.replace("%OLED%", String(DISPLAYONSTR));
       }
       else
       {
-        // not checked
-        WHomePage.replace("%OLED%", "ON");
+        WHomePage.replace("%OLED%", String(DISPLAYOFFSTR));
       }
 #else
       WHomePage.replace("%OLED%", "Display not defined");

@@ -148,9 +148,9 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSFAST        2000
+#define MSFAST        4000
 #define MSMED         8000
-#define MSSLOW        12000
+#define MSSLOW        13000
 #endif
 #if (DRVBRD == PRO2EL293DMINI)
 #define TEMPPIN       10

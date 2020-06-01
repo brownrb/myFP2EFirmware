@@ -1,3 +1,8 @@
+// Fix for OLED text on Management and Web server pages
+// Fix for display of temperature on Web Server pages
+// Add ability to change temp between C/F on maanagement web server page
+// Presets fix
+
 // r119
 // Add alpacadiscovery protocol support (UDP port 32227, IPv4)
 // Move ASCOMGUID into ascom definitions rather than hard coded

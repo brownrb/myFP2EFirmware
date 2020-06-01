@@ -78,8 +78,11 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
       mystepper->setSpeed(5);      // DONE
 #endif
-#if (DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N)
-      mystepper->setSpeed(20);      // DONE
+#if (DRVBRD == PRO2EL298N)
+      mystepper->setSpeed(10);      // DONE
+#endif
+#if (DRVBRD == PRO2ESP32L298N)
+      mystepper->setSpeed(20);     // DONE
 #endif
 #if (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
       mystepper->setSpeed(5);       // TODO
