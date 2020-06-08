@@ -18,6 +18,7 @@
 // ----------------------------------------------------------------------------------------------
 // Uncomment only your board - ONLY ONE BOARD SHOULD BE UNCOMMENTED
 
+#if defined(ESP8266)
 // ESP8266 Boards
 #define DRVBRD WEMOSDRV8825
 //#define DRVBRD PRO2EULN2003           // DONE
@@ -28,15 +29,19 @@
 //#define DRVBRD PRO2EL298N             // DONE
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
+#else
 // ESP32 Boards
-//#define DRVBRD PRO2ESP32DRV8825
+#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
 //#define DRVBRD PRO2ESP32L9110S
 //#define DRVBRD PRO2ESP32R3WEMOS
+#endif
 
-
+#ifndef DRVBRD
+#error no board defined
+#endif 
 
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
 #define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266

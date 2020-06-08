@@ -95,7 +95,7 @@ OLED_NON::OLED_NON()
 
      
 //OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64) 
-OLED_GRAPHIC::OLED_GRAPHIC()  :  OLED_NON(), SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64)
+OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64) , OLED_NON()
 {
   if(connected)
   {
@@ -199,13 +199,13 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
   else
   {
     char dir = (mySetupData->get_focuserdirection() == moving_in ) ? '<' : '>';
-    snprintf(buffer, sizeof(buffer), "%i:%i %c", fcurrentPosition, fcurrentPosition % driverboard->getstepmode(), dir);
+    snprintf(buffer, sizeof(buffer), "%u:%i %c", fcurrentPosition, (int)(fcurrentPosition % driverboard->getstepmode()), dir);
     drawString(64, 28, buffer);
 
     setFont(ArialMT_Plain_10);   
-    snprintf(buffer, sizeof(buffer), "µSteps: %i MaxPos: %i", driverboard->getstepmode(),mySetupData->get_maxstep());
+    snprintf(buffer, sizeof(buffer), "µSteps: %u MaxPos: %u", driverboard->getstepmode(),mySetupData->get_maxstep());
     drawString(64, 0, buffer);
-    snprintf(buffer, sizeof(buffer), "TargetPos:  %i", ftargetPosition);
+    snprintf(buffer, sizeof(buffer), "TargetPos:  %u", ftargetPosition);
     drawString(64, 12, buffer);
   }
 

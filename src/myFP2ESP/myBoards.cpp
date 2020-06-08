@@ -376,6 +376,8 @@ void DriverBoard::initmove(bool dir, unsigned long steps)
   digitalWrite(ENABLEPIN, 0);           // enable motor driver
   delay(1);                             // wait a little for the motor driver to power up
 
+  timerSemaphore = false;
+  
   DebugPrint(F(">initmove "));
   DebugPrint(dir);  
   DebugPrint(F(":"));  

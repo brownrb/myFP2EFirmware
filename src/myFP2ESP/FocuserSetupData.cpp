@@ -65,7 +65,7 @@ SetupData::SetupData(void)
 byte SetupData::LoadConfiguration()
 {
   byte retval = 0;
-  char data[512];
+//  char data[512];
 
   // Open file for reading
   File file = SPIFFS.open(filename_persistant, "r");
