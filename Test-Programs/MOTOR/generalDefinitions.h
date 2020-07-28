@@ -9,11 +9,12 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
+
+
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
 
 #include <Arduino.h>
-
 // ----------------------------------------------------------------------------------------------
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
@@ -55,13 +56,10 @@
 #define LCDPAGETIMEMIN        2             // 2s minimum lcd page display time
 #define LCDPAGETIMEMAX        10            // 10s maximum lcd page display time
 #define DEFAULTSAVETIME       30000         // default time to wait before saving data to SPIFFS
-//#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
+#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
+#define HPSWOPEN              0             // hpsw states refelect status of switch
+#define HPSWCLOSED            1
 
-#ifdef HOMEPOSITIONSWITCH
-#define HPS_alert             !((bool)digitalRead(HPSWPIN))
-#else
-#define HPS_alert             false
-#endif
 
 #define SLOW                  0             // motorspeeds
 #define MED                   1
@@ -90,6 +88,7 @@
 
 extern const char* programVersion;
 extern const char* ProgramAuthor;
+
 
 extern const char* STATEMOVINGSTR;
 extern const char* STATEAPPLYBACKLASH;
@@ -142,11 +141,6 @@ extern const char* TCPCLIENTDISCONNECTSTR;
 extern const char* APCONNECTFAILSTR;
 extern const char* CONNECTEDSTR;
 extern const char* I2CDEVICENOTFOUNDSTR;
-extern const char* ASCOMREMOTESTR;
-
-extern const char* MANAGEMENTURLNOTFOUNDSTR;
-extern const char* WEBSERVERURLNOTFOUNDSTR;
-extern const char* ASCOMSERVERURLNOTFOUNDSTR;
 
 extern const char* WRITEFILEFAILSTR;
 extern const char* WRITEFILESUCCESSSTR;
@@ -191,14 +185,13 @@ extern const char* BACKLASHINSTEPSSTR;
 extern const char* BACKLASHOUTSTEPSSTR;
 extern const char* BLUETOOTHSTR;
 extern const char* LOCALSERIALSTR;
-extern const char* FSFILENOTFOUNDSTR;
 
 // joystick messages
-#define UPDATEJOYSTICKSTR         "joystick: update joystick"
-#define JOYSTICKVALSTR            "Raw joyval:"
-#define JOYSTICKXINVALSTR         "X IN joyval:"
-#define JOYSTICKSPEEDSTR          ", Speed:"
-#define JOYSTICKXOUTVALSTR        "X OUT joyval:"
+#define UPDATEJOYSTICKSTR     "joystick: update joystick"
+#define JOYSTICKVALSTR        "Raw joyval:"
+#define JOYSTICKXINVALSTR     "X IN joyval:"
+#define JOYSTICKSPEEDSTR      ", Speed:"
+#define JOYSTICKXOUTVALSTR    "X OUT joyval:"
 
 // defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
 #define ASCOMREMOTESTR            "ASCOM Remote: "
@@ -213,13 +206,13 @@ extern const char* FSFILENOTFOUNDSTR;
 #define PLAINTEXTPAGETYPE         "text/plain"
 #define JSONTEXTPAGETYPE          "text/json"
 #define JSONPAGETYPE              "application/json"
-#define FILENOTFOUNDSTR           "File!found"
+#define FILENOTFOUNDSTR           "File Not Found"
 #define FILEFOUNDSTR              "File found"
-#define CANNOTCREATEFILESTR       "!create file"
+#define CANNOTCREATEFILESTR       "Unable to create file"
 
-#define SPIFFSNOTSTARTEDSTR       "!start SPIFFS"
+#define SPIFFSNOTSTARTEDSTR       "Unable to start SPIFFS"
 #define BUILDDEFAULTPAGESTR       "build default page"
-#define SPIFFSFILENOTFOUNDSTR     "file !found"
+#define SPIFFSFILENOTFOUNDSTR     "file not found in spiffs"
 #define READPAGESTR               "read page into string"
 #define PROCESSPAGESTARTSTR       "process page start"
 #define PROCESSPAGEENDSTR         "process page done"
@@ -234,8 +227,23 @@ extern const char* FSFILENOTFOUNDSTR;
 #define SERVERSTATERUNSTR         "RUNNING"
 #define SENDPAGESTR               "Send page"
 
-#define MDNSSTARTFAILSTR          "Err setting up MDNS responder"
+#define MDNSSTARTFAILSTR          "Error setting up MDNS responder!"
 #define MDNSSTARTEDSTR            "mDNS responder started"
+
+#define MYIPSTR                   "%IPSTR%"
+#define TSSTATUSSTR               "%TSTATUS%"
+#define TSPORTSTR                 "%TSPORT%"
+#define TSBUTTONSTR               "%TSBUTTON%"
+#define MSPORTSTR                 "%MSSERVERPORT%"
+#define MSVERSIONSTR              "%MSPROGRAMVERSION%"
+#define MSNAMESTR                 "%MSPROGRAMNAME%"
+#define MSMODESTR                 "%MSCONTROLLERMODE%"
+#define WSVERSIONSTR              "%WSPROGRAMVERSION%"
+#define WSNAMESTR                 "%WSPROGRAMNAME%"
+#define WSCURRENTSTR              "%WSCURRENTPOSITION%"
+#define WSTARGETSTR               "%WSFTARGETPOSITION%"
+#define WSISMOVINGSTR             "%WSISMOVING%"
+#define WSMAXSTEPSTR              "%WSMAXSTEP%"
 
 #define STOPTSSTR                 "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopts\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
 #define STARTTSSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startts\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
@@ -249,10 +257,7 @@ extern const char* FSFILENOTFOUNDSTR;
 #define MDNSSTARTSTR              "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startmdns\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
 #define DISPLAYONSTR              "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"doff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
 #define DISPLAYOFFSTR             "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"don\"><input type=\"submit\" value=\"Turn On\"></form>"
-#define DISPLAYCSTR               "<form action=\"/\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"cel\" Checked><input type=\"submit\" value=\"Enable Celsius\"></form>"
-#define DISPLAYFSTR               "<form action=\"/\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"fah\"><input type=\"submit\" value=\"Enable Fahrenheit\"></form>"
-#define NOTDEFINEDSTR             "!defined in firmware"
-
+#define NOTDEFINEDSTR             "Not defined in firmware"
 
 // Controller Features
 #define ENABLEDLCD                1L
@@ -301,12 +306,12 @@ DebugPrintln(__PRETTY_FUNCTION__);
 #define DEBUG     1
 //#define LOOPTIMETEST 1
 
-#ifdef  DEBUG                                         // Macros are usually in all capital letters.
-#define DebugPrint(...) Serial.print(__VA_ARGS__)     // DPRINT is a macro, debug print
-#define DebugPrintln(...) Serial.println(__VA_ARGS__) // DPRINTLN is a macro, debug print with new line
+#ifdef  DEBUG                                         //Macros are usually in all capital letters.
+#define DebugPrint(...) Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
+#define DebugPrintln(...) Serial.println(__VA_ARGS__) //DPRINTLN is a macro, debug print with new line
 #else
-#define DebugPrint(...)                               // now defines a blank line
-#define DebugPrintln(...)                             // now defines a blank line
+#define DebugPrint(...)                               //now defines a blank line
+#define DebugPrintln(...)                             //now defines a blank line
 #endif
 
 

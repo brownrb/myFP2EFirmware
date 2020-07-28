@@ -1,10 +1,10 @@
-<html><head></head><meta http-equiv=refresh content="%WSREFRESHRATE%"><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>&copy; R. Brown, Holger M, 2019-2020. All rights reserved<br>IP Address: %IP%: Port: %PORT%, Firmware Version=%VER%<br>Driverboard = %NAME%</p><p><h3>FOCUSER PRESETS</h3></p><b>Position is : </b><span id="POSITION">%CPOS%</span><br><b>Target  : </b> %TPOS%<br><b>IsMoving: </b> <span id="ISMOVING">%MOVING%</span></p>
+<html><head></head><meta http-equiv=refresh content="%RAT%"><title>myFP2ESP WEB SERVER</title></head><body><h3>myFP2ESP Web based focus controller</h3><p>&copy; R. Brown, Holger M, 2019-2020. All rights reserved<br>IP Address: %IP%: Port: %POR%, Firmware Version=%VER%<br>Driverboard = %NAM%</p><p><h3>FOCUSER PRESETS</h3></p><b>Position is : </b><span id="POS">%CPO%</span><br><b>Target  : </b> %TPO%<br><b>IsMoving: </b> <span id="MOV">%MOV%</span></p>
 <script>
 function getposition() {
 var xhttp = new XMLHttpRequest();
 xhttp.onreadystatechange = function() {
 if (this.readyState == 4 && this.status == 200) {
-document.getElementById("POSITION").innerHTML = this.responseText;
+document.getElementById("POS").innerHTML = this.responseText;
 }
 };
 xhttp.open("GET", "position", true);
@@ -21,7 +21,7 @@ function getismoving() {
 var xhttp = new XMLHttpRequest();
 xhttp.onreadystatechange = function() {
 if (this.readyState == 4 && this.status == 200) {
-document.getElementById("ISMOVING").innerHTML = this.responseText;
+document.getElementById("MOV").innerHTML = this.responseText;
 }
 };
 xhttp.open("GET", "ismoving", true);

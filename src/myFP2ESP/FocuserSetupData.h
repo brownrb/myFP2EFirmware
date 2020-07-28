@@ -9,9 +9,8 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-#include <Arduino.h>
-
-#include "generalDefinitions.h"
+//#include <Arduino.h>              // no includes in includes
+//#include "generalDefinitions.h"
 
 #define DEFAULTPOSITION   5000L
 #define DEFAULTMAXSTEPS   80000L
@@ -101,12 +100,13 @@ class SetupData
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
     void StartDelayedUpdate(int &, int);
+	  void ListDir(const char*, uint8_t);
 
-    boolean ReqSaveData_var;    // Flag for request save variable data
-    boolean ReqSaveData_per;    // Flag for request save persitant data
+    boolean ReqSaveData_var;        // Flag for request save variable data
+    boolean ReqSaveData_per;        // Flag for request save persitant data
 
-    const String filename_persistant = "/data_per.jsn"; // persistant JSON setup data
-    const String filename_variable = "/data_var.jsn";    // variable  JSON setup data
+    const char* filename_persistant = "/data_per.jsn"; // persistant JSON setup data
+    const char* filename_variable = "/data_var.jsn";    // variable  JSON setup data
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
@@ -136,19 +136,11 @@ class SetupData
     byte tcdirection;               // direction in which to apply temperature compensation
     byte motorSpeed;                // speed of motor, slow, medium or fast
     byte displayenabled;            // if 1, display is enabled
-    unsigned long preset0;          // focuser presets can be used with software or ir-remote controller
-    unsigned long preset1;
-    unsigned long preset2;
-    unsigned long preset3;
-    unsigned long preset4;
-    unsigned long preset5;
-    unsigned long preset6;
-    unsigned long preset7;
-    unsigned long preset8;
-    unsigned long preset9;
+
+    unsigned long preset[10];       // focuser presets can be used with software or ir-remote controller
     unsigned long webserverport;
     unsigned long ascomalpacaport;
     int webpagerefreshrate;
     unsigned long mdnsport;
-    unsigned long tcpipport;
+    unsigned long tcpipport; 
 };

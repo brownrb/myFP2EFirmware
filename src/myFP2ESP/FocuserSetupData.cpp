@@ -12,13 +12,15 @@
 #include <ArduinoJson.h>
 
 #if defined(ESP8266)
-#include <FS.h>
+#include "LittleFS.h"
 #else
 #include "SPIFFS.h"
 #endif
 
 #include "FocuserSetupData.h"
 #include "generalDefinitions.h"
+
+//__ Constructor ________________________________________
 
 SetupData::SetupData(void)
 {
@@ -28,19 +30,43 @@ SetupData::SetupData(void)
   this->ReqSaveData_var  = false;
   this->ReqSaveData_per = false;
 
-  // mount SPIFFS
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  // mount FS
+  if (!LittleFS.begin())
   {
-    DebugPrintln(F("Error occurred when mounting SPIFFS"));
-    Serial.println(F("Format SPIFFS, please wait..."));
-    SPIFFS.format();
-    Serial.println(F("Format SPIFFS done"));
+    DebugPrintln(F("Error occurred when mounting FS"));
+    DebugPrintln(F("Format FS, please wait..."));
+    LittleFS.format();
+    DebugPrintln(F("Format FS done"));
   }
   else
   {
-    DebugPrintln("SPIFFS mounted");
+    DebugPrintln("FS mounted");
+    DebugPrint(F("list files on FS: "));
+    String str = "";
+    Dir dir = LittleFS.openDir("/");
+    while (dir.next())
+    {
+      str = dir.fileName() + ": " + dir.fileSize() + "  ";
+      DebugPrint(str);
+    }
+    DebugPrintln(F("...done"));
   }
-
+#else
+  // mount SPIFFS
+  if (!SPIFFS.begin())
+  {
+    DebugPrintln(F("FS !mounted"));
+    DebugPrintln(F("Formatting, please wait..."));
+    SPIFFS.format();
+    DebugPrintln(F("Format FS done"));
+  }
+  else
+  {
+    DebugPrintln("FS mounted");
+    this->ListDir("/", 0);
+  }
+#endif
   this->LoadConfiguration();
 };
 
@@ -48,9 +74,14 @@ SetupData::SetupData(void)
 byte SetupData::LoadConfiguration()
 {
   byte retval = 0;
+  //  char data[512];
 
   // Open file for reading
+#if defined(ESP8266)
+  File file = LittleFS.open(filename_persistant, "r");
+#else
   File file = SPIFFS.open(filename_persistant, "r");
+#endif
 
   if (!file)
   {
@@ -62,9 +93,10 @@ byte SetupData::LoadConfiguration()
     String data = file.readString(); // read content of the text file
     DebugPrint(F("SPIFFS. Persistant SetupData= "));
     DebugPrintln(data);           // ... and print on serial
-
+    file.close();
+    
     // Allocate a temporary JsonDocument
-    DynamicJsonDocument doc_per(DEFAULTDOCSIZE);
+    StaticJsonDocument<DEFAULTDOCSIZE> doc_per;
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_per, data);
@@ -95,16 +127,10 @@ byte SetupData::LoadConfiguration()
       this->tcdirection           = doc_per["tcdir"];
       this->motorSpeed            = doc_per["motorspeed"];
       this->displayenabled        = doc_per["displaystate"];
-      this->preset0               = doc_per["preset0"];
-      this->preset1               = doc_per["preset1"];
-      this->preset2               = doc_per["preset2"];
-      this->preset3               = doc_per["preset3"];
-      this->preset4               = doc_per["preset4"];
-      this->preset5               = doc_per["preset5"];
-      this->preset6               = doc_per["preset6"];
-      this->preset7               = doc_per["preset7"];
-      this->preset8               = doc_per["preset8"];
-      this->preset9               = doc_per["preset9"];
+      for (int i = 0; i < 10; i++)
+      {
+        this->preset[i]           = doc_per["preset"][i];
+      }
       this->webserverport         = doc_per["wsport"];
       this->ascomalpacaport       = doc_per["ascomport"];
       this->webpagerefreshrate    = doc_per["wprefreshrate"];
@@ -115,7 +141,11 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(F("config file persistant data loaded"));
   }
 
+#if defined(ESP8266)
+  file = LittleFS.open(filename_variable, "r");
+#else
   file = SPIFFS.open(filename_variable, "r");
+#endif
   if (!file)
   {
     DebugPrintln(F("no config file variable data found, load default values"));
@@ -129,7 +159,7 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(data);               // ... and print on serial
 
     // Allocate a temporary JsonDocument
-    DynamicJsonDocument doc_var(DEFAULTVARDOCSIZE);
+    StaticJsonDocument<DEFAULTVARDOCSIZE> doc_var;
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_var, data);
@@ -158,9 +188,13 @@ void SetupData::SetFocuserDefaults(void)
 {
   LoadDefaultPersistantData();
   LoadDefaultVariableData();
-
+#if defined(ESP8266)
+  LittleFS.remove(filename_persistant);
+  LittleFS.remove(filename_variable);
+#else
   SPIFFS.remove(filename_persistant);
   SPIFFS.remove(filename_variable);
+#endif
 }
 
 void SetupData::LoadDefaultPersistantData()
@@ -185,22 +219,16 @@ void SetupData::LoadDefaultPersistantData()
   this->lcdpagetime           = LCDPAGETIMEMIN;       // 2, 3 -- 10
   this->motorSpeed            = FAST;
   this->displayenabled        = DEFAULTON;
-  this->preset0               = 0;
-  this->preset1               = 0;
-  this->preset2               = 0;
-  this->preset3               = 0;
-  this->preset4               = 0;
-  this->preset5               = 0;
-  this->preset6               = 0;
-  this->preset7               = 0;
-  this->preset8               = 0;
-  this->preset9               = 0;
+  for (int i = 0; i < 10; i++)
+  {
+    this->preset[i]       = 0;
+  }
   this->webserverport         = WEBSERVERPORT;    // 80
   this->ascomalpacaport       = ALPACAPORT;       // 4040
   this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
   this->mdnsport              = MDNSSERVERPORT;   // 7070
   this->tcpipport             = SERVERPORT;       // 2020
-  
+
   this->SavePersitantConfiguration();             // write default values to SPIFFS
 }
 
@@ -261,13 +289,17 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
 
 byte SetupData::SavePersitantConfiguration()
 {
-  SPIFFS.remove(filename_persistant);                // Delete existing file
-
+#if defined(ESP8266)
+  LittleFS.remove(filename_persistant);                // Delete existing file
+  File file = LittleFS.open(filename_persistant, "w"); // Open file for writing
+#else
+  SPIFFS.remove(filename_persistant);
   File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
+#endif
   if (!file)
   {
-    TRACE();
-    DebugPrintln(F(CREATEFILEFAILSTR));
+    //    TRACE();
+    DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
 
@@ -297,16 +329,10 @@ byte SetupData::SavePersitantConfiguration()
   doc["tcdir"]              = this->tcdirection;
   doc["motorspeed"]         = this->motorSpeed;
   doc["displaystate"]       = this->displayenabled;
-  doc["preset0"]            = this->preset0;
-  doc["preset1"]            = this->preset1;
-  doc["preset2"]            = this->preset2;
-  doc["preset3"]            = this->preset3;
-  doc["preset4"]            = this->preset4;
-  doc["preset5"]            = this->preset5;
-  doc["preset6"]            = this->preset6;
-  doc["preset7"]            = this->preset7;
-  doc["preset8"]            = this->preset8;
-  doc["preset9"]            = this->preset9;
+  for (int i = 0; i < 10; i++)
+  {
+    doc["preset"][i]        = this->preset[i];                  //Json array for presets
+  }
   doc["wsport"]             = this->webserverport;
   doc["ascomport"]          = this->ascomalpacaport;
   doc["mdnsport"]           = this->mdnsport;
@@ -317,13 +343,13 @@ byte SetupData::SavePersitantConfiguration()
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
-    DebugPrintln(F(WRITEFILEFAILSTR));
+    DebugPrintln(WRITEFILEFAILSTR);
     file.close();     // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    DebugPrintln(WRITEFILESUCCESSSTR);
     file.close();     // Close the file
     return true;
   }
@@ -332,14 +358,22 @@ byte SetupData::SavePersitantConfiguration()
 byte SetupData::SaveVariableConfiguration()
 {
   // Delete existing file
+#if defined(ESP8266)
+  LittleFS.remove(filename_variable);
+#else
   SPIFFS.remove(filename_variable);
+#endif
 
   // Open file for writing
+#if defined(ESP8266)
+  File file = LittleFS.open(this->filename_variable, "w");
+#else
   File file = SPIFFS.open(this->filename_variable, "w");
+#endif
   if (!file)
   {
     TRACE();
-    DebugPrintln(F(CREATEFILEFAILSTR));
+    DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
 
@@ -356,13 +390,13 @@ byte SetupData::SaveVariableConfiguration()
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
-    DebugPrintln(F(WRITEFILEFAILSTR));
+    DebugPrintln(WRITEFILEFAILSTR);
     file.close();     // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    DebugPrintln(WRITEFILESUCCESSSTR);
     file.close();     // Close the file
     return true;
   }
@@ -482,33 +516,7 @@ byte SetupData::get_displayenabled()
 
 unsigned long SetupData::get_focuserpreset(byte idx)
 {
-  idx = idx & 0x0f;     // get least significant nibble
-  idx = ( idx > 9 ) ? 9 : idx;
-  switch ( idx )
-  {
-    case 0: return this->preset0;
-      break;
-    case 1: return this->preset1;
-      break;
-    case 2: return this->preset2;
-      break;
-    case 3: return this->preset3;
-      break;
-    case 4: return this->preset4;
-      break;
-    case 5: return this->preset5;
-      break;
-    case 6: return this->preset6;
-      break;
-    case 7: return this->preset7;
-      break;
-    case 8: return this->preset8;
-      break;
-    case 9: return this->preset9;
-      break;
-    default:
-      return this->preset0;
-  }
+  return this->preset[idx % 10];
 }
 
 unsigned long SetupData::get_webserverport(void)
@@ -650,33 +658,7 @@ void SetupData::set_displayenabled(byte displaystate)
 
 void SetupData::set_focuserpreset(byte idx, unsigned long pos)
 {
-  idx = idx & 0x0f;     // get least significant nibble
-  idx = ( idx > 9 ) ? 9 : idx;
-  switch ( idx )
-  {
-    case 0: this->StartDelayedUpdate(this->preset0, pos);
-      break;
-    case 1: this->StartDelayedUpdate(this->preset1, pos);
-      break;
-    case 2: this->StartDelayedUpdate(this->preset2, pos);
-      break;
-    case 3: this->StartDelayedUpdate(this->preset3, pos);
-      break;
-    case 4: this->StartDelayedUpdate(this->preset4, pos);
-      break;
-    case 5: this->StartDelayedUpdate(this->preset5, pos);
-      break;
-    case 6: this->StartDelayedUpdate(this->preset6, pos);
-      break;
-    case 7: this->StartDelayedUpdate(this->preset7, pos);
-      break;
-    case 8: this->StartDelayedUpdate(this->preset8, pos);
-      break;
-    case 9: this->StartDelayedUpdate(this->preset9, pos);
-      break;
-    default: this->StartDelayedUpdate(this->preset0, pos);
-      break;
-  }
+  this->preset[idx % 10] = pos;
 }
 
 void SetupData::set_webserverport(unsigned long wsp)
@@ -745,5 +727,60 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
     this->SnapShotMillis = millis();
     org_data = new_data;
     DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+  }
+}
+
+void SetupData::ListDir(const char * dirname, uint8_t levels)
+{
+  DebugPrint(F("Listing directory: {"));
+
+#if defined(ESP8266)
+  File root = LittleFS.open(dirname, "r");
+#else
+  File root = SPIFFS.open(dirname);
+#endif
+
+  if (!root)
+    DebugPrintln(F(" - failed to open directory"));
+  else
+  {
+    if (!root.isDirectory())
+    {
+      DebugPrintln(F(" - not a directory"));
+    }
+    else
+    {
+      File file = root.openNextFile();
+
+      int i = 0;
+      while (file)
+      {
+        if (file.isDirectory())
+        {
+          DebugPrint(F("  DIR : "));
+          DebugPrintln(file.name());
+          if (levels)
+          {
+            this->ListDir(file.name(), levels - 1);
+          }
+        }
+        else
+        {
+          DebugPrint(file.name());
+          DebugPrint(F(":"));
+          DebugPrint(file.size());
+          if ((++i % 6) == 0)
+          {
+            DebugPrintln("");
+          }
+          else
+          {
+            DebugPrint(F("  "));
+          }
+        }
+        file = root.openNextFile();
+      }
+      DebugPrintln("}");
+    }
   }
 }
