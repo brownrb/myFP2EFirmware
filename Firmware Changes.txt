@@ -12,6 +12,7 @@
 // Fix for display of temperature on Web Server pages
 // Add ability to change temp between C/F on maanagement web server page
 // Presets fix
+// Remove references to driverboard->setmotorspeed
 
 // r119
 // Add alpacadiscovery protocol support (UDP port 32227, IPv4)

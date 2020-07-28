@@ -55,7 +55,7 @@ void SendMessage(const char *str)
   SerialBT.print(str);
 #elif defined(LOCALSERIAL)
   Serial.print(str);
-#endif  
+#endif
 }
 
 void SendPaket(const char token, const char *str)
@@ -107,14 +107,13 @@ bool ESP_Communication()
   long paramval = 0;
   bool halt_alert = false;
 
-  
 #if defined(BLUETOOTHMODE)
-      receiveString = STARTCMDSTR + queue.pop();
+  receiveString = STARTCMDSTR + queue.pop();
 #elif defined(LOCALSERIAL)
-      receiveString = STARTCMDSTR + queue.pop();
+  receiveString = STARTCMDSTR + queue.pop();
 #else   // for Accesspoint or Station mode
-      packetsreceived++;
-      receiveString = myclient.readStringUntil(EOFSTR);    // read until terminator
+  packetsreceived++;
+  receiveString = myclient.readStringUntil(EOFSTR);    // read until terminator
 #endif
 
   receiveString += EOFSTR;                                 // put back terminator
@@ -132,11 +131,11 @@ bool ESP_Communication()
       SendPaket('I', isMoving);
       break;
     case 2: // get controller status
-      SendPaket('E',"OK");      
+      SendPaket('E', "OK");
       break;
     case 3: // get firmware version
 #ifdef INDI
-      SendPaket('F', "291");      
+      SendPaket('F', "291");
 #else
       SendPaket('F', programVersion);
 #endif
@@ -148,39 +147,38 @@ bool ESP_Communication()
       break;
     case 6: // get temperature
 #if defined(TEMPERATUREPROBE)
-      SendPaket('Z', read_temp(0), 3);     
+      SendPaket('Z', read_temp(0), 3);
 #else
-      SendPaket('Z',"20.00");      
+      SendPaket('Z', "20.00");
 #endif
       break;
     case 8: // get maxStep
       SendPaket('M', mySetupData->get_maxstep());
-
       break;
     case 10: // get maxIncrement
-      SendPaket('Y', mySetupData->get_maxstep());   
+      SendPaket('Y', mySetupData->get_maxstep());
       break;
     case 11: // get coilpower
-      SendPaket('O',mySetupData->get_coilpower());      
+      SendPaket('O', mySetupData->get_coilpower());
       break;
     case 13: // get reverse direction setting, 00 off, 01 on
-      SendPaket('R', mySetupData->get_reversedirection());      
+      SendPaket('R', mySetupData->get_reversedirection());
       break;
     case 21: // get temp probe resolution
-      SendPaket('Q',mySetupData->get_tempprecision());      
+      SendPaket('Q', mySetupData->get_tempprecision());
       break;
     case 24: // get status of temperature compensation (enabled | disabled)
-      SendPaket('1',mySetupData->get_tempcompenabled());      
+      SendPaket('1', mySetupData->get_tempcompenabled());
       break;
     case 25: // get IF temperature compensation is available
 #if defined(TEMPERATUREPROBE)
-      SendPaket('A',"1"); // this focuser supports temperature compensation
+      SendPaket('A', "1"); // this focuser supports temperature compensation
 #else
-      SendPaket('A',"0");      
+      SendPaket('A', "0");
 #endif
       break;
     case 26: // get temperature coefficient steps/degree
-      SendPaket('B',mySetupData->get_tempcoefficient());      
+      SendPaket('B', mySetupData->get_tempcoefficient());
       break;
     case 29: // get stepmode
       SendPaket('S', mySetupData->get_stepmode());
@@ -189,7 +187,7 @@ bool ESP_Communication()
       SendPaket('U', mySetupData->get_stepsizeenabled());
       break;
     case 33: // get stepsize
-      SendPaket('T',mySetupData->get_stepsize(), 3);        // ????????????? check format
+      SendPaket('T', mySetupData->get_stepsize(), 3);       // ????????????? check format
       break;
     case 34: // get the time that an LCD screen is displayed for
       SendPaket('X', mySetupData->get_lcdpagetime());
@@ -207,10 +205,10 @@ bool ESP_Communication()
       SendPaket('C', mySetupData->get_motorSpeed());
       break;
     case 49: // aXXXXX
-      SendPaket('a', "b552efd");      
+      SendPaket('a', "b552efd");
       break;
     case 51: // return ESP8266Wifi Controller IP Address
-      SendPaket('d', ipStr);      
+      SendPaket('d', ipStr);
       break;
     case 52: // return ESP32 Controller number of TCP packets sent
       SendPaket('e', packetssent);
@@ -220,10 +218,10 @@ bool ESP_Communication()
       break;
     case 54: // return ESP32 Controller SSID
 #ifdef LOCALSERIAL
-      SendPaket('g', "SERIAL");     
+      SendPaket('g', "SERIAL");
 #endif
 #ifdef BLUETOOTH
-      SendPaket('g', "BLUETOOTH");      
+      SendPaket('g', "BLUETOOTH");
 #endif
 #if !defined(LOCALSERIAL) && !defined(BLUETOOTHMODE)
       SendPaket('g', mySSID);
@@ -233,7 +231,7 @@ bool ESP_Communication()
       SendPaket('0', driverboard->getstepdelay());
       break;
     case 58: // get controller features
-      SendPaket('m', Features);      
+      SendPaket('m', Features);
       break;
     case 62: // get update of position on lcd when moving (00=disable, 01=enable)
       SendPaket('L', mySetupData->get_lcdupdateonmove());
@@ -242,7 +240,7 @@ bool ESP_Communication()
 #ifdef HOMEPOSITIONSWITCH
       SendPaket('H', digitalRead(HPSWPIN));
 #else
-      SendPaket('H',"0");
+      SendPaket('H', "0");
 #endif
       break;
     case 72: // get DelayAfterMove
@@ -270,30 +268,21 @@ bool ESP_Communication()
       {
         byte preset = (byte) (receiveString[3] - '0');
         preset = (preset > 9) ? 9 : preset;
-        SendPaket('h', mySetupData->get_focuserpreset(preset));        
+        SendPaket('h', mySetupData->get_focuserpreset(preset));
       }
       break;
-
-    // only the set commands are listed here as they do not require a response
     case 28:              // :28#       None    home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
       break;
+
+    // the set commands are listed here as they do not require a response
     case 5: // :05xxxxxx# None    Set new target position to xxxxxx (and focuser initiates immediate move to xxxxxx)
-      // only if not already moving
-      if ( isMoving == 0 )
+      if ( isMoving == 0 )        // only if not already moving
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         ftargetPosition = (unsigned long)WorkString.toInt();
         ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
         myoled->update_oledtext_position();
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-        // restore motorspeed just in case
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
       }
       break;
     case 7: // set maxsteps
@@ -363,7 +352,6 @@ bool ESP_Communication()
 #endif
       break;
     case 27: // stop a move - like a Halt
-//      ftargetPosition = fcurrentPosition;
       halt_alert = true;
       break;
     case 30: // set step mode
@@ -379,11 +367,11 @@ bool ESP_Communication()
       paramval = DRV8825TEPMODE;            // stepmopde set by jumpers
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS)
-      if( paramval < STEP1 )
+      if ( paramval < STEP1 )
       {
         paramval = STEP1;
       }
-      else if( paramval > STEP32 )
+      else if ( paramval > STEP32 )
       {
         paramval = STEP32;
       }
@@ -446,11 +434,11 @@ bool ESP_Communication()
         ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
       }
       break;
-    case 48: // save settings to EEPROM
+    case 48: // save settings to FS
       // TODO: THIS SHOULD SAVE "ALL" FOCUSER SETTINGS
       mySetupData->set_fposition(fcurrentPosition); // need to save setting
       break;
-    case 56: // set motorspeed delay for current speed setting
+    case 56: // set motorspeed delay motor speed fast
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       driverboard->setstepdelay(WorkString.toInt());
       break;
@@ -464,10 +452,6 @@ bool ESP_Communication()
         long pos = (long)WorkString.toInt() + (long)fcurrentPosition;
         pos  = (pos < 0) ? 0 : pos;
         ftargetPosition = ( pos > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)pos;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-        // restore motorspeed just in case
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
       }
       break;
     case 71: // set DelayAfterMove in milliseconds
@@ -524,7 +508,7 @@ bool ESP_Communication()
       // ignore
       break;
     case 66: // get jogging state enabled/disabled
-      SendPaket('K', "0");      
+      SendPaket('K', "0");
       break;
     case 67: // set jogging direction, 0=IN, 1=OUT
       // ignore

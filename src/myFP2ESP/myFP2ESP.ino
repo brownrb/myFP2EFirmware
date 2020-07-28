@@ -53,9 +53,9 @@
 // Libraries
 // Arduino JSON 6.15.2
 // myOLED as in myFP2ELibs
-// IRRemoteESP32 as in myFP2ELibs
 // HalfStepperESP32 as in myFP2ELibs
-// myDallas Temperature 3.7.3A as in myFP2ELibs
+// myDallas Temperature as in myFP2ELibs
+// IRRemoteESP8266 https://github.com/crankyoldgit/IRremoteESP8266
 // Wire [as installed with Arduino 1.8.13]
 // OneWire 2.3.5
 // EasyDDNS 1.5.2
@@ -580,15 +580,12 @@ void update_irremote()
     {
       case IR_SLOW:
         mySetupData->set_motorSpeed(SLOW);
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());     // set the correct delay based on motorSpeed
         break;
       case IR_MEDIUM:
         mySetupData->set_motorSpeed(MED);
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());     // set the correct delay based on motorSpeed
         break;
       case IR_FAST:
         mySetupData->set_motorSpeed(FAST);
-        driverboard->setmotorspeed(mySetupData->get_motorSpeed());     // set the correct delay based on motorSpeed
         break;
       case IR_IN1:
         adjpos = -1;
@@ -664,10 +661,6 @@ void update_irremote()
       newpos = (newpos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newpos;
       ftargetPosition = newpos;
     }
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-    // restore motorspeed just in case
-    driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
   }
 }
 
@@ -2063,10 +2056,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(0, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2107,10 +2096,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(1, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2150,10 +2135,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(2, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2193,10 +2174,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(3, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2236,10 +2213,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(4, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2279,10 +2252,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(5, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2322,10 +2291,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(6, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2365,10 +2330,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(7, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2408,10 +2369,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(8, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2451,10 +2408,6 @@ void WEBSERVER_handlepresets(void)
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
       mySetupData->set_focuserpreset(9, (unsigned long) temp);
       ftargetPosition = temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -2554,10 +2507,6 @@ void WEBSERVER_handlemove()
     DebugPrintln(fcurrentPosition);
     DebugPrint(TARGETPOSSTR);
     DebugPrintln(ftargetPosition);
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-    // restore motorspeed just in case
-    driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
   }
 
   WEBSERVER_buildmove();
@@ -2836,10 +2785,6 @@ void WEBSERVER_handleroot()
       temp = fp.toInt();
       temp = (temp < 0) ? 0 : temp;
       ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-      // restore motorspeed just in case
-      driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
     }
   }
 
@@ -4081,10 +4026,6 @@ void  ASCOM_handlemoveput()
       ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
     }
   }
-#if defined(JOYSTICK1) || defined(JOYSTICK2)
-  // restore motorspeed just in case
-  driverboard->setmotorspeed(mySetupData->get_motorSpeed());
-#endif
 }
 
 void ASCOM_handlesupportedactionsget()
@@ -5004,7 +4945,6 @@ void loop()
                   // apply backlash
                   // save new direction of travel
           //          mySetupData->set_focuserdirection(DirOfTravel);
-                  //driverboard->setmotorspeed(BACKLASHSPEED);
           //          MainStateMachine = State_ApplyBacklash;
                   DebugPrint(STATEAPPLYBACKLASH);
                   DebugPrint(backlash_count);

@@ -50,7 +50,7 @@
 //#define INOUTLEDS 1
 
 // To enable the Infrared remote controller [ESP32 only], uncomment the next line
-//#define INFRAREDREMOTE
+#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 #define SHOWSTARTSCRN 1

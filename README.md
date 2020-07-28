@@ -124,9 +124,9 @@ Libraries
 
 * Arduino JSON 6.15.2
 * myOLED as in myFP2ELibs
-* IRRemoteESP8266 2.7.1
 * HalfStepperESP32 as in myFP2ELibs
-* Dallas Temperature 3.80
+* myDallas Temperature as in myFP2ELibs
+* IRRemoteESP8266 https://github.com/crankyoldgit/IRremoteESP8266
 * Wire [as installed with Arduino 1.8.13]
 * OneWire 2.3.5
 * EasyDDNS 1.5.2
