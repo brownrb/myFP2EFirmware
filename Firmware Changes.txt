@@ -1,17 +1,13 @@
 // r120
 // Fix for OLED text on Management and Web server pages
 // Fix for display of temperature on Web Server pages
-// Add ability to change temp between C/F on maanagement web server page
+// Add ability to change temp between C/F on management web server page
 // Presets fix
 // Use Timer interrupts to move motor
 // Remove speed settings in driverboard
 // Use common speed setting MSPEED for each driverboard
 // Move to LittleFS file system for ESP8266
 // Trim html files and code handling routines for Webserver and Management server
-// Fix for OLED text on Management and Web server pages
-// Fix for display of temperature on Web Server pages
-// Add ability to change temp between C/F on maanagement web server page
-// Presets fix
 // Remove references to driverboard->setmotorspeed
 
 // r119
