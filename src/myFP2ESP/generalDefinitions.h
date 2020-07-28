@@ -9,8 +9,6 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-
-
 #ifndef generalDefinitions_h
 #define generalDefinitions_h
 
@@ -57,9 +55,7 @@
 #define LCDPAGETIMEMIN        2             // 2s minimum lcd page display time
 #define LCDPAGETIMEMAX        10            // 10s maximum lcd page display time
 #define DEFAULTSAVETIME       30000         // default time to wait before saving data to SPIFFS
-#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
-//#define HPSWOPEN              0             // hpsw states refelect status of switch
-//#define HPSWCLOSED            1
+//#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
 
 #ifdef HOMEPOSITIONSWITCH
 #define HPS_alert             !((bool)digitalRead(HPSWPIN))
@@ -94,7 +90,6 @@
 
 extern const char* programVersion;
 extern const char* ProgramAuthor;
-
 
 extern const char* STATEMOVINGSTR;
 extern const char* STATEAPPLYBACKLASH;
@@ -147,6 +142,11 @@ extern const char* TCPCLIENTDISCONNECTSTR;
 extern const char* APCONNECTFAILSTR;
 extern const char* CONNECTEDSTR;
 extern const char* I2CDEVICENOTFOUNDSTR;
+extern const char* ASCOMREMOTESTR;
+
+extern const char* MANAGEMENTURLNOTFOUNDSTR;
+extern const char* WEBSERVERURLNOTFOUNDSTR;
+extern const char* ASCOMSERVERURLNOTFOUNDSTR;
 
 extern const char* WRITEFILEFAILSTR;
 extern const char* WRITEFILESUCCESSSTR;
@@ -194,11 +194,11 @@ extern const char* LOCALSERIALSTR;
 extern const char* SSPIFFSFILENOTFOUNDSTR;
 
 // joystick messages
-#define UPDATEJOYSTICKSTR     "joystick: update joystick"
-#define JOYSTICKVALSTR        "Raw joyval:"
-#define JOYSTICKXINVALSTR     "X IN joyval:"
-#define JOYSTICKSPEEDSTR      ", Speed:"
-#define JOYSTICKXOUTVALSTR    "X OUT joyval:"
+#define UPDATEJOYSTICKSTR         "joystick: update joystick"
+#define JOYSTICKVALSTR            "Raw joyval:"
+#define JOYSTICKXINVALSTR         "X IN joyval:"
+#define JOYSTICKSPEEDSTR          ", Speed:"
+#define JOYSTICKXOUTVALSTR        "X OUT joyval:"
 
 // defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
 #define ASCOMREMOTESTR            "ASCOM Remote: "
@@ -213,13 +213,13 @@ extern const char* SSPIFFSFILENOTFOUNDSTR;
 #define PLAINTEXTPAGETYPE         "text/plain"
 #define JSONTEXTPAGETYPE          "text/json"
 #define JSONPAGETYPE              "application/json"
-#define FILENOTFOUNDSTR           "File Not Found"
+#define FILENOTFOUNDSTR           "File!found"
 #define FILEFOUNDSTR              "File found"
-#define CANNOTCREATEFILESTR       "Unable to create file"
+#define CANNOTCREATEFILESTR       "!create file"
 
-#define SPIFFSNOTSTARTEDSTR       "Unable to start SPIFFS"
+#define SPIFFSNOTSTARTEDSTR       "!start SPIFFS"
 #define BUILDDEFAULTPAGESTR       "build default page"
-#define SPIFFSFILENOTFOUNDSTR     "file not found in spiffs"
+#define SPIFFSFILENOTFOUNDSTR     "file !found"
 #define READPAGESTR               "read page into string"
 #define PROCESSPAGESTARTSTR       "process page start"
 #define PROCESSPAGEENDSTR         "process page done"
@@ -234,23 +234,8 @@ extern const char* SSPIFFSFILENOTFOUNDSTR;
 #define SERVERSTATERUNSTR         "RUNNING"
 #define SENDPAGESTR               "Send page"
 
-#define MDNSSTARTFAILSTR          "Error setting up MDNS responder!"
+#define MDNSSTARTFAILSTR          "Err setting up MDNS responder"
 #define MDNSSTARTEDSTR            "mDNS responder started"
-
-#define MYIPSTR                   "%IPSTR%"
-#define TSSTATUSSTR               "%TSTATUS%"
-#define TSPORTSTR                 "%TSPORT%"
-#define TSBUTTONSTR               "%TSBUTTON%"
-#define MSPORTSTR                 "%MSSERVERPORT%"
-#define MSVERSIONSTR              "%MSPROGRAMVERSION%"
-#define MSNAMESTR                 "%MSPROGRAMNAME%"
-#define MSMODESTR                 "%MSCONTROLLERMODE%"
-#define WSVERSIONSTR              "%WSPROGRAMVERSION%"
-#define WSNAMESTR                 "%WSPROGRAMNAME%"
-#define WSCURRENTSTR              "%WSCURRENTPOSITION%"
-#define WSTARGETSTR               "%WSFTARGETPOSITION%"
-#define WSISMOVINGSTR             "%WSISMOVING%"
-#define WSMAXSTEPSTR              "%WSMAXSTEP%"
 
 #define STOPTSSTR                 "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopts\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
 #define STARTTSSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startts\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
@@ -264,7 +249,7 @@ extern const char* SSPIFFSFILENOTFOUNDSTR;
 #define MDNSSTARTSTR              "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startmdns\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
 #define DISPLAYONSTR              "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"doff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
 #define DISPLAYOFFSTR             "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"don\"><input type=\"submit\" value=\"Turn On\"></form>"
-#define NOTDEFINEDSTR             "Not defined in firmware"
+#define NOTDEFINEDSTR             "!defined in firmware"
 
 // Controller Features
 #define ENABLEDLCD                1L
@@ -310,7 +295,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ----------------------------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-#define DEBUG     1
+//#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         //Macros are usually in all capital letters.

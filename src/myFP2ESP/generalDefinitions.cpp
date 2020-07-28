@@ -9,9 +9,8 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-const char* programVersion        = "119";
+const char* programVersion        = "120";
 const char* ProgramAuthor         = "(c) R BROWN 2020 h120";
-
 
 const char* STATEMOVINGSTR        = ">Moving";
 const char* STATEAPPLYBACKLASH    = ">ApplyBacklash";
@@ -27,12 +26,12 @@ const char* SERIALSTARTSTR        = "Serial started";
 const char* DEBUGONSTR            = "Debug on";
 const char* BLUETOOTHSTARTSTR     = "Bluetooth started";
 const char* ATTEMPTCONNSTR        = "Attempt connection to= ";
-const char* APSTARTFAILSTR        = "Did not connect to AP ";
+const char* APSTARTFAILSTR        = "Fail starting AP ";
 const char* SERVERREADYSTR        = "Server Ready= ";
 const char* STARTSTR              = "Start";
 const char* ENDSTR                = "End";
 const char* PROGRESSSTR           = "Progress: ";
-const char* ERRORSTR              = "Error= ";
+const char* ERRORSTR              = "Err= ";
 const char* READYSTR              = "Ready";
 const char* SETUPDRVBRDSTR        = "Setup drvbrd= ";
 const char* DRVBRDDONESTR         = "Driver board done";
@@ -63,31 +62,24 @@ const char* TCPCLIENTCONNECTSTR   = "tcp client has connected";
 const char* TCPCLIENTDISCONNECTSTR = "tcp client has disconnected";
 const char* APCONNECTFAILSTR      = "Did not connect to AP ";
 const char* CONNECTEDSTR          = "Connected";
-const char* I2CDEVICENOTFOUNDSTR  = "I2C device not found";
+const char* I2CDEVICENOTFOUNDSTR  = "I2C device !found";
+const char* ASCOMREMOTESTR        = "ASCOM Remote";
 
-const char* WRITEFILEFAILSTR      = "Write to file failed";
+const char* MANAGEMENTURLNOTFOUNDSTR  = "<html><head><title>Management server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
+const char* WEBSERVERURLNOTFOUNDSTR   = "<html><head><title>Web-server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
+const char* ASCOMSERVERURLNOTFOUNDSTR = "<html><head><title>ASCOM server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
+
+const char* WRITEFILEFAILSTR      = "!write to file";
 const char* WRITEFILESUCCESSSTR   = "Write to file OK";
-const char* CREATEFILEFAILSTR     = "Unable to create file";
+const char* CREATEFILEFAILSTR     = "!create file";
 const char* CHECKWIFICONFIGFILESTR = "check for Wifi config file";
-const char* DESERIALIZEERRORSTR   = "Deserialization error";
-const char* SERVERNOTRUNNINGSTR   = "Server NOT running";
-
-const char* HPCLOSEDFPNOT0STR     = "HP closed, fcurrentPosition !=0";
-const char* HPCLOSEDFP0STR        = "HP closed, fcurrentPosition=0";
-const char* HPOPENFPNOT0STR       = "HP Open, fcurrentPosition=0";
-const char* HPMOVETILLCLOSEDSTR   = "HP MoveIN till closed";
-const char* HPMOVEINERRORSTR      = "HP MoveIN ERROR: HOMESTEPS exceeded";
-const char* HPMOVEINSTEPSSTR      = "HP MoveIN stepstaken=";
-const char* HPMOVEINFINISHEDSTR   = "HP MoveIN finished";
-const char* HPMOVETILLOPENSTR     = "HP Move out till OPEN";
-const char* HPMOVEOUTERRORSTR     = "HP MoveOUT ERROR: HOMESTEPS exceeded#";
-const char* HPMOVEOUTSTEPSSTR     = "HP MoveOUT stepstaken=";
-const char* HPMOVEOUTFINISHEDSTR  = "HP MoveOUT ended";
+const char* DESERIALIZEERRORSTR   = "Deserialization err";
+const char* SERVERNOTRUNNINGSTR   = "Server !running";
 
 // temperature probe messages
 const char* TPROBESTR             = "Tsensors= ";
-const char* TPROBENOTFOUNDSTR     = "Tprobe not found";
-const char* GETTEMPPROBESSTR      = "Get # of Tsensors";
+const char* TPROBENOTFOUNDSTR     = "Tprobe !found";
+const char* GETTEMPPROBESSTR      = "Get #Tsensors";
 const char* SETTPROBERESSTR       = "Set Tprecision to ";
 // oled messages
 
@@ -108,4 +100,4 @@ const char* BACKLASHINSTEPSSTR  =  "Backlash In#= ";
 const char* BACKLASHOUTSTEPSSTR =  "Backlash Ou#= ";
 const char* BLUETOOTHSTR        =  "Bluetooth Mode";
 const char* LOCALSERIALSTR      =  "Local Serial Mode";
-const char* SSPIFFSFILENOTFOUNDSTR = "SSPIFFS file not found";
+const char* SSPIFFSFILENOTFOUNDSTR = "SPIFFS file !found";

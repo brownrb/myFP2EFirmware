@@ -56,7 +56,7 @@
 #define ASCOMACTIONNOTIMPLEMENTED 0x40C
 #define ASCOMERRORMSGERROR        "Error"
 #define ASCOMERRORMSGNULL         ""
-#define ASCOMERRORNOTIMPLEMENTED  "Not implemented"
+#define ASCOMERRORNOTIMPLEMENTED  "!implemented"
 #define ASCOMERRORMSGINVALID      "Invalid operation"
 #define ASCOMNAME                 "\"myFP2ESPASCOMR\""
 #define ASCOMDESCRIPTION          "\"ASCOM driver for myFP2ESP controllers\""

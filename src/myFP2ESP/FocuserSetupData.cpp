@@ -12,14 +12,13 @@
 #include <ArduinoJson.h>
 
 #if defined(ESP8266)
-#include <FS.h>
+#include "LittleFS.h"
 #else
 #include "SPIFFS.h"
 #endif
 
 #include "FocuserSetupData.h"
 #include "generalDefinitions.h"
-
 
 //__ Constructor ________________________________________
 
@@ -31,33 +30,43 @@ SetupData::SetupData(void)
   this->ReqSaveData_var  = false;
   this->ReqSaveData_per = false;
 
-  // mount SPIFFS
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  // mount FS
+  if (!LittleFS.begin())
   {
-    DebugPrintln(F("Error occurred when mounting SPIFFS"));
-    Serial.println(F("Format SPIFFS, please wait..."));
-    SPIFFS.format();
-    Serial.println(F("Format SPIFFS done"));
+    DebugPrintln(F("Error occurred when mounting FS"));
+    DebugPrintln(F("Format FS, please wait..."));
+    LittleFS.format();
+    DebugPrintln(F("Format FS done"));
   }
   else
   {
-    DebugPrintln("SPIFFS mounted");
-
-#if defined(ESP8266)
-    DebugPrint(F("list files on SPIFFS: "));
+    DebugPrintln("FS mounted");
+    DebugPrint(F("list files on FS: "));
     String str = "";
-    Dir dir = SPIFFS.openDir("/");
-    while(dir.next())
+    Dir dir = LittleFS.openDir("/");
+    while (dir.next())
     {
       str = dir.fileName() + ": " + dir.fileSize() + "  ";
-      Serial.print(str);
+      DebugPrint(str);
     }
-    Serial.println(F("...done"));
-#else
-    this->ListDir("/", 0);    
-#endif
+    DebugPrintln(F("...done"));
   }
-
+#else
+  // mount SPIFFS
+  if (!SPIFFS.begin())
+  {
+    DebugPrintln(F("FS !mounted"));
+    DebugPrintln(F("Formatting, please wait..."));
+    SPIFFS.format();
+    DebugPrintln(F("Format FS done"));
+  }
+  else
+  {
+    DebugPrintln("FS mounted");
+    this->ListDir("/", 0);
+  }
+#endif
   this->LoadConfiguration();
 };
 
@@ -65,10 +74,14 @@ SetupData::SetupData(void)
 byte SetupData::LoadConfiguration()
 {
   byte retval = 0;
-//  char data[512];
+  //  char data[512];
 
   // Open file for reading
+#if defined(ESP8266)
+  File file = LittleFS.open(filename_persistant, "r");
+#else
   File file = SPIFFS.open(filename_persistant, "r");
+#endif
 
   if (!file)
   {
@@ -80,7 +93,8 @@ byte SetupData::LoadConfiguration()
     String data = file.readString(); // read content of the text file
     DebugPrint(F("SPIFFS. Persistant SetupData= "));
     DebugPrintln(data);           // ... and print on serial
-
+    file.close();
+    
     // Allocate a temporary JsonDocument
     StaticJsonDocument<DEFAULTDOCSIZE> doc_per;
 
@@ -113,7 +127,7 @@ byte SetupData::LoadConfiguration()
       this->tcdirection           = doc_per["tcdir"];
       this->motorSpeed            = doc_per["motorspeed"];
       this->displayenabled        = doc_per["displaystate"];
-      for(int i= 0; i<10; i++)
+      for (int i = 0; i < 10; i++)
       {
         this->preset[i]           = doc_per["preset"][i];
       }
@@ -127,7 +141,11 @@ byte SetupData::LoadConfiguration()
     DebugPrintln(F("config file persistant data loaded"));
   }
 
+#if defined(ESP8266)
+  file = LittleFS.open(filename_variable, "r");
+#else
   file = SPIFFS.open(filename_variable, "r");
+#endif
   if (!file)
   {
     DebugPrintln(F("no config file variable data found, load default values"));
@@ -170,9 +188,13 @@ void SetupData::SetFocuserDefaults(void)
 {
   LoadDefaultPersistantData();
   LoadDefaultVariableData();
-
+#if defined(ESP8266)
+  LittleFS.remove(filename_persistant);
+  LittleFS.remove(filename_variable);
+#else
   SPIFFS.remove(filename_persistant);
   SPIFFS.remove(filename_variable);
+#endif
 }
 
 void SetupData::LoadDefaultPersistantData()
@@ -197,7 +219,7 @@ void SetupData::LoadDefaultPersistantData()
   this->lcdpagetime           = LCDPAGETIMEMIN;       // 2, 3 -- 10
   this->motorSpeed            = FAST;
   this->displayenabled        = DEFAULTON;
-  for(int i= 0; i<10; i++)
+  for (int i = 0; i < 10; i++)
   {
     this->preset[i]       = 0;
   }
@@ -206,7 +228,7 @@ void SetupData::LoadDefaultPersistantData()
   this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
   this->mdnsport              = MDNSSERVERPORT;   // 7070
   this->tcpipport             = SERVERPORT;       // 2020
-  
+
   this->SavePersitantConfiguration();             // write default values to SPIFFS
 }
 
@@ -267,12 +289,16 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
 
 byte SetupData::SavePersitantConfiguration()
 {
-  SPIFFS.remove(filename_persistant);                // Delete existing file
-
+#if defined(ESP8266)
+  LittleFS.remove(filename_persistant);                // Delete existing file
+  File file = LittleFS.open(filename_persistant, "w"); // Open file for writing
+#else
+  SPIFFS.remove(filename_persistant);
   File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
+#endif
   if (!file)
   {
-//    TRACE();
+    //    TRACE();
     DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
@@ -303,8 +329,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["tcdir"]              = this->tcdirection;
   doc["motorspeed"]         = this->motorSpeed;
   doc["displaystate"]       = this->displayenabled;
-
-  for(int i=0; i<10; i++)
+  for (int i = 0; i < 10; i++)
   {
     doc["preset"][i]        = this->preset[i];                  //Json array for presets
   }
@@ -333,10 +358,18 @@ byte SetupData::SavePersitantConfiguration()
 byte SetupData::SaveVariableConfiguration()
 {
   // Delete existing file
+#if defined(ESP8266)
+  LittleFS.remove(filename_variable);
+#else
   SPIFFS.remove(filename_variable);
+#endif
 
   // Open file for writing
+#if defined(ESP8266)
+  File file = LittleFS.open(this->filename_variable, "w");
+#else
   File file = SPIFFS.open(this->filename_variable, "w");
+#endif
   if (!file)
   {
     TRACE();
@@ -697,46 +730,53 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
   }
 }
 
-
 void SetupData::ListDir(const char * dirname, uint8_t levels)
 {
   DebugPrint(F("Listing directory: {"));
 
 #if defined(ESP8266)
-  File root = SPIFFS.open(dirname,"r"); 
+  File root = LittleFS.open(dirname, "r");
 #else
   File root = SPIFFS.open(dirname);
 #endif
 
-  if(!root)
+  if (!root)
     DebugPrintln(F(" - failed to open directory"));
   else
   {
-    if(!root.isDirectory())
+    if (!root.isDirectory())
+    {
       DebugPrintln(F(" - not a directory"));
+    }
     else
     {
       File file = root.openNextFile();
 
-      int i=0;
-      while(file)
+      int i = 0;
+      while (file)
       {
-        if(file.isDirectory())
+        if (file.isDirectory())
         {
           DebugPrint(F("  DIR : "));
           DebugPrintln(file.name());
-          if(levels)
-            this->ListDir(file.name(), levels -1);           
-        } 
-        else 
+          if (levels)
+          {
+            this->ListDir(file.name(), levels - 1);
+          }
+        }
+        else
         {
           DebugPrint(file.name());
           DebugPrint(F(":"));
           DebugPrint(file.size());
           if ((++i % 6) == 0)
+          {
             DebugPrintln("");
+          }
           else
+          {
             DebugPrint(F("  "));
+          }
         }
         file = root.openNextFile();
       }
@@ -744,4 +784,3 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
     }
   }
 }
-

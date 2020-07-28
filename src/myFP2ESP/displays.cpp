@@ -22,8 +22,6 @@
 #include "generalDefinitions.h"
 #include "displays.h"
 
-
-
 //#ifdef OLEDTEXT
 //#include <Wire.h>                           // needed for I2C => OLED display text-only
 //#include <mySSD1306Ascii.h>
@@ -31,10 +29,7 @@
 
 //#endif // #ifdef OLEDTEXT
 
-
-
 extern bool TimeCheck(unsigned long, unsigned long);
-
 
 //__ helper function
 
@@ -93,7 +88,6 @@ OLED_NON::OLED_NON()
 
 //__constructor
 
-     
 //OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64) 
 OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64) , OLED_NON()
 {
@@ -199,17 +193,16 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
   else
   {
     char dir = (mySetupData->get_focuserdirection() == moving_in ) ? '<' : '>';
-    snprintf(buffer, sizeof(buffer), "%u:%i %c", fcurrentPosition, (int)(fcurrentPosition % driverboard->getstepmode()), dir);
+    snprintf(buffer, sizeof(buffer), "%lu:%i %c", fcurrentPosition, (int)(fcurrentPosition % driverboard->getstepmode()), dir);
     drawString(64, 28, buffer);
 
     setFont(ArialMT_Plain_10);   
-    snprintf(buffer, sizeof(buffer), "µSteps: %u MaxPos: %u", driverboard->getstepmode(),mySetupData->get_maxstep());
+    snprintf(buffer, sizeof(buffer), "µSteps: %i MaxPos: %lu", driverboard->getstepmode(),mySetupData->get_maxstep());
     drawString(64, 0, buffer);
-    snprintf(buffer, sizeof(buffer), "TargetPos:  %u", ftargetPosition);
+    snprintf(buffer, sizeof(buffer), "TargetPos:  %lu", ftargetPosition);
     drawString(64, 12, buffer);
   }
-
-
+  
   setTextAlignment(TEXT_ALIGN_LEFT);
 
 #ifdef TEMPERATUREPROBE
@@ -240,7 +233,6 @@ void OLED_GRAPHIC::oled_draw_reboot(void)
 // ----------------------------------------------------------------------------------------------
 // Section OLED TEXT
 // ----------------------------------------------------------------------------------------------
-
 
 void OLED_TEXT::oledtextmsg(String str, int val, boolean clrscr, boolean nl)
 {
@@ -322,7 +314,6 @@ void OLED_TEXT::displaylcdpage1(void)
   print(TCOMPSTATESTR);
   println(mySetupData->get_tempcompenabled());
 
-
   print(TCOMPDIRSTR);
   println(mySetupData->get_tcdirection());
 
@@ -342,11 +333,10 @@ void OLED_TEXT::displaylcdpage1(void)
 
 void OLED_TEXT::displaylcdpage2(void)
 {
-
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   setCursor(0, 0);
 #if defined(ACCESSPOINT)
-  println(accesspointstr);
+  println(ACCESSPOINTSTR);
 #endif
 #if defined(STATIONMODE)
   println(STATIONMODESTR);
@@ -364,7 +354,7 @@ void OLED_TEXT::displaylcdpage2(void)
   setCursor(0, 0);
   println(WEBSERVERSTR);
 #if defined(ACCESSPOINT)
-  println(accesspointstr);
+  println(ACCESSPOINTSTR);
 #endif
 #if defined(STATIONMODE)
   println(STATIONMODESTR);
@@ -376,7 +366,7 @@ void OLED_TEXT::displaylcdpage2(void)
 #endif // webserver
 #if defined(ASCOMREMOTE)
   setCursor(0, 0);
-  println(ascomremotestr);
+  println(ASCOMREMOTESTR);
   print(IPADDRESSSTR);
   print(ipStr);
   print(STARTSTR);
@@ -422,7 +412,6 @@ void OLED_TEXT::Update_OledText(void)
   }
 }
 
-/*
 void OLED_TEXT::UpdatePositionOledText(void)
 {
   setCursor(0, 0);
@@ -433,7 +422,6 @@ void OLED_TEXT::UpdatePositionOledText(void)
   println(ftargetPosition);
 //  display();
 }
-*/
 
 void OLED_TEXT::update_oledtext_position(void)
 {
@@ -447,6 +435,7 @@ void OLED_TEXT::update_oledtext_position(void)
   print(ftargetPosition);
   clearToEOL();
   println();
+//  display();
 }
 
 OLED_TEXT::OLED_TEXT(void)
@@ -604,7 +593,7 @@ void OLED_TEXT::display_oledtext_page2(void)
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   setCursor(0, 0);
 #if defined(ACCESSPOINT)
-  print(accesspointstr);
+  print(ACCESSPOINTSTR);
   clearToEOL();
   println();
 #endif
@@ -638,7 +627,7 @@ void OLED_TEXT::display_oledtext_page2(void)
   println();
 #endif // webserver
 #if defined(ASCOMREMOTE)
-  print(ascomremotestr);
+  print(ASCOMREMOTESTR);
   clearToEOL();
   println();
   print(IPADDRESSSTR);

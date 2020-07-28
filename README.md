@@ -72,8 +72,11 @@ https://github.com/ayushsharma82/EasyDDNS
 ESP32 Sketch Data uploader
 https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
 
-ESP8266 Sketch Data uploader
-https://github.com/esp8266/arduino-esp8266fs-plugin
+ESP8266 Sketch LittleFS Data uploader
+https://github.com/earlephilhower/arduino-esp8266littlefs-plugin
+
+ESP8266 TimerInterrupt Library
+https://github.com/khoih-prog/ESP8266TimerInterrupt
 
 After downloading the zip files, you then need to install these into the Arduino IDE environment. To do that, start the Arduino IDE, select Sketch, Include Library, Add .Zip library, then navigate to where the ZIP files are stored and select them (you can only load 1 zip file at a time so please repeat this for all ZIP files).
 
@@ -113,18 +116,19 @@ This is a special cut down version of the SSD1306AsciiWire library by Bill Greim
 
 # COMPILE ENVIRONMENT : Tested with 
 
-* Arduino IDE 1.8.9
-* ESP8266 Driver Board 2.4.0
+* Arduino IDE 1.8.13
+* ESP8266 Arduino Core 2.7.3
+* ESP32 Arduino Core 1.0.4
 
 Libraries 
 
-* Arduino JSON 6.11.2
+* Arduino JSON 6.15.2
 * myOLED as in myFP2ELibs
 * IRRemoteESP8266 2.7.1
 * HalfStepperESP32 as in myFP2ELibs
 * Dallas Temperature 3.80
-* Wire [as installed with Arduino 1.8.9
-* OneWire 2.3.3
+* Wire [as installed with Arduino 1.8.13]
+* OneWire 2.3.5
 * EasyDDNS 1.5.2
 
 # Notes:

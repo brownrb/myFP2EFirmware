@@ -25,10 +25,10 @@
 #define TEMPERATUREPROBE 1
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
-//#define OLEDTEXT 1
+#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
-#define OLEDGRAPHICS 1
+//#define OLEDGRAPHICS 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -66,16 +66,16 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-//#define ACCESSPOINT 2
+#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-#define STATIONMODE 3
+//#define STATIONMODE 3
 
 // to work only via USB cable as Serial port, uncomment the next line
 //#define LOCALSERIAL 4
 
 // To enable OTA updates, uncomment the next line [only works in STATIONMODE]
-#define OTAUPDATES 5
+//#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support [Port 4040], uncomment the next line
 //#define ASCOMREMOTE 6
@@ -102,7 +102,7 @@
 
 // to enable reading SSID and PASSWORD 
 // from SPIFFS file wificonfig at boot time, uncomment the following file
-#define READWIFICONFIG 1
+//#define READWIFICONFIG 1
 
 // ----------------------------------------------------------------------------------------------------------
 // 3: SPECIFY OLED DISPLAY TYPE

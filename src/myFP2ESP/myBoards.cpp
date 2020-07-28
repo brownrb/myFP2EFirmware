@@ -13,208 +13,208 @@
 #include "generalDefinitions.h"
 #include "myBoards.h"
 
-
 // ____ESP8266 Boards
 #if DRVBRD == WEMOSDRV8825
-  const char* DRVBRD_ID = "WEMOSDRV8825";
+const char* DRVBRD_ID = "WEMOSDRV8825";
 #elif  DRVBRD == PRO2EULN2003
-  const char* DRVBRD_ID = "PRO2EULN2003";
+const char* DRVBRD_ID = "PRO2EULN2003";
 #elif  DRVBRD == PRO2EDRV8825
-  const char* DRVBRD_ID = "PRO2EDRV8825";
+const char* DRVBRD_ID = "PRO2EDRV8825";
 #elif  DRVBRD == PRO2EDRV8825BIG
-  const char* DRVBRD_ID = "PRO2EDRV8825BIG";
+const char* DRVBRD_ID = "PRO2EDRV8825BIG";
 #elif  DRVBRD == PRO2EL293DNEMA
-  const char* DRVBRD_ID = "PRO2EL293DNEMA";
+const char* DRVBRD_ID = "PRO2EL293DNEMA";
 #elif  DRVBRD == PRO2EL293D28BYJ48
-  const char* DRVBRD_ID = "PRO2EL293D28BYJ48";
+const char* DRVBRD_ID = "PRO2EL293D28BYJ48";
 #elif  DRVBRD == PRO2EL298N
-  const char* DRVBRD_ID = "PRO2EL298N";
+const char* DRVBRD_ID = "PRO2EL298N";
 #elif  DRVBRD == PRO2EL293DMINI
-  const char* DRVBRD_ID = "PRO2EL293DMINI";
+const char* DRVBRD_ID = "PRO2EL293DMINI";
 #elif  DRVBRD == PRO2EL9110S
-  const char* DRVBRD_ID = "PRO2EL9110S";
+const char* DRVBRD_ID = "PRO2EL9110S";
 
 // ____ESP32 Boards
 #elif  DRVBRD == PRO2ESP32DRV8825
-  const char* DRVBRD_ID = "PRO2ESP32DRV8825";
-  
+const char* DRVBRD_ID = "PRO2ESP32DRV8825";
+
 #elif  DRVBRD == PRO2ESP32ULN2003
-  const char* DRVBRD_ID = "PRO2ESP32ULN2003";
+const char* DRVBRD_ID = "PRO2ESP32ULN2003";
 #elif  DRVBRD == PRO2ESP32L298N
-  const char* DRVBRD_ID = "PRO2ESP32L298N";
+const char* DRVBRD_ID = "PRO2ESP32L298N";
 #elif  DRVBRD == PRO2ESP32L293DMINI
-  const char* DRVBRD_ID = "PRO2ESP32L293DMINI";
+const char* DRVBRD_ID = "PRO2ESP32L293DMINI";
 #elif  DRVBRD == PRO2ESP32L9110S
-  const char* DRVBRD_ID = "PRO2ESP32L9110S";
+const char* DRVBRD_ID = "PRO2ESP32L9110S";
 #elif  DRVBRD == PRO2ESP32R3WEMOS
-  const char* DRVBRD_ID = "PRO2ESP32R3WEMOS";
+const char* DRVBRD_ID = "PRO2ESP32R3WEMOS";
 #else
-  const char* DRVBRD_ID = "UNKNOWN";
+const char* DRVBRD_ID = "UNKNOWN";
 #endif
 
-
-
-
-#if defined(ESP8266)  
-#include "ESP8266TimerInterrupt.h"
-#define ESP_ISR_ATTR    ICACHE_RAM_ATTR
-  ESP8266Timer ITimer;
-#else
-#define ESP_ISR_ATTR    IRAM_ATTR
-  hw_timer_t * timer = NULL;
-//  portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-//  volatile SemaphoreHandle_t timerSemaphore;
-#endif 
-
-  volatile bool timerSemaphore = false;
-  volatile uint32_t stepcount = 0;
-  bool stepdir;
-
+volatile bool timerSemaphore = false;
+volatile uint32_t stepcount = 0;
+bool stepdir;
 
 //_______________ Timer Interrupt
+#if defined(ESP8266)
+#include "ESP8266TimerInterrupt.h"
+ESP8266Timer ITimer;
+#else
+hw_timer_t * timer = NULL;
+#endif
 
-#define LED 2
+extern DriverBoard* driverboard;
 
 /*
-stepcount   HPS_altert    stepdir           action
-----------------------------------------------------
+  stepcount   HPS_altert    stepdir           action
+  ----------------------------------------------------
     0           x             x             stop
     >0        false           x             step
     !0        true        moving_in         stop
     !0        true        moving_out        step
 */
 
-
 //_________________Timer ISR  (Interrupt Service Routine)______________________
 
-void ESP_ISR_ATTR onTimer()
+//THIS SHOULD BE CALLING ::movemotor(dir) to move the motor!
+#if defined(ESP8266)
+ICACHE_RAM_ATTR void onTimer()
 {
-  static bool toggle = false;
-  static bool  mjob = false;      // motor job is running or not
-
-  if (stepcount  && !(HPS_alert && stepdir == moving_in))  
+  //static bool toggle = false;
+  static bool mjob = false;      // motor job is running or not
+  if (stepcount  && !(HPS_alert && stepdir == moving_in))
   {
-    digitalWrite(STEPPIN, 1);
-    toggle ^= 1;       
-    digitalWrite(LED, toggle);    // blink LED
+    driverboard->movemotor(stepdir);
     stepcount--;
     mjob = true;                  // mark a running job
-    digitalWrite(STEPPIN, 0);
   }
   else
   {
     if (mjob == true)
     {
       stepcount = 0;              // just in case HPS_alert was fired up
-      digitalWrite(LED, 0);       // debug LED off, stop blinling
       mjob = false;               // wait, and do nothing
-//      xSemaphoreGiveFromISR(timerSemaphore, NULL);    // fire up semaphore
       timerSemaphore = true;
     }
   }
 }
-
+#else
+void IRAM_ATTR onTimer()
+{
+  static bool mjob = false;      // motor job is running or not
+  if (stepcount  && !(HPS_alert && stepdir == moving_in))
+  {
+    driverboard->movemotor(stepdir);
+    stepcount--;
+    mjob = true;                  // mark a running job
+  }
+  else
+  {
+    if (mjob == true)
+    {
+      stepcount = 0;              // just in case HPS_alert was fired up
+      mjob = false;               // wait, and do nothing
+      timerSemaphore = true;
+    }
+  }
+}
+#endif
 
 DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 {
-  do  { 
-#if DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS 
-      pinMode(ENABLEPIN, OUTPUT);
-      pinMode(DIRPIN, OUTPUT);
-      pinMode(STEPPIN, OUTPUT);
-      digitalWrite(ENABLEPIN, 1);
-      DriverBoard::setstepmode(DRV8825TEPMODE);
-      break;
+  do  {
+#if DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS
+    pinMode(ENABLEPIN, OUTPUT);
+    pinMode(DIRPIN, OUTPUT);
+    pinMode(STEPPIN, OUTPUT);
+    digitalWrite(ENABLEPIN, 1);
+    DriverBoard::setstepmode(DRV8825TEPMODE);
+    this->stepdelay = MSPEED;
+    break;
 
-#elif DRVBRD == PRO2ESP32DRV8825 
-      pinMode(ENABLEPIN, OUTPUT);
-      pinMode(DIRPIN, OUTPUT);
-      pinMode(STEPPIN, OUTPUT);
-      digitalWrite(ENABLEPIN, 1);
-      pinMode(MS1, OUTPUT);
-      pinMode(MS2, OUTPUT);
-      pinMode(MS3, OUTPUT);
-
-      pinMode(LED, OUTPUT);      
-
-      digitalWrite(STEPPIN, 0);
-
-// Create semaphore to inform us when the timer has fired
-//      timerSemaphore = xSemaphoreCreateBinary();
-
-      break;
+#elif DRVBRD == PRO2ESP32DRV8825
+    pinMode(ENABLEPIN, OUTPUT);
+    pinMode(DIRPIN, OUTPUT);
+    pinMode(STEPPIN, OUTPUT);
+    digitalWrite(ENABLEPIN, 1);
+    pinMode(MS1, OUTPUT);
+    pinMode(MS2, OUTPUT);
+    pinMode(MS3, OUTPUT);
+    digitalWrite(STEPPIN, 0);
+    this->stepdelay = MSPEED;
+    break;
 
 #elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
-      // IN1ULN, IN3ULN, IN4ULN, IN2ULN
-      mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN4, IN2);
-      mystepper->setSpeed(5);      
-
+    // IN1ULN, IN3ULN, IN4ULN, IN2ULN
+    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN4, IN2);
+    mystepper->setSpeed(5);
+    this->stepdelay = MSPEED;
 #elif (DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N)
-      // IN1L298N, IN2L298N, IN3L298N, IN4L298N
-      mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-      mystepper->setSpeed(20); 
-
+    // IN1L298N, IN2L298N, IN3L298N, IN4L298N
+    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
+    mystepper->setSpeed(20);
+    this->stepdelay = MSPEED;
 #elif (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
-      // IN1L293DMINI, IN2L293DMINI, IN3L293DMINI, IN4L293DMINI
-      mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-      mystepper->setSpeed(5);
-
+    // IN1L293DMINI, IN2L293DMINI, IN3L293DMINI, IN4L293DMINI
+    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
+    mystepper->setSpeed(5);
+    this->stepdelay = MSPEED;
 #elif (DRVBRD == PRO2EL9110S || DRVBRD == PRO2ESP32L9110S)
-      // IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S
-      mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-      mystepper->setSpeed(5); 
+    // IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S
+    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
+    mystepper->setSpeed(5);
+    this->stepdelay = MSPEED;
 #endif
 
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
   || DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L2933DMINI \
   || DRVBRD == PRO2ESP32L9110S)
 
-      // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
-      this->inputPins[0] = IN1;
-      this->inputPins[1] = IN2;
-      this->inputPins[2] = IN3;
-      this->inputPins[3] = IN4;
-      for (int i = 0; i < 4; i++) {
-        pinMode(this->inputPins[i], OUTPUT);
-      }
-      this->stepdelay = MSFAST;
-      setmotorspeed(FAST);
-      break;     
+    // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
+    this->inputPins[0] = IN1;
+    this->inputPins[1] = IN2;
+    this->inputPins[2] = IN3;
+    this->inputPins[3] = IN4;
+    for (int i = 0; i < 4; i++) {
+      pinMode(this->inputPins[i], OUTPUT);
+    }
+    this->stepdelay = MSPEED;
+    break;
 #endif
 
-
-      // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
+    // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
 #if (DRVBRD == PRO2EL293DNEMA )
-      mystepper = new Stepper(STEPSPERREVOLUTION, IN2, IN3, IN1, IN4);
-      // constructor was IN2, IN3, IN1, IN4 for NEMA14
-      this->inputPins[0] = IN1;
-      this->inputPins[1] = IN2;
-      this->inputPins[2] = IN3;
-      this->inputPins[3] = IN4;
-      for (int i = 0; i < 4; i++)
-      {
-        pinMode(this->inputPins[i, OUTPUT);
-      }
-      mystepper->setSpeed(SPEEDNEMA);
-
+    mystepper = new Stepper(STEPSPERREVOLUTION, IN2, IN3, IN1, IN4);
+    // constructor was IN2, IN3, IN1, IN4 for NEMA14
+    this->inputPins[0] = IN1;
+    this->inputPins[1] = IN2;
+    this->inputPins[2] = IN3;
+    this->inputPins[3] = IN4;
+    for (int i = 0; i < 4; i++)
+    {
+      pinMode(this->inputPins[i, OUTPUT);
+    }
+    mystepper->setSpeed(SPEEDNEMA);
+    this->stepdelay = MSPEED;
 #elif (DRVBRD == PRO2EL293D28BYJ48 )
-      mystepper = new Stepper(STEPSPERREVOLUTION, IN1, IN3, IN2, IN4);
-      // constructor was IN1, IN3, IN2, IN4 for 28BYJ48
-      this->inputPins[0] = IN1;
-      this->inputPins[1] = IN3;
-      this->inputPins[2] = IN2;
-      this->inputPins[3] = IN4;
-      for (int i = 0; i < 4; i++)
-      {
-        pinMode(this->inputPins[i], OUTPUT);
-      }
-      mystepper->setSpeed(SPEEDBIPOLAR);
+    mystepper = new Stepper(STEPSPERREVOLUTION, IN1, IN3, IN2, IN4);
+    // constructor was IN1, IN3, IN2, IN4 for 28BYJ48
+    this->inputPins[0] = IN1;
+    this->inputPins[1] = IN3;
+    this->inputPins[2] = IN2;
+    this->inputPins[3] = IN4;
+    for (int i = 0; i < 4; i++)
+    {
+      pinMode(this->inputPins[i], OUTPUT);
+    }
+    mystepper->setSpeed(SPEEDBIPOLAR);
+    this->stepdelay = MSPEED;
 #endif
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-      setstepmode(STEP1);
-      setmotorspeed(FAST);
+    setstepmode(STEP1);
+    this->stepdelay = MSPEED;
 #endif
-  } while(0);
+  } while (0);
 
 #ifdef HOMEPOSITIONSWITCH
   pinMode(HPSWPIN, INPUT_PULLUP);   // init home position sensor
@@ -231,77 +231,76 @@ void DriverBoard::setstepmode(byte smode)
   do {
 #if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
   || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS )
-      // for DRV8825 stepmode is set in hardware jumpers
-      // cannot set by software
-      this->stepmode = DRV8825TEPMODE;       // defined at beginning of myBoards.h
-      break;
+    // for DRV8825 stepmode is set in hardware jumpers
+    // cannot set by software
+    this->stepmode = DRV8825TEPMODE;       // defined at beginning of myBoards.h
+    break;
 
 #elif (DRVBRD == PRO2ESP32DRV8825 )
-
-      switch (smode)
-      {
-        case STEP2:
-          digitalWrite(MS1, 1);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 0);
-          break;
-        case STEP4:
-          digitalWrite(MS1, 0);
-          digitalWrite(MS2, 1);
-          digitalWrite(MS3, 0);
-          break;
-        case STEP8:
-          digitalWrite(MS1, 1);
-          digitalWrite(MS2, 1);
-          digitalWrite(MS3, 0);
-          break;
-        case STEP16:
-          digitalWrite(MS1, 0);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 1);
-          break;
-        case STEP32:
-          digitalWrite(MS1, 1);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 1);
-          break;
-        case STEP1:          
-        default:
-          digitalWrite(MS1, 0);
-          digitalWrite(MS2, 0);
-          digitalWrite(MS3, 0);
-          smode = STEP1;
-          break;
-      }
-      this->stepmode = smode;
-      break;
+    switch (smode)
+    {
+      case STEP2:
+        digitalWrite(MS1, 1);
+        digitalWrite(MS2, 0);
+        digitalWrite(MS3, 0);
+        break;
+      case STEP4:
+        digitalWrite(MS1, 0);
+        digitalWrite(MS2, 1);
+        digitalWrite(MS3, 0);
+        break;
+      case STEP8:
+        digitalWrite(MS1, 1);
+        digitalWrite(MS2, 1);
+        digitalWrite(MS3, 0);
+        break;
+      case STEP16:
+        digitalWrite(MS1, 0);
+        digitalWrite(MS2, 0);
+        digitalWrite(MS3, 1);
+        break;
+      case STEP32:
+        digitalWrite(MS1, 1);
+        digitalWrite(MS2, 0);
+        digitalWrite(MS3, 1);
+        break;
+      case STEP1:
+      default:
+        digitalWrite(MS1, 0);
+        digitalWrite(MS2, 0);
+        digitalWrite(MS3, 0);
+        smode = STEP1;
+        break;
+    }
+    this->stepmode = smode;
+    break;
 
 #elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
  || DRVBRD == PRO2ESP32L9110S )
-      switch ( smode )
-      {
-        case STEP1:
-          mystepper->SetSteppingMode(SteppingMode::FULL);
-          this->stepmode = STEP1;
-          break;
-        case STEP2:
-          mystepper->SetSteppingMode(SteppingMode::HALF);
-          this->stepmode = STEP2;
-          break;
-        default:
-          mystepper->SetSteppingMode(SteppingMode::FULL);
-           this->stepmode = STEP1;
-          break;
-      }
-      break;
+    switch ( smode )
+    {
+      case STEP1:
+        mystepper->SetSteppingMode(SteppingMode::FULL);
+        this->stepmode = STEP1;
+        break;
+      case STEP2:
+        mystepper->SetSteppingMode(SteppingMode::HALF);
+        this->stepmode = STEP2;
+        break;
+      default:
+        mystepper->SetSteppingMode(SteppingMode::FULL);
+        this->stepmode = STEP1;
+        break;
+    }
+    break;
 
 #elif (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-      this->stepmode = STEP1;
-      break;
+    this->stepmode = STEP1;
+    break;
 #endif
-      this->stepmode = STEP1;
-  }  while(0);    
+    this->stepmode = STEP1;
+  }  while (0);
 }
 
 void DriverBoard::enablemotor(void)
@@ -310,7 +309,7 @@ void DriverBoard::enablemotor(void)
   || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
   || DRVBRD == PRO2ESP32R3WEMOS )
   digitalWrite(ENABLEPIN, 0);
-  delay(1);                     // boards require 1ms before stepping can occur      
+  delay(1);                     // boards require 1ms before stepping can occur
 #endif
 }
 
@@ -319,88 +318,106 @@ void DriverBoard::releasemotor(void)
 #if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
   || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
   || DRVBRD == PRO2ESP32R3WEMOS )
-      digitalWrite(ENABLEPIN, 1);
+  digitalWrite(ENABLEPIN, 1);
 
 #elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
   || DRVBRD == PRO2ESP32L9110S || DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
-      digitalWrite(this->inputPins[0], 0 );
-      digitalWrite(this->inputPins[1], 0 );
-      digitalWrite(this->inputPins[2], 0 );
-      digitalWrite(this->inputPins[3], 0 );
+  digitalWrite(this->inputPins[0], 0 );
+  digitalWrite(this->inputPins[1], 0 );
+  digitalWrite(this->inputPins[2], 0 );
+  digitalWrite(this->inputPins[3], 0 );
 #endif
 }
 
 void DriverBoard::movemotor(byte dir)
-{ 
-// handling of inout leds when moving done in main code
+{
+  // handling of inout leds when moving done in main code
 #if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
   || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
   || DRVBRD == PRO2ESP32R3WEMOS )
-      digitalWrite(DIRPIN, dir);            // set Direction of travel
-      digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver
-      digitalWrite(STEPPIN, 1);             // Step pin on
-      delayMicroseconds(MOTORPULSETIME);
-      digitalWrite(STEPPIN, 0);
-      delayMicroseconds(this->stepdelay);   // this controls speed of motor
+  digitalWrite(DIRPIN, dir);            // set Direction of travel
+  digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver
+  digitalWrite(STEPPIN, 1);             // Step pin on
+  delayMicroseconds(MOTORPULSETIME);
+  digitalWrite(STEPPIN, 0);
+  delayMicroseconds(this->stepdelay);   // this controls speed of motor
 #endif
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI \
   || DRVBRD == PRO2EL9110S  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N \
   || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S \
   || DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
-      (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
-      delayMicroseconds(this->stepdelay);
+  (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
+  delayMicroseconds(this->stepdelay);
 #endif
+  Serial.println("move");
 }
-
 
 uint32_t DriverBoard::halt(void)
 {
-#if defined(ESP8266) 
+#if defined(ESP8266)
   ITimer.detachInterrupt();
-#else    
+#else
   timerAlarmDisable(timer);		// stop alarm
   timerDetachInterrupt(timer);	// detach interrupt
   timerEnd(timer);			// end timer
-#endif  
+#endif
   DebugPrint(F(">halt_alert "));
   delay(10);
   return stepcount;
 }
 
-void DriverBoard::initmove(bool dir, unsigned long steps)
+void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed)
 {
   stepcount = steps;
   stepdir = dir;
-  digitalWrite(DIRPIN, dir);            // init direction of travel to the motor driver
-  digitalWrite(ENABLEPIN, 0);           // enable motor driver
-  delay(1);                             // wait a little for the motor driver to power up
+  DriverBoard::enablemotor();
 
   timerSemaphore = false;
-  
+
   DebugPrint(F(">initmove "));
-  DebugPrint(dir);  
-  DebugPrint(F(":"));  
+  DebugPrint(dir);
+  DebugPrint(F(":"));
   DebugPrint(steps);
   DebugPrint(F(" "));
-  
-#if defined(ESP8266) 
-  if (ITimer.attachInterruptInterval(3000, onTimer) == false)
-    DebugPrint(F("Can't set ITimer correctly. Select another freq. or interval"));
-#else
 
+#if defined(ESP8266)
+  unsigned long curspd = DriverBoard::getstepdelay();
+  switch ( motorspeed )
+  {
+    case 0: // slow, 1/3rd the speed
+      curspd *= 3;
+      break;
+    case 1: // med, 1/2 the speed
+      curspd *= 2;
+      break;
+  }
+  if (ITimer.attachInterruptInterval(curspd, onTimer) == false)
+  {
+    DebugPrint(F("Can't set ITimer correctly. Select another freq. or interval"));
+  }
+#else
   // Use 1st timer of 4 (counted from zero).
   // Set 80 divider for prescaler (see ESP32 Technical Reference Manual)
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);  // Attach onTimer function to our timer.
 
   // Set alarm to call onTimer function every second (value in microseconds).
-  // Repeat the alarm (third parameter) 
-  timerAlarmWrite(timer, 3000, true);   // timer for ISR = 3 ms
-  timerAlarmEnable(timer);              // start timer alarm
-#endif  
+  // Repeat the alarm (third parameter)
+  unsigned long curspd = DriverBoard::getstepdelay();
+  switch ( motorspeed )
+  {
+    case 0: // slow, 1/3rd the speed
+      curspd *= 3;
+      break;
+    case 1: // med, 1/2 the speed
+      curspd *= 2;
+      break;
+  }
+  timerAlarmWrite(timer, curspd, true);   // timer for ISR
+  timerAlarmEnable(timer);                // start timer alarm
+#endif
 }
-
 
 int DriverBoard::getstepdelay(void)
 {
@@ -410,35 +427,4 @@ int DriverBoard::getstepdelay(void)
 void DriverBoard::setstepdelay(int sdelay)
 {
   this->stepdelay = sdelay;
-}
-
-byte DriverBoard::getmotorspeed(void)
-{
-  if ( stepdelay == MSFAST )
-  {
-    return FAST;
-  }
-  else if ( stepdelay == MSMED )
-  {
-    return MED;
-  }
-  else
-    return SLOW;
-}
-
-void DriverBoard::setmotorspeed(byte spd)
-{
-  switch (spd) 
-  {
-    case SLOW:
-      this->stepdelay = MSSLOW;
-      break;
-    case MED:
-      this->stepdelay = MSMED;
-      break;
-    case FAST:
-    default:
-      this->stepdelay = MSFAST;
-      break;
-  }
 }

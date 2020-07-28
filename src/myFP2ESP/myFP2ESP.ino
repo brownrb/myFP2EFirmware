@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 119
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 120
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -19,7 +19,7 @@
 // SPECIAL LICENSE
 // ----------------------------------------------------------------------------------------------
 // This code is released under license. If you copy or write new code based on the code in these files
-// you MUST include to link to these files AND you MUST include references to the authors of this code.
+// you MUST include a link to these files AND you MUST include references to the authors of this code.
 
 // ----------------------------------------------------------------------------------------------
 // CONTRIBUTIONS
@@ -47,17 +47,21 @@
 // ESP32 R3WEMOS https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
 // ----------------------------------------------------------------------------------------------
 // COMPILE ENVIRONMENT : Tested with
-// Arduino IDE 1.8.9
-// ESP8266 Driver Board 2.4.0
+// Arduino IDE 1.8.13
+// ESP8266 Arduino Core 2.7.3
+// ESP32 Arduino Core 1.0.4
 // Libraries
-// Arduino JSON 6.11.2
+// Arduino JSON 6.15.2
 // myOLED as in myFP2ELibs
-// IRRemoteESP32 2.0.1 as in myFP2ELibs
+// IRRemoteESP32 as in myFP2ELibs
 // HalfStepperESP32 as in myFP2ELibs
 // myDallas Temperature 3.7.3A as in myFP2ELibs
-// Wire [as installed with Arduino 1.8.9
+// Wire [as installed with Arduino 1.8.13]
 // OneWire 2.3.5
 // EasyDDNS 1.5.2
+// ESP8266 TimerInterrupt Library https://github.com/khoih-prog/ESP8266TimerInterrupt
+// ESP32 Sketch Data uploader https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
+// ESP8266 Sketch LittleFS Data uploader https://github.com/earlephilhower/arduino-esp8266littlefs-plugin
 // Notes:
 // You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
 // remove the chip from PCB before re-programming new firmware. Remember to remove WIFI library
@@ -107,9 +111,9 @@
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
 
-#if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE automatic 
+#if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE
 #include <ESP8266WiFi.h>
-#include <FS.h>                             // Include the SPIFFS library  
+#include "LittleFS.h"                      // Include the file library  
 #else
 #include <WiFi.h>
 #include "SPIFFS.h"
@@ -344,11 +348,11 @@ enum StateMachineStates
 {
   State_Idle,
   State_InitMove,
-//  State_ApplyBacklash,
+  //  State_ApplyBacklash,
   State_ApplyBacklash2,
   State_Moving,
   State_DelayAfterMove,
-//  State_FinishedMove,
+  //  State_FinishedMove,
   State_SetHomePosition,
   State_FindHomePosition
 };
@@ -360,10 +364,6 @@ enum StateMachineStates
 //moving_out  1||  1   |   0
 //moving_in   0||  0   |   1
 
-
-
-#define programName  DRVBRD_ID
-
 DriverBoard* driverboard;
 
 unsigned long fcurrentPosition;             // current focuser position
@@ -371,12 +371,10 @@ unsigned long ftargetPosition;              // target position
 unsigned long tmppos;
 boolean  displayfound;
 
-byte   tprobe1;                               // indicate if there is a probe attached to myFocuserPro2
-byte   isMoving;                              // is the motor currently moving
-//String ipStr;                                 // shared between BT mode and other modes
-char ipStr[16];
+byte  tprobe1;                              // indicate if there is a probe attached to myFocuserPro2
+byte  isMoving;                             // is the motor currently moving
+char  ipStr[16];                            // shared between BT mode and other modes
 const char ip_zero[] = "0.0.0.0";
-
 
 int  packetsreceived;
 int  packetssent;
@@ -474,14 +472,14 @@ void update_temp(void)
   if (tprobe1 == 1)
   {
     static unsigned long lasttempconversion = 0;
-    static byte requesttempflag = 0;                      // start with request
+    static byte requesttempflag = 0;                  // start with request
     unsigned long tempnow = millis();
 
     // see if the temperature needs updating - done automatically every 1.5s
     if (TimeCheck(lasttempconversion, TEMPREFRESHRATE))   // see if the temperature needs updating
     {
       static float tempval;
-      static float starttemp;                             // start temperature to use when temperature compensation is enabled
+      static float starttemp;                         // start temperature to use when temperature compensation is enabled
 
       if ( tcchanged != mySetupData->get_tempcompenabled() )
       {
@@ -492,7 +490,7 @@ void update_temp(void)
         }
       }
 
-      lasttempconversion = tempnow;               // update time stamp
+      lasttempconversion = tempnow;                   // update time stamp
 
       if (requesttempflag)
       {
@@ -549,31 +547,7 @@ void update_temp(void)
 #endif // TEMPERATUREPROBE
 
 // ----------------------------------------------------------------------------------------------
-// 20: HOMEPOSITION SWITCH - CHANGE AT YOUR OWN PERIL
-// ----------------------------------------------------------------------------------------------
-#ifdef HOMEPOSITIONSWITCH
-/*
-volatile int hpswstate;
-
-void IRAM_ATTR hpsw_isr()
-{
-  // internal pullup = 1 when switch is OPEN, hpswstate of 0
-  hpswstate = !(digitalRead(HPSWPIN));
-  // when switch is closed, level is 0 so hpswstate is 1
-}
-
-void init_homepositionswitch(void)
-{
-  // setup home position switch
-  pinMode(HPSWPIN, INPUT_PULLUP);
-  // setup interrupt, falling, when switch is closed, pin goes low
-  attachInterrupt(HPSWPIN, hpsw_isr, CHANGE);
-  hpswstate = 0;
-}*/
-#endif // #ifdef HOMEPOSITIONSWITCH
-
-// ----------------------------------------------------------------------------------------------
-// 21: INFRARED REMOTE CONTROLLER - CHANGE AT YOUR OWN PERIL
+// 20: INFRARED REMOTE CONTROLLER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef INFRAREDREMOTE
 
@@ -704,7 +678,7 @@ void init_irremote(void)
 #endif // #ifdef INFRAREDREMOTE
 
 // ----------------------------------------------------------------------------------------------
-// 22: JOYSTICK - CHANGE AT YOUR OWN PERIL
+// 21: JOYSTICK - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
 #include "joystick.h"
@@ -834,7 +808,7 @@ void init_joystick2(void)
 #endif // #if defined(JOYSTICK1) || defined(JOYSTICK2)
 
 // ----------------------------------------------------------------------------------------------
-// 23: PUSHBUTTONS - CHANGE AT YOUR OWN PERIL
+// 22: PUSHBUTTONS - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef PUSHBUTTONS
 void init_pushbuttons(void)
@@ -866,7 +840,7 @@ void update_pushbuttons(void)
 #endif // PUSHBUTTONS
 
 // ----------------------------------------------------------------------------------------------
-// 24: mDNS SERVER - CHANGE AT YOUR OWN PERIL
+// 23: mDNS SERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef MDNSSERVER
 
@@ -922,7 +896,7 @@ void stop_mdns_service(void)
 #endif // #ifdef MDNSSERVER
 
 // ----------------------------------------------------------------------------------------------
-// 26: MANAGEMENT INTERFACE - CHANGE AT YOUR OWN PERIL
+// 24: MANAGEMENT INTERFACE - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef MANAGEMENT
 
@@ -976,9 +950,17 @@ bool MANAGEMENT_handlefileread(String path)
     path += "index.html";                               // If a folder is requested, send the index file
   }
   String contentType = MANAGEMENT_getcontenttype(path); // Get the MIME type
+#if defined(ESP8266)
+  if ( LittleFS.exists(path) )                            // If the file exists
+#else
   if ( SPIFFS.exists(path) )                            // If the file exists
+#endif
   {
+#if defined(ESP8266)
+    File file = LittleFS.open(path, "r");                 // Open it
+#else
     File file = SPIFFS.open(path, "r");                 // Open it
+#endif
 #ifdef MANAGEMENTFORCEDOWNLOAD
     if ( path.indexOf(".html") == -1)
     {
@@ -1001,7 +983,11 @@ bool MANAGEMENT_handlefileread(String path)
 
 void MANAGEMENT_listSPIFFSfiles(void)
 {
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
   if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
@@ -1012,7 +998,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
   DebugPrintln("MANAGEMENT_listSPIFFSfiles: " + path);
 #if defined(ESP8266)
   String output = "{[";
-  Dir dir = SPIFFS.openDir("/");
+  Dir dir = LittleFS.openDir("/");
   while (dir.next())
   {
     output += "{" + dir.fileName() + "}, ";
@@ -1049,31 +1035,44 @@ void MANAGEMENT_listSPIFFSfiles(void)
 void MANAGEMENT_buildnotfound(void)
 {
   // load not found page from spiffs - wsnotfound.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+    MNotFoundPage = MANAGEMENTURLNOTFOUNDSTR;
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/msnotfound.html"))
+#else
     if ( SPIFFS.exists("/msnotfound.html"))
+#endif
     {
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/msnotfound.html", "r");
+#else
       File file = SPIFFS.open("/msnotfound.html", "r");
+#endif
       // read contents into string
       TRACE();
       DebugPrintln(READPAGESTR);
       MNotFoundPage = file.readString();
+      file.close();
 
       TRACE();
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       MNotFoundPage.replace("%IP%", ipStr);
-      MNotFoundPage.replace("%PORT%", String(MSSERVERPORT));
+      MNotFoundPage.replace("%POR%", String(MSSERVERPORT));
       MNotFoundPage.replace("%VER%", String(programVersion));
-      MNotFoundPage.replace("%NAME%", String(programName));
+      MNotFoundPage.replace("%NAM%", String(DRVBRD_ID));
       TRACE();
       DebugPrintln(PROCESSPAGEENDSTR);
     }
@@ -1081,7 +1080,7 @@ void MANAGEMENT_buildnotfound(void)
     {
       TRACE();
       DebugPrintln(SSPIFFSFILENOTFOUNDSTR);
-      MNotFoundPage = "<html><head><title>Management Server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+      MNotFoundPage = MANAGEMENTURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -1095,31 +1094,44 @@ void MANAGEMENT_handlenotfound(void)
 void MANAGEMENT_buildupload(void)
 {
   // load not found page from spiffs - wsupload.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    MUploadPage = "<html><head><title>Management Server></title></head><body><p>msupload.html not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+    MUploadPage = MANAGEMENTURLNOTFOUNDSTR;
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/msupload.html"))
+#else
     if ( SPIFFS.exists("/msupload.html"))
+#endif
     {
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/msupload.html", "r");
+#else
       File file = SPIFFS.open("/msupload.html", "r");
+#endif
       // read contents into string
       TRACE();
       DebugPrintln(READPAGESTR);
       MUploadPage = file.readString();
+      file.close();
 
       TRACE();
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       MUploadPage.replace("%IP%", ipStr);
-      MUploadPage.replace("%PORT%", String(MSSERVERPORT));
+      MUploadPage.replace("%POR%", String(MSSERVERPORT));
       MUploadPage.replace("%VER%", String(programVersion));
-      MUploadPage.replace("%NAME%", String(programName));
+      MUploadPage.replace("%NAM%", String(DRVBRD_ID));
       TRACE();
       DebugPrintln(PROCESSPAGEENDSTR);
     }
@@ -1127,7 +1139,7 @@ void MANAGEMENT_buildupload(void)
     {
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
-      MUploadPage = "<html><head><title>Management Server></title></head><body><p>msupload.html not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>";
+      MUploadPage = MANAGEMENTURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -1150,7 +1162,11 @@ void MANAGEMENT_handlefileupload(void)
     }
     DebugPrint("handleFileUpload Name: ");
     DebugPrintln(filename);
+#if defined(ESP8266)
+    fsUploadFile = LittleFS.open(filename, "w");
+#else
     fsUploadFile = SPIFFS.open(filename, "w");
+#endif
     filename = String();
   }
   else if (upload.status == UPLOAD_FILE_WRITE)
@@ -1183,192 +1199,205 @@ void MANAGEMENT_buildhome(void)
   // constructs home page of management server
   TRACE();
   // load not found page from spiffs - wsindex.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     // could not read index file from SPIFFS
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    MHomePage = "<html><head><title>Management Server></title></head><body><p>msindex.html not found</p><p>Did you upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"> </form></p></body></html>";
+    MHomePage = MANAGEMENTURLNOTFOUNDSTR;
   }
   else
   {
     DebugPrintln(F("management: SPIFFS mounted"));
+#if defined(ESP8266)
+    if (LittleFS.exists("/msindex.html"))
+#else
     if ( SPIFFS.exists("/msindex.html"))
+#endif
     {
       TRACE();
       DebugPrintln(FILEFOUNDSTR);
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/msindex.html", "r");
+#else
       File file = SPIFFS.open("/msindex.html", "r");
+#endif
       // read contents into string
       DebugPrintln(READPAGESTR);
       MHomePage = file.readString();
+      file.close();
 
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       MHomePage.replace("%IP%", ipStr);
-      MHomePage.replace("%PORT%", String(MSSERVERPORT));
+      MHomePage.replace("%POR%", String(MSSERVERPORT));
       MHomePage.replace("%VER%", String(programVersion));
-      MHomePage.replace("%NAME%", String(programName));
+      MHomePage.replace("%NAM%", String(DRVBRD_ID));
 #ifdef BLUETOOTHMODE
-      MHomePage.replace("%MODE%", "BLUETOOTH : " + String(BLUETOOTHNAME));
+      MHomePage.replace("%MOD%", "BLUETOOTH : " + String(BLUETOOTHNAME));
 #endif
 #ifdef ACCESSPOINT
-      MHomePage.replace("%MODE%", "ACCESSPOINT");
+      MHomePage.replace("%MOD%", "ACCESSPOINT");
 #endif
 #ifdef STATIONMODE
-      MHomePage.replace("%MODE%", "STATIONMODE");
+      MHomePage.replace("%MOD%", "STATIONMODE");
 #endif
 #ifdef LOCALSERIAL
-      MHomePage.replace("%MODE%", "LOCALSERIAL");
+      MHomePage.replace("%MOD%", "LOCALSERIAL");
 #endif
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
       if ( tcpipserverstate == RUNNING )
       {
-        MHomePage.replace("%TSTATE%", "RUNNING");
+        MHomePage.replace("%TST%", "RUNNING");
       }
       else
       {
-        MHomePage.replace("%TSTATE%", "STOPPED");
+        MHomePage.replace("%TST%", "STOPPED");
       }
-      MHomePage.replace("%TPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"tp\" size=\"6\" value=" + String(mySetupData->get_tcpipport()) + "> <input type=\"submit\" name=\"settsport\" value=\"Set\"></form>");
+      MHomePage.replace("%TPO%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"tp\" size=\"6\" value=" + String(mySetupData->get_tcpipport()) + "> <input type=\"submit\" name=\"settsport\" value=\"Set\"></form>");
       if ( tcpipserverstate == RUNNING)
       {
-        MHomePage.replace("%TBTN%", String(STOPTSSTR));
+        MHomePage.replace("%TBT%", String(STOPTSSTR));
       }
       else
       {
-        MHomePage.replace("%TBTN%", String(STARTTSSTR));
+        MHomePage.replace("%TBT%", String(STARTTSSTR));
       }
 #else
-      MHomePage.replace("%TSTATE%", "Not defined");
-      MHomePage.replace("%TPORT%", "Port: " + String(mySetupData->get_tcpipport()));
-      MHomePage.replace("%TBTN%", " ");
+      MHomePage.replace("%TST%", "Not defined");
+      MHomePage.replace("%TPO%", "Port: " + String(mySetupData->get_tcpipport()));
+      MHomePage.replace("%TBT%", " ");
 #endif
 
 #ifdef WEBSERVER
       if ( webserverstate == RUNNING )
       {
-        MHomePage.replace("%WSTATE%", "RUNNING");
+        MHomePage.replace("%WST%", "RUNNING");
       }
       else
       {
-        MHomePage.replace("%WSTATE%", "STOPPED");
+        MHomePage.replace("%WST%", "STOPPED");
       }
-      MHomePage.replace("%WPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\"></form>");
-      MHomePage.replace("%WRATE%", "<form action=\"/\" method =\"post\">Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"></form>");
+      MHomePage.replace("%WPO%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"wp\" size=\"6\" value=" + String(mySetupData->get_webserverport()) + "> <input type=\"submit\" name=\"setwsport\" value=\"Set\"></form>");
+      MHomePage.replace("%WRA%", "<form action=\"/\" method =\"post\">Refresh Rate: <input type=\"text\" name= \"wr\" size=\"6\" value=" + String(mySetupData->get_webpagerefreshrate()) + "> <input type=\"submit\" name=\"setwsrate\" value=\"Set\"></form>");
       if ( webserverstate == RUNNING)
       {
-        MHomePage.replace("%WBTN%", String(STOPWSSTR));
+        MHomePage.replace("%WBT%", String(STOPWSSTR));
       }
       else
       {
-        MHomePage.replace("%WBTN%", String(STARTWSSTR));
+        MHomePage.replace("%WBT%", String(STARTWSSTR));
       }
 #else
-      MHomePage.replace("%WSTATE%", "Not defined");
-      MHomePage.replace("%WRATE%", "Refresh Rate: " + String(mySetupData->get_webpagerefreshrate()));
-      MHomePage.replace("%WPORT%", "Port: " + String(mySetupData->get_webserverport()));
-      MHomePage.replace("%WBTN%", " ");
+      MHomePage.replace("%WST%", "Not defined");
+      MHomePage.replace("%RAT%", "Refresh Rate: " + String(mySetupData->get_webpagerefreshrate()));
+      MHomePage.replace("%WPO%", "Port: " + String(mySetupData->get_webserverport()));
+      MHomePage.replace("%WBT%", " ");
 #endif
 #ifdef ASCOMREMOTE
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ASTATE%", "RUNNING");
+        MHomePage.replace("%AST%", "RUNNING");
       }
       else
       {
-        MHomePage.replace("%ASTATE%", "STOPPED");
+        MHomePage.replace("%AST%", "STOPPED");
       }
-      MHomePage.replace("%APORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"></form>");
+      MHomePage.replace("%APO%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"></form>");
       if ( ascomserverstate == RUNNING )
       {
-        MHomePage.replace("%ABTN%", String(STOPASSTR));
+        MHomePage.replace("%ABT%", String(STOPASSTR));
       }
       else
       {
-        MHomePage.replace("%ABTN%", String(STARTASSTR));
+        MHomePage.replace("%ABT%", String(STARTASSTR));
       }
 #else
-      MHomePage.replace("%ASTATE", "Not defined");
-      MHomePage.replace("%APORT%", "Port: " + String(mySetupData->get_ascomalpacaport()));
-      MHomePage.replace("%ABTN%", " ");
+      MHomePage.replace("%AST", "Not defined");
+      MHomePage.replace("%APO%", "Port: " + String(mySetupData->get_ascomalpacaport()));
+      MHomePage.replace("%ABT%", " ");
 #endif
 
 #ifdef OTAUPDATES
       if ( otaupdatestate == RUNNING )
       {
-        MHomePage.replace("%OSTATE%", "RUNNING");
+        MHomePage.replace("%OST%", "RUNNING");
       }
       else
       {
-        MHomePage.replace("%OSTATE%", "STOPPED");
+        MHomePage.replace("%OST%", "STOPPED");
       }
 #else
-      MHomePage.replace("%OSTATE%", "Not defined");
+      MHomePage.replace("%OST%", "Not defined");
 #endif
 #ifdef USEDUCKDNS
       if ( duckdnsstate == RUNNING )
       {
-        MHomePage.replace("%DSTATE%", "RUNNING");
+        MHomePage.replace("%DST%", "RUNNING");
       }
       else
       {
-        MHomePage.replace("%DSTATE%", "STOPPED");
+        MHomePage.replace("%DST%", "STOPPED");
       }
 #else
-      MHomePage.replace("%DSTATE%", "Not defined");
+      MHomePage.replace("%DST%", "Not defined");
 #endif
       if ( staticip == STATICIPON )
       {
-        MHomePage.replace("%IPSTATE%", "ON");
+        MHomePage.replace("%IPS%", "ON");
       }
       else
       {
-        MHomePage.replace("%IPSTATE%", "OFF");
+        MHomePage.replace("%IPS%", "OFF");
       }
 #ifdef MDNSSERVER
       if ( mdnsserverstate == RUNNING)
       {
-        MHomePage.replace("%MSTATE%", "RUNNING");
+        MHomePage.replace("%MST%", "RUNNING");
       }
       else
       {
-        MHomePage.replace("%MSTATE%", "STOPPED");
+        MHomePage.replace("%MST%", "STOPPED");
       }
-      MHomePage.replace("%MPORT%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name= \"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\"></form>");
+      MHomePage.replace("%MPO%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name=\"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\"></form>");
       if ( mdnsserverstate == RUNNING)
       {
-        MHomePage.replace("%MBTN%", "STOP");
+        MHomePage.replace("%MBT%", "STOP");
       }
       else
       {
-        MHomePage.replace("%MBTN%", "START");
+        MHomePage.replace("%MBT%", "START");
       }
 #else
-      MHomePage.replace("%MSTATE%", "Not defined");
-      MHomePage.replace("%MPORT%", "Port: " + String(mySetupData->get_mdnsport()));
-      MHomePage.replace("%MBTN%", " ");
+      MHomePage.replace("%MST%", "Not defined");
+      MHomePage.replace("%MPO%", "Port: " + String(mySetupData->get_mdnsport()));
+      MHomePage.replace("%MBT%", " ");
 #endif
       // display
 #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
       if ( mySetupData->get_displayenabled() == 1 )
       {
         // checked already
-        MHomePage.replace("%OLED%", String(DISPLAYONSTR));
+        MHomePage.replace("%OLE%", String(DISPLAYONSTR));
       }
       else
       {
         // not checked
-        MHomePage.replace("%OLED%", String(DISPLAYOFFSTR));
+        MHomePage.replace("%OLE%", String(DISPLAYOFFSTR));
       }
 #else
-      MHomePage.replace("%OLED%", "Not defined");
+      MHomePage.replace("%OLE%", "Not defined");
 #endif
       // display heap memory for tracking memory loss?
       // only esp32?
-      MHomePage.replace("%HEAP%", String(ESP.getFreeHeap()));
+      MHomePage.replace("%HEA%", String(ESP.getFreeHeap()));
       DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
@@ -1376,7 +1405,7 @@ void MANAGEMENT_buildhome(void)
       // could not read index file from SPIFFS
       TRACE();
       DebugPrintln(BUILDDEFAULTPAGESTR);
-      MHomePage = "<html><head><title>Management Server></title></head><body><p>msindex.html not found</p><p>Did you upload the data files to SPIFFS?</p><p><form action=\"/\" method=\"post\"><input type=\"submit\" name=\"reboot\" value=\"Reboot Controller\"></form></p></body></html>";
+      MHomePage = MANAGEMENTURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -1746,7 +1775,11 @@ void MANAGEMENT_handleroot(void)
 
 void start_management(void)
 {
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
@@ -1793,7 +1826,7 @@ void stop_management(void)
 #endif // #ifdef MANAGEMENT
 
 // ----------------------------------------------------------------------------------------------
-// 26: WEBSERVER - CHANGE AT YOUR OWN PERIL
+// 25: WEBSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef WEBSERVER
 
@@ -1817,33 +1850,43 @@ String WPresetsPage;
 void WEBSERVER_buildnotfound(void)
 {
   // load not found page from spiffs - wsnotfound.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    WNotFoundPage = "<html><head><title>Web Server: Not found></title></head><body>";
-    WNotFoundPage = WNotFoundPage + "<p>The requested URL was not found</p>";
-    WNotFoundPage = WNotFoundPage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p>";
-    WNotFoundPage = WNotFoundPage + "</body></html>";
+    WNotFoundPage = WEBSERVERURLNOTFOUNDSTR;
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/wsnotfound.html"))
+#else
     if ( SPIFFS.exists("/wsnotfound.html"))
+#endif
     {
-      DebugPrintln("webserver: wsnotfound.html found in spiffs");
+      DebugPrintln("webserver: wsnotfound.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/wsnotfound.html", "r");
+#else
       File file = SPIFFS.open("/wsnotfound.html", "r");
+#endif
       // read contents into string
       DebugPrintln(READPAGESTR);
       WNotFoundPage = file.readString();
+      file.close();
 
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       WNotFoundPage.replace("%IP%", ipStr);
-      WNotFoundPage.replace("%PORT%", String(mySetupData->get_webserverport()));
+      WNotFoundPage.replace("%POR%", String(mySetupData->get_webserverport()));
       WNotFoundPage.replace("%VER%", String(programVersion));
-      WNotFoundPage.replace("%NAME%", String(programName));
+      WNotFoundPage.replace("%NAM%", String(DRVBRD_ID));
       DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
@@ -1851,10 +1894,7 @@ void WEBSERVER_buildnotfound(void)
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
-      WNotFoundPage = "<html><head><title>Web Server: Not found></title></head><body>";
-      WNotFoundPage = WNotFoundPage + "<p>The requested URL was not found</p>";
-      WNotFoundPage = WNotFoundPage + "<p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p>";
-      WNotFoundPage = WNotFoundPage + "</body></html>";
+      WNotFoundPage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -1869,35 +1909,48 @@ void WEBSERVER_buildpresets(void)
 {
   // construct the presetspage now
   // load not found page from spiffs - wspresets.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     // could not read move file from SPIFFS
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>wspresets.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
+    WPresetsPage = WEBSERVERURLNOTFOUNDSTR;
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/wspresets.html"))
+#else
     if ( SPIFFS.exists("/wspresets.html"))
+#endif
     {
-      DebugPrintln("webserver: wspresets.html found in spiffs");
+      DebugPrintln("webserver: wspresets.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/wspresets.html", "r");
+#else
       File file = SPIFFS.open("/wspresets.html", "r");
+#endif
       // read contents into string
       DebugPrintln(READPAGESTR);
       WPresetsPage = file.readString();
+      file.close();
 
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
-      WPresetsPage.replace("%RATE%", String(mySetupData->get_webpagerefreshrate()));
+      WPresetsPage.replace("%RAT%", String(mySetupData->get_webpagerefreshrate()));
       WPresetsPage.replace("%IP%", ipStr);
-      WPresetsPage.replace("%PORT%", String(mySetupData->get_webserverport()));
+      WPresetsPage.replace("%POR%", String(mySetupData->get_webserverport()));
       WPresetsPage.replace("%VER%", String(programVersion));
-      WPresetsPage.replace("%NAME%", String(programName));
-      WPresetsPage.replace("%CPOS%", String(fcurrentPosition));
-      WPresetsPage.replace("%TPOS%", String(ftargetPosition));
-      WPresetsPage.replace("%MOVING%", String(isMoving));
+      WPresetsPage.replace("%NAM%", String(DRVBRD_ID));
+      WPresetsPage.replace("%CPO%", String(fcurrentPosition));
+      WPresetsPage.replace("%TPO%", String(ftargetPosition));
+      WPresetsPage.replace("%MOV%", String(isMoving));
 
       WPresetsPage.replace("%WSP0%", String(mySetupData->get_focuserpreset(0)));
       WPresetsPage.replace("%WSP1%", String(mySetupData->get_focuserpreset(1)));
@@ -1917,7 +1970,7 @@ void WEBSERVER_buildpresets(void)
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
-      WPresetsPage = "<html><head><title>Web Server:></title></head><body><p>wspresets.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
+      WPresetsPage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -2376,35 +2429,47 @@ void WEBSERVER_buildmove(void)
 {
   // construct the movepage now
   // load not found page from spiffs - wsmove.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     // could not read move file from SPIFFS
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    WMovePage = "<html><head><title>Web Server:></title></head><body><p>wsmove.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
+    WMovePage = WEBSERVERURLNOTFOUNDSTR;
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/wsmove.html"))
+#else
     if ( SPIFFS.exists("/wsmove.html"))
+#endif
     {
-      DebugPrintln("webserver: wsmove.html found in spiffs");
+      DebugPrintln("webserver: wsmove.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/wsmove.html", "r");
+#else
       File file = SPIFFS.open("/wsmove.html", "r");
+#endif
       // read contents into string
       DebugPrintln(READPAGESTR);
       WMovePage = file.readString();
+      file.close();
 
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
-      WMovePage.replace("%RATE%", String(mySetupData->get_webpagerefreshrate()));
       WMovePage.replace("%IP%", ipStr);
-      WMovePage.replace("%PORT%", String(mySetupData->get_webserverport()));
+      WMovePage.replace("%POR%", String(mySetupData->get_webserverport()));
       WMovePage.replace("%VER%", String(programVersion));
-      WMovePage.replace("%NAME%", String(programName));
-      WMovePage.replace("%CPOS%", String(fcurrentPosition));
-      WMovePage.replace("%TPOS%", String(ftargetPosition));
-      WMovePage.replace("%MOVING%", String(isMoving));
+      WMovePage.replace("%NAM%", String(DRVBRD_ID));
+      WMovePage.replace("%CPO%", String(fcurrentPosition));
+      WMovePage.replace("%TPO%", String(ftargetPosition));
+      WMovePage.replace("%MOVI%", String(isMoving));
       DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
@@ -2413,7 +2478,7 @@ void WEBSERVER_buildmove(void)
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
-      WMovePage = "<html><head><title>Web Server:></title></head><body><p>wsmove.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
+      WMovePage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -2466,67 +2531,80 @@ void WEBSERVER_buildhome(void)
 {
   // construct the homepage now
   // load not found page from spiffs - wsindex.html
-  if (!SPIFFS.begin())
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     TRACE();
     DebugPrintln(SPIFFSNOTSTARTEDSTR);
     // could not read index file from SPIFFS
     DebugPrintln(BUILDDEFAULTPAGESTR);
-    WHomePage = "<html><head><title>Web Server:></title></head><body><p>wsindex.html not found</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
+    WHomePage = WEBSERVERURLNOTFOUNDSTR;
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/wsindex.html"))
+#else
     if ( SPIFFS.exists("/wsindex.html"))
+#endif
     {
-      DebugPrintln("webserver: wsindex.html found in spiffs");
+      DebugPrintln("webserver: wsindex.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/wsindex.html", "r");
+#else
       File file = SPIFFS.open("/wsindex.html", "r");
+#endif
       // read contents into string
       DebugPrintln(READPAGESTR);
       WHomePage = file.readString();
+      file.close();
 
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
-      WHomePage.replace("%RATE%", String(mySetupData->get_webpagerefreshrate()));
+      WHomePage.replace("%RAT%", String(mySetupData->get_webpagerefreshrate()));
       WHomePage.replace("%IP%", ipStr);
-      WHomePage.replace("%PORT%", String(mySetupData->get_webserverport()));
+      WHomePage.replace("%POR%", String(mySetupData->get_webserverport()));
       WHomePage.replace("%VER%", String(programVersion));
-      WHomePage.replace("%NAME%", String(programName));
+      WHomePage.replace("%NAM%", String(DRVBRD_ID));
       // if this is a GOTO command then make this target else make current
       String fp_str = webserver->arg("gotopos");
       if ( fp_str != "" )
       {
-        WHomePage.replace("%CPOS%", String(ftargetPosition));
+        WHomePage.replace("%CPO%", String(ftargetPosition));
       }
       else
       {
-        WHomePage.replace("%CPOS%", String(fcurrentPosition));
+        WHomePage.replace("%CPO%", String(fcurrentPosition));
       }
-      WHomePage.replace("%TPOS%", String(ftargetPosition));
-      WHomePage.replace("%MAXSTEP%", String(mySetupData->get_maxstep()));
-      WHomePage.replace("%MOVING%", String(isMoving));
+      WHomePage.replace("%TPO%", String(ftargetPosition));
+      WHomePage.replace("%MAX%", String(mySetupData->get_maxstep()));
+      WHomePage.replace("%MOV%", String(isMoving));
 #ifdef TEMPERATUREPROBE
       if ( mySetupData->get_tempmode() == 1)
       {
-        WHomePage.replace("%WSTEMPERATURE%", String(read_temp(1), 2));
+        WHomePage.replace("%TEM%", String(read_temp(1), 2));
       }
       else
       {
         float ft = read_temp(1);
         ft = (ft * 1.8) + 32;
-        WHomePage.replace("%WSTEMPERATURE%", String(ft, 2));
+        WHomePage.replace("%TEM%", String(ft, 2));
       }
 #else
       if ( mySetupData->get_tempmode() == 1)
       {
-        WHomePage.replace("%TEMP%", "20.00");
+        WHomePage.replace("%TEM%", "20.00");
       }
       else
       {
-        WHomePage.replace("%TEMP%", "68.00");
+        WHomePage.replace("%TEM%", "68.00");
       }
 #endif
-      WHomePage.replace("%TPRN%", String(mySetupData->get_tempprecision()));
+      WHomePage.replace("%TPR%", String(mySetupData->get_tempprecision()));
       String smbuffer = String(mySetupData->get_stepmode());
       switch ( mySetupData->get_stepmode() )
       {
@@ -2587,7 +2665,7 @@ void WEBSERVER_buildhome(void)
           smbuffer = smbuffer + WS_SM32UNCHECKED;
           break;
       }
-      WHomePage.replace("%SMBUF%", smbuffer);
+      WHomePage.replace("%STM%", smbuffer);
       String msbuffer = String(mySetupData->get_motorSpeed());
       switch ( mySetupData->get_motorSpeed() )
       {
@@ -2612,7 +2690,7 @@ void WEBSERVER_buildhome(void)
           msbuffer = msbuffer + WS_MSFASTCHECKED;
           break;
       }
-      WHomePage.replace("%MSBUF%", msbuffer);
+      WHomePage.replace("%MSB%", msbuffer);
       String cpbuffer;
       if ( !mySetupData->get_coilpower() )
       {
@@ -2622,7 +2700,7 @@ void WEBSERVER_buildhome(void)
       {
         cpbuffer = "<input type=\"checkbox\" name=\"cp\" value=\"cp\" Checked> ";
       }
-      WHomePage.replace("%CPBUF%", cpbuffer);
+      WHomePage.replace("%CPB%", cpbuffer);
       String rdbuffer;
       if ( !mySetupData->get_reversedirection() )
       {
@@ -2632,21 +2710,19 @@ void WEBSERVER_buildhome(void)
       {
         rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
       }
-      WHomePage.replace("%RDBUF%", rdbuffer);
+      WHomePage.replace("%RDB%", rdbuffer);
       // display
 #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
       if ( mySetupData->get_displayenabled() == 1 )
       {
-        // checked already
-        WHomePage.replace("%OLED%", "OFF");
+        WHomePage.replace("%OLE%", "ON");
       }
       else
       {
-        // not checked
-        WHomePage.replace("%OLED%", "ON");
+        WHomePage.replace("%OLE%", "ON");
       }
 #else
-      WHomePage.replace("%OLED%", "Display not defined");
+      WHomePage.replace("%OLE%", "Display not defined");
 #endif
       DebugPrintln(PROCESSPAGEENDSTR);
     }
@@ -2656,7 +2732,7 @@ void WEBSERVER_buildhome(void)
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
-      WHomePage = "<html><head><title>Web Server:></title></head><body><p>wsindex.html</p><p>Did you upload the data files to SPIFFS?</p></body></html>";
+      WHomePage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
@@ -2664,12 +2740,12 @@ void WEBSERVER_buildhome(void)
 
 void WEBSERVER_handleposition()
 {
-  webserver->send(200, "text/plane", String(fcurrentPosition)); //Send position value only to client ajax request
+  webserver->send(200, PLAINTEXTPAGETYPE, String(fcurrentPosition)); //Send position value only to client ajax request
 }
 
 void WEBSERVER_handleismoving()
 {
-  webserver->send(200, "text/plane", String(isMoving)); //Send isMoving value only to client ajax request
+  webserver->send(200, PLAINTEXTPAGETYPE, String(isMoving)); //Send isMoving value only to client ajax request
 }
 
 // handles root page of webserver
@@ -2862,12 +2938,16 @@ void WEBSERVER_handleroot()
 #endif
     }
   }
+  WEBSERVER_sendroot();
+}
 
+void WEBSERVER_sendroot()
+{
   WEBSERVER_buildhome();
   // send the homepage to a connected client
   DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WHomePage );
-  delay(10);                     // small pause so background ESP8266 tasks can run
+  delay(10);
 }
 
 void start_webserver(void)
@@ -2882,7 +2962,8 @@ void start_webserver(void)
   WEBSERVER_buildhome();
   WEBSERVER_buildmove();
   WEBSERVER_buildpresets();
-  webserver->on("/", WEBSERVER_handleroot);
+  webserver->on("/", HTTP_PUT, WEBSERVER_handleroot);
+  webserver->on("/", HTTP_GET, WEBSERVER_sendroot);
   webserver->on("/move", WEBSERVER_handlemove);
   webserver->on("/presets", WEBSERVER_handlepresets);
   webserver->on("/position", WEBSERVER_handleposition);
@@ -2914,7 +2995,7 @@ void stop_webserver(void)
 #endif // #ifdef WEBSERVER
 
 // ----------------------------------------------------------------------------------------------
-// 27: ASCOMSERVER - CHANGE AT YOUR OWN PERIL
+// 26: ASCOMSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef ASCOMREMOTE
 #if defined(ESP8266)
@@ -3124,20 +3205,33 @@ void ASCOM_Create_Setup_Focuser_HomePage()
 
   // construct setup page of ascom server
   // header
-  if (SPIFFS.begin())
+#if defined(ESP8266)
+  if ( LittleFS.begin())
+#else
+  if ( SPIFFS.begin())
+#endif
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/assetup.html"))
+#else
     if ( SPIFFS.exists("/assetup.html"))
+#endif
     {
-      DebugPrintln("ascomserver: assetup.html found in spiffs");
+      DebugPrintln("ascomserver: assetup.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/assetup.html", "r");
+#else
       File file = SPIFFS.open("/assetup.html", "r");
+#endif
       // read contents into string
       DebugPrintln("ascomserver: read page into string");
       Focuser_Setup_HomePage = file.readString();
+      file.close();
 
       DebugPrintln("ascomserver: processing page start");
       // process for dynamic data
-      Focuser_Setup_HomePage.replace("%PROGRAMNAME%", String(programName));
+      Focuser_Setup_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
       Focuser_Setup_HomePage.replace("%IPSTR%", ipStr);
       Focuser_Setup_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
       Focuser_Setup_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
@@ -3168,8 +3262,8 @@ void ASCOM_Create_Setup_Focuser_HomePage()
     Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_TITLE);
 
     Focuser_Setup_HomePage = Focuser_Setup_HomePage + String(AS_COPYRIGHT);
-    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<p>Driverboard = myFP2ESP." + programName + "<br>";
-    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<myFP2ESP." + programName + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion) + "</br>";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<p>Driverboard = myFP2ESP." + DRVBRD_ID + "<br>";
+    Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<myFP2ESP." + DRVBRD_ID + "</h3>IP Address: " + ipStr + ", Firmware Version=" + String(programVersion) + "</br>";
 
     // position. set position
     Focuser_Setup_HomePage = Focuser_Setup_HomePage + "<form action=\"/setup/v1/focuser/0/setup\" method=\"post\" ><br><b>Focuser Position</b> <input type=\"text\" name=\"fp\" size =\"15\" value=" + fpbuffer + "> ";
@@ -3319,42 +3413,55 @@ void ASCOM_handle_setup()
   // The web page must describe the overall device, including name, manufacturer and version number.
   // content-type: text/html
   String AS_HomePage;
-  // read ashomepage.html from SPIFFS
-  if (!SPIFFS.begin())
+  // read ashomepage.html from FS
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
     DebugPrintln(F("ascomserver: build_default_homepage"));
-    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
+    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
     AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
     AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
     AS_HomePage = AS_HomePage + "</body></html>";
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/ashomepage.html"))
+#else
     if ( SPIFFS.exists("/ashomepage.html"))
+#endif
     {
-      DebugPrintln("ascomserver: ashomepage.html found in spiffs");
+      DebugPrintln("ascomserver: ashomepage.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/ashomepage.html", "r");
+#else
       File file = SPIFFS.open("/ashomepage.html", "r");
+#endif
       // read contents into string
       DebugPrintln("ascomserver: read page into string");
       AS_HomePage = file.readString();
+      file.close();
 
       DebugPrintln("ascomserver: processing page start");
       // process for dynamic data
       AS_HomePage.replace("%IPSTR%", ipStr);
       AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
       AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
-      AS_HomePage.replace("%PROGRAMNAME%", String(programName));
+      AS_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
       DebugPrintln("ascomserver: processing page done");
     }
     else
     {
-      DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
+      DebugPrintln(F("ascomserver: Err ashomepage.html !found"));
       DebugPrintln(F("ascomserver: build_default_homepage"));
-      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
-      AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
-      AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
+      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
+      AS_HomePage = AS_HomePage + "<p>File not found</p>";
+      AS_HomePage = AS_HomePage + "<p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
       AS_HomePage = AS_HomePage + "</body></html>";
     }
   }
@@ -4003,41 +4110,54 @@ void ASCOM_handleNotFound()
 void ASCOM_handleRoot()
 {
   String AS_HomePage;
-  // read ashomepage.html from SPIFFS
-  if (!SPIFFS.begin())
+  // read ashomepage.html from FS
+#if defined(ESP8266)
+  if ( !LittleFS.begin())
+#else
+  if ( !SPIFFS.begin())
+#endif
   {
     DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
     DebugPrintln(F("ascomserver: build_default_homepage"));
-    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
-    AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
+    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
+    AS_HomePage = AS_HomePage + "<p>FS could not be started</p>";
     AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
     AS_HomePage = AS_HomePage + "</body></html>";
   }
   else
   {
+#if defined(ESP8266)
+    if ( LittleFS.exists("/ashomepage.html"))
+#else
     if ( SPIFFS.exists("/ashomepage.html"))
+#endif
     {
-      DebugPrintln("ascomserver: ashomepage.html found in spiffs");
+      DebugPrintln("ascomserver: ashomepage.html found");
       // open file for read
+#if defined(ESP8266)
+      File file = LittleFS.open("/ashomepage.html", "r");
+#else
       File file = SPIFFS.open("/ashomepage.html", "r");
+#endif
       // read contents into string
       DebugPrintln("ascomserver: read page into string");
       AS_HomePage = file.readString();
+      file.close();
 
       DebugPrintln("ascomserver: processing page start");
       // process for dynamic data
       AS_HomePage.replace("%IPSTR%", ipStr);
       AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
       AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
-      AS_HomePage.replace("%PROGRAMNAME%", String(programName));
+      AS_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
       DebugPrintln("ascomserver: processing page done");
     }
     else
     {
       DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
       DebugPrintln(F("ascomserver: build_default_homepage"));
-      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER: Not found></title></head><body>";
-      AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
+      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
+      AS_HomePage = AS_HomePage + "<p>File not found</p>";
       AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
       AS_HomePage = AS_HomePage + "</body></html>";
     }
@@ -4126,10 +4246,11 @@ void stop_ascomremoteserver(void)
   delay(10);                        // small pause so background tasks can run
 }
 #endif // ifdef ASCOMREMOTE
+
 // ASCOM REMOTE END -----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
-// 28: OTAUPDATES - CHANGE AT YOUR OWN PERIL
+// 27: OTAUPDATES - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #if defined(OTAUPDATES)
 #include <ArduinoOTA.h>
@@ -4186,7 +4307,7 @@ void start_otaservice()
 #endif // #if defined(OTAUPDATES)
 
 // ----------------------------------------------------------------------------------------------
-// 29: DUCKDNS - CHANGE AT YOUR OWN PERIL
+// 28: DUCKDNS - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #ifdef USEDUCKDNS
 #include <EasyDDNS.h>                           // https://github.com/ayushsharma82/EasyDDNS
@@ -4206,7 +4327,7 @@ void init_duckdns(void)
 #endif // #ifdef USEDUCKSDNS
 
 // ----------------------------------------------------------------------------------------------
-// 30: FIRMWARE - CHANGE AT YOUR OWN PERIL
+// 29: FIRMWARE - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 byte TimeCheck(unsigned long x, unsigned long Delay)
 {
@@ -4261,14 +4382,18 @@ void steppermotormove(byte dir )                // direction moving_in, moving_o
 
 bool readwificonfig( char* xSSID, char* xPASSWORD)
 {
-//  const String filename = "/wificonfig.json";
-  const char filename[] = "/wificonfig.json";  
+  //  const String filename = "/wificonfig.json";
+  const char filename[] = "/wificonfig.json";
   String SSID;
   String PASSWORD;
   boolean status = false;
 
   DebugPrintln(CHECKWIFICONFIGFILESTR);
+#if defined(ESP8266)
+  File f = LittleFS.open(filename, "r");                          // file open to read
+#else
   File f = SPIFFS.open(filename, "r");                          // file open to read
+#endif
   if (!f)
   {
     TRACE();
@@ -4279,6 +4404,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
     String data = f.readString();                               // read content of the text file
     DebugPrint(F("Wifi Config data: "));
     DebugPrintln(data);                                         // ... and print on serial
+    f.close();
 
     DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(2) + 120));  // allocate json buffer
     DeserializationError error = deserializeJson(doc, data);    // Parse JSON object
@@ -4321,6 +4447,7 @@ void stop_tcpipserver()
 
 void setup()
 {
+  Serial.begin(SERIALPORTSPEED);
 #if defined(DEBUG)
   Serial.begin(SERIALPORTSPEED);
   DebugPrintln(SERIALSTARTSTR);
@@ -4355,11 +4482,11 @@ void setup()
 
   displayfound = false;
 #ifdef OLEDTEXT
-    myoled = new OLED_TEXT;
+  myoled = new OLED_TEXT;
 #elif OLEDGRAPHICS
-  myoled = new OLED_GRAPHIC();      
+  myoled = new OLED_GRAPHIC();
 #else
-    myoled = new OLED_NON;      // create Object for non OLED
+  myoled = new OLED_NON;      // create Object for non OLED
 #endif
 
   delay(100);                                   // keep delays small otherwise issue with ASCOM
@@ -4428,7 +4555,7 @@ void setup()
 
 #ifdef ACCESSPOINT
   myoled->oledtextmsg(STARTAPSTR, -1, true, true);
-  DebugPrintln(STARTAPSTR));
+  DebugPrintln(STARTAPSTR);
   WiFi.config(ip, dns, gateway, subnet);
   WiFi.mode(WIFI_AP);
   WiFi.softAP(mySSID, myPASSWORD);
@@ -4468,7 +4595,7 @@ void setup()
       DebugPrintln(APCONNECTFAILSTR);
       DebugPrintln(WIFIRESTARTSTR);
       myoled->oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
-	    myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
+      myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
       delay(2000);
       software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
@@ -4511,13 +4638,9 @@ void setup()
   DebugPrintln(SERVERPORT);
   DebugPrintln(SERVERREADYSTR);
   myIP = WiFi.localIP();
-//  ipStr = String(myIP[0]) + "." + String(myIP[1]) + "." + String(myIP[2]) + "." + String(myIP[3]);
   snprintf(ipStr, sizeof(ipStr), "%i.%i.%i.%i",  myIP[0], myIP[1], myIP[2], myIP[3]);
-
-
 #else
   // it is Bluetooth so set some globals
-//  ipStr = "0.0.0.0";
   ipStr = ip_zero;      // "0.0.0.0"
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
@@ -4541,12 +4664,9 @@ void setup()
   mySetupData->set_lcdpagetime((mySetupData->get_lcdpagetime() < LCDPAGETIMEMIN) ? mySetupData->get_lcdpagetime() : LCDPAGETIMEMIN);
   mySetupData->set_lcdpagetime((mySetupData->get_lcdpagetime() > LCDPAGETIMEMAX) ? LCDPAGETIMEMAX : mySetupData->get_lcdpagetime());
   mySetupData->set_maxstep((mySetupData->get_maxstep() < FOCUSERLOWERLIMIT) ? FOCUSERLOWERLIMIT : mySetupData->get_maxstep());
-  //mySetupData->set_fposition((mySetupData->get_fposition() < 0 ) ? 0 : mySetupData->get_fposition());
-  //mySetupData->set_fposition((mySetupData->get_fposition() > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : mySetupData->get_fposition());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() < 0.0 ) ? 0 : mySetupData->get_stepsize());
   mySetupData->set_stepsize((float)(mySetupData->get_stepsize() > MAXIMUMSTEPSIZE ) ? MAXIMUMSTEPSIZE : mySetupData->get_stepsize());
 
-  driverboard->setmotorspeed(mySetupData->get_motorSpeed());  // restore motorspeed
   driverboard->setstepmode(mySetupData->get_stepmode());      // restore stepmode
 
   DebugPrintln(CHECKCPWRSTR);
@@ -4561,12 +4681,11 @@ void setup()
   // set features
   setFeatures();
 
-/*
-  // setup home position switch
+  // setup home position switch input pin
 #ifdef HOMEPOSITIONSWITCH
-  init_homepositionswitch();
+  pinMode(HPSWPIN, INPUT_PULLUP);
 #endif
-*/
+
   // Setup infra red remote
 #ifdef INFRAREDREMOTE
   init_irremote();
@@ -4584,8 +4703,6 @@ void setup()
   isMoving = 0;
 
 #ifdef TEMPERATUREPROBE
-  // restore temperature probe resolution setting
-  // temp_setresolution(mySetupData->get_tempprecision());    // redundant as earlier call to init_temp() sets the precision
   read_temp(1);
 #endif
 
@@ -4629,7 +4746,8 @@ void setup()
 
 //_____________________ loop()___________________________________________
 
-extern volatile uint32_t stepcount;     // number of steps to go in timer interrupt service routine 
+extern volatile uint32_t stepcount;     // number of steps to go in timer interrupt service routine
+extern volatile bool timerSemaphore;
 
 void loop()
 {
@@ -4645,10 +4763,10 @@ void loop()
   static oled_state oled = oled_on;
   static uint32_t steps = 0;
   static bool flag = false;
-  static bool halt_alert = false;  
+  static bool halt_alert = false;
 
 #ifdef HOMEPOSITIONSWITCH
-  static byte stepstaken       = 0;
+  static byte stepstaken = 0;
 #endif
 
 #ifdef LOOPTIMETEST
@@ -4657,14 +4775,16 @@ void loop()
 #endif
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-if (ConnectionStatus == disconnected)
+  if (ConnectionStatus == disconnected)
   {
     myclient = myserver.available();
     if (myclient)
     {
-      DebugPrintln(F("tcp client has connected"));
+      DebugPrintln(F(TCPCLIENTCONNECTSTR));
       if (myclient.connected())
+      {
         ConnectionStatus = connected;
+      }
     }
   }
   else
@@ -4674,15 +4794,15 @@ if (ConnectionStatus == disconnected)
     {
       if (myclient.available())
       {
-        halt_alert = ESP_Communication(ESPDATA); // Wifi communication
+        halt_alert = ESP_Communication(); // Wifi communication
       }
     }
     else
     {
-        DebugPrintln(F("tcp client has disconnected"));
-        myclient.stop();
-        ConnectionStatus = disconnected;
-        oled = oled_on;
+      DebugPrintln(F(TCPCLIENTDISCONNECTSTR));
+      myclient.stop();
+      ConnectionStatus = disconnected;
+      oled = oled_on;
     }
   }
 #endif // defined(ACCESSPOINT) || defined(STATIONMODE)
@@ -4695,7 +4815,7 @@ if (ConnectionStatus == disconnected)
   // if there is a command from Bluetooth
   if ( queue.count() >= 1 )                 // check for serial command
   {
-     halt_alert = ESP_Communication(BTDATA);
+    halt_alert = ESP_Communication();
   }
 #endif // ifdef Bluetoothmode
 
@@ -4707,7 +4827,7 @@ if (ConnectionStatus == disconnected)
   }
   if ( queue.count() >= 1 )                 // check for serial command
   {
-     halt_alert = ESP_Communication(SERIALDATA);
+    halt_alert = ESP_Communication();
   }
 #endif // ifdef LOCALSERIAL
 
@@ -4759,13 +4879,10 @@ if (ConnectionStatus == disconnected)
       else
       {
         // focuser stationary. isMoving is 0
-//        byte status = mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel); // save config if needed
-//        if ( status == true )
-        if(mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel)) // save config if needed)
+        if (mySetupData->SaveConfiguration(fcurrentPosition, DirOfTravel)) // save config if needed
         {
-//          Update_OledGraphics(oled_off);                // Display off after config saved
           oled = oled_off;
-          DebugPrint(CONFIGSAVEDSTR);                  
+          DebugPrint(CONFIGSAVEDSTR);
         }
 
 #ifdef PUSHBUTTONS
@@ -4781,10 +4898,14 @@ if (ConnectionStatus == disconnected)
         update_irremote();
 #endif
         if (mySetupData->get_displayenabled() == 1)
+        {
           myoled->update_oledtextdisplay();
+        }
         else
+        {
           oled = oled_off;
-              
+        }
+
         myoled->Update_Oled(oled, ConnectionStatus);
 #ifdef TEMPERATUREPROBE
         update_temp();
@@ -4816,189 +4937,187 @@ if (ConnectionStatus == disconnected)
         mySetupData->set_focuserdirection(DirOfTravel);
         // move is in opposite direction, check for backlash enabled
         // get backlash settings
-#ifdef BACKLASH        
+#ifdef BACKLASH
         if ( DirOfTravel == moving_in)
-        {        
+        {
           if (mySetupData->get_backlash_in_enabled())
+          {
             backlash_count = mySetupData->get_backlashsteps_in();
+          }
         }
         else
         {
           if (mySetupData->get_backlash_out_enabled())
+          {
             backlash_count = mySetupData->get_backlashsteps_out();
+          }
         }
-#endif      
+#endif
 
-/*
-        // backlash needs to be applied, so get backlash values and states
-#if (BACKLASH == 1)
-        // if backlask was defined then follow the backlash rules
-        // if backlash has been enabled then apply it
-        if ( backlash_enabled == true )
-        {
-          // apply backlash
-          // save new direction of travel
-//          mySetupData->set_focuserdirection(DirOfTravel);
-          //driverboard->setmotorspeed(BACKLASHSPEED);
-//          MainStateMachine = State_ApplyBacklash;
-          DebugPrint(STATEAPPLYBACKLASH);
-          DebugPrint(backlash_count);
-          DebugPrint(F(" "));          
-        }
-        else
-        {
-          // do not apply backlash, go straight to moving
-            backlash_count = 0;
-        }
-*/
+        /*
+                // backlash needs to be applied, so get backlash values and states
+          #if (BACKLASH == 1)
+                // if backlask was defined then follow the backlash rules
+                // if backlash has been enabled then apply it
+                if ( backlash_enabled == true )
+                {
+                  // apply backlash
+                  // save new direction of travel
+          //          mySetupData->set_focuserdirection(DirOfTravel);
+                  //driverboard->setmotorspeed(BACKLASHSPEED);
+          //          MainStateMachine = State_ApplyBacklash;
+                  DebugPrint(STATEAPPLYBACKLASH);
+                  DebugPrint(backlash_count);
+                  DebugPrint(F(" "));
+                }
+                else
+                {
+                  // do not apply backlash, go straight to moving
+                    backlash_count = 0;
+                }
+        */
 
 #if (BACKLASH == 2)
         if (DirOfTravel != moving_main && backlash_count)
         {
           uint32_t sm = mySetupData->get_stepmode();
           uint32_t bl = backlash_count * sm;
-          DebugPrint(F("bl: "));                    
-          DebugPrint(bl);          
-          DebugPrint(F(" "));                    
+          DebugPrint(F("bl: "));
+          DebugPrint(bl);
+          DebugPrint(F(" "));
 
           if (DirOfTravel == moving_out)
+          {
             backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
+          }
           else
+          {
             backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
-            
-          DebugPrint(F("backlash_count: "));                    
+          }
+
+          DebugPrint(F("backlash_count: "));
           DebugPrint(backlash_count);
-          DebugPrint(F(" "));                    
+          DebugPrint(F(" "));
         }
 #endif
       }
-      
+
       steps = (fcurrentPosition > ftargetPosition) ? fcurrentPosition - ftargetPosition : ftargetPosition - fcurrentPosition;
       DebugPrint(STATEMOVINGSTR);
-      DebugPrint(steps);      
+      DebugPrint(steps);
 
-      driverboard->initmove(DirOfTravel, steps + backlash_count);
+      driverboard->initmove(DirOfTravel, steps + backlash_count, mySetupData->get_motorSpeed());
       MainStateMachine = State_Moving;
       break;
 
-//_______________________________State_Moving
+    //_______________________________State_Moving
 
     case State_Moving:
-
       if (timerSemaphore == false)
-//      if (xSemaphoreTake(timerSemaphore, 0) != pdTRUE)          // still on  track?
       {
-
-        if(halt_alert)            // halt command received => stop moving
+        if (halt_alert)           // halt command received => stop moving
         {
           halt_alert = false;     // reset alert flag
           driverboard->halt();
           MainStateMachine = State_DelayAfterMove;
-          DebugPrintln(STATEDELAYAFTERMOVE);     
+          DebugPrintln(STATEDELAYAFTERMOVE);
         }
-
-        if (stepcount < steps)
-        {
-          if (ftargetPosition > fcurrentPosition)
-            fcurrentPosition = ftargetPosition - stepcount;
-          else
-            fcurrentPosition = ftargetPosition + stepcount;            
-        }
-
         if (mySetupData->get_displayenabled() == 1)
         {
           updatecount++;
           if ( updatecount > LCDUPDATEONMOVE )
           {
-              updatecount = 0;
-              myoled->update_oledtext_position();
+            updatecount = 0;
+            myoled->update_oledtext_position();
           }  // !!!!!!!!!!!!!!!!!!!  no support for  Graphic OLED Mode !!!!!!!!!!!!!!!!!!!!!!!
         }
       }
       else
       {
-
-//#ifdef HOMEPOSITIONSWITCH
-        // if switch state = CLOSED and currentPosition != 0
-
+        // it may not have taken all the steps, so it is actually moved by steps - stepcount
+        // I know this only gives an indication once the move has completed
+        // I moved it here to work on the logic
+        if (ftargetPosition > fcurrentPosition)
+        {
+          fcurrentPosition += (steps - stepcount);
+        }
+        else
+        {
+          fcurrentPosition -= (steps - stepcount);
+        }
+        //Serial.print("cpos:"); Serial.println(fcurrentPosition);
         if (HPS_alert)                         // home position sensor activated?
-        {     
-          if(fcurrentPosition > 0) 
+        {
+          if (fcurrentPosition > 0)
+          {
             DebugPrintln(HPCLOSEDFPNOT0STR);
+          }
           else
+          {
             DebugPrintln(HPCLOSEDFP0STR);
-              
+          }
           DebugPrintln(STATESETHOMEPOSITION);
           fcurrentPosition = ftargetPosition = 0;
-//        MainStateMachine = State_SetHomePosition;
-
 #ifdef SHOWHPSWMSGS
           myoled->clear();
           myoled->println(HPCLOSEDFP0STR);
 #endif  // SHOWHPSWMSGS
-        } 
-//#endif // HOMEPOSITIONSWITCH
-
+        }
 #if (BACKLASH == 2)
         else if (DirOfTravel != moving_main && backlash_count)
         {
           DirOfTravel = moving_main;                     // switch direction of travel
           mySetupData->set_focuserdirection(DirOfTravel);
           TimeStampDelayAfterMove = millis();
-
-          if (fcurrentPosition > 0 || DirOfTravel == moving_out) 
+          if (fcurrentPosition > 0 || DirOfTravel == moving_out)
           {
             DebugPrint(F(">State_ApplyBacklash2 "));
             DebugPrintln(backlash_count);
             MainStateMachine = State_ApplyBacklash2;
             break;
           }
-        }       
-#endif                
-        MainStateMachine = State_DelayAfterMove;
-        DebugPrintln(STATEDELAYAFTERMOVE);     
-      }
-      break;
-
-//_______________________________ApplyBacklash2
-
-  case State_ApplyBacklash2:
-
-    if (TimeCheck(TimeStampDelayAfterMove, 250))      // 250ms delay 
-    {
-      if (flag == true)                               // init moving back
-      {
-        DebugPrint(F(">BL2: "));        
-        driverboard->initmove(DirOfTravel, backlash_count);   // init job for the timer ISR
-        flag = false;                                 // mark job is done for the next turn
-      }
-      else if (timerSemaphore == true)  // wait for message "well done" from timer ISR       
-//      else if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)  // wait for message "well done" from timer ISR 
-      {
-        TimeStampDelayAfterMove = millis();
+        }
+#endif
         MainStateMachine = State_DelayAfterMove;
         DebugPrintln(STATEDELAYAFTERMOVE);
       }
-    }
-    else
-      flag = true;      // init flag
-        
-    break;
+      break;
 
-//_______________________________State_DelayAfterMove
+    //_______________________________ApplyBacklash2
+
+    case State_ApplyBacklash2:
+      if (TimeCheck(TimeStampDelayAfterMove, 250))      // 250ms delay
+      {
+        if (flag == true)                               // init moving back
+        {
+          DebugPrint(F(">BL2: "));
+          driverboard->initmove(DirOfTravel, backlash_count, mySetupData->get_motorSpeed());   // init job for the timer ISR
+          flag = false;                                 // mark job is done for the next turn
+        }
+        else if (timerSemaphore == true)  // wait for message "well done" from timer ISR
+        {
+          TimeStampDelayAfterMove = millis();
+          MainStateMachine = State_DelayAfterMove;
+          DebugPrintln(STATEDELAYAFTERMOVE);
+        }
+      }
+      else
+        flag = true;      // init flag
+      break;
+
+    //_______________________________State_DelayAfterMove
 
     case State_DelayAfterMove:
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
-        ftargetPosition = fcurrentPosition;             // need in case of halt_alert exception 
+        ftargetPosition = fcurrentPosition;             // need in case of halt_alert exception
         oled = oled_on;
         isMoving = 0;
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle
-        MainStateMachine = State_Idle;        
+        MainStateMachine = State_Idle;
         DebugPrint(F(">State_Idle "));
-//        DebugPrintln(STATEFINISHEDMOVE);
       }
       break;
 
@@ -5013,4 +5132,3 @@ if (ConnectionStatus == disconnected)
   DebugPrintln(millis());
 #endif
 } // end Loop()
-

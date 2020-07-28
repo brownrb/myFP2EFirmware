@@ -1,3 +1,10 @@
+// r120
+// Use Timer interrupts to move motor
+// Remove speed settings in driverboard
+// Use common speed setting MSPEED for each driverboard
+// Move to LittleFS file system for ESP8266
+// Trim html files and code handling routines for Webserver and Management server
+
 // r119
 // Add alpacadiscovery protocol support (UDP port 32227, IPv4)
 // Move ASCOMGUID into ascom definitions rather than hard coded

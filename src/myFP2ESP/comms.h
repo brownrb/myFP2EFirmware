@@ -99,7 +99,7 @@ void SendPaket(const char token, const float val, int i)    // i => decimal plac
 }
 
 
-bool ESP_Communication( byte mode )
+bool ESP_Communication()
 {
   byte cmdval;
   String receiveString = "";
@@ -323,7 +323,6 @@ bool ESP_Communication( byte mode )
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = (byte)WorkString.toInt() & 3;
       mySetupData->set_motorSpeed((byte) paramval);
-      driverboard->setmotorspeed((byte) paramval);
       break;
     case 16: // set display to celsius
       mySetupData->set_tempmode(1); // temperature display mode, Celsius=1, Fahrenheit=0

@@ -12,7 +12,6 @@
 //#include <Arduino.h>              // no includes in includes
 //#include "generalDefinitions.h"
 
-
 #define DEFAULTPOSITION   5000L
 #define DEFAULTMAXSTEPS   80000L
 #define DEFAULTOFF        0
@@ -101,10 +100,10 @@ class SetupData
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
     void StartDelayedUpdate(int &, int);
-	void ListDir(const char*, uint8_t);
+	  void ListDir(const char*, uint8_t);
 
-    boolean ReqSaveData_var;    // Flag for request save variable data
-    boolean ReqSaveData_per;    // Flag for request save persitant data
+    boolean ReqSaveData_var;        // Flag for request save variable data
+    boolean ReqSaveData_per;        // Flag for request save persitant data
 
     const char* filename_persistant = "/data_per.jsn"; // persistant JSON setup data
     const char* filename_variable = "/data_var.jsn";    // variable  JSON setup data
