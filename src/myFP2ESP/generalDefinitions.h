@@ -217,7 +217,7 @@ extern const char* FSFILENOTFOUNDSTR;
 #define FILEFOUNDSTR              "File found"
 #define CANNOTCREATEFILESTR       "!create file"
 
-#define SPIFFSNOTSTARTEDSTR       "!start SPIFFS"
+#define FSNOTSTARTEDSTR           "!start FS"
 #define BUILDDEFAULTPAGESTR       "build default page"
 #define SPIFFSFILENOTFOUNDSTR     "file !found"
 #define READPAGESTR               "read page into string"
@@ -252,7 +252,6 @@ extern const char* FSFILENOTFOUNDSTR;
 #define DISPLAYCSTR               "<form action=\"/\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"cel\" Checked><input type=\"submit\" value=\"Enable Celsius\"></form>"
 #define DISPLAYFSTR               "<form action=\"/\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"fah\"><input type=\"submit\" value=\"Enable Fahrenheit\"></form>"
 #define NOTDEFINEDSTR             "!defined in firmware"
-
 
 // Controller Features
 #define ENABLEDLCD                1L
@@ -298,7 +297,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ----------------------------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
-#define DEBUG     1
+//#define DEBUG     1
 //#define LOOPTIMETEST 1
 
 #ifdef  DEBUG                                         // Macros are usually in all capital letters.
@@ -308,6 +307,27 @@ DebugPrintln(__PRETTY_FUNCTION__);
 #define DebugPrint(...)                               // now defines a blank line
 #define DebugPrintln(...)                             // now defines a blank line
 #endif
+
+#define TIMESETUP               1
+#define TIMELOOP                1
+#define MSBUILDROOT             1
+#define MSROOT                  1
+#define MSHANDLEROOT            1
+#define WSSENDPRESETS           1
+#define WSBUILDPRESETS          1
+#define WSHANDLEPRESETS         1
+#define WSSENDMOVE              1
+#define WSBUILDMOVE             1
+#define WSHANDLEMOVE            1
+#define WSSENDROOT              1
+#define WSBUILDROOT             1
+#define WSHANDLEROOT            1
+#define ASSETUP1                1
+#define ASCOMHANDLESETUP        1
+#define ASCOMHANDLEFOCUSERSETUP 1
+#define ASCOMHANDLEAPIVER       1
+#define ASCOMHANDLEAPIDES       1
+#define ASCOMHANDLEAPICON       1
 
 
 #endif // generalDefinitions.h

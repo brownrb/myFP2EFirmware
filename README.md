@@ -36,12 +36,6 @@ When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents
 
 # Additional JSON library Needed
 make sure you install the library ArduinoJson-6.x.xip into the Arduino IDE else firmware will not compile.
-You can do this within the Arduino IDE by
-
-* Open the Arduino Library Manager
-* Search for “ArduinoJson”
-* Select the version: 6.11.2
-* Click install
 
 The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 

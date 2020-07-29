@@ -21,21 +21,21 @@
 // Caution: Do not enable a feature if the associated hardware circuits are not fitted on the board
 // Enable or disable the specific hardware below
 
-// To enable temperature probe, uncomment the next line
-#define TEMPERATUREPROBE 1
-
 // To enable the OLED TEXT DISPLAY uncomment the next line
 #define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
 //#define OLEDGRAPHICS 1
 
+// To enable temperature probe, uncomment the next line
+#define TEMPERATUREPROBE 1
+
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
 //#define HOMEPOSITIONSWITCH 1
 
 // To enable backlash in this firmware, uncomment the next line
-#define BACKLASH 2
+//#define BACKLASH 2
 
 // To enable In and Out Pushbuttons [ESP32 only], uncomment the next line
 //#define PUSHBUTTONS 1
@@ -50,7 +50,7 @@
 //#define INOUTLEDS 1
 
 // To enable the Infrared remote controller [ESP32 only], uncomment the next line
-#define INFRAREDREMOTE
+//#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
 #define SHOWSTARTSCRN 1
@@ -78,7 +78,7 @@
 //#define OTAUPDATES 5
 
 // to enable this focuser for ASCOM ALPACA REMOTE support [Port 4040], uncomment the next line
-//#define ASCOMREMOTE 6
+#define ASCOMREMOTE 6
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
 // to enable Webserver interface [Port 80], uncomment the next line 

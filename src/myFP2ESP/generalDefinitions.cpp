@@ -9,8 +9,8 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-const char* programVersion        = "120";
-const char* ProgramAuthor         = "(c) R BROWN 2020 h120";
+const char* programVersion        = "121";
+const char* ProgramAuthor         = "(c) R BROWN 2020";
 
 const char* STATEMOVINGSTR        = ">Moving";
 const char* STATEAPPLYBACKLASH    = ">ApplyBacklash";
@@ -58,8 +58,8 @@ const char* CONFIGSAVEDSTR        = "new Config saved: ";
 const char* RELEASEMOTORSTR       = "Idle: release motor";
 const char* LOOPSTARTSTR          = "Loop Start =";
 const char* LOOPENDSTR            = "Loop End =";
-const char* TCPCLIENTCONNECTSTR   = "tcp client has connected";
-const char* TCPCLIENTDISCONNECTSTR = "tcp client has disconnected";
+const char* TCPCLIENTCONNECTSTR   = "tcp client connected";
+const char* TCPCLIENTDISCONNECTSTR = "tcp client disconnected";
 const char* APCONNECTFAILSTR      = "Did not connect to AP ";
 const char* CONNECTEDSTR          = "Connected";
 const char* I2CDEVICENOTFOUNDSTR  = "I2C device !found";
@@ -67,7 +67,7 @@ const char* ASCOMREMOTESTR        = "ASCOM Remote";
 
 const char* MANAGEMENTURLNOTFOUNDSTR  = "<html><head><title>Management server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
 const char* WEBSERVERURLNOTFOUNDSTR   = "<html><head><title>Web-server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
-const char* ASCOMSERVERURLNOTFOUNDSTR = "<html><head><title>ASCOM server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
+const char* ASCOMSERVERURLNOTFOUNDSTR = "<html><head><title>ASCOM REMOTE SERVER</title></head><body><p>File not found</p><p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p></body></html>";
 
 const char* WRITEFILEFAILSTR      = "!write to file";
 const char* WRITEFILESUCCESSSTR   = "Write to file OK";

@@ -20,7 +20,7 @@
 // DATA AND DEFINITIONS - ASCOM SETUP WEB PAGE
 // ----------------------------------------------------------------------------------------------
 #ifdef ASCOMREMOTE
-#define AS_COPYRIGHT              "<p>(c) R. Brown, Holger M, 2019. All rights reserved.</p>"
+#define AS_COPYRIGHT              "<p>(c) R. Brown, Holger M, 2020. All rights reserved.</p>"
 #define AS_TITLE                  "<h3>myFP2ESP ASCOM REMOTE focus controller</h3>"
 #define AS_PAGETITLE              "<title>myFP2ESP ASCOM SERVER</title>"
 
@@ -60,7 +60,7 @@
 #define ASCOMERRORMSGINVALID      "Invalid operation"
 #define ASCOMNAME                 "\"myFP2ESPASCOMR\""
 #define ASCOMDESCRIPTION          "\"ASCOM driver for myFP2ESP controllers\""
-#define ASCOMDRIVERINFO           "\"myFP2ESP ASCOM Driver (c) R. Brown. 2019\""
+#define ASCOMDRIVERINFO           "\"myFP2ESP ASCOM Driver (c) R. Brown. 2020\""
 #define ASCOMMANAGEMENTINFO       "{\"ServerName\":\"myFP2ESP\",\"Manufacturer\":\"R. Brown\",\"ManufacturerVersion\":\"v1.0\",\"Location\":\"New Zealand\"}"
 
 #endif // ifdef ASCOMREMOTE

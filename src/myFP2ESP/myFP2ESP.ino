@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 120
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 121
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // Supports driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI
@@ -684,7 +684,6 @@ volatile int joy2swstate;
 #ifdef JOYSTICK1
 void update_joystick1(void)
 {
-  int joyspeed;
   int joyval;
 
   DebugPrintln(UPDATEJOYSTICKSTR);
@@ -696,10 +695,6 @@ void update_joystick1(void)
     ftargetPosition--;                            // move IN
     DebugPrint(JOYSTICKXINVALSTR);
     DebugPrint(joyval);
-    joyspeed = map(joyval, 0, (JZEROPOINT - JTHRESHOLD), MSFAST, MSSLOW);
-    DebugPrint(JOYSTICKSPEEDSTR);
-    DebugPrintln(joyspeed);
-    driverboard->setstepdelay(joyspeed);
   }
   else if ( joyval > (JZEROPOINT + JTHRESHOLD) )
   {
@@ -715,10 +710,6 @@ void update_joystick1(void)
     }
     DebugPrint(JOYSTICKXOUTVALSTR);
     DebugPrint(joyval);
-    joyspeed = map(joyval, 0, (JMAXVALUE - (JZEROPOINT + JTHRESHOLD)), MSSLOW, MSFAST);
-    DebugPrint(JOYSTICKSPEEDSTR);
-    DebugPrintln(joyspeed);
-    driverboard->setstepdelay(joyspeed);
   }
 }
 
@@ -740,7 +731,6 @@ void IRAM_ATTR joystick2sw_isr()
 
 void update_joystick2(void)
 {
-  int joyspeed;
   int joyval;
 
   joyval = analogRead(JOYINOUTPIN);               // range is 0 - 4095, midpoint is 2047
@@ -751,10 +741,6 @@ void update_joystick2(void)
     ftargetPosition--;                            // move IN
     DebugPrint(JOYSTICKXINVALSTR);
     DebugPrint(joyval);
-    joyspeed = map(joyval, 0, (JZEROPOINT - JTHRESHOLD), MSFAST, MSSLOW);
-    DebugPrint(JOYSTICKSPEEDSTR));
-    DebugPrintln(joyspeed);
-    driverboard->setstepdelay(joyspeed);
   }
   else if ( joyval > (JZEROPOINT + JTHRESHOLD) )
   {
@@ -770,10 +756,6 @@ void update_joystick2(void)
     }
     DebugPrint(JOYSTICKXOUTVALSTR);
     DebugPrint(joyval);
-    joyspeed = map(joyval, 0, (JMAXVALUE - (JZEROPOINT + JTHRESHOLD)), MSSLOW, MSFAST);
-    DebugPrint(JOYSTICKSPEEDSTR);
-    DebugPrintln(joyspeed);
-    driverboard->setstepdelay(joyspeed);
   }
 
   if ( joy2swstate == 1)                          // switch is pressed
@@ -882,7 +864,7 @@ void stop_mdns_service(void)
   }
   else
   {
-    DebugPrintln(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
   delay(10);                      // small pause so background tasks can run
 }
@@ -983,7 +965,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(FSNOTSTARTEDSTR);
     return;
   }
   // example code taken from FSBrowser
@@ -1027,7 +1009,7 @@ void MANAGEMENT_listSPIFFSfiles(void)
 
 void MANAGEMENT_buildnotfound(void)
 {
-  // load not found page from spiffs - wsnotfound.html
+  // load not found page from FS - wsnotfound.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -1035,7 +1017,7 @@ void MANAGEMENT_buildnotfound(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
     MNotFoundPage = MANAGEMENTURLNOTFOUNDSTR;
   }
@@ -1086,7 +1068,7 @@ void MANAGEMENT_handlenotfound(void)
 
 void MANAGEMENT_buildupload(void)
 {
-  // load not found page from spiffs - wsupload.html
+  // load not found page from FS - wsupload.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -1094,7 +1076,7 @@ void MANAGEMENT_buildupload(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
     MUploadPage = MANAGEMENTURLNOTFOUNDSTR;
   }
@@ -1190,17 +1172,20 @@ void MANAGEMENT_handlefileupload(void)
 void MANAGEMENT_buildhome(void)
 {
   // constructs home page of management server
-  TRACE();
-  // load not found page from spiffs - wsindex.html
+#ifdef MSBUIDLROOT
+  Serial.print("ms:buildroot: ");
+  Serial.println(millis());
+#endif
+  // load not found page from FS - wsindex.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
   if ( !SPIFFS.begin())
 #endif
   {
-    // could not read index file from SPIFFS
+    // could not read index file from FS
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
     MHomePage = MANAGEMENTURLNOTFOUNDSTR;
   }
@@ -1411,20 +1396,27 @@ void MANAGEMENT_buildhome(void)
     }
     else
     {
-      // could not read index file from SPIFFS
+      // could not read index file from FS
       TRACE();
       DebugPrintln(BUILDDEFAULTPAGESTR);
       MHomePage = MANAGEMENTURLNOTFOUNDSTR;
     }
   }
   delay(10);                      // small pause so background tasks can run
+#ifdef MSBUILDROOT
+  Serial.print("ms:buildroot: ");
+  Serial.println(millis());
+#endif
 }
 
 void MANAGEMENT_handleroot(void)
 {
   // code here to handle a put request
   String msg;
-
+#ifdef MSHANDLEROOT
+  Serial.print("ms:handleroot: ");
+  Serial.println(millis());
+#endif
   msg = mserver.arg("reboot");
   if ( msg != "" )
   {
@@ -1753,7 +1745,7 @@ void MANAGEMENT_handleroot(void)
       }
     }
   }
-  
+
   // if update display state
   String d_str = mserver.arg("di");
   if ( d_str != "" )
@@ -1775,7 +1767,7 @@ void MANAGEMENT_handleroot(void)
 #endif
     }
   }
-  
+
   // if temp mode update
   String t_str = mserver.arg("tm");
   if ( t_str != "" )
@@ -1797,13 +1789,30 @@ void MANAGEMENT_handleroot(void)
 #endif
     }
   }
-  
-  MANAGEMENT_buildhome();
+  // send the homepage to a connected client
+  MANAGEMENT_sendroot();
+#ifdef MSHANDLEROOT
+  Serial.print("ms:handleroot: ");
+  Serial.println(millis());
+#endif
+}
 
+void MANAGEMENT_sendroot(void)
+{
+#ifdef MSSENDROOT
+  Serial.print("ms:sendroot: ");
+  Serial.println(millis());
+#endif
+  // build management home page
+  MANAGEMENT_buildhome();
   // send the homepage to a connected client
   DebugPrintln("root() - send homepage");
   mserver.send(NORMALWEBPAGE, TEXTPAGETYPE, MHomePage );
   delay(10);                                      // small pause so background ESP8266 tasks can run
+#ifdef MSSENDROOT
+  Serial.print("ms:sendroot: ");
+  Serial.println(millis());
+#endif
 }
 
 void start_management(void)
@@ -1815,7 +1824,7 @@ void start_management(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(SERVERSTATESTOPSTR);
     managementserverstate = STOPPED;
     return;
@@ -1823,8 +1832,9 @@ void start_management(void)
   MANAGEMENT_buildnotfound();
   MANAGEMENT_buildhome();
   MANAGEMENT_buildupload();
-  mserver.on("/", MANAGEMENT_handleroot);
-  mserver.on("/list", MANAGEMENT_listSPIFFSfiles);
+  mserver.on("/", HTTP_GET,       MANAGEMENT_sendroot);
+  mserver.on("/", HTTP_POST,      MANAGEMENT_handleroot);
+  mserver.on("/list",             MANAGEMENT_listSPIFFSfiles);
   mserver.on("/upload", HTTP_GET, MANAGEMENT_displayfileupload);
   mserver.on("/upload", HTTP_POST, []() {
     mserver.send(NORMALWEBPAGE);
@@ -1882,7 +1892,7 @@ String WPresetsPage;
 
 void WEBSERVER_buildnotfound(void)
 {
-  // load not found page from spiffs - wsnotfound.html
+  // load not found page from FS - wsnotfound.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -1890,7 +1900,7 @@ void WEBSERVER_buildnotfound(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
+    DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(BUILDDEFAULTPAGESTR);
     WNotFoundPage = WEBSERVERURLNOTFOUNDSTR;
   }
@@ -1940,8 +1950,12 @@ void WEBSERVER_handlenotfound(void)
 
 void WEBSERVER_buildpresets(void)
 {
+#ifdef WSBUILDPRESETS
+  Serial.print("ws:buildpresets: ");
+  Serial.println(millis());
+#endif
   // construct the presetspage now
-  // load not found page from spiffs - wspresets.html
+  // load not found page from FS - wspresets.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -1949,8 +1963,8 @@ void WEBSERVER_buildpresets(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
-    // could not read move file from SPIFFS
+    DebugPrintln(FSNOTSTARTEDSTR);
+    // could not read move file from FS
     DebugPrintln(BUILDDEFAULTPAGESTR);
     WPresetsPage = WEBSERVERURLNOTFOUNDSTR;
   }
@@ -1999,18 +2013,26 @@ void WEBSERVER_buildpresets(void)
     }
     else
     {
-      // could not read preset file from SPIFFS
+      // could not read preset file from FS
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
       WPresetsPage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
+#ifdef WSBUILDPRESETS
+  Serial.print("ws:buildpresets: ");
+  Serial.println(millis());
+#endif
   delay(10);                      // small pause so background tasks can run
 }
 
 void WEBSERVER_handlepresets(void)
 {
+#ifdef WSHANDLEPRESETS
+  Serial.print("ws:handlepresets: ");
+  Serial.println(millis());
+#endif
   // if the root page was a HALT request via Submit button
   String halt_str = webserver->arg("ha");
   if ( halt_str != "" )
@@ -2410,18 +2432,38 @@ void WEBSERVER_handlepresets(void)
       ftargetPosition = temp;
     }
   }
+  WEBSERVER_sendpresets();
+#ifdef WSHANDLEPRESETS
+  Serial.print("ws:handlepresets: ");
+  Serial.println(millis());
+#endif
+}
 
+void WEBSERVER_sendpresets(void)
+{
+#ifdef WSSENDPRESETS
+  Serial.print("ws:sendpresets: ");
+  Serial.println(millis());
+#endif
   WEBSERVER_buildpresets();
   // send the presetspage to a connected client
   DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WPresetsPage );
-  delay(10);                     // small pause so background ESP8266 tasks can run
+#ifdef WSSENDPRESETS
+  Serial.print("ws:sendpresets: ");
+  Serial.println(millis());
+#endif
+  delay(10);                      // small pause so background tasks can run
 }
 
 void WEBSERVER_buildmove(void)
 {
+#ifdef WSBUILDMOVE
+  Serial.print("ws:buildmove: ");
+  Serial.println(millis());
+#endif
   // construct the movepage now
-  // load not found page from spiffs - wsmove.html
+  // load not found page from fs - wsmove.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -2429,8 +2471,8 @@ void WEBSERVER_buildmove(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
-    // could not read move file from SPIFFS
+    DebugPrintln(FSNOTSTARTEDSTR);
+    // could not read move file from FS
     DebugPrintln(BUILDDEFAULTPAGESTR);
     WMovePage = WEBSERVERURLNOTFOUNDSTR;
   }
@@ -2467,20 +2509,45 @@ void WEBSERVER_buildmove(void)
     }
     else
     {
-      // could not read move file from SPIFFS
+      // could not read move file from FS
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
       WMovePage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
+#ifdef WSBUILDMOVE
+  Serial.print("ws:buildmove: ");
+  Serial.println(millis());
+#endif
   delay(10);                      // small pause so background tasks can run
+}
+
+void WEBSERVER_sendmove(void)
+{
+#ifdef WSSENDMOVE
+  Serial.print("ws:sendmove: ");
+  Serial.println(millis());
+#endif
+  WEBSERVER_buildmove();
+  // send the movepage to a connected client
+  DebugPrintln(SENDPAGESTR);
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WMovePage );
+#ifdef WSSENDMOVE
+  Serial.print("ws:sendmove: ");
+  Serial.println(millis());
+#endif
+  delay(10);                     // small pause so background ESP8266 tasks can run
 }
 
 // handles move page of webserver
 // this is called whenever a client requests move
 void WEBSERVER_handlemove()
 {
+#ifdef WSHANDLEMOVE
+  Serial.print("ws:handlemove: ");
+  Serial.println(millis());
+#endif
   // if the root page was a HALT request via Submit button
   String halt_str = webserver->arg("ha");
   if ( halt_str != "" )
@@ -2509,17 +2576,22 @@ void WEBSERVER_handlemove()
     DebugPrintln(ftargetPosition);
   }
 
-  WEBSERVER_buildmove();
-  // send the movepage to a connected client
-  DebugPrintln(SENDPAGESTR);
-  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WMovePage );
+  WEBSERVER_sendmove();
+#ifdef WSHANDLEMOVE
+  Serial.print("ws:handlemove: ");
+  Serial.println(millis());
+#endif
   delay(10);                     // small pause so background ESP8266 tasks can run
 }
 
 void WEBSERVER_buildhome(void)
 {
+#ifdef WSBUILDROOT
+  Serial.print("ws:buildroot: ");
+  Serial.println(millis());
+#endif
   // construct the homepage now
-  // load not found page from spiffs - wsindex.html
+  // load not found page from FS - wsindex.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -2527,8 +2599,8 @@ void WEBSERVER_buildhome(void)
 #endif
   {
     TRACE();
-    DebugPrintln(SPIFFSNOTSTARTEDSTR);
-    // could not read index file from SPIFFS
+    DebugPrintln(FSNOTSTARTEDSTR);
+    // could not read index file from FS
     DebugPrintln(BUILDDEFAULTPAGESTR);
     WHomePage = WEBSERVERURLNOTFOUNDSTR;
   }
@@ -2717,13 +2789,17 @@ void WEBSERVER_buildhome(void)
     }
     else
     {
-      // could not read index file from SPIFFS
+      // could not read index file from FS
       TRACE();
       DebugPrintln(SPIFFSFILENOTFOUNDSTR);
       DebugPrintln(BUILDDEFAULTPAGESTR);
       WHomePage = WEBSERVERURLNOTFOUNDSTR;
     }
   }
+#ifdef WSBUILDROOT
+  Serial.print("ws:buildroot: ");
+  Serial.println(millis());
+#endif
   delay(10);                      // small pause so background tasks can run
 }
 
@@ -2741,6 +2817,10 @@ void WEBSERVER_handleismoving()
 // this is called whenever a client requests home page of sebserver
 void WEBSERVER_handleroot()
 {
+#ifdef WSHANDLEROOT
+  Serial.print("ws:handleroot: ");
+  Serial.println(millis());
+#endif
   // if the root page was a HALT request via Submit button
   String halt_str = webserver->arg("ha");
   if ( halt_str != "" )
@@ -2924,14 +3004,26 @@ void WEBSERVER_handleroot()
     }
   }
   WEBSERVER_sendroot();
+#ifdef WSHANDLEROOT
+  Serial.print("ws:handleroot: ");
+  Serial.println(millis());
+#endif
 }
 
 void WEBSERVER_sendroot()
 {
+#ifdef WSSENDROOT
+  Serial.print("ws:sendroot: ");
+  Serial.println(millis());
+#endif
   WEBSERVER_buildhome();
   // send the homepage to a connected client
   DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WHomePage );
+#ifdef WSSENDROOT
+  Serial.print("ws:sendroot: ");
+  Serial.println(millis());
+#endif
   delay(10);
 }
 
@@ -2947,12 +3039,14 @@ void start_webserver(void)
   WEBSERVER_buildhome();
   WEBSERVER_buildmove();
   WEBSERVER_buildpresets();
-  webserver->on("/", HTTP_PUT, WEBSERVER_handleroot);
-  webserver->on("/", HTTP_GET, WEBSERVER_sendroot);
-  webserver->on("/move", WEBSERVER_handlemove);
-  webserver->on("/presets", WEBSERVER_handlepresets);
-  webserver->on("/position", WEBSERVER_handleposition);
-  webserver->on("/ismoving", WEBSERVER_handleismoving);
+  webserver->on("/",        HTTP_GET,   WEBSERVER_sendroot);
+  webserver->on("/",        HTTP_POST,  WEBSERVER_handleroot);
+  webserver->on("/move",    HTTP_GET,   WEBSERVER_sendmove);
+  webserver->on("/move",    HTTP_POST,  WEBSERVER_handlemove);
+  webserver->on("/presets", HTTP_GET,   WEBSERVER_sendpresets);
+  webserver->on("/presets", HTTP_POST,  WEBSERVER_handlepresets);
+  webserver->on("/position", WEBSERVER_handleposition);                   // xhtml
+  webserver->on("/ismoving", WEBSERVER_handleismoving);                   // xhtml
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
@@ -3075,6 +3169,10 @@ void checkASCOMALPACADiscovery()
 // constructs ascom setup server page /setup/v1/focuser/0/setup
 void ASCOM_Create_Setup_Focuser_HomePage()
 {
+#ifdef ASCOMCREATESETUP
+  Serial.print("ascomcreatesetup() : ");
+  Serial.println(millis());
+#endif
   // Convert IP address to a string;
   // already in ipStr
   // convert current values of focuserposition and focusermaxsteps to string types
@@ -3276,6 +3374,10 @@ void ASCOM_Create_Setup_Focuser_HomePage()
 
     Focuser_Setup_HomePage = Focuser_Setup_HomePage + "</body></html>\r\n";
   }
+#ifdef ASCOMCREATESETUP
+  Serial.print("ascomcreatesetup() : ");
+  Serial.println(millis());
+#endif
 }
 
 // generic ASCOM send reply
@@ -3394,6 +3496,10 @@ String ASCOM_addclientinfo(String str )
 // ----------------------------------------------------------------------------------------------
 void ASCOM_handle_setup()
 {
+#ifdef ASCOMHANDLESETUP
+  Serial.print("ascomhandlesetup() : ");
+  Serial.println(millis());
+#endif
   // url /setup
   // The web page must describe the overall device, including name, manufacturer and version number.
   // content-type: text/html
@@ -3452,11 +3558,19 @@ void ASCOM_handle_setup()
   }
   ASCOMServerTransactionID++;
   ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, AS_HomePage);
+#ifdef ASCOMHANDLESETUP
+  Serial.print("ascomhandlesetup() : ");
+  Serial.println(millis());
+#endif
   delay(10);                     // small pause so background tasks can run
 }
 
 void ASCOM_handle_focuser_setup()
 {
+#ifdef ASCOMHANDLEFOCUSERSETUP
+  Serial.print("ascomhandlefocusersetup() : ");
+  Serial.println(millis());
+#endif
   // url /setup/v1/focuser/0/setup
   // Configuration web page for the specified device
   // content-type: text/html
@@ -3583,6 +3697,10 @@ void ASCOM_handle_focuser_setup()
   ASCOMServerTransactionID++;
   DebugPrintln("root() - send homepage");
   ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, Focuser_Setup_HomePage);
+#ifdef ASCOMHANDLEFOCUSERSETUP
+  Serial.print("ascomhandlefocusersetup() : ");
+  Serial.println(millis());
+#endif
   delay(10);                     // small pause so background ESP8266 tasks can run
 }
 
@@ -3591,6 +3709,10 @@ void ASCOM_handle_focuser_setup()
 // ----------------------------------------------------------------------------------------------
 void ASCOM_handleapiversions()
 {
+#ifdef ASCOMHANDLEAPIVER
+  Serial.print("ascomhandleapiver() : ");
+  Serial.println(millis());
+#endif
   // url /management/apiversions
   // Returns an integer array of supported Alpaca API version numbers.
   // { "Value": [1,2,3,4],"ClientTransactionID": 9876,"ServerTransactionID": 54321}
@@ -3604,10 +3726,18 @@ void ASCOM_handleapiversions()
   jsonretstr = "{\"Value\":[1]," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+#ifdef ASCOMHANDLEAPIVER
+  Serial.print("ascomhandleapiver() : ");
+  Serial.println(millis());
+#endif
 }
 
 void ASCOM_handleapidescription()
 {
+#ifdef ASCOMHANDLEAPIDES
+  Serial.print("ascomhandleapides() : ");
+  Serial.println(millis());
+#endif
   // url /management/v1/description
   // Returns cross-cutting information that applies to all devices available at this URL:Port.
   // content-type: application/json
@@ -3624,10 +3754,18 @@ void ASCOM_handleapidescription()
   jsonretstr = "{\"Value\":" + String(ASCOMMANAGEMENTINFO) + "," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+#ifdef ASCOMHANDLEAPIDES
+  Serial.print("ascomhandleapides() : ");
+  Serial.println(millis());
+#endif
 }
 
 void ASCOM_handleapiconfigureddevices()
 {
+#ifdef ASCOMHANDLEAPICON
+  Serial.print("ascomhandleapicon() : ");
+  Serial.println(millis());
+#endif
   // url /management/v1/configureddevices
   // Returns an array of device description objects, providing unique information for each served device, enabling them to be accessed through the Alpaca Device API.
   // content-type: application/json
@@ -3642,6 +3780,10 @@ void ASCOM_handleapiconfigureddevices()
   jsonretstr = "{\"Value\":[{\"DeviceName\":" + String(ASCOMNAME) + ",\"DeviceType\":\"focuser\",\"DeviceNumber\":0,\"UniqueID\":\"" + String(ASCOMGUID) + "\"}]," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
+#ifdef ASCOMHANDLEAPICON
+  Serial.print("ascomhandleapicon() : ");
+  Serial.println(millis());
+#endif
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -3939,13 +4081,11 @@ void ASCOM_handletempcompput()
 #ifdef TEMPERATUREPROBE
   if ( ASCOMTempCompState == 1 )
   {
-    // turn on temperature compensation
-    mySetupData->set_tempcompenabled(1);
+    mySetupData->set_tempcompenabled(1);              // turn on temperature compensation
   }
   else
   {
-    // turn off temperature compensation
-    mySetupData->set_tempcompenabled(0);
+    mySetupData->set_tempcompenabled(0);              // turn off temperature compensation
   }
   jsonretstr = "{" + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
@@ -4098,12 +4238,9 @@ void ASCOM_handleRoot()
   if ( !SPIFFS.begin())
 #endif
   {
-    DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
+    DebugPrintln(F("ascomserver: Error occurred when mounting FS"));
     DebugPrintln(F("ascomserver: build_default_homepage"));
-    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
-    AS_HomePage = AS_HomePage + "<p>FS could not be started</p>";
-    AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
-    AS_HomePage = AS_HomePage + "</body></html>";
+    AS_HomePage = ASCOMSERVERURLNOTFOUNDSTR;
   }
   else
   {
@@ -4121,26 +4258,23 @@ void ASCOM_handleRoot()
       File file = SPIFFS.open("/ashomepage.html", "r");
 #endif
       // read contents into string
-      DebugPrintln("ascomserver: read page into string");
+      DebugPrintln(READPAGESTR);
       AS_HomePage = file.readString();
       file.close();
 
-      DebugPrintln("ascomserver: processing page start");
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       AS_HomePage.replace("%IPSTR%", ipStr);
       AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
       AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
       AS_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
-      DebugPrintln("ascomserver: processing page done");
+      DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
     {
-      DebugPrintln(F("ascomserver: Error occurred finding SPIFFS file ashomepage.html"));
+      DebugPrintln(F("ascomserver: Error occurred finding FS file ashomepage.html"));
       DebugPrintln(F("ascomserver: build_default_homepage"));
-      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
-      AS_HomePage = AS_HomePage + "<p>File not found</p>";
-      AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
-      AS_HomePage = AS_HomePage + "</body></html>";
+      AS_HomePage = ASCOMSERVERURLNOTFOUNDSTR;
     }
   }
   ASCOMServerTransactionID++;
@@ -4423,7 +4557,6 @@ void stop_tcpipserver()
 }
 #endif
 
-
 //_______________________________________________ setup()
 
 void setup()
@@ -4433,6 +4566,11 @@ void setup()
   Serial.begin(SERIALPORTSPEED);
   DebugPrintln(SERIALSTARTSTR);
   DebugPrintln(DEBUGONSTR);
+#endif
+
+#ifdef TIMESETUP
+  Serial.print("setup(): ");
+  Serial.println(millis());
 #endif
 
   mySetupData = new SetupData();                // instantiate object SetUpData with SPIFFS file
@@ -4467,7 +4605,7 @@ void setup()
 #elif OLEDGRAPHICS
   myoled = new OLED_GRAPHIC();
 #else
-  myoled = new OLED_NON;      // create Object for non OLED
+  myoled = new OLED_NON;                       // create Object for non OLED
 #endif
 
   delay(100);                                   // keep delays small otherwise issue with ASCOM
@@ -4530,7 +4668,7 @@ void setup()
 #ifdef READWIFICONFIG
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   TRACE();
-  readwificonfig(mySSID, myPASSWORD);           // read mySSID,myPASSWORD from SPIFFS if exist, otherwise use defaults
+  readwificonfig(mySSID, myPASSWORD);           // read mySSID,myPASSWORD from FS if exist, otherwise use defaults
 #endif
 #endif
 
@@ -4723,6 +4861,11 @@ void setup()
   digitalWrite(INLEDPIN, 0);
   digitalWrite(OUTLEDPIN, 0);
 #endif
+
+#ifdef TIMESETUP
+  Serial.print("setup(): ");
+  Serial.println(millis());
+#endif
 }
 
 //_____________________ loop()___________________________________________
@@ -4746,13 +4889,9 @@ void loop()
   static bool flag = false;
   static bool halt_alert = false;
 
-#ifdef HOMEPOSITIONSWITCH
-  static byte stepstaken = 0;
-#endif
-
-#ifdef LOOPTIMETEST
-  DebugPrint(LOOPSTARTSTR);
-  DebugPrintln(millis());
+#ifdef TIMELOOP
+  Serial.print("loop(): ");
+  Serial.println(millis());
 #endif
 
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
@@ -5107,8 +5246,8 @@ void loop()
       break;
   }
 
-#ifdef LOOPTIMETEST
-  DebugPrint(LOOPENDSTR);
-  DebugPrintln(millis());
+#ifdef TIMELOOP
+  Serial.print("loop(): ");
+  Serial.println(millis());
 #endif
 } // end Loop()

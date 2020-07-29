@@ -15,6 +15,8 @@
 // ----------------------------------------------------------------------------------------------
 #include <Arduino.h>
 
+// We should NOT include graphics code if the user has NOT defined its use
+
 #include "myBoards.h"
 #include "focuserconfig.h"
 #include "FocuserSetupData.h"
@@ -74,7 +76,6 @@ void OLED_NON::update_oledtextdisplay(void){}
 void OLED_NON::Update_Oled(const oled_state x, const connection_status y){}
 void OLED_NON::oled_draw_reboot(void){}
 //void OLED_NON::println(const char *c){}
-
 
 OLED_NON::OLED_NON()
 {
@@ -652,7 +653,6 @@ void OLED_TEXT::display_oledtext_page2(void)
   println(LOCALSERIALSTR);
 #endif
 }
-
 
 void OLED_TEXT::update_oledtextdisplay(void)
 {
