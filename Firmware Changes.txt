@@ -1,8 +1,10 @@
 // r121
 // Remove joystick speed code - now redundant 
-// fix bug in debug statement for mdnsserver
-// implement timing statements for some code functions
-// implement HTTP_GET functions for most web/management/ascom server pages
+// Fix bug in debug statement for mdnsserver
+// Implement timing statements for some code functions
+// Implement HTTP_GET functions for most web/management/ascom server pages
+// Optimize web server and management server code
+// Add /reboot /rebootws /reboottcp and /rebootascom to Management server
 
 // r120
 // Fix for OLED text on Management and Web server pages

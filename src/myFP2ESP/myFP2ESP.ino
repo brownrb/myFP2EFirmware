@@ -1815,6 +1815,44 @@ void MANAGEMENT_sendroot(void)
 #endif
 }
 
+// reboot web server
+void MANAGEMENT_rebootws()
+{
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTWSSTR);
+  delay(250);                                     // small delay - wait till web server has sent reboot message
+  stop_webserver();
+  delay(250);                                     // small delay before restarting service
+  start_webserver();
+}
+
+// reboot TCP/IP server/interface on port 2020
+void MANAGEMENT_reboottcp()
+{
+  // Note: Webserver cannot be defined without ACCESSPOINT or STATIONMODE
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTTCPSTR);
+  stop_tcpipserver();
+  delay(250);                                     // small delay before restarting service
+  start_tcpipserver();
+}
+
+// reboot ascom remote server on port 4040
+void MANAGEMENT_rebootascom()
+{
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTASCOMSTR);
+  stop_ascomremoteserver();
+  delay(250);                                     // small delay before restarting service
+  start_ascomremoteserver();
+}
+
+
+// reboot controller
+void MANAGEMENT_reboot()
+{
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTCNTLRSTR);
+  delay(250);                                     // small delay - wait till web server has sent reboot message
+  software_Reboot(REBOOTDELAY);
+}
+
 void start_management(void)
 {
 #if defined(ESP8266)
@@ -1832,10 +1870,14 @@ void start_management(void)
   MANAGEMENT_buildnotfound();
   MANAGEMENT_buildhome();
   MANAGEMENT_buildupload();
-  mserver.on("/", HTTP_GET,       MANAGEMENT_sendroot);
-  mserver.on("/", HTTP_POST,      MANAGEMENT_handleroot);
-  mserver.on("/list",             MANAGEMENT_listSPIFFSfiles);
-  mserver.on("/upload", HTTP_GET, MANAGEMENT_displayfileupload);
+  mserver.on("/", HTTP_GET,           MANAGEMENT_sendroot);
+  mserver.on("/", HTTP_POST,          MANAGEMENT_handleroot);
+  mserver.on("/reboot", HTTP_GET,     MANAGEMENT_reboot);           // reboot controller
+  mserver.on("/rebootws", HTTP_GET,   MANAGEMENT_rebootws);         // reboot web server port 80
+  mserver.on("/reboottcp", HTTP_GET,  MANAGEMENT_reboottcp);        // reboot tcpip server port 2020
+  mserver.on("/rebootascom", HTTP_GET,MANAGEMENT_rebootascom);      // reboot ascom remote server port 4040  
+  mserver.on("/list",                 MANAGEMENT_listSPIFFSfiles);
+  mserver.on("/upload", HTTP_GET,     MANAGEMENT_displayfileupload);
   mserver.on("/upload", HTTP_POST, []() {
     mserver.send(NORMALWEBPAGE);
   }, MANAGEMENT_handlefileupload );
@@ -1849,7 +1891,7 @@ void start_management(void)
   managementserverstate = RUNNING;
   TRACE();
   DebugPrintln(SERVERSTATESTARTSTR);
-  delay(10);                      // small pause so background tasks can run
+  delay(10);                                        // small pause so background tasks can run
 }
 
 void stop_management(void)

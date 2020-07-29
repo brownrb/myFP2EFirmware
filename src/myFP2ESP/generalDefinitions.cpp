@@ -64,6 +64,10 @@ const char* APCONNECTFAILSTR      = "Did not connect to AP ";
 const char* CONNECTEDSTR          = "Connected";
 const char* I2CDEVICENOTFOUNDSTR  = "I2C device !found";
 const char* ASCOMREMOTESTR        = "ASCOM Remote";
+const char* REBOOTWSSTR           = "Rebooting web-server";
+const char* REBOOTTCPSTR          = "Rebooting tcp/ip-server";
+const char* REBOOTCNTLRSTR        = "Rebooting controller";
+const char* REBOOTASCOMSTR        = "Rebooting ASCOM remote server";
 
 const char* MANAGEMENTURLNOTFOUNDSTR  = "<html><head><title>Management server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
 const char* WEBSERVERURLNOTFOUNDSTR   = "<html><head><title>Web-server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";

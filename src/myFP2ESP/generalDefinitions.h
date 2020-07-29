@@ -143,6 +143,10 @@ extern const char* APCONNECTFAILSTR;
 extern const char* CONNECTEDSTR;
 extern const char* I2CDEVICENOTFOUNDSTR;
 extern const char* ASCOMREMOTESTR;
+extern const char* REBOOTWSSTR;
+extern const char* REBOOTTCPSTR;
+extern const char* REBOOTCNTLRSTR;
+extern const char* REBOOTASCOMSTR;
 
 extern const char* MANAGEMENTURLNOTFOUNDSTR;
 extern const char* WEBSERVERURLNOTFOUNDSTR;
