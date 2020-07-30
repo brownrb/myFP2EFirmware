@@ -13,6 +13,7 @@
 #define myBoards_h
 
 #include "myBoardTypes.h"
+
 // ----------------------------------------------------------------------------------------------
 // 1: BOARD DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
@@ -55,7 +56,6 @@
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 //#define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
 //#define STEPSPERREVOLUTION 1036        // NEMA16HS13-0604S-PG5
-
 
 // do not change, required for L293D motor shield
 #define UNIPOLAR28BYJ48   1
@@ -167,8 +167,8 @@
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
 #define TEMPPIN       13
-#define I2CDATAPIN    21            // D21 is SDA
-#define I2CCLKPIN     22            // D22 is SCL
+#define I2CDATAPIN    21                // D21 is SDA
+#define I2CCLKPIN     22                // D22 is SCL
 #define DIRPIN        32
 #define STEPPIN       33
 #define ENABLEPIN     14
@@ -223,7 +223,7 @@ class DriverBoard
 {
   public:
     DriverBoard(byte);          // constructor
-    void      initmove(bool, unsigned long, byte);
+    void      initmove(bool, unsigned long, byte, bool);
     uint32_t  halt(void);
 
     // getter
@@ -251,5 +251,7 @@ class DriverBoard
     byte boardtype;
     byte stepmode;
     int stepdelay;                                // time in milliseconds to wait between pulses when moving
+    unsigned int clock_frequency;
+    bool drvbrdleds;
 };
 #endif

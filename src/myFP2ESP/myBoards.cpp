@@ -60,6 +60,7 @@ bool stepdir;
 #include "ESP8266TimerInterrupt.h"
 ESP8266Timer ITimer;
 #else
+#include "esp32-hal-cpu.h"                                    // so we can get CPU frequency
 hw_timer_t * timer = NULL;
 #endif
 
@@ -74,9 +75,65 @@ extern DriverBoard* driverboard;
     !0        true        moving_out        step
 */
 
+inline void asm2uS()  __attribute__((always_inline));
+
+// On esp8266 with 80mHz clock a nop takes 1/80000000 second, i.e. one clock pulse, or 0.0000000125 of a second
+// 2 Microseconds = 2 x 10-6 Seconds or 0.000001
+// To get to 2uS for ESP8266 we will need 80 nop instructions
+// On esp32 with 240mHz clock a nop takes ? 1/240000000 second or 0.000000004166 of a second
+// To get to 2us for ESP32 we will need 240 nop instructions
+// TODO
+// I need to finish code with clock_frequency and half asm1uS calls if using a clock frequency of 120MHZ on ESP32
+
+inline void asm1uS()                  // 1uS on ESP8266, 1/3uS on ESP32
+{
+  asm volatile (
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    "nop \n\t"
+    ::
+  );
+}
+
 //_________________Timer ISR  (Interrupt Service Routine)______________________
 
-//THIS SHOULD BE CALLING ::movemotor(dir) to move the motor!
 #if defined(ESP8266)
 ICACHE_RAM_ATTR void onTimer()
 {
@@ -122,6 +179,12 @@ void IRAM_ATTR onTimer()
 DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 {
   do  {
+#if defined(ESP8266)
+    // do nothing
+#else
+    // esp32
+    clock_frequency = ESP.getCpuFreqMHz();    // returns the CPU frequency in MHz as an unsigned 8-bit integer
+#endif
 #if DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS
     pinMode(ENABLEPIN, OUTPUT);
     pinMode(DIRPIN, OUTPUT);
@@ -145,19 +208,23 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 
 #elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
     // IN1ULN, IN3ULN, IN4ULN, IN2ULN
-    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN4, IN2);
+    // mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN4, IN2);
+    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
     mystepper->setSpeed(5);
     this->stepdelay = MSPEED;
+
 #elif (DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N)
     // IN1L298N, IN2L298N, IN3L298N, IN4L298N
     mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
     mystepper->setSpeed(20);
     this->stepdelay = MSPEED;
+
 #elif (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
     // IN1L293DMINI, IN2L293DMINI, IN3L293DMINI, IN4L293DMINI
     mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
     mystepper->setSpeed(5);
     this->stepdelay = MSPEED;
+
 #elif (DRVBRD == PRO2EL9110S || DRVBRD == PRO2ESP32L9110S)
     // IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S
     mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
@@ -330,6 +397,13 @@ void DriverBoard::releasemotor(void)
 
 void DriverBoard::movemotor(byte dir)
 {
+  // only some boards have in out leds
+#if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
+  if ( drvbrdleds )
+  {
+    ( dir == moving_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
+  }
+#endif
   // handling of inout leds when moving done in main code
 #if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
   || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
@@ -337,16 +411,43 @@ void DriverBoard::movemotor(byte dir)
   digitalWrite(DIRPIN, dir);            // set Direction of travel
   digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver
   digitalWrite(STEPPIN, 1);             // Step pin on
-  delayMicroseconds(MOTORPULSETIME);
-  digitalWrite(STEPPIN, 0);
-  delayMicroseconds(this->stepdelay);   // this controls speed of motor
+#if defined(ESP8266)
+  asm1uS();                             // ESP8266 must be 2uS delay for DRV8825 chip
+  asm1uS();
+#else
+  asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
+  asm1uS();
+  asm1uS();
+  asm1uS();
+  asm1uS();
+  asm1uS();
+#endif
+  digitalWrite(STEPPIN, 0);             // Step pin off
 #endif
 #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI \
   || DRVBRD == PRO2EL9110S  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N \
   || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S \
   || DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
   (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
-  delayMicroseconds(this->stepdelay);
+  // keep same code here even though these driver boards do not require a pulse
+  // this makes timing the same for all driver boards
+#if defined(ESP8266)
+  asm1uS();                             // ESP8266 must be 2uS delay for DRV8825 chip
+  asm1uS();
+#else
+  asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
+  asm1uS();
+  asm1uS();
+  asm1uS();
+  asm1uS();
+  asm1uS();
+#endif
+#endif
+#if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
+  if ( drvbrdleds )
+  {
+    ( dir == moving_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
+  }
 #endif
 }
 
@@ -364,12 +465,12 @@ uint32_t DriverBoard::halt(void)
   return stepcount;
 }
 
-void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed)
+void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool leds)
 {
   stepcount = steps;
   stepdir = dir;
   DriverBoard::enablemotor();
-
+  drvbrdleds = leds;
   timerSemaphore = false;
 
   DebugPrint(F(">initmove "));

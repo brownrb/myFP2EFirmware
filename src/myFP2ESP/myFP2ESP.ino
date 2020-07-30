@@ -1,3 +1,15 @@
+// TODO ISSUE 1 in myBoards.cpp
+// I need to finish code with clock_frequency and half asm1uS calls if using a clock frequency of 120MHZ on ESP32
+// TODO ISSUE 2
+// HALT when moving does not update the focuser position correctly - has to do with code in loop()
+// TODO ISSUE 3
+// Focuser position only updated after move is complete - has to do with code in loop()
+// It needs to be updated during the move
+// TODO ISSUE 4 - ULN2003 - Appears line 212-myBoards.cpp was wrong: RESOLVED - still need to check wiring of board and motor
+// Focuser is only moving in one direction [+ or - always turns the same direction]
+// TODO ISSUE 5 - RESOLVED
+// INOUT LEDS needs to move from main code into myBoards.cpp as leds are not pulsing with interrupt code
+
 // ----------------------------------------------------------------------------------------------
 // TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 121
 // ----------------------------------------------------------------------------------------------
@@ -389,6 +401,12 @@ bool duckdnsstate;
 
 SetupData *mySetupData;
 
+#ifdef INOUTLEDS
+bool leds = true;
+#else
+bool leds = false;
+#endif
+
 // ----------------------------------------------------------------------------------------------
 // 17: FIRMWARE CODE START - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
@@ -514,11 +532,11 @@ void update_temp(void)
           {
             // temperature compensation direction is in, if a fall then move in else move out
             if ( temperaturedirection == 1 )          // check if temperature is falling
-            { 
+            {
               newPos = ftargetPosition - mySetupData->get_tempcoefficient();    // then move inwards
             }
             else
-            { 
+            {
               newPos = ftargetPosition + mySetupData->get_tempcoefficient();    // else move outwards
             }
           }
@@ -1875,7 +1893,7 @@ void start_management(void)
   mserver.on("/reboot", HTTP_GET,     MANAGEMENT_reboot);           // reboot controller
   mserver.on("/rebootws", HTTP_GET,   MANAGEMENT_rebootws);         // reboot web server port 80
   mserver.on("/reboottcp", HTTP_GET,  MANAGEMENT_reboottcp);        // reboot tcpip server port 2020
-  mserver.on("/rebootascom", HTTP_GET,MANAGEMENT_rebootascom);      // reboot ascom remote server port 4040  
+  mserver.on("/rebootascom", HTTP_GET, MANAGEMENT_rebootascom);     // reboot ascom remote server port 4040
   mserver.on("/list",                 MANAGEMENT_listSPIFFSfiles);
   mserver.on("/upload", HTTP_GET,     MANAGEMENT_displayfileupload);
   mserver.on("/upload", HTTP_POST, []() {
@@ -4604,7 +4622,7 @@ void setup()
   DebugPrintln(DEBUGONSTR);
 #endif
   delay(100);                                       // otherwise this serial statement does not appear
-  
+
 #ifdef TIMESETUP
   Serial.print("setup(): ");
   Serial.println(millis());
@@ -5162,7 +5180,7 @@ void loop()
       DebugPrint(STATEMOVINGSTR);
       DebugPrint(steps);
 
-      driverboard->initmove(DirOfTravel, steps + backlash_count, mySetupData->get_motorSpeed());
+      driverboard->initmove(DirOfTravel, steps + backlash_count, mySetupData->get_motorSpeed(), leds);
       MainStateMachine = State_Moving;
       break;
 
@@ -5247,7 +5265,7 @@ void loop()
         if (flag == true)                               // init moving back
         {
           DebugPrint(F(">BL2: "));
-          driverboard->initmove(DirOfTravel, backlash_count, mySetupData->get_motorSpeed());   // init job for the timer ISR
+          driverboard->initmove(DirOfTravel, backlash_count, mySetupData->get_motorSpeed(), leds);   // init job for the timer ISR
           flag = false;                                 // mark job is done for the next turn
         }
         else if (timerSemaphore == true)  // wait for message "well done" from timer ISR

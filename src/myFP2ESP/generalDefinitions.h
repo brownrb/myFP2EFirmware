@@ -312,8 +312,8 @@ DebugPrintln(__PRETTY_FUNCTION__);
 #define DebugPrintln(...)                             // now defines a blank line
 #endif
 
-#define TIMESETUP               1
-#define TIMELOOP                1
+//#define TIMESETUP               1
+//#define TIMELOOP                1
 //#define MSBUILDROOT             1
 //#define MSSENDROOT              1
 //#define MSHANDLEROOT            1
