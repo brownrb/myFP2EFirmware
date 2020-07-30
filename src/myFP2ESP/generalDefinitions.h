@@ -147,6 +147,8 @@ extern const char* REBOOTWSSTR;
 extern const char* REBOOTTCPSTR;
 extern const char* REBOOTCNTLRSTR;
 extern const char* REBOOTASCOMSTR;
+extern const char* ASCOMSERVERNOTDEFINEDSTR;
+extern const char* WEBSERVERNOTDEFINEDSTR;
 
 extern const char* MANAGEMENTURLNOTFOUNDSTR;
 extern const char* WEBSERVERURLNOTFOUNDSTR;

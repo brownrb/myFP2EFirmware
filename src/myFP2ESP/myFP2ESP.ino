@@ -9,6 +9,8 @@
 // Focuser is only moving in one direction [+ or - always turns the same direction]
 // TODO ISSUE 5 - RESOLVED
 // INOUT LEDS needs to move from main code into myBoards.cpp as leds are not pulsing with interrupt code
+// TODO ISSUE 6 - RESOLVED
+// Compilation errors when webserver and ascom remote are undefined
 
 // ----------------------------------------------------------------------------------------------
 // TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 121
@@ -1836,32 +1838,41 @@ void MANAGEMENT_sendroot(void)
 // reboot web server
 void MANAGEMENT_rebootws()
 {
+#ifdef WEBSERVER
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTWSSTR);
   delay(250);                                     // small delay - wait till web server has sent reboot message
   stop_webserver();
   delay(250);                                     // small delay before restarting service
   start_webserver();
+#else
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, WEBSERVERNOTDEFINEDSTR);
+#endif
 }
 
 // reboot TCP/IP server/interface on port 2020
 void MANAGEMENT_reboottcp()
 {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
   // Note: Webserver cannot be defined without ACCESSPOINT or STATIONMODE
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTTCPSTR);
   stop_tcpipserver();
   delay(250);                                     // small delay before restarting service
   start_tcpipserver();
+#endif
 }
 
 // reboot ascom remote server on port 4040
 void MANAGEMENT_rebootascom()
 {
+#ifdef ASCOMREMOTE
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, REBOOTASCOMSTR);
   stop_ascomremoteserver();
   delay(250);                                     // small delay before restarting service
   start_ascomremoteserver();
+#else
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, ASCOMSERVERNOTDEFINEDSTR);
+#endif
 }
-
 
 // reboot controller
 void MANAGEMENT_reboot()
