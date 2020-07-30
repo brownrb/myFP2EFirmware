@@ -48,9 +48,9 @@
 
 // stepper motor steps per full revolution using full steps
 // WARNING: USE THE CORRECT ONE - IF YOU THEN CHANGE STEPMODE THE STEPS MOVED WILL BE INVALID
-//#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
+#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
 //#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
-#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
+//#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
 //#define STEPSPERREVOLUTION 1028        // 17HS13-0404S-PG5
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 //#define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
@@ -113,7 +113,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        30000             // timer interrupt motor speed value for fast speed
+#define MSPEED        5000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL293DNEMA)          // DONE, TESTED FULL STEPPING WITH NEMA17 STEPPER MOTOR
 #define TEMPPIN       10                // Temperature somehows does not work now for this shield
@@ -133,7 +133,7 @@
 #define IN2           0                 // DIR B
 #define IN3           4                 // DIR A
 #define IN4           2                 // PWM_B 
-#define MSPEED        30000             // timer interrupt motor speed value for fast speed
+#define MSPEED        5000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL298N)              // DONE, TESTED FULL/HALF STEPPING WITH NEMA 17 200 STEPPER MOTOR
 #define TEMPPIN       10
@@ -143,7 +143,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        5000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL293DMINI)
 #define TEMPPIN       10
@@ -153,7 +153,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        5000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL9110S)
 #define TEMPPIN       10
@@ -163,7 +163,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        5000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
 #define TEMPPIN       13
@@ -198,7 +198,7 @@
 #define OUTLEDPIN     19
 #define IRPIN         15
 #define HPSWPIN       4
-#define MSPEED        30000             // timer interrupt motor speed value for fast speed
+#define MSPEED        5000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2ESP32R3WEMOS )
 #define TEMPPIN       13

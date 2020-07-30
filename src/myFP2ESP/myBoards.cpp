@@ -348,7 +348,6 @@ void DriverBoard::movemotor(byte dir)
   (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
   delayMicroseconds(this->stepdelay);
 #endif
-  Serial.println("move");
 }
 
 uint32_t DriverBoard::halt(void)

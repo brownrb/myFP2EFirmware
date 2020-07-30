@@ -314,24 +314,25 @@ DebugPrintln(__PRETTY_FUNCTION__);
 
 #define TIMESETUP               1
 #define TIMELOOP                1
-#define MSBUILDROOT             1
-#define MSROOT                  1
-#define MSHANDLEROOT            1
-#define WSSENDPRESETS           1
-#define WSBUILDPRESETS          1
-#define WSHANDLEPRESETS         1
-#define WSSENDMOVE              1
-#define WSBUILDMOVE             1
-#define WSHANDLEMOVE            1
-#define WSSENDROOT              1
-#define WSBUILDROOT             1
-#define WSHANDLEROOT            1
-#define ASSETUP1                1
-#define ASCOMHANDLESETUP        1
-#define ASCOMHANDLEFOCUSERSETUP 1
-#define ASCOMHANDLEAPIVER       1
-#define ASCOMHANDLEAPIDES       1
-#define ASCOMHANDLEAPICON       1
+//#define MSBUILDROOT             1
+//#define MSSENDROOT              1
+//#define MSHANDLEROOT            1
+//#define WSSENDPRESETS           1
+//#define WSBUILDPRESETS          1
+//#define WSHANDLEPRESETS         1
+//#define WSSENDMOVE              1
+//#define WSBUILDMOVE             1
+//#define WSHANDLEMOVE            1
+//#define WSSENDROOT              1
+//#define WSBUILDROOT             1
+//#define WSHANDLEROOT            1
+//#define ASSETUP1                1
+//#define ASCOMBUILDSETUP         1
+//#define ASCOMHANDLESETUP        1
+//#define ASCOMHANDLEFOCUSERSETUP 1
+//#define ASCOMHANDLEAPIVER       1
+//#define ASCOMHANDLEAPIDES       1
+//#define ASCOMHANDLEAPICON       1
 
 
 #endif // generalDefinitions.h

@@ -5,6 +5,11 @@
 // Implement HTTP_GET functions for most web/management/ascom server pages
 // Optimize web server and management server code
 // Add /reboot /rebootws /reboottcp and /rebootascom to Management server
+// Fix errors in TIME statements
+// Fix error on ASCOM setup page
+// Remove serial.print statement from move motor [was used for testing]
+// Issue long move of 2000+ steps causes timeout on TCP/IP app
+// Issue long move from 52000+ steps causes reboot of controller
 
 // r120
 // Fix for OLED text on Management and Web server pages

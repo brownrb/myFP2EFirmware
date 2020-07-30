@@ -514,12 +514,12 @@ void update_temp(void)
           {
             // temperature compensation direction is in, if a fall then move in else move out
             if ( temperaturedirection == 1 )          // check if temperature is falling
-            { // then move inwards
-              newPos = ftargetPosition - mySetupData->get_tempcoefficient();
+            { 
+              newPos = ftargetPosition - mySetupData->get_tempcoefficient();    // then move inwards
             }
             else
-            { // else move outwards
-              newPos = ftargetPosition + mySetupData->get_tempcoefficient();
+            { 
+              newPos = ftargetPosition + mySetupData->get_tempcoefficient();    // else move outwards
             }
           }
           else
@@ -1172,11 +1172,11 @@ void MANAGEMENT_handlefileupload(void)
 void MANAGEMENT_buildhome(void)
 {
   // constructs home page of management server
-#ifdef MSBUIDLROOT
+#ifdef MSBUILDROOT
   Serial.print("ms:buildroot: ");
   Serial.println(millis());
 #endif
-  // load not found page from FS - wsindex.html
+  // load page from FS - wsindex.html
 #if defined(ESP8266)
   if ( !LittleFS.begin())
 #else
@@ -2626,7 +2626,7 @@ void WEBSERVER_handlemove()
   delay(10);                     // small pause so background ESP8266 tasks can run
 }
 
-void WEBSERVER_buildhome(void)
+void WEBSERVER_buildroot(void)
 {
 #ifdef WSBUILDROOT
   Serial.print("ws:buildroot: ");
@@ -3058,7 +3058,7 @@ void WEBSERVER_sendroot()
   Serial.print("ws:sendroot: ");
   Serial.println(millis());
 #endif
-  WEBSERVER_buildhome();
+  WEBSERVER_buildroot();
   // send the homepage to a connected client
   DebugPrintln(SENDPAGESTR);
   webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WHomePage );
@@ -3078,7 +3078,7 @@ void start_webserver(void)
   webserver = new WebServer(mySetupData->get_webserverport());
 #endif // if defined(esp8266) 
   WEBSERVER_buildnotfound();
-  WEBSERVER_buildhome();
+  WEBSERVER_buildroot();
   WEBSERVER_buildmove();
   WEBSERVER_buildpresets();
   webserver->on("/",        HTTP_GET,   WEBSERVER_sendroot);
@@ -3211,8 +3211,8 @@ void checkASCOMALPACADiscovery()
 // constructs ascom setup server page /setup/v1/focuser/0/setup
 void ASCOM_Create_Setup_Focuser_HomePage()
 {
-#ifdef ASCOMCREATESETUP
-  Serial.print("ascomcreatesetup() : ");
+#ifdef ASCOMBUILDSETUP
+  Serial.print("ascombuildsetup() : ");
   Serial.println(millis());
 #endif
   // Convert IP address to a string;
@@ -3356,16 +3356,16 @@ void ASCOM_Create_Setup_Focuser_HomePage()
 
       DebugPrintln("ascomserver: processing page start");
       // process for dynamic data
-      Focuser_Setup_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
-      Focuser_Setup_HomePage.replace("%IPSTR%", ipStr);
-      Focuser_Setup_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
-      Focuser_Setup_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
-      Focuser_Setup_HomePage.replace("%FPBUFFER%", fpbuffer);
-      Focuser_Setup_HomePage.replace("%MXBUFFER%", mxbuffer);
-      Focuser_Setup_HomePage.replace("%CPBUFFER%", cpbuffer);
-      Focuser_Setup_HomePage.replace("%RDBUFFER%", rdbuffer);
-      Focuser_Setup_HomePage.replace("%SMBUFFER%", smbuffer);
-      Focuser_Setup_HomePage.replace("%MSBUFFER%", msbuffer);
+      Focuser_Setup_HomePage.replace("%DRV%", String(DRVBRD_ID));
+      Focuser_Setup_HomePage.replace("%IPS%", ipStr);
+      Focuser_Setup_HomePage.replace("%ALP%", String(mySetupData->get_ascomalpacaport()));
+      Focuser_Setup_HomePage.replace("%VER%", String(programVersion));
+      Focuser_Setup_HomePage.replace("%FPB%", fpbuffer);
+      Focuser_Setup_HomePage.replace("%MXB%", mxbuffer);
+      Focuser_Setup_HomePage.replace("%CPB%", cpbuffer);
+      Focuser_Setup_HomePage.replace("%RDB%", rdbuffer);
+      Focuser_Setup_HomePage.replace("%SMB%", smbuffer);
+      Focuser_Setup_HomePage.replace("%MSB%", msbuffer);
       DebugPrintln("ascomserver: processing page done");
       eflag = 0;
     }
@@ -3416,8 +3416,8 @@ void ASCOM_Create_Setup_Focuser_HomePage()
 
     Focuser_Setup_HomePage = Focuser_Setup_HomePage + "</body></html>\r\n";
   }
-#ifdef ASCOMCREATESETUP
-  Serial.print("ascomcreatesetup() : ");
+#ifdef ASCOMBUILDSETUP
+  Serial.print("ascombuildsetup() : ");
   Serial.println(millis());
 #endif
 }
@@ -3555,10 +3555,7 @@ void ASCOM_handle_setup()
   {
     DebugPrintln(F("ascomserver: Error occurred when mounting SPIFFS"));
     DebugPrintln(F("ascomserver: build_default_homepage"));
-    AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
-    AS_HomePage = AS_HomePage + "<p>SPIFFS could not be started</p>";
-    AS_HomePage = AS_HomePage + "<p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
-    AS_HomePage = AS_HomePage + "</body></html>";
+    AS_HomePage = ASCOMSERVERURLNOTFOUNDSTR;
   }
   else
   {
@@ -3582,20 +3579,17 @@ void ASCOM_handle_setup()
 
       DebugPrintln("ascomserver: processing page start");
       // process for dynamic data
-      AS_HomePage.replace("%IPSTR%", ipStr);
-      AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
-      AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
-      AS_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
+      AS_HomePage.replace("%IPS%", ipStr);
+      AS_HomePage.replace("%ALP%", String(mySetupData->get_ascomalpacaport()));
+      AS_HomePage.replace("%VER%", String(programVersion));
+      AS_HomePage.replace("%DRV%", String(DRVBRD_ID));
       DebugPrintln("ascomserver: processing page done");
     }
     else
     {
       DebugPrintln(F("ascomserver: Err ashomepage.html !found"));
       DebugPrintln(F("ascomserver: build_default_homepage"));
-      AS_HomePage = "<html><head><title>ASCOM REMOTE SERVER</title></head><body>";
-      AS_HomePage = AS_HomePage + "<p>File not found</p>";
-      AS_HomePage = AS_HomePage + "<p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p>";
-      AS_HomePage = AS_HomePage + "</body></html>";
+      AS_HomePage = ASCOMSERVERURLNOTFOUNDSTR;
     }
   }
   ASCOMServerTransactionID++;
@@ -4306,10 +4300,10 @@ void ASCOM_handleRoot()
 
       DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
-      AS_HomePage.replace("%IPSTR%", ipStr);
-      AS_HomePage.replace("%ALPACAPORT%", String(mySetupData->get_ascomalpacaport()));
-      AS_HomePage.replace("%PROGRAMVERSION%", String(programVersion));
-      AS_HomePage.replace("%DRVBRD_ID%", String(DRVBRD_ID));
+      AS_HomePage.replace("%IPS%", ipStr);
+      AS_HomePage.replace("%ALP%", String(mySetupData->get_ascomalpacaport()));
+      AS_HomePage.replace("%VER%", String(programVersion));
+      AS_HomePage.replace("%DRV%", String(DRVBRD_ID));
       DebugPrintln(PROCESSPAGEENDSTR);
     }
     else
@@ -4609,7 +4603,8 @@ void setup()
   DebugPrintln(SERIALSTARTSTR);
   DebugPrintln(DEBUGONSTR);
 #endif
-
+  delay(100);                                       // otherwise this serial statement does not appear
+  
 #ifdef TIMESETUP
   Serial.print("setup(): ");
   Serial.println(millis());
