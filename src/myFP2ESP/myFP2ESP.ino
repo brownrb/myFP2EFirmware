@@ -1,15 +1,15 @@
-// TODO ISSUE 1 in myBoards.cpp
-// I need to finish code with clock_frequency and half asm1uS calls if using a clock frequency of 120MHZ on ESP32
 // TODO ISSUE 2
 // HALT when moving does not update the focuser position correctly - has to do with code in loop()
 // TODO ISSUE 3
 // Focuser position only updated after move is complete - has to do with code in loop()
 // It needs to be updated during the move
-// TODO ISSUE 4 - ULN2003 - Appears line 212-myBoards.cpp was wrong: RESOLVED - still need to check wiring of board and motor
-// Focuser is only moving in one direction [+ or - always turns the same direction]
-// TODO ISSUE 5 - RESOLVED
+// ISSUE 1 RESOLVED
+// in myBoards.cpp need to finish code with clock_frequency and half asm1uS calls if using a clock frequency of 120MHZ on ESP32
+// ISSUE 4 - RESOLVED
+// ULN2003 - Focuser is only moving in one direction - line 212-myBoards.cpp was wrong
+// ISSUE 5 - RESOLVED
 // INOUT LEDS needs to move from main code into myBoards.cpp as leds are not pulsing with interrupt code
-// TODO ISSUE 6 - RESOLVED
+// ISSUE 6 - RESOLVED
 // Compilation errors when webserver and ascom remote are undefined
 
 // ----------------------------------------------------------------------------------------------
@@ -5207,6 +5207,22 @@ void loop()
           MainStateMachine = State_DelayAfterMove;
           DebugPrintln(STATEDELAYAFTERMOVE);
         }
+        // update current focuser position - this does NOT work
+        // logic not correct - often losing 1 step in 100, try 2000 then goto 5000 - ends up at 4999 or 
+        // just try moving +- 10 steps, just try +- 1step, 1 step does NOT work
+        // if trying then comment out lines 5243 and 5247
+        if (stepcount < steps)
+        {
+          if (ftargetPosition > fcurrentPosition)
+          {
+            //fcurrentPosition = ftargetPosition - stepcount;
+          }
+          else
+          {
+            //fcurrentPosition = ftargetPosition + stepcount;
+          }
+        }
+
         if (mySetupData->get_displayenabled() == 1)
         {
           updatecount++;
@@ -5221,7 +5237,7 @@ void loop()
       {
         // it may not have taken all the steps, so it is actually moved by steps - stepcount
         // I know this only gives an indication once the move has completed
-        // I moved it here to work on the logic
+        // I moved it here to work on the logic - this code works
         if (ftargetPosition > fcurrentPosition)
         {
           fcurrentPosition += (steps - stepcount);

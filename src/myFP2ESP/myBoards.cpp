@@ -184,6 +184,8 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 #else
     // esp32
     clock_frequency = ESP.getCpuFreqMHz();    // returns the CPU frequency in MHz as an unsigned 8-bit integer
+    //Serial.print("Clock Freq: ");
+    //Serial.println(clock_frequency);
 #endif
 #if DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32R3WEMOS
     pinMode(ENABLEPIN, OUTPUT);
@@ -207,9 +209,14 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
     break;
 
 #elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
-    // IN1ULN, IN3ULN, IN4ULN, IN2ULN
-    // mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN4, IN2);
-    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN4, IN2);  // does not work, rotation one way
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN3, IN2, IN4);  // does not work, rotation one way
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN4, IN2, IN1, IN3);  // does not work, rotation one way
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN4, IN2, IN3, IN1);  // does not work, rotation one way
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN4, IN3, IN2);  // does not work, rotation one way
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN3, IN4, IN1, IN2);  // appears to work
+    //mystepper = new HalfStepper(STEPSPERREVOLUTION, IN4, IN3, IN2, IN1);  // appears to work, rotation directions reversed
+    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);  // appears to work
     mystepper->setSpeed(5);
     this->stepdelay = MSPEED;
 
@@ -415,12 +422,23 @@ void DriverBoard::movemotor(byte dir)
   asm1uS();                             // ESP8266 must be 2uS delay for DRV8825 chip
   asm1uS();
 #else
-  asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
-  asm1uS();
-  asm1uS();
-  asm1uS();
-  asm1uS();
-  asm1uS();
+  if ( clock_frequency == 160 )
+  {
+    asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
+    asm1uS();
+    asm1uS();
+    asm1uS();
+  }
+  else
+  {
+    // assume clock frequency is 240mHz
+    asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
+    asm1uS();
+    asm1uS();
+    asm1uS();
+    asm1uS();
+    asm1uS();
+  }
 #endif
   digitalWrite(STEPPIN, 0);             // Step pin off
 #endif
