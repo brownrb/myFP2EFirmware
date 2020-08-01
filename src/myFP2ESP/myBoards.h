@@ -22,17 +22,17 @@
 #if defined(ESP8266)
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
-#define DRVBRD PRO2EULN2003           // DONE
-//#define DRVBRD PRO2EDRV8825           // DONE
+//#define DRVBRD PRO2EULN2003           // missing steps
+//#define DRVBRD PRO2EDRV8825           //
 //#define DRVBRD PRO2EDRV8825BIG
-//#define DRVBRD PRO2EL293DNEMA         // DONE, FULL STEPPING ONLY
-//#define DRVBRD PRO2EL293D28BYJ48      // DONE, FULL STEPPING ONLY
-//#define DRVBRD PRO2EL298N             // DONE
+//#define DRVBRD PRO2EL293DNEMA         // missing steps
+//#define DRVBRD PRO2EL293D28BYJ48      // 
+//#define DRVBRD PRO2EL298N             //
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 #else
 // ESP32 Boards
-//#define DRVBRD PRO2ESP32DRV8825
+#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -45,12 +45,12 @@
 #endif
 
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
-#define DRV8825TEPMODE    STEP16        // jumpers MS1/2/3 on the PCB for ESP8266
+#define DRV8825TEPMODE    STEP1          // jumpers MS1/2/3 on the PCB for ESP8266
 
 // stepper motor steps per full revolution using full steps
 // WARNING: USE THE CORRECT ONE - IF YOU THEN CHANGE STEPMODE THE STEPS MOVED WILL BE INVALID
-#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
-//#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
+//#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
+#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
 //#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
 //#define STEPSPERREVOLUTION 1028        // 17HS13-0404S-PG5
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
@@ -74,8 +74,12 @@
 #include <HalfStepperESP32.h>
 #endif
 
-#if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
+#if (DRVBRD == PRO2EL293D28BYJ48)
 #include <Stepper.h>                    // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
+#endif
+#if (DRVBRD == PRO2EL293DNEMA)
+#include <Stepper.h>    
+//#include <Stepper.h>           
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
@@ -87,7 +91,7 @@
 #define ENABLEPIN     14                // D5 GPIO14
 #define MSPEED        3000              // timer interrupt motor speed value for fast speed
 #endif
-#if (DRVBRD == PRO2EDRV8825 )           // DONE, TESTED WITH NEMA14 STEPPER MOTOR
+#if (DRVBRD == PRO2EDRV8825 )           // 
 #define TEMPPIN       10
 #define I2CDATAPIN    5
 #define I2CCLKPIN     4
@@ -96,16 +100,16 @@
 #define ENABLEPIN     14                // D5 GPIO14
 #define MSPEED        3000              // timer interrupt motor speed value for fast speed
 #endif
-#if (DRVBRD == PRO2EDRV8825BIG )        // DONE, TESTED WITH NEMA14 STEPPER MOTOR
+#if (DRVBRD == PRO2EDRV8825BIG )        // 
 #define TEMPPIN       2                 // temp probe does not work on SD3 for BigChip
 #define I2CDATAPIN    5
 #define I2CCLKPIN     4
 #define DIRPIN        13                // D7 GPIOP13
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        1000              // timer interrupt motor speed value for fast speed
 #endif
-#if (DRVBRD == PRO2EULN2003 )           // DONE, TESTED FULL/HALF STEPPING WITH 28BYJ48 STEPPER MOTOR
+#if (DRVBRD == PRO2EULN2003 )           // 
 #define TEMPPIN       10
 #define I2CDATAPIN    5
 #define I2CCLKPIN     4
@@ -113,9 +117,9 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        5000              // timer interrupt motor speed value for fast speed
+#define MSPEED        6000              // timer interrupt motor speed value for fast speed
 #endif
-#if (DRVBRD == PRO2EL293DNEMA)          // DONE, TESTED FULL STEPPING WITH NEMA17 STEPPER MOTOR
+#if (DRVBRD == PRO2EL293DNEMA)          // 
 #define TEMPPIN       10                // Temperature somehows does not work now for this shield
 #define I2CDATAPIN    12                // GPIO12 is D6
 #define I2CCLKPIN     14                // GPIO14 is D5
@@ -123,7 +127,7 @@
 #define IN2           0                 // DIR B
 #define IN3           4                 // DIR A
 #define IN4           2                 // PWM_B 
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        6000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL293D28BYJ48)       // DONE, TESTED FULL STEPPING WITH 28BYJ48 STEPPER MOTOR
 #define TEMPPIN       10
@@ -133,7 +137,7 @@
 #define IN2           0                 // DIR B
 #define IN3           4                 // DIR A
 #define IN4           2                 // PWM_B 
-#define MSPEED        5000              // timer interrupt motor speed value for fast speed
+#define MSPEED        6000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL298N)              // DONE, TESTED FULL/HALF STEPPING WITH NEMA 17 200 STEPPER MOTOR
 #define TEMPPIN       10
@@ -143,7 +147,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        5000              // timer interrupt motor speed value for fast speed
+#define MSPEED        6000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2EL293DMINI)
 #define TEMPPIN       10
@@ -163,7 +167,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        5000              // timer interrupt motor speed value for fast speed
+#define MSPEED        6000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )
 #define TEMPPIN       13
@@ -177,12 +181,12 @@
 #define INLEDPIN      18
 #define OUTLEDPIN     19
 #define IRPIN         15
-//#define HPSWPIN       4
-#define HPSWPIN       0       //_HM 04.05.2020 for debug only, need to be removed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#define HPSWPIN       4
+//#define HPSWPIN       0       //_HM 04.05.2020 for debug only, need to be removed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #define MS1           27
 #define MS2           26
 #define MS3           25
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        500              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S)
 #define TEMPPIN       13
@@ -198,7 +202,7 @@
 #define OUTLEDPIN     19
 #define IRPIN         15
 #define HPSWPIN       4
-#define MSPEED        5000              // timer interrupt motor speed value for fast speed
+#define MSPEED        6000              // timer interrupt motor speed value for fast speed
 #endif
 #if (DRVBRD == PRO2ESP32R3WEMOS )
 #define TEMPPIN       13
@@ -209,7 +213,7 @@
 #define ENABLEPIN     14
 #define IRPIN         15
 #define HPSWPIN       4
-#define MSPEED        3000              // timer interrupt motor speed value for fast speed
+#define MSPEED        1000              // timer interrupt motor speed value for fast speed
 #endif
 
 // ----------------------------------------------------------------------------------------------
@@ -244,10 +248,13 @@ class DriverBoard
    || DRVBRD == PRO2EL9110S    || DRVBRD == PRO2ESPL9110S)
     HalfStepper* mystepper;
 #endif
-#if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
+#if (DRVBRD == PRO2EL293DNEMA)
     Stepper* mystepper;
 #endif
-    int inputPins[4];                             // The input pin numbers
+#if (DRVBRD == PRO2EL293D28BYJ48)
+    HalfStepper* mystepper;
+#endif
+    int inputPins[4];                             // the input pin numbers
     byte boardtype;
     byte stepmode;
     int stepdelay;                                // time in milliseconds to wait between pulses when moving

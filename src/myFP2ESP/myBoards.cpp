@@ -140,6 +140,7 @@ ICACHE_RAM_ATTR void onTimer()
   static bool mjob = false;      // motor job is running or not
   if (stepcount  && !(HPS_alert && stepdir == moving_in))
   {
+    //Serial.println("onTimer() : tick");
     driverboard->movemotor(stepdir);
     stepcount--;
     mjob = true;                  // mark a running job
@@ -223,7 +224,7 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
 #elif (DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N)
     // IN1L298N, IN2L298N, IN3L298N, IN4L298N
     mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-    mystepper->setSpeed(20);
+    mystepper->setSpeed(40);
     this->stepdelay = MSPEED;
 
 #elif (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
@@ -257,18 +258,19 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
     // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
 #if (DRVBRD == PRO2EL293DNEMA )
     mystepper = new Stepper(STEPSPERREVOLUTION, IN2, IN3, IN1, IN4);
-    // constructor was IN2, IN3, IN1, IN4 for NEMA14
     this->inputPins[0] = IN1;
     this->inputPins[1] = IN2;
     this->inputPins[2] = IN3;
     this->inputPins[3] = IN4;
     for (int i = 0; i < 4; i++)
     {
-      pinMode(this->inputPins[i, OUTPUT);
+      pinMode(this->inputPins[i], OUTPUT);
     }
-    mystepper->setSpeed(SPEEDNEMA);
-    this->stepdelay = MSPEED;
-#elif (DRVBRD == PRO2EL293D28BYJ48 )
+    mystepper->setSpeed(SPEEDNEMA);   // 100
+    setstepmode(STEP1);
+    this->stepdelay = MSPEED;         // 3000;
+#endif
+#if (DRVBRD == PRO2EL293D28BYJ48 )
     mystepper = new Stepper(STEPSPERREVOLUTION, IN1, IN3, IN2, IN4);
     // constructor was IN1, IN3, IN2, IN4 for 28BYJ48
     this->inputPins[0] = IN1;
@@ -280,9 +282,6 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
       pinMode(this->inputPins[i], OUTPUT);
     }
     mystepper->setSpeed(SPEEDBIPOLAR);
-    this->stepdelay = MSPEED;
-#endif
-#if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
     setstepmode(STEP1);
     this->stepdelay = MSPEED;
 #endif
@@ -404,6 +403,8 @@ void DriverBoard::releasemotor(void)
 
 void DriverBoard::movemotor(byte dir)
 {
+  //Serial.print("movemotor() : ");
+  //Serial.println(dir);
   // only some boards have in out leds
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
   if ( drvbrdleds )
@@ -411,20 +412,20 @@ void DriverBoard::movemotor(byte dir)
     ( dir == moving_in ) ? digitalWrite(INLEDPIN, 1) : digitalWrite(OUTLEDPIN, 1);
   }
 #endif
-  // handling of inout leds when moving done in main code
-#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 \
-  || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 \
-  || DRVBRD == PRO2ESP32R3WEMOS )
+
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
   digitalWrite(DIRPIN, dir);            // set Direction of travel
   digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver
   digitalWrite(STEPPIN, 1);             // Step pin on
 #if defined(ESP8266)
   asm1uS();                             // ESP8266 must be 2uS delay for DRV8825 chip
   asm1uS();
+  asm1uS();
 #else
+  // ESP32
   if ( clock_frequency == 160 )
   {
-    asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
+    asm1uS();                           // ESP32 must be 2uS delay for DRV8825 chip
     asm1uS();
     asm1uS();
     asm1uS();
@@ -439,28 +440,42 @@ void DriverBoard::movemotor(byte dir)
     asm1uS();
     asm1uS();
   }
-#endif
-  digitalWrite(STEPPIN, 0);             // Step pin off
-#endif
-#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI \
-  || DRVBRD == PRO2EL9110S  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N \
-  || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S \
-  || DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
+#endif // #if defined(ESP8266)
+  digitalWrite(STEPPIN, 0);               // Step pin off
+#endif // #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N \
+  || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S )
   (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
   // keep same code here even though these driver boards do not require a pulse
   // this makes timing the same for all driver boards
 #if defined(ESP8266)
-  asm1uS();                             // ESP8266 must be 2uS delay for DRV8825 chip
+  asm1uS();                               // ESP8266 must be 2uS delay for DRV8825 chip
   asm1uS();
 #else
-  asm1uS();                             // ESP32 must be 2uS delay for DRV8825 chip
+  // ESP32
+  asm1uS();                               // ESP32 must be 2uS delay for DRV8825 chip
   asm1uS();
   asm1uS();
   asm1uS();
   asm1uS();
+  asm1uS();
+#endif // #if defined(ESP8266)
+#endif
+
+#if (DRVBRD == PRO2EL293D28BYJ48)
+  (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
+  asm1uS();                               // ESP8266 must be 2uS delay for DRV8825 chip
   asm1uS();
 #endif
+
+#if (DRVBRD == PRO2EL293DNEMA)
+  (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
+  asm1uS();                               // ESP8266 must be 2uS delay for DRV8825 chip
+  asm1uS();
 #endif
+
+  // turn off leds
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
   if ( drvbrdleds )
   {
@@ -497,6 +512,14 @@ void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool 
   DebugPrint(steps);
   DebugPrint(F(" "));
 
+  //Serial.print("initmove: ");
+  //Serial.print(dir);
+  //Serial.print(" : ");
+  //Serial.print(steps);
+  //Serial.print(" : ");
+  //Serial.print(motorspeed);
+  //Serial.print(" : ");
+  //Serial.println(leds);
 #if defined(ESP8266)
   unsigned long curspd = DriverBoard::getstepdelay();
   switch ( motorspeed )

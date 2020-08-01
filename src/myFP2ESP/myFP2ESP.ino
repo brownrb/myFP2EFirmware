@@ -1,16 +1,10 @@
+// TODO ISSUE 7
+// Often +1 or -1 is ignored and stepper not moved
 // TODO ISSUE 2
 // HALT when moving does not update the focuser position correctly - has to do with code in loop()
 // TODO ISSUE 3
 // Focuser position only updated after move is complete - has to do with code in loop()
 // It needs to be updated during the move
-// ISSUE 1 RESOLVED
-// in myBoards.cpp need to finish code with clock_frequency and half asm1uS calls if using a clock frequency of 120MHZ on ESP32
-// ISSUE 4 - RESOLVED
-// ULN2003 - Focuser is only moving in one direction - line 212-myBoards.cpp was wrong
-// ISSUE 5 - RESOLVED
-// INOUT LEDS needs to move from main code into myBoards.cpp as leds are not pulsing with interrupt code
-// ISSUE 6 - RESOLVED
-// Compilation errors when webserver and ascom remote are undefined
 
 // ----------------------------------------------------------------------------------------------
 // TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 121

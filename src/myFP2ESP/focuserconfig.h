@@ -38,7 +38,7 @@
 //#define BACKLASH 2
 
 // To enable In and Out Pushbuttons [ESP32 only], uncomment the next line
-//#define PUSHBUTTONS 1
+#define PUSHBUTTONS 1
 
 // To enable the 2-Axis Joystick [ESP32 only], uncomment the next line
 //#define JOYSTICK1 1
@@ -47,16 +47,16 @@
 //#define JOYSTICK2 2
 
 // To enable In and Out LEDS [ESP32 only], uncomment the next line
-//#define INOUTLEDS 1
+#define INOUTLEDS 1
 
 // To enable the Infrared remote controller [ESP32 only], uncomment the next line
 //#define INFRAREDREMOTE
 
 // To enable the start boot screen showing startup messages, uncomment the next line
-#define SHOWSTARTSCRN 1
+//#define SHOWSTARTSCRN 1
 
 // To display Splash screen graphic, uncomment the next line
-#define SPLASHSCREEN 1
+//#define SPLASHSCREEN 1
 
 // ----------------------------------------------------------------------------------------------
 // 2: SPECIFY THE CONTROLLER MODE HERE - THERE ARE RESTRICTIONS ON WHAT CAN BE COMBINED TOGETHER

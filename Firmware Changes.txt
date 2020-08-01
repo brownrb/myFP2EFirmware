@@ -12,7 +12,8 @@
 // Resolve issue ULN2003 motor only moving in one direction
 // Resolve issue leds not working with interrupt code
 // Resolve issue of compilation errors when webserver and ascom remote are undefined
-
+// Adjust for ESP32 clock rate when moving motor [adjustment of step pulse to be 2uS]
+// Fix compiler error for board PRO2EL293DNEMA
 
 // r120
 // Fix for OLED text on Management and Web server pages

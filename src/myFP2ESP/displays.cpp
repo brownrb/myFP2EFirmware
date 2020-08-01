@@ -65,16 +65,16 @@ bool OLED_NON::OledConnected(void)
 }
 
 // ----------------------------------------------------------------------------------------------
-// CODE NON OLED 
+// CODE NON OLED
 // ----------------------------------------------------------------------------------------------
 
-void OLED_NON::oledgraphicmsg(String &str, int val, boolean clrscr){}
-void OLED_NON::oled_draw_Wifi(int j){}
-void OLED_NON::oledtextmsg(String str, int val, boolean clrscr, boolean nl){}
-void OLED_NON::update_oledtext_position(void){}
-void OLED_NON::update_oledtextdisplay(void){}
-void OLED_NON::Update_Oled(const oled_state x, const connection_status y){}
-void OLED_NON::oled_draw_reboot(void){}
+void OLED_NON::oledgraphicmsg(String &str, int val, boolean clrscr) {}
+void OLED_NON::oled_draw_Wifi(int j) {}
+void OLED_NON::oledtextmsg(String str, int val, boolean clrscr, boolean nl) {}
+void OLED_NON::update_oledtext_position(void) {}
+void OLED_NON::update_oledtextdisplay(void) {}
+void OLED_NON::Update_Oled(const oled_state x, const connection_status y) {}
+void OLED_NON::oled_draw_reboot(void) {}
 //void OLED_NON::println(const char *c){}
 
 OLED_NON::OLED_NON()
@@ -89,14 +89,14 @@ OLED_NON::OLED_NON()
 
 //__constructor
 
-//OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64) 
+//OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64)
 OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64) , OLED_NON()
 {
-  if(connected)
+  if (connected)
   {
 
     Serial.println(F("start init()"));
-    delay(1000);    
+    delay(1000);
     this->init();
     delay(1000);
 
@@ -118,20 +118,20 @@ void OLED_GRAPHIC::Update_Oled(const oled_state oled, const connection_status Co
 {
   if (connected)
   {
-    if(TimeCheck(timestamp, 750))
+    if (TimeCheck(timestamp, 750))
     {
       timestamp = millis();
 
       if (oled == oled_on)
-      { 
-        oled_draw_main_update(ConnectionStatus);  
+      {
+        oled_draw_main_update(ConnectionStatus);
       }
       else
-      {  
+      {
         clear();
         display();
-      }   
-    }  
+      }
+    }
   }
 }
 
@@ -186,7 +186,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
     drawString(64, 28, F("offline"));
 
     setFont(ArialMT_Plain_10);
-//    drawString(64, 0, driverboard->getboardname());
+    //    drawString(64, 0, driverboard->getboardname());
     drawString(64, 0, DRVBRD_ID);
     snprintf(buffer, sizeof(buffer), "IP= %s", ipStr);
     drawString(64, 12, buffer);
@@ -197,21 +197,21 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
     snprintf(buffer, sizeof(buffer), "%lu:%i %c", fcurrentPosition, (int)(fcurrentPosition % driverboard->getstepmode()), dir);
     drawString(64, 28, buffer);
 
-    setFont(ArialMT_Plain_10);   
-    snprintf(buffer, sizeof(buffer), "µSteps: %i MaxPos: %lu", driverboard->getstepmode(),mySetupData->get_maxstep());
+    setFont(ArialMT_Plain_10);
+    snprintf(buffer, sizeof(buffer), "µSteps: %i MaxPos: %lu", driverboard->getstepmode(), mySetupData->get_maxstep());
     drawString(64, 0, buffer);
     snprintf(buffer, sizeof(buffer), "TargetPos:  %lu", ftargetPosition);
     drawString(64, 12, buffer);
   }
-  
+
   setTextAlignment(TEXT_ALIGN_LEFT);
 
 #ifdef TEMPERATUREPROBE
 
   snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", read_temp(0));
-  drawString(54, 54, buffer);    
+  drawString(54, 54, buffer);
 #else
-//  String tmbuffer = "20.0";
+  //  String tmbuffer = "20.0";
 #endif
   snprintf(buffer, sizeof(buffer), "BL: %i", mySetupData->get_backlashsteps_out());
   drawString(0, 54, buffer);
@@ -219,7 +219,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
   snprintf(buffer, sizeof(buffer), "%c", heartbeat[++count_hb % 4]);
   drawString(8, 12, buffer);
 
-  display(); 
+  display();
 }
 
 void OLED_GRAPHIC::oled_draw_reboot(void)
@@ -262,7 +262,7 @@ void OLED_TEXT::oledtextmsg(String str, int val, boolean clrscr, boolean nl)
       print(val);
     }
   }
-//  display();
+  //  display();
 }
 
 void OLED_TEXT::displaylcdpage0(void)      // displaylcd screen
@@ -302,7 +302,7 @@ void OLED_TEXT::displaylcdpage0(void)      // displaylcd screen
   print(MAXSTEPSSTR);
   ltoa(mySetupData->get_maxstep(), tempString, 10);
   println(tempString);
-//  display();
+  //  display();
 }
 
 void OLED_TEXT::displaylcdpage1(void)
@@ -329,7 +329,7 @@ void OLED_TEXT::displaylcdpage1(void)
 
   print(BACKLASHOUTSTEPSSTR);
   println(mySetupData->get_backlashsteps_out());
-//  display();
+  //  display();
 }
 
 void OLED_TEXT::displaylcdpage2(void)
@@ -383,7 +383,7 @@ void OLED_TEXT::displaylcdpage2(void)
   setCursor(0, 0);
   println(LOCALSERIALSTR);
 #endif
-//  display();
+  //  display();
 }
 
 void OLED_TEXT::Update_OledText(void)
@@ -396,7 +396,7 @@ void OLED_TEXT::Update_OledText(void)
   if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
   {
     olddisplaytimestampNotMoving = currentMillis;       // update the timestamp
-    clear();                             // clrscr OLED
+    clear();                                            // clrscr OLED
     switch (displaypage)
     {
       case 0:   displaylcdpage0();
@@ -421,7 +421,7 @@ void OLED_TEXT::UpdatePositionOledText(void)
 
   print(TARGETPOSSTR);
   println(ftargetPosition);
-//  display();
+  //  display();
 }
 
 void OLED_TEXT::update_oledtext_position(void)
@@ -436,7 +436,7 @@ void OLED_TEXT::update_oledtext_position(void)
   print(ftargetPosition);
   clearToEOL();
   println();
-//  display();
+  //  display();
 }
 
 OLED_TEXT::OLED_TEXT(void)
@@ -454,7 +454,7 @@ OLED_TEXT::OLED_TEXT(void)
   DebugPrintln("Setup esp32 I2C");
   Wire.begin(I2CDATAPIN, I2CCLKPIN);          // esp32
 #endif
- Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
+  Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
     TRACE();
@@ -474,17 +474,18 @@ OLED_TEXT::OLED_TEXT(void)
     begin(&SH1106_128x64, OLED_ADDR);
 #endif
 
-  set400kHz();
-  setFont(Adafruit5x7);
-  clear();                          // clrscr OLED
-  Display_Normal();                 // black on white
-  Display_On();                     // display ON
-  Display_Rotate(0);                // portrait, not rotated
-  Display_Bright();
+    set400kHz();
+    setFont(Adafruit5x7);
+    setcolor(WHITE);                        // Draw white text
+    clear();                            // clrscr OLED
+    //Display_Normal();                 // black on white
+    //Display_On();                     // display ON
+    //Display_Rotate(0);                // portrait, not rotated
+    //Display_Bright();
 #ifdef SHOWSTARTSCRN
-  println(DRVBRD_ID);             // print startup screen
-  println(programVersion);
-  println(ProgramAuthor);
+    println(DRVBRD_ID);               // print startup screen
+    println(programVersion);
+    println(ProgramAuthor);
 #endif // showstartscreen
   }
 }
