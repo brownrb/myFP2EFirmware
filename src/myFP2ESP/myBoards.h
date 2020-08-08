@@ -89,6 +89,16 @@
 #define ENABLEPIN     14                // D5 GPIO14
 #define MSPEED        8000
 #endif
+#if (DRVBRD == PRO2EULN2003 )           // DONE
+#define TEMPPIN       10
+#define I2CDATAPIN    5
+#define I2CCLKPIN     4
+#define IN1           13
+#define IN2           12
+#define IN3           14
+#define IN4           2
+#define MSPEED        17500
+#endif
 #if (DRVBRD == PRO2EL293DNEMA)          // TESTING NOW
 #define TEMPPIN       10                // Temperature somehow does not work now for this shield
 #define I2CDATAPIN    12                // GPIO12 is D6
