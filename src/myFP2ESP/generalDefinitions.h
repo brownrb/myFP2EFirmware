@@ -18,14 +18,24 @@
 // 1: GENERAL DEFINES -- DO NOT CHANGE
 // ----------------------------------------------------------------------------------------------
 
-#define ALPACAPORT            4040          // ASCOM Remote server port
+enum oled_state { oled_off, oled_on };
+enum connection_status { disconnected, connected };
+//  StateMachine definition
+enum StateMachineStates { State_Idle, State_InitMove, State_Moving, State_DelayAfterMove, State_FinishedMove, State_SetHomePosition };
+
+#define DEFAULTPOSITION       5000L
+#define DEFAULTMAXSTEPS       80000L
+
+#define DEFAULTSAVETIME       30000         // default time to wait before saving data to FS
+
+#define ALPACAPORT            4040          // ASCOM Remote port
 #define WEBSERVERPORT         80            // Web server port
 #define MSSERVERPORT          6060          // Management interface - cannot be changed
 #define MDNSSERVERPORT        7070          // mDNS service
 #define WS_REFRESHRATE        60            // web server page refresh time 60s
 #define MINREFRESHPAGERATE    10            // 10s - too low and the overhead becomes too much for the controller
 #define MAXREFRESHPAGERATE    900           // 15m
-#define DUCKDNS_REFREHRATE    60000         // duck dns, check ip address every 60s for an update
+#define DUCKDNS_REFRESHRATE   60000         // duck dns, check ip address every 60s for an update
 #define RUNNING               true          // service state running
 #define STOPPED               false         // service state stopped
 #define MSREBOOTPAGEDELAY     20000         // management service reboot page, time (s) between next page refresh
@@ -54,8 +64,13 @@
 #define FOCUSERLOWERLIMIT     1024L         // lowest value that maxsteps can be
 #define LCDPAGETIMEMIN        2             // 2s minimum lcd page display time
 #define LCDPAGETIMEMAX        10            // 10s maximum lcd page display time
-#define DEFAULTSAVETIME       30000         // default time to wait before saving data to SPIFFS
-//#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
+#define HOMESTEPS             200           // Prevent searching for home position switch never returning, this should be > than # of steps between closed and open
+#define HPSWOPEN              0             // hpsw states refelect status of switch
+#define HPSWCLOSED            1
+
+#define MAXWEBPAGESIZE        3400
+#define MAXASCOMPAGESIZE      2200
+#define MAXMANAGEMENTPAGESIZE 3400
 
 #ifdef HOMEPOSITIONSWITCH
 #define HPS_alert             !((bool)digitalRead(HPSWPIN))
@@ -63,12 +78,15 @@
 #define HPS_alert             false
 #endif
 
+#ifndef SLOW
 #define SLOW                  0             // motorspeeds
+#endif
+#ifndef MED
 #define MED                   1
+#endif
+#ifndef FAST
 #define FAST                  2
-
-// You can set the speed of the motor when performing backlash to SLOW, MED or FAST
-#define BACKLASHSPEED         SLOW
+#endif
 
 // ----------------------------------------------------------------------------------------------
 // 2: DO NOT CHANGE
@@ -78,12 +96,24 @@
 #define moving_out            !moving_in
 #define moving_main           moving_in               
 
+#ifndef STEP1
 #define STEP1                 1             // stepmodes
+#endif
+#ifndef STEP2
 #define STEP2                 2
+#endif
+#ifndef STEP4
 #define STEP4                 4
+#endif
+#ifndef STEP8
 #define STEP8                 8
+#endif
+#ifndef STEP16
 #define STEP16                16
+#endif
+#ifndef STEP32
 #define STEP32                32
+#endif
 
 #define EOFSTR                '#'
 #define STARTCMDSTR           ':'
@@ -150,9 +180,9 @@ extern const char* REBOOTASCOMSTR;
 extern const char* ASCOMSERVERNOTDEFINEDSTR;
 extern const char* WEBSERVERNOTDEFINEDSTR;
 
-extern const char* MANAGEMENTURLNOTFOUNDSTR;
-extern const char* WEBSERVERURLNOTFOUNDSTR;
-extern const char* ASCOMSERVERURLNOTFOUNDSTR;
+extern const char* MANAGEMENTNOTFOUNDSTR;
+extern const char* WEBSERVERNOTFOUNDSTR;
+extern const char* ASCOMSERVERNOTFOUNDSTR;
 
 extern const char* WRITEFILEFAILSTR;
 extern const char* WRITEFILESUCCESSSTR;
@@ -163,11 +193,6 @@ extern const char* SERVERNOTRUNNINGSTR;
 
 extern const char* HPCLOSEDFPNOT0STR;
 extern const char* HPCLOSEDFP0STR;
-extern const char* HPOPENFPNOT0STR;
-extern const char* HPMOVETILLCLOSEDSTR;
-extern const char* HPMOVEINERRORSTR;
-extern const char* HPMOVEINSTEPSSTR;
-extern const char* HPMOVEINFINISHEDSTR;
 extern const char* HPMOVETILLOPENSTR;
 extern const char* HPMOVEOUTERRORSTR;
 extern const char* HPMOVEOUTSTEPSSTR;
@@ -178,8 +203,17 @@ extern const char* TPROBESTR;
 extern const char* TPROBENOTFOUNDSTR;
 extern const char* GETTEMPPROBESSTR;
 extern const char* SETTPROBERESSTR;
-// oled messages
 
+// web page color messages
+extern const char* BACKCOLORINVALIDSTR;
+extern const char* NEWTITLECOLORSTR;
+extern const char* TITLECOLORINVALIDSTR;
+extern const char* NEWHEADERCOLORSTR;
+extern const char* HEADERCOLORINVALIDSTR;
+extern const char* NEWTEXTCOLORSTR;
+extern const char* TEXTCOLORINVALIDSTR;
+
+// oled messages
 extern const char* CURRENTPOSSTR;
 extern const char* TARGETPOSSTR;
 extern const char* COILPWRSTR;
@@ -239,51 +273,48 @@ extern const char* FSFILENOTFOUNDSTR;
 #define SERVERSTATESTARTSTR       "STARTED"
 #define SERVERSTATERUNSTR         "RUNNING"
 #define SENDPAGESTR               "Send page"
+#define ENABLEDSTR                "Enabled"
+#define NOTENABLEDSTR             "Disabled"
+
+#define MANAGEMENTNOTFOUNDSTR   "<html><head><title>Management Server</title></head><body><p>URL not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>"
+#define WEBSERVERNOTFOUNDSTR    "<html><head><title>Web Server</title></head><body><p>URL not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>"
+#define ASCOMSERVERNOTFOUNDSTR  "<html><head><title>ASCOM REMOTE Server</title></head><body><p>FS not started</p><p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p></body></html>";
 
 #define MDNSSTARTFAILSTR          "Err setting up MDNS responder"
 #define MDNSSTARTEDSTR            "mDNS responder started"
 
-#define STOPTSSTR                 "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopts\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define STARTTSSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startts\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define CREBOOTSTR                "<form action=\"/\" method =\"post\"><input type=\"hidden\" name=\"srestart\" value=\"true\"><input type=\"submit\" value=\"REBOOT CONTROLLER\"></form>"
 
-#define STOPWSSTR                 "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define STARTWSSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define ENABLEBKINSTR             "<form action=\"/msindex3\" method=\"post\"><b>BL-IN State</b> [%STI%]: <input type=\"hidden\" name=\"enin\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
+#define DISABLEBKINSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-IN State</b> [%STI%]: <input type=\"hidden\" name=\"diin\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
+#define ENABLEBKOUTSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"enou\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
+#define DISABLEBKOUTSTR           "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"diou\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
 
-#define STOPASSTR                 "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define STARTASSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define ENABLELEDSTR              "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"startle\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
+#define DISABLELEDSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"stople\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
+#define ENABLETEMPSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%TPE%]: <input type=\"hidden\" name=\"starttp\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
+#define DISABLETEMPSTR            "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%TPE%]: <input type=\"hidden\" name=\"stoptp\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
+#define STOPTSSTR                 "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%TST%]: <input type=\"hidden\" name=\"stopts\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
+#define STARTTSSTR                "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%TST%]: <input type=\"hidden\" name=\"startts\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define STOPWSSTR                 "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%WST%]: <input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
+#define STARTWSSTR                "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%WST%]: <input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define STOPASSTR                 "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%ABT%]: <input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
+#define STARTASSTR                "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%ABT%]: <input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
+#define DISPLAYCSTR               "<form action=\"/msindex2\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"cel\" Checked><input type=\"submit\" value=\"Enable Celsius\"></form>"
+#define DISPLAYFSTR               "<form action=\"/msindex2\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"fah\"><input type=\"submit\" value=\"Enable Fahrenheit\"></form>"
+
 #define MDNSTOPSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopmdns\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
 #define MDNSSTARTSTR              "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startmdns\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
 #define DISPLAYONSTR              "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"doff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
 #define DISPLAYOFFSTR             "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"don\"><input type=\"submit\" value=\"Turn On\"></form>"
-#define DISPLAYCSTR               "<form action=\"/\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"cel\" Checked><input type=\"submit\" value=\"Enable Celsius\"></form>"
-#define DISPLAYFSTR               "<form action=\"/\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"fah\"><input type=\"submit\" value=\"Enable Fahrenheit\"></form>"
-#define NOTDEFINEDSTR             "!defined in firmware"
+#define STARTSCREENONSTR          "<form action=\"/\" method=\"post\"><b>Startscreen: </b><input type=\"hidden\" name=\"ss\" value=\"ssoff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
+#define STARTSCREENOFFSTR         "<form action=\"/\" method=\"post\"><b>Startscreen: </b><input type=\"hidden\" name=\"ss\" value=\"sson\"><input type=\"submit\" value=\"Turn On\"></form>"
+#define STARTHPSWMONSTR           "<form action=\"/\" method=\"post\"><b>HPSW Messages: </b><input type=\"hidden\" name=\"hp\" value=\"hpoff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
+#define STARTHPSWMOFFSTR          "<form action=\"/\" method=\"post\"><b>HPSW Messages: </b><input type=\"hidden\" name=\"hp\" value=\"hpon\"><input type=\"submit\" value=\"Turn On\"></form>"
+#define STARTFMDLONSTR            "<form action=\"/\" method=\"post\"><b>MS Forcedownload: </b><input type=\"hidden\" name=\"fd\" value=\"fdoff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
+#define STARTFMDLOFFSTR           "<form action=\"/\" method=\"post\"><b>MS Forcedownload: </b><input type=\"hidden\" name=\"fd\" value=\"fdon\"><input type=\"submit\" value=\"Turn On\"></form>"
 
-// Controller Features
-#define ENABLEDLCD                1L
-#define ENABLEDOLED               2L
-#define ENABLEDTEMPPROBE          4L
-#define ENABLEDHPSW               8L
-#define ENABLEDBLUETOOTH          16L
-#define ENABLEDSTEPPERPWR         32L
-#define ENABLEDPUSHBUTTONS        64L
-#define ENABLEDROTARYENCODER      128L
-#define ENABLEDINFRARED           256L
-#define ENABLEDBACKLASH           512L
-#define ENABLEDTFT                1024L
-#define ENABLENOKIA               2048L
-#define ENABLEKEYPAD              4096L
-#define ENABLEDINOUTLEDS          8192L
-#define ENABLEDBUZZER             16384L
-#define ENABLEDACCESSPOINT        32768L
-#define ENABLEDSTATIONMODE        65536L
-#define ENABLEDLOCALSERIAL        131072L
-#define ENABLEDOTAUPDATES         262144L
-#define ENABLEDWEBSERVER          524288L
-#define ENABLEDASCOMREMOTE        1048576L
-#define ENABLEDSTATICIP           2097152L
-#define ENABLEDMDNS               4194304L
-#define ENABLEDJOYSTICK           8388608L
+#define NOTDEFINEDSTR             "!defined in firmware"
 
 // ----------------------------------------------------------------------------------------------
 // 2. TRACING -- DO NOT CHANGE
@@ -314,27 +345,61 @@ DebugPrintln(__PRETTY_FUNCTION__);
 #define DebugPrintln(...)                             // now defines a blank line
 #endif
 
-//#define TIMESETUP               1
-//#define TIMELOOP                1
-//#define MSBUILDROOT             1
-//#define MSSENDROOT              1
-//#define MSHANDLEROOT            1
-//#define WSSENDPRESETS           1
-//#define WSBUILDPRESETS          1
-//#define WSHANDLEPRESETS         1
-//#define WSSENDMOVE              1
-//#define WSBUILDMOVE             1
-//#define WSHANDLEMOVE            1
-//#define WSSENDROOT              1
-//#define WSBUILDROOT             1
-//#define WSHANDLEROOT            1
-//#define ASSETUP1                1
-//#define ASCOMBUILDSETUP         1
-//#define ASCOMHANDLESETUP        1
-//#define ASCOMHANDLEFOCUSERSETUP 1
-//#define ASCOMHANDLEAPIVER       1
-//#define ASCOMHANDLEAPIDES       1
-//#define ASCOMHANDLEAPICON       1
+// ---------------------------------------------------------------------------
+// 4. HEAP DEBUGGING - DO NOT CHANGE / DO NOT ENABLE
+// ---------------------------------------------------------------------------
+//#define HEAPDEBUG     1
 
+#ifdef  HEAPDEBUG   
+#define HDebugPrint(...) Serial.print(__VA_ARGS__)      // HDebugPrint is a macro, serial print
+#define HDebugPrintln(...) Serial.println(__VA_ARGS__)  // HDebugPrintln is a macro, serial print with new line
+#define HDebugPrintf(...) Serial.printf(__VA_ARGS__)    // HDebugPrintf is a macro, serial printf
+#else
+#define HDebugPrint(...)                                // now defines a blank line
+#define HDebugPrintln(...)                              // now defines a blank line
+#define HDebugPrintf(...)
+#endif
+
+// ---------------------------------------------------------------------------
+// 5. TIMING TESTS - DO NOT CHANGE / DO NOT ENABLE
+// ---------------------------------------------------------------------------
+//#define TIMEDTESTS 1
+#ifdef TIMEDTESTS
+
+#define TIMESETUP                   1
+//#define TIMELOOP                    1
+#define TIMEWSROOTSEND              1
+#define TIMEWSROOTHANDLE            1
+#define TIMEWSROOTBUILD             1
+#define TIMEWSMOVEHANDLE            1
+#define TIMEWSBUILDMOVE             1
+#define TIMEWSSENDMOVE              1
+#define TIMEWSSENDPRESETS           1
+#define TIMEWSHANDLEPRESETS         1
+#define TIMEWSBUILDPRESETS          1
+
+#define TIMEMSSENDPG1               1
+#define TIMEMSSENDPG2               1
+#define TIMEMSSENDPG3               1
+#define TIMEMSSENDPG4               1
+#define TIMEMSSENDPG5               1
+#define TIMEMSBUILDPG1              1
+#define TIMEMSBUILDPG2              1
+#define TIMEMSBUILDPG3              1
+#define TIMEMSBUILDPG4              1
+#define TIMEMSBUILDPG5              1
+#define TIMEMSHANDLEPG1             1
+#define TIMEMSHANDLEPG2             1
+#define TIMEMSHANDLEPG3             1
+#define TIMEMSHANDLEPG4             1
+#define TIMEMSHANDLEPG5             1
+
+#define TIMEASCOMBUILDSETUP         1
+#define TIMEASCOMHANDLESETUP        1
+#define TIMEASCOMHANDLEFOCUSERSETUP 1
+#define TIMEASCOMHANDLEAPIVER       1
+#define TIMEASCOMHANDLEAPIDES       1
+#define TIMEASCOMHANDLEAPICON       1
+#endif
 
 #endif // generalDefinitions.h

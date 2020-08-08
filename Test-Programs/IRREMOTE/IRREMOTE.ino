@@ -1,8 +1,8 @@
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 Controllers
 // IRREMOTE Test Program [ESP32]
 
-// DOWNLOAD THIS IRREMOTE LIBRARY
-// https://github.com/crankyoldgit/IRremoteESP8266
+// USE THE LIBRARY IN THE Library Files folder of the Firmware Zip file
+// myfp2eIRremoteESP8266.Zip
 //
 // THEN INSTALL LIBRARY FROM IDE-Sketch-Include Library-Add ZIP library
 
@@ -15,9 +15,11 @@
 // and then insert those codes into the irremotemappings.h file
 
 #include <Arduino.h>
-#include <IRremoteESP8266.h>
-#include <IRrecv.h>
-#include <IRutils.h>
+#define ESP32
+#include <myfp2eIRremoteESP8266.h>
+#include <myfp2eIRrecv.h>
+#include <myfp2eIRutils.h>
+#undef ESP32
 
 #define IRPIN 15
 const uint16_t RECV_PIN = IRPIN;

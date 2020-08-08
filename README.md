@@ -35,8 +35,7 @@ Additional JSON files are separated in board manager by using a comma ,
 When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents compiling of ESP8266 firmware so move the WIFI folder to C:\Program Files (x86)\Arduino\libraries.old\WiFi  
 
 # Additional JSON library Needed
-make sure you install the library ArduinoJson-6.x.xip into the Arduino IDE else firmware will not compile.
-
+Make sure you install the library ArduinoJson into the Arduino IDE else firmware will not compile.
 The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 
 # Libraries
@@ -45,13 +44,14 @@ To compile you will also need to import these libraries in the folder src/myFP2E
 * myOLED
 * HalfStepperESP32
 * myDallasTemperature
+* myfp2eIRremoteESP8266
 
 Do not edit or replace any of these library files with others.
 
 # Additional Libraries which must be downloaded and installed
 To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file firat.
 
-Graphics OLED
+Graphics OLED [SSD1306 4.1.0]
 https://github.com/ThingPulse/esp8266-oled-ssd1306
 
 OneWire
@@ -66,11 +66,8 @@ https://github.com/ayushsharma82/EasyDDNS
 ESP32 Sketch Data uploader
 https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
 
-ESP8266 Sketch LittleFS Data uploader
-https://github.com/earlephilhower/arduino-esp8266littlefs-plugin
-
-ESP8266 TimerInterrupt Library
-https://github.com/khoih-prog/ESP8266TimerInterrupt
+ESP8266 Sketch Data uploader
+https://github.com/esp8266/arduino-esp8266fs-plugin
 
 After downloading the zip files, you then need to install these into the Arduino IDE environment. To do that, start the Arduino IDE, select Sketch, Include Library, Add .Zip library, then navigate to where the ZIP files are stored and select them (you can only load 1 zip file at a time so please repeat this for all ZIP files).
 
@@ -112,18 +109,17 @@ This is a special cut down version of the SSD1306AsciiWire library by Bill Greim
 
 * Arduino IDE 1.8.13
 * ESP8266 Arduino Core 2.7.3
-* ESP32 Arduino Core 1.0.4
 
 Libraries 
 
-* Arduino JSON 6.15.2
-* myOLED as in myFP2ELibs
-* HalfStepperESP32 as in myFP2ELibs
-* myDallas Temperature as in myFP2ELibs
+* Arduino JSON 6.11.5 https://github.com/bblanchon/ArduinoJson.git
 * IRRemoteESP8266 https://github.com/crankyoldgit/IRremoteESP8266
+* IRRemoteESP32 as in Library Files
+* myOLED as in Library Files
+* myHalfStepperESP32 as in Library Files
+* myDallas Temperature as in Library Files
 * Wire [as installed with Arduino 1.8.13]
-* OneWire 2.3.5
-* EasyDDNS 1.5.2
+* OneWire http://www.pjrc.com/teensy/td_libs_OneWire.html
 
 # Notes:
 You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to

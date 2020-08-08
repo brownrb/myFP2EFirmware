@@ -14,11 +14,13 @@
 // We should NOT include graphics code if the user has NOT defined its use and does not want any display
 // If the user explicitly does not want a display we should not include its code
 
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+
 #ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
-#include <SSD1306Wire.h>
+//#include <SSD1306Wire.h>
 #endif
 #ifdef USE_SSH1106                            // For the OLED 128x64 1.3" display using the SSH1106 driver
-#include <SH1106Wire.h>
+//#include <SH1106Wire.h>
 #endif
 
 #include <mySSD1306AsciiWire.h>
@@ -29,7 +31,7 @@
 extern SetupData *mySetupData;
 extern unsigned long fcurrentPosition;      // current focuser position
 extern unsigned long ftargetPosition;       // target position
-extern char  ipStr[];                        // ip address
+extern char ipStr[];                        // ip address
 extern char mySSID[];
 extern DriverBoard* driverboard;
 extern float read_temp(byte);
@@ -41,9 +43,6 @@ extern float read_temp(byte);
 #define SCREEN_WIDTH          128           // OLED display width, in pixels
 #define SCREEN_HEIGHT         64            // OLED display height, in pixels
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address
-
-enum oled_state { oled_off, oled_on };
-enum connection_status { disconnected, connected };
 
 //__helper function
 
@@ -90,9 +89,9 @@ class OLED_TEXT : public SSD1306AsciiWire, public OLED_NON
 };
 
 #ifdef USE_SSD1306
-class OLED_GRAPHIC : public SSD1306Wire , public OLED_NON
+class OLED_GRAPHIC : public SSD1306Wire, public OLED_NON
 #else
-class OLED_GRAPHIC : public SH1106Wire , public OLED_NON
+class OLED_GRAPHIC : public SH1106Wire, public OLED_NON
 #endif
 {
   public:
@@ -108,5 +107,7 @@ class OLED_GRAPHIC : public SH1106Wire , public OLED_NON
     byte count_hb = 0;      // heart beat counter
     long timestamp;
 };
+
+#endif // #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
 
 #endif

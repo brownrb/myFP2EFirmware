@@ -1,18 +1,19 @@
 #include <Wire.h>
-
-void setup() 
-{  
+#define I2CDATAPIN    21            // D21 is SDA
+#define I2CCLKPIN     22            // D22 is SCL
+void setup()
+{
   Serial.begin (115200);
   Serial.println ("****** simple I2C bus scanner ********");
 
-  Wire.begin();
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);                    // esp32
 
   Serial.println("Scan at 100 kHz");
   scan(100000L);
   Serial.println("Scan at 400 kHz");
   scan(400000L);
 }
-  
+
 void scan(unsigned long clock)
 {
   Wire.setClock(clock);
@@ -21,16 +22,21 @@ void scan(unsigned long clock)
   for (int i = 0; i < 128; i++)
   {
     Wire.beginTransmission(i);
-    if(!Wire.endTransmission ())
-    { 
+    if (!Wire.endTransmission ())
+    {
       Serial.print ("address = 0x");
       Serial.println(i, HEX);
-      count++;    
+      count++;
     }
   }
   Serial.print (count);
-  Serial.println (" devices detected");   
+  Serial.println (" devices detected");
 }
-  
 
-void loop(){}
+
+void loop() {
+  Serial.println("Scan at 100 kHz");
+  scan(100000L);
+  Serial.println("Scan at 400 kHz");
+  scan(400000L);
+}

@@ -1,46 +1,40 @@
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // myFP2ESP COMMS ROUTINES AND DEFINITIONS
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // COPYRIGHT
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 #ifndef comms_h
 #define comms_h
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // EXTERNS
-// ----------------------------------------------------------------------------------------------
-extern unsigned long fcurrentPosition;         // current focuser position
+// ---------------------------------------------------------------------------
 extern unsigned long ftargetPosition;          // target position
 extern byte isMoving;
 extern char ipStr[];
 extern const char* programVersion;
-
+extern const char* DRVBRD_ID;
 extern DriverBoard* driverboard;
 extern char mySSID[64];
 extern void software_Reboot(int);
+extern volatile bool halt_alert;
 
-#ifdef OLEDTEXT
-extern OLED_TEXT *myoled;
-#endif
-#ifdef TEMPERATUREPROBE
 extern float read_temp(byte);
 extern void temp_setresolution(byte);
-#endif
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // DATA
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // CODE
-// ----------------------------------------------------------------------------------------------
-
+// ---------------------------------------------------------------------------
 #if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 
 void SendMessage(const char *str)
@@ -98,14 +92,12 @@ void SendPaket(const char token, const float val, int i)    // i => decimal plac
   SendMessage(buffer);
 }
 
-
-bool ESP_Communication()
+void ESP_Communication()
 {
   byte cmdval;
   String receiveString = "";
   String WorkString = "";
   long paramval = 0;
-  bool halt_alert = false;
 
 #if defined(BLUETOOTHMODE)
   receiveString = STARTCMDSTR + queue.pop();
@@ -116,16 +108,16 @@ bool ESP_Communication()
   receiveString = myclient.readStringUntil(EOFSTR);    // read until terminator
 #endif
 
-  receiveString += EOFSTR;                                 // put back terminator
+  receiveString += EOFSTR;                                // put back terminator
   String cmdstr = receiveString.substring(1, 3);
-  cmdval = cmdstr.toInt();                              // convert command to an integer
+  cmdval = cmdstr.toInt();                                // convert command to an integer
   DebugPrint("recstr=" + receiveString + "  ");
-
+  DebugPrintln("cmdstr=" + cmdstr);
   switch (cmdval)
   {
-    // all the get go first followed by set
+    // all the get values first followed by set values
     case 0: // get focuser position
-      SendPaket('P', fcurrentPosition);
+      SendPaket('P', driverboard->getposition());
       break;
     case 1: // ismoving
       SendPaket('I', isMoving);
@@ -146,11 +138,14 @@ bool ESP_Communication()
       SendPaket('F', buffer);
       break;
     case 6: // get temperature
-#if defined(TEMPERATUREPROBE)
-      SendPaket('Z', read_temp(0), 3);
-#else
-      SendPaket('Z', "20.00");
-#endif
+      if ( mySetupData->get_temperatureprobestate() == 1)
+      {
+        SendPaket('Z', read_temp(0), 3);
+      }
+      else
+      {
+        SendPaket('Z', "20.00");
+      }
       break;
     case 8: // get maxStep
       SendPaket('M', mySetupData->get_maxstep());
@@ -171,11 +166,14 @@ bool ESP_Communication()
       SendPaket('1', mySetupData->get_tempcompenabled());
       break;
     case 25: // get IF temperature compensation is available
-#if defined(TEMPERATUREPROBE)
-      SendPaket('A', "1"); // this focuser supports temperature compensation
-#else
-      SendPaket('A', "0");
-#endif
+      if ( mySetupData->get_temperatureprobestate() == 1 )
+      {
+        SendPaket('A', "1"); // this focuser supports temperature compensation
+      }
+      else
+      {
+        SendPaket('A', "0");
+      }
       break;
     case 26: // get temperature coefficient steps/degree
       SendPaket('B', mySetupData->get_tempcoefficient());
@@ -230,8 +228,8 @@ bool ESP_Communication()
     case 55: // get motorspeed delay for current speed setting
       SendPaket('0', driverboard->getstepdelay());
       break;
-    case 58: // get controller features
-      SendPaket('m', Features);
+    case 58: // get controller features .. deprecated
+      SendPaket('m', 0);
       break;
     case 62: // get update of position on lcd when moving (00=disable, 01=enable)
       SendPaket('L', mySetupData->get_lcdupdateonmove());
@@ -271,31 +269,34 @@ bool ESP_Communication()
         SendPaket('h', mySetupData->get_focuserpreset(preset));
       }
       break;
+
+    // only the set commands are listed here as they do not require a response
     case 28:              // :28#       None    home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
       break;
-
-    // the set commands are listed here as they do not require a response
     case 5: // :05xxxxxx# None    Set new target position to xxxxxx (and focuser initiates immediate move to xxxxxx)
-      if ( isMoving == 0 )        // only if not already moving
+      // only if not already moving
+      if ( isMoving == 0 )
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         ftargetPosition = (unsigned long)WorkString.toInt();
         ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
-        myoled->update_oledtext_position();
+        // main loop will update focuser positions
       }
       break;
     case 7: // set maxsteps
-      WorkString = receiveString.substring(3, receiveString.length() - 1);
-      tmppos = (unsigned long)WorkString.toInt();
-      delay(5);
-      // check to make sure not above largest value for maxstep
-      tmppos = (tmppos > FOCUSERUPPERLIMIT) ? FOCUSERUPPERLIMIT : tmppos;
-      // check if below lowest set value for maxstep
-      tmppos = (tmppos < FOCUSERLOWERLIMIT) ? FOCUSERLOWERLIMIT : tmppos;
-      // check to make sure its not less than current focuser position
-      tmppos = (tmppos < fcurrentPosition) ? fcurrentPosition : tmppos;
-      mySetupData->set_maxstep(tmppos);
+      {
+        WorkString = receiveString.substring(3, receiveString.length() - 1);
+        unsigned long tmppos = (unsigned long)WorkString.toInt();
+        delay(5);
+        // check to make sure not above largest value for maxstep
+        tmppos = (tmppos > FOCUSERUPPERLIMIT) ? FOCUSERUPPERLIMIT : tmppos;
+        // check if below lowest set value for maxstep
+        tmppos = (tmppos < FOCUSERLOWERLIMIT) ? FOCUSERLOWERLIMIT : tmppos;
+        // check to make sure its not less than current focuser position
+        tmppos = (tmppos < driverboard->getposition()) ? driverboard->getposition() : tmppos;
+        mySetupData->set_maxstep(tmppos);
+      }
       break;
     case 12: // set coil power
       paramval = (byte) (receiveString[3] - '0');
@@ -305,7 +306,8 @@ bool ESP_Communication()
     case 14: // set reverse direction
       if ( isMoving == 0 )
       {
-        mySetupData->set_reversedirection((byte) (receiveString[3] - '0'));
+        paramval = (byte) (receiveString[3] - '0');
+        ( paramval == 1 ) ? mySetupData->set_reversedirection(1) : mySetupData->set_reversedirection(0);
       }
       break;
     case 15: // set motorspeed
@@ -337,9 +339,10 @@ bool ESP_Communication()
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
       mySetupData->set_tempprecision((byte) paramval);
-#ifdef TEMPERATUREPROBE
-      temp_setresolution((byte) paramval);
-#endif
+      if ( mySetupData->get_temperatureprobestate() == 1)
+      {
+        temp_setresolution((byte) paramval);
+      }
       break;
     case 22: // set the temperature compensation value to xxx
       WorkString = receiveString.substring(3, receiveString.length() - 1);
@@ -347,9 +350,10 @@ bool ESP_Communication()
       mySetupData->set_tempcoefficient((byte)paramval);
       break;
     case 23: // set the temperature compensation ON (1) or OFF (0)
-#if defined(TEMPERATUREPROBE)
-      mySetupData->set_tempcompenabled((byte) (receiveString[3] - '0'));
-#endif
+      if ( mySetupData->get_temperatureprobestate() == 1)
+      {
+        mySetupData->set_tempcompenabled((byte) (receiveString[3] - '0'));
+      }
       break;
     case 27: // stop a move - like a Halt
       halt_alert = true;
@@ -390,8 +394,9 @@ bool ESP_Communication()
         {
           long tpos = (long)WorkString.toInt();
           tpos = (tpos < 0) ? 0 : tpos;
-          tmppos = ((unsigned long) tpos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long) tpos;
-          fcurrentPosition = ftargetPosition = tmppos;
+          unsigned long tmppos = ((unsigned long) tpos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long) tpos;
+          ftargetPosition = tmppos;
+          driverboard->setposition(tmppos);
           mySetupData->set_fposition(tmppos);
         }
       }
@@ -431,14 +436,16 @@ bool ESP_Communication()
       if ( isMoving == 0 )
       {
         mySetupData->SetFocuserDefaults();
-        ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
+        ftargetPosition = mySetupData->get_fposition();
+        driverboard->setposition(ftargetPosition);
+        mySetupData->set_fposition(ftargetPosition);
       }
       break;
     case 48: // save settings to FS
-      // TODO: THIS SHOULD SAVE "ALL" FOCUSER SETTINGS
-      mySetupData->set_fposition(fcurrentPosition); // need to save setting
+      mySetupData->set_fposition(driverboard->getposition());       // need to save setting
+      mySetupData->SaveNow();                                       // save the focuser settings immediately
       break;
-    case 56: // set motorspeed delay motor speed fast
+    case 56: // set motorspeed delay for current speed setting
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       driverboard->setstepdelay(WorkString.toInt());
       break;
@@ -449,7 +456,7 @@ bool ESP_Communication()
       if ( isMoving == 0 )
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
-        long pos = (long)WorkString.toInt() + (long)fcurrentPosition;
+        long pos = (long)WorkString.toInt() + (long)driverboard->getposition();
         pos  = (pos < 0) ? 0 : pos;
         ftargetPosition = ( pos > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)pos;
       }
@@ -480,7 +487,7 @@ bool ESP_Communication()
         byte preset = (byte) (receiveString[3] - '0');
         preset = (preset > 9) ? 9 : preset;
         WorkString = receiveString.substring(4, receiveString.length() - 1);
-        tmppos = (unsigned long)WorkString.toInt();
+        unsigned long tmppos = (unsigned long)WorkString.toInt();
         mySetupData->set_focuserpreset( preset, tmppos );
       }
       break;
@@ -520,7 +527,6 @@ bool ESP_Communication()
       SendPaket('9', "1");
       break;
   }
-  return halt_alert;
 }
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE) || defined(LOCALSERIAL) || defined(BLUETOOTHMODE)
 

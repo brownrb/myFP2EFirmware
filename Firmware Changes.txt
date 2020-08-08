@@ -1,39 +1,68 @@
-// r121
-// Remove joystick speed code - now redundant 
-// Fix bug in debug statement for mdnsserver
-// Implement timing statements for some code functions
+// 126
+// Rewrite web/management/ascom-remote server send page routines
+// Move focuserposition to driverboard.cpp, simplifies a lot of code
+// Implement timing statements for some code functions [to support debugging and optimization]
 // Implement HTTP_GET functions for most web/management/ascom server pages
-// Optimize web server and management server code
-// Add /reboot /rebootws /reboottcp and /rebootascom to Management server
-// Fix errors in TIME statements
-// Fix error on ASCOM setup page
-// Remove serial.print statement from move motor [was used for testing]
-// Resolve issue of long moves 2000+ causing reboot of controller
-// Resolve issue ULN2003 motor only moving in one direction
-// Resolve issue leds not working with interrupt code
-// Resolve issue of compilation errors when webserver and ascom remote are undefined
-// Adjust for ESP32 clock rate when moving motor [adjustment of step pulse to be 2uS]
-// Fix compiler error for board PRO2EL293DNEMA
+// Optimize web/management server code
+// Optimize html files and code handling routines for Webserver and Management server
+// Use Timer interrupts to move motor
+// Use common speed setting MSPEED for each driverboard
+// Remove speed settings in driverboard
+// Remove references to driverboard->setmotorspeed
+// Remove IRREMOTE from ESP8266 as those boards do not have support for IRREMOTE on PCB
+// Remove joystick speed code - now redundant 
+// Add ability to change temp between C/F on management web server page
+// Add webserver and management server page fonts/colors/layout
+// Add additional management web server page into 4 pages
+// Add management server page2 to display services to ENABLE/DISABLE WEBSERVER/ASCOMREMOTESERVER/TEMPERATUREPROBE
+//    and IN-OUT LEDS
+// Add management server page3 to display backlash settings
+// Add management server page4 to customize web page colors
+// Add management server page5 to display webpicker
+// Add SHOWSTARTMESSAGE to management webserver and remove define from focuserconfig.h
+// Add SHOWHPSWMESSAGES to management webserver and remove define from focuserconfig.h
+// Add MANAGEMENTFORCEDOWNLOAD to management webserver and remove define from focuserconfig.h
+// Add INOUTLEDS to management webserver and remove define from focuserconfig.h
+// Add BACKLASH to management webserver and remove define from focuserconfig.h
+// Add TEMPERATUREPROBE to management webserver and remove define from focuserconfig.h
+// Add WEBSERVER to management webserver and remove define from focuserconfig.h
+// Add ASCOMREMOTESERVER to management webserver and remove define from focuserconfig.h
+// Add SaveNow() into focuserSetupData so settings are saved immediately before rebooting
+// Add debug statements for printing available HEAP memory to aid debugging
+// Fix for motorspeed setting when using joystick or infrared remote - esp32drv8825
+// Fix for presets not being saved
+// Fix for FocuserSetupData.cpp - ESP8266 - check if file exists BEFORE attempting to delete it [avoid potential crash]
+// Fis for FocuserSetupData.cpp - ESP8266 - issues related to file access [avoid potential crash]
+// Fix for Presets on webserver presets page
+// Fix bug in debug statement for mdnsserver
+// Fix for OLED text on Management and Web server pages
+// Fix for display of temperature on Web Server pages
+// Fix for low heap memory - release web/management/ascom server strings after sending pages
+// Fix for low heap memory - only build strings for web/management/ascom server pages as required
+// Rewrite myBoards.cpp driverboard initialization code
+// Implement myfp2eIRemoteESP8266 library to handle IRREMOTE to reduce space footprint
 
-// r120
+// 122
 // Fix for OLED text on Management and Web server pages
 // Fix for display of temperature on Web Server pages
 // Add ability to change temp between C/F on management web server page
 // Presets fix
-// Use Timer interrupts to move motor
-// Remove speed settings in driverboard
-// Use common speed setting MSPEED for each driverboard
-// Move to LittleFS file system for ESP8266
-// Trim html files and code handling routines for Webserver and Management server
-// Remove references to driverboard->setmotorspeed
+// Fix for listspiffsfiles
+
+// r121
+// Fix issue with Home Position Switch
+
+// r120
+// Fix issue with tcpserver on esp8266 [port cannot be changed dynamically]
+// reverse direction fix (and home position switch now obeys it to)
 
 // r119
 // Add alpacadiscovery protocol support (UDP port 32227, IPv4)
 // Move ASCOMGUID into ascom definitions rather than hard coded
 // Fix setfeatures
 // Fix stepmode
-// On Webserver - Add ability to change TCPIP port - Needs to be tested
-// Add tcpip port to LCD display
+// On Webserver - Add ability to change TCP/IP port
+// Add TCP/IP port to LCD display
 // Fix code in management server to check for updated port numbers that change
 // Increase SPIFF file size for data_per.jsn
 

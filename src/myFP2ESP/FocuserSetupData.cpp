@@ -1,18 +1,18 @@
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // myFP2ESP FOCUSER DATA ROUTINES
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // COPYRIGHT
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 #include <ArduinoJson.h>
 
 #if defined(ESP8266)
-#include "LittleFS.h"
+#include "FS.h"
 #else
 #include "SPIFFS.h"
 #endif
@@ -20,7 +20,7 @@
 #include "FocuserSetupData.h"
 #include "generalDefinitions.h"
 
-//__ Constructor ________________________________________
+// delay(10) required in ESP8266 code arounf file handling
 
 SetupData::SetupData(void)
 {
@@ -30,30 +30,6 @@ SetupData::SetupData(void)
   this->ReqSaveData_var  = false;
   this->ReqSaveData_per = false;
 
-#if defined(ESP8266)
-  // mount FS
-  if (!LittleFS.begin())
-  {
-    DebugPrintln(F("Error occurred when mounting FS"));
-    DebugPrintln(F("Format FS, please wait..."));
-    LittleFS.format();
-    DebugPrintln(F("Format FS done"));
-  }
-  else
-  {
-    DebugPrintln("FS mounted");
-    DebugPrint(F("list files on FS: "));
-    String str = "";
-    Dir dir = LittleFS.openDir("/");
-    while (dir.next())
-    {
-      str = dir.fileName() + ": " + dir.fileSize() + "  ";
-      DebugPrint(str);
-    }
-    DebugPrintln(F("...done"));
-  }
-#else
-  // mount SPIFFS
   if (!SPIFFS.begin())
   {
     DebugPrintln(F("FS !mounted"));
@@ -66,7 +42,6 @@ SetupData::SetupData(void)
     DebugPrintln("FS mounted");
     this->ListDir("/", 0);
   }
-#endif
   this->LoadConfiguration();
 };
 
@@ -74,29 +49,26 @@ SetupData::SetupData(void)
 byte SetupData::LoadConfiguration()
 {
   byte retval = 0;
-  //  char data[512];
 
   // Open file for reading
-#if defined(ESP8266)
-  File file = LittleFS.open(filename_persistant, "r");
-#else
+  delay(10);
   File file = SPIFFS.open(filename_persistant, "r");
-#endif
 
   if (!file)
   {
-    DebugPrintln(F("no config file persistant data found, load default values"));
+    delay(10);
+    DebugPrintln(F("no persistant data file, load default values"));
     LoadDefaultPersistantData();
   }
   else
   {
-    String data = file.readString(); // read content of the text file
-    DebugPrint(F("SPIFFS. Persistant SetupData= "));
-    DebugPrintln(data);           // ... and print on serial
-    file.close();
-    
+    delay(10);
+    String data = file.readString();                  // read content of the text file
+    DebugPrint(F("FS. Persistant SetupData= "));
+    DebugPrintln(data);                               // ... and print on serial
+
     // Allocate a temporary JsonDocument
-    StaticJsonDocument<DEFAULTDOCSIZE> doc_per;
+    DynamicJsonDocument doc_per(DEFAULTDOCSIZE);
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_per, data);
@@ -136,43 +108,50 @@ byte SetupData::LoadConfiguration()
       this->webpagerefreshrate    = doc_per["wprefreshrate"];
       this->mdnsport              = doc_per["mdnsport"];
       this->tcpipport             = doc_per["tcpipport"];
+      this->startscreen           = doc_per["startscrn"];
+      this->backcolor             = doc_per["bcol"].as<char*>();
+      this->textcolor             = doc_per["tcol"].as<char*>();
+      this->headercolor           = doc_per["hcol"].as<char*>();
+      this->titlecolor            = doc_per["ticol"].as<char*>();
+      this->ascomserverstate      = doc_per["ason"];
+      this->webserverstate        = doc_per["wson"];
+      this->temperatureprobestate = doc_per["tprobe"];
+      this->inoutledstate         = doc_per["leds"];
+      this->showhpswmessages      = doc_per["hpswmsg"];
+      this->forcedownload         = doc_per["fcdownld"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
   }
 
-#if defined(ESP8266)
-  file = LittleFS.open(filename_variable, "r");
-#else
   file = SPIFFS.open(filename_variable, "r");
-#endif
   if (!file)
   {
-    DebugPrintln(F("no config file variable data found, load default values"));
+    DebugPrintln(F("file variable data !found, load default values"));
     LoadDefaultVariableData();
     retval = 1;
   }
   else
   {
-    String data = file.readString();  // read content of the text file
-    DebugPrint(F("SPIFFS. Variable SetupData= "));
-    DebugPrintln(data);               // ... and print on serial
+    String data = file.readString();                // read content of the text file
+    DebugPrint(F("FS. Variable SetupData= "));
+    DebugPrintln(data);                             // ... and print on serial
 
     // Allocate a temporary JsonDocument
-    StaticJsonDocument<DEFAULTVARDOCSIZE> doc_var;
+    DynamicJsonDocument doc_var(DEFAULTVARDOCSIZE);
 
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(doc_var, data);
     if (error)
     {
-      DebugPrintln(F("Failed to read variable data file, using default configuration"));
+      DebugPrintln(F("Fail reading variable data file, using default configuration"));
       LoadDefaultVariableData();
       retval = 2;
     }
     else
     {
-      this->fposition = doc_var["fpos"];         // last focuser position
-      this->focuserdirection = doc_var["fdir"];  // keeps track of last focuser move direction
+      this->fposition = doc_var["fpos"];            // last focuser position
+      this->focuserdirection = doc_var["fdir"];     // keeps track of last focuser move direction
 
       // round position to fullstep motor position
       this->fposition = (this->fposition + this->stepmode / 2) / this->stepmode * this->stepmode;
@@ -188,13 +167,14 @@ void SetupData::SetFocuserDefaults(void)
 {
   LoadDefaultPersistantData();
   LoadDefaultVariableData();
-#if defined(ESP8266)
-  LittleFS.remove(filename_persistant);
-  LittleFS.remove(filename_variable);
-#else
-  SPIFFS.remove(filename_persistant);
-  SPIFFS.remove(filename_variable);
-#endif
+  if ( SPIFFS.exists(filename_persistant))
+  {
+    SPIFFS.remove(filename_persistant);
+  }
+  if ( SPIFFS.exists(filename_variable))
+  {
+    SPIFFS.remove(filename_variable);
+  }
 }
 
 void SetupData::LoadDefaultPersistantData()
@@ -221,15 +201,25 @@ void SetupData::LoadDefaultPersistantData()
   this->displayenabled        = DEFAULTON;
   for (int i = 0; i < 10; i++)
   {
-    this->preset[i]       = 0;
+    this->preset[i]           = 0;
   }
-  this->webserverport         = WEBSERVERPORT;    // 80
-  this->ascomalpacaport       = ALPACAPORT;       // 4040
-  this->webpagerefreshrate    = WS_REFRESHRATE;   // 30s
-  this->mdnsport              = MDNSSERVERPORT;   // 7070
-  this->tcpipport             = SERVERPORT;       // 2020
-
-  this->SavePersitantConfiguration();             // write default values to SPIFFS
+  this->webserverport         = WEBSERVERPORT;        // 80
+  this->ascomalpacaport       = ALPACAPORT;           // 4040
+  this->webpagerefreshrate    = WS_REFRESHRATE;       // 30s
+  this->mdnsport              = MDNSSERVERPORT;       // 7070
+  this->tcpipport             = SERVERPORT;           // 2020
+  this->startscreen           = DEFAULTON;
+  this->backcolor             = "333333";
+  this->textcolor             = "5d6d7e";
+  this->headercolor           = "3399ff";
+  this->titlecolor            = "8e44ad";
+  this->ascomserverstate      = DEFAULTOFF;           // this should be default OFF
+  this->webserverstate        = DEFAULTOFF;           // this should be default OFF
+  this->temperatureprobestate = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
+  this->inoutledstate         = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
+  this->showhpswmessages      = DEFAULTOFF;           // this should be default OFF
+  this->forcedownload         = DEFAULTOFF;           // this should be default OFF, MANAGEMENT Server only
+  this->SavePersitantConfiguration();                 // write default values to SPIFFS
 }
 
 void SetupData::LoadDefaultVariableData()
@@ -241,14 +231,14 @@ void SetupData::LoadDefaultVariableData()
 // Saves the configuration to a file
 boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTravel)
 {
-  //DebugPrintln("SaveConfiguration:");
+  //Serial.println("SaveConfiguration:");
   if (this->fposition != currentPosition || this->focuserdirection != DirOfTravel)  // last focuser position
   {
     this->fposition = currentPosition;
     this->focuserdirection = DirOfTravel;
     this->ReqSaveData_var = true;
     this->SnapShotMillis = millis();
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving variable data"));
+    DebugPrintln(F("++ request for saving variable data"));
   }
 
   byte status = false;
@@ -264,7 +254,7 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
       }
       else
       {
-        DebugPrintln(F("++++++++++++++++++++++++++++++++++++ persistant data saved"));
+        DebugPrintln(F("++ persistant data saved"));
       }
       status = true;
       this->ReqSaveData_per = false;
@@ -278,7 +268,7 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
       }
       else
       {
-        DebugPrintln(F("++++++++++++++++++++++++++++++++++++ variable data saved"));
+        DebugPrintln(F("++ variable data saved"));
       }
       status = true;
       this->ReqSaveData_var = false;
@@ -287,19 +277,22 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
   return status;
 }
 
+boolean SetupData::SaveNow()                                // used by reboot to save settings
+{
+  return SavePersitantConfiguration();
+}
+
 byte SetupData::SavePersitantConfiguration()
 {
-#if defined(ESP8266)
-  LittleFS.remove(filename_persistant);                // Delete existing file
-  File file = LittleFS.open(filename_persistant, "w"); // Open file for writing
-#else
-  SPIFFS.remove(filename_persistant);
-  File file = SPIFFS.open(filename_persistant, "w"); // Open file for writing
-#endif
+  if ( SPIFFS.exists(filename_persistant))
+  {
+    SPIFFS.remove(filename_persistant);
+  }
+  File file = SPIFFS.open(filename_persistant, "w");         // Open file for writing
   if (!file)
   {
-    //    TRACE();
-    DebugPrintln(CREATEFILEFAILSTR);
+    TRACE();
+    DebugPrintln(F(CREATEFILEFAILSTR));
     return false;
   }
 
@@ -331,26 +324,38 @@ byte SetupData::SavePersitantConfiguration()
   doc["displaystate"]       = this->displayenabled;
   for (int i = 0; i < 10; i++)
   {
-    doc["preset"][i]        = this->preset[i];                  //Json array for presets
-  }
+    doc["preset"][i]        = this->preset[i];                  // Json array for presets
+  };
   doc["wsport"]             = this->webserverport;
   doc["ascomport"]          = this->ascomalpacaport;
   doc["mdnsport"]           = this->mdnsport;
   doc["wprefreshrate"]      = this->webpagerefreshrate;
   doc["tcpipport"]          = this->tcpipport;
+  doc["startscrn"]          = this->startscreen;
+  doc["bcol"]               = this->backcolor;
+  doc["tcol"]               = this->textcolor;
+  doc["hcol"]               = this->headercolor;
+  doc["ticol"]              = this->titlecolor;
+  doc["ason"]               = this->ascomserverstate;
+  doc["wson"]               = this->webserverstate;
+  doc["tprobe"]             = this->temperatureprobestate;
+  doc["leds"]               = this->inoutledstate;
+  doc["hpswmsg"]            = this->showhpswmessages;
+  doc["fcdownld"]           = this->forcedownload;
 
   // Serialize JSON to file
+  Serial.println("Writing to file");
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
-    DebugPrintln(WRITEFILEFAILSTR);
-    file.close();     // Close the file
+    DebugPrintln(F(WRITEFILEFAILSTR));
+    file.close();                                     // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(WRITEFILESUCCESSSTR);
-    file.close();     // Close the file
+    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    file.close();                                     // Close the file
     return true;
   }
 }
@@ -358,22 +363,18 @@ byte SetupData::SavePersitantConfiguration()
 byte SetupData::SaveVariableConfiguration()
 {
   // Delete existing file
-#if defined(ESP8266)
-  LittleFS.remove(filename_variable);
-#else
+  if ( SPIFFS.exists(filename_variable))
+  {
+    SPIFFS.remove(filename_variable);
+  }
   SPIFFS.remove(filename_variable);
-#endif
 
   // Open file for writing
-#if defined(ESP8266)
-  File file = LittleFS.open(this->filename_variable, "w");
-#else
   File file = SPIFFS.open(this->filename_variable, "w");
-#endif
   if (!file)
   {
     TRACE();
-    DebugPrintln(CREATEFILEFAILSTR);
+    DebugPrintln(F(CREATEFILEFAILSTR));
     return false;
   }
 
@@ -386,162 +387,218 @@ byte SetupData::SaveVariableConfiguration()
   doc["fpos"] =  this->fposition;                  // last focuser position
   doc["fdir"] =  this->focuserdirection;           // keeps track of last focuser move direction
 
-  // Serialize JSON to file
-  if (serializeJson(doc, file) == 0)
+  if (serializeJson(doc, file) == 0)                // Serialize JSON to file
   {
     TRACE();
-    DebugPrintln(WRITEFILEFAILSTR);
-    file.close();     // Close the file
+    DebugPrintln(F(WRITEFILEFAILSTR));
+    file.close();                                   // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(WRITEFILESUCCESSSTR);
+    DebugPrintln(F(WRITEFILESUCCESSSTR));
     file.close();     // Close the file
     return true;
   }
 }
 
-
 //__getter
 unsigned long SetupData::get_fposition()
 {
-  return this->fposition; // last focuser position
+  return this->fposition;             // last focuser position
 }
 
 byte SetupData::get_focuserdirection()
 {
-  return this->focuserdirection; // keeps track of last focuser move direction
+  return this->focuserdirection;      // keeps track of last focuser move direction
 }
 
 unsigned long SetupData::get_maxstep()
 {
-  return this->maxstep; // max steps
+  return this->maxstep;               // max steps
 }
 
 float SetupData::get_stepsize()
 {
-  return this->stepsize; // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
+  return this->stepsize;              // the step size in microns
+  // this is the actual measured focuser stepsize in microns amd is reported to ASCOM, so must be valid
+  // the amount in microns that the focuser tube moves in one step of the motor
 }
 
 byte SetupData::get_DelayAfterMove()
 {
-  return this->DelayAfterMove; // delay after movement is finished (maxval=256)
+  return this->DelayAfterMove;        // delay after movement is finished (maxval=256)
 }
 
 byte SetupData::get_backlashsteps_in()
 {
-  return this->backlashsteps_in; // number of backlash steps to apply for IN moves
+  return this->backlashsteps_in;      // number of backlash steps to apply for IN moves
 }
 
 byte SetupData::get_backlashsteps_out()
 {
-  return this->backlashsteps_out; // number of backlash steps to apply for OUT moves
+  return this->backlashsteps_out;     // number of backlash steps to apply for OUT moves
 }
 
 byte SetupData::get_backlash_in_enabled()
 {
-  return this->backlash_in_enabled;
+  return this->backlash_in_enabled;   // apply backlash when moving in [0=!enabled, 1=enabled]
 }
 
 byte SetupData::get_backlash_out_enabled()
 {
-  return this->backlash_out_enabled;
+  return this->backlash_out_enabled;  // apply backlash when moving out [0=!enabled, 1=enabled]
 }
 
 byte SetupData::get_tempcoefficient()
 {
-  return this->tempcoefficient; // steps per degree temperature coefficient value (maxval=256)
+  return this->tempcoefficient;       // steps per degree temperature coefficient value (maxval=256)
 }
 
 byte SetupData::get_tempprecision()
 {
-  return this->tempprecision;
+  return this->tempprecision;         // precision of temperature measurement 9-12
 }
 
 byte SetupData::get_stepmode()
 {
-  return this->stepmode;
+  return this->stepmode;              // current step mode
 }
 
 byte SetupData::get_coilpower()
 {
-  return this->coilpower;
+  return this->coilpower;             // state of coil power, 0 = !enabled, 1= enabled
 }
 
 byte SetupData::get_reversedirection()
 {
-  return this->reversedirection;
+  return this->reversedirection;      // state for reverse direction, 0 = !enabled, 1= enabled
 }
 
 byte SetupData::get_stepsizeenabled()
 {
-  return this->stepsizeenabled; // if 1, controller returns step size
+  return this->stepsizeenabled;       // if 1, controller returns step size
 }
 
 byte SetupData::get_tempmode()
 {
-  return this->tempmode; // temperature display mode, Celcius=1, Fahrenheit=0
+  return this->tempmode;              // temperature display mode, Celcius=1, Fahrenheit=0
 }
 
 byte SetupData::get_lcdupdateonmove()
 {
-  return this->lcdupdateonmove; // update position on lcd when moving
+  return this->lcdupdateonmove;       // update position on lcd when moving
 }
 
 byte SetupData::get_lcdpagetime()
 {
-  return this->lcdpagetime;
+  return this->lcdpagetime;           // the length of time the page is displayed for
 }
 
 byte SetupData::get_tempcompenabled()
 {
-  return this->tempcompenabled; // indicates if temperature compensation is enabled
+  return this->tempcompenabled;       // indicates if temperature compensation is enabled
 }
 
 byte SetupData::get_tcdirection()
 {
-  return this->tcdirection;
+  return this->tcdirection;           // indicates the direction in which temperature compensation is applied
 }
 
 byte SetupData::get_motorSpeed()
 {
-  return this->motorSpeed;
+  return this->motorSpeed;            // the stepper motor speed, slow, medium, fast
 }
 
 byte SetupData::get_displayenabled()
 {
-  return this->displayenabled;
+  return this->displayenabled;        // the state of the oled display, enabled or !enabled
 }
 
 unsigned long SetupData::get_focuserpreset(byte idx)
 {
-  return this->preset[idx % 10];
+  return this->preset[idx % 10];      // the focuser position for each preset
 }
 
 unsigned long SetupData::get_webserverport(void)
 {
-  return this->webserverport;
+  return this->webserverport;         // the port number of the webserver
 }
 
 unsigned long SetupData::get_ascomalpacaport(void)
 {
-  return this->ascomalpacaport;
+  return this->ascomalpacaport;       // the port number used by the ALPACA ASCOM Remote server
 }
 
 int SetupData::get_webpagerefreshrate(void)
 {
-  return this->webpagerefreshrate;
+  return this->webpagerefreshrate;    // the webpage refresh rate
 }
 
 unsigned long SetupData::get_mdnsport(void)
 {
-  return this->mdnsport;
+  return this->mdnsport;              // the mdns port number
 }
 
 unsigned long SetupData::get_tcpipport(void)
 {
-  return this->tcpipport;
+  return this->tcpipport;             // the tcp/ip port used by the tcp/server
+}
+
+byte SetupData::get_showstartscreen(void)
+{
+  return this->startscreen;           //  the state of startscreen, enabled or !enabled
+  // if enabled, show startup messages on the TEXT OLED display
+}
+
+String SetupData::get_wp_backcolor()
+{
+  return this->backcolor;
+}
+
+String SetupData::get_wp_textcolor()
+{
+  return this->textcolor;
+}
+
+String SetupData::get_wp_headercolor()
+{
+  return this->headercolor;
+}
+
+String SetupData::get_wp_titlecolor()
+{
+  return this->titlecolor;
+}
+
+byte SetupData::get_ascomserverstate()
+{
+  return this->ascomserverstate;
+}
+
+byte SetupData::get_webserverstate()
+{
+  return this->webserverstate;
+}
+
+byte SetupData::get_temperatureprobestate()
+{
+  return this->temperatureprobestate;
+}
+
+byte SetupData::get_inoutledstate()
+{
+  return this->inoutledstate;
+}
+
+byte SetupData::get_showhpswmsg()
+{
+  return this->showhpswmessages;
+}
+
+byte SetupData::get_forcedownload()
+{
+  return this->forcedownload;
 }
 
 //__Setter
@@ -658,7 +715,7 @@ void SetupData::set_displayenabled(byte displaystate)
 
 void SetupData::set_focuserpreset(byte idx, unsigned long pos)
 {
-  this->preset[idx % 10] = pos;
+  this->StartDelayedUpdate(this->preset[idx % 10], pos);
 }
 
 void SetupData::set_webserverport(unsigned long wsp)
@@ -686,6 +743,61 @@ void SetupData::set_tcpipport(unsigned long port)
   this->StartDelayedUpdate(this->tcpipport, port);
 }
 
+void SetupData::set_showstartscreen(byte newval)
+{
+  this->StartDelayedUpdate(this->startscreen, newval);
+}
+
+void SetupData::set_wp_backcolor(String newstr)
+{
+  this->StartDelayedUpdate(this->backcolor, newstr);
+}
+
+void SetupData::set_wp_textcolor(String newstr)
+{
+  this->StartDelayedUpdate(this->textcolor, newstr);
+}
+
+void SetupData::set_wp_headercolor(String newstr)
+{
+  this->StartDelayedUpdate(this->headercolor, newstr);
+}
+
+void SetupData::set_wp_titlecolor(String newstr)
+{
+  this->StartDelayedUpdate(this->titlecolor, newstr);
+}
+
+void SetupData::set_ascomserverstate(byte newval)
+{
+  this->StartDelayedUpdate(this->ascomserverstate, newval);
+}
+
+void SetupData::set_webserverstate(byte newval)
+{
+  this->StartDelayedUpdate(this->webserverstate, newval);
+}
+
+void SetupData::set_temperatureprobestate(byte newval)
+{
+  this->StartDelayedUpdate(this->temperatureprobestate, newval);
+}
+
+void SetupData::set_inoutledstate(byte newval)
+{
+  this->StartDelayedUpdate(this->inoutledstate, newval);
+}
+
+void SetupData::set_showhpswmsg(byte newval)
+{
+  this->StartDelayedUpdate(this->showhpswmessages, newval);
+}
+
+void SetupData::set_forcedownload(byte newval)
+{
+  this->StartDelayedUpdate(this->forcedownload, newval);
+}
+
 void SetupData::StartDelayedUpdate(int & org_data, int new_data)
 {
   if (org_data != new_data)
@@ -693,7 +805,7 @@ void SetupData::StartDelayedUpdate(int & org_data, int new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+    DebugPrintln(F("++ request for saving persitant data"));
   }
 }
 
@@ -704,7 +816,7 @@ void SetupData::StartDelayedUpdate(unsigned long & org_data, unsigned long new_d
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+    DebugPrintln(F("++ request for saving persitant data"));
   }
 }
 
@@ -715,7 +827,7 @@ void SetupData::StartDelayedUpdate(float & org_data, float new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+    DebugPrintln(F("++ request for saving persitant data"));
   }
 }
 
@@ -726,22 +838,36 @@ void SetupData::StartDelayedUpdate(byte & org_data, byte new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F("++++++++++++++++++++++++++++++++++++ request for saving persitant data"));
+    DebugPrintln(F("++ request for saving persitant data"));
+  }
+}
+
+void SetupData::StartDelayedUpdate(String & org_data, String new_data)
+{
+  if (org_data != new_data)
+  {
+    this->ReqSaveData_per = true;
+    this->SnapShotMillis = millis();
+    org_data = new_data;
+    DebugPrintln(F(CONFIGSAVEREQUESTSTR));
   }
 }
 
 void SetupData::ListDir(const char * dirname, uint8_t levels)
 {
-  DebugPrint(F("Listing directory: {"));
+  // TODO
+  // THIS DOES NOT WORK ON ESP8266!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  DebugPrint(F("Listing directory: {"));
 #if defined(ESP8266)
-  File root = LittleFS.open(dirname, "r");
+  Serial.println("Stuffed");
+  // this does not work;
 #else
   File root = SPIFFS.open(dirname);
-#endif
-
   if (!root)
+  {
     DebugPrintln(F(" - failed to open directory"));
+  }
   else
   {
     if (!root.isDirectory())
@@ -783,4 +909,5 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
       DebugPrintln("}");
     }
   }
+#endif
 }

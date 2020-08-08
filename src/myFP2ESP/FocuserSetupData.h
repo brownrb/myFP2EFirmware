@@ -1,25 +1,26 @@
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // myFP2ESP FOCUSER DATA DEFINITIONS
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // COPYRIGHT
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-//#include <Arduino.h>              // no includes in includes
-//#include "generalDefinitions.h"
+#include <Arduino.h>
 
-#define DEFAULTPOSITION   5000L
-#define DEFAULTMAXSTEPS   80000L
-#define DEFAULTOFF        0
-#define DEFAULTON         1
-#define DEFAULTCELSIUS    1
-#define DEFAULTFAHREN     0
-#define DEFAULTDOCSIZE    2048
-#define DEFAULTVARDOCSIZE 64
+#include "generalDefinitions.h"
+
+//#define DEFAULTPOSITION       5000L               // moved to generalDefinitions.h
+//#define DEFAULTMAXSTEPS       80000L
+#define DEFAULTOFF              0
+#define DEFAULTON               1
+#define DEFAULTCELSIUS          1
+#define DEFAULTFAHREN           0
+#define DEFAULTDOCSIZE          3000
+#define DEFAULTVARDOCSIZE       64
 
 class SetupData
 {
@@ -27,6 +28,7 @@ class SetupData
     SetupData(void);
     byte LoadConfiguration(void);
     boolean SaveConfiguration(unsigned long, byte);
+    boolean SaveNow(void);
     void SetFocuserDefaults(void);
 
     //  getter
@@ -58,6 +60,17 @@ class SetupData
     int get_webpagerefreshrate();
     unsigned long get_mdnsport();
     unsigned long get_tcpipport();
+    byte get_showstartscreen();
+    String  get_wp_backcolor();
+    String  get_wp_textcolor();
+    String  get_wp_headercolor();
+    String  get_wp_titlecolor();
+    byte get_ascomserverstate();
+    byte get_webserverstate();
+    byte get_inoutledstate();
+    byte get_temperatureprobestate();
+    byte get_showhpswmsg();
+    byte get_forcedownload();
 
     //__setter
     void set_fposition(unsigned long);
@@ -88,7 +101,18 @@ class SetupData
     void set_webpagerefreshrate(int);
     void set_mdnsport(unsigned long);
     void set_tcpipport(unsigned long);
-
+    void set_showstartscreen(byte);
+    void set_wp_backcolor(String);
+    void set_wp_textcolor(String);
+    void set_wp_headercolor(String);
+    void set_wp_titlecolor(String);
+    void set_ascomserverstate(byte);
+    void set_webserverstate(byte);
+    void set_temperatureprobestate(byte);
+    void set_inoutledstate(byte);
+    void set_showhpswmsg(byte);
+    void set_forcedownload(byte);
+     
   private:
     byte SavePersitantConfiguration();
     byte SaveVariableConfiguration();
@@ -100,22 +124,23 @@ class SetupData
     void StartDelayedUpdate(float &, float);
     void StartDelayedUpdate(byte &, byte);
     void StartDelayedUpdate(int &, int);
-	  void ListDir(const char*, uint8_t);
+    void StartDelayedUpdate(String &, String);
+    void ListDir(const char*, uint8_t);
 
     boolean ReqSaveData_var;        // Flag for request save variable data
     boolean ReqSaveData_per;        // Flag for request save persitant data
 
-    const char* filename_persistant = "/data_per.jsn"; // persistant JSON setup data
-    const char* filename_variable = "/data_var.jsn";    // variable  JSON setup data
+    const String filename_persistant = "/data_per.jsn"; // persistant JSON setup data
+    const String filename_variable = "/data_var.jsn";    // variable  JSON setup data
 
     unsigned long fposition;        // last focuser position
     byte focuserdirection;          // keeps track of last focuser move direction
     // these are not used in code
-    //unsigned long fposition_org;    // last focuser position
-    //byte focuserdirection_org;      // keeps track of last focuser move direction
+    // unsigned long fposition_org;    // last focuser position
+    // byte focuserdirection_org;      // keeps track of last focuser move direction
     unsigned long SnapShotMillis;
 
-    //dataset_persistant
+    // dataset_persistant
     unsigned long maxstep;          // max steps
     float stepsize;                 // the step size in microns, ie 7.2 - value * 10, so real stepsize = stepsize / 10 (maxval = 25.6)
     byte DelayAfterMove;            // delay after movement is finished (maxval=256)
@@ -136,11 +161,21 @@ class SetupData
     byte tcdirection;               // direction in which to apply temperature compensation
     byte motorSpeed;                // speed of motor, slow, medium or fast
     byte displayenabled;            // if 1, display is enabled
-
     unsigned long preset[10];       // focuser presets can be used with software or ir-remote controller
     unsigned long webserverport;
     unsigned long ascomalpacaport;
     int webpagerefreshrate;
     unsigned long mdnsport;
-    unsigned long tcpipport; 
+    unsigned long tcpipport;
+    byte startscreen;               // if 1, display shows startscreen messages on bootup
+    String  backcolor;
+    String  textcolor;
+    String  headercolor;
+    String  titlecolor;
+    byte ascomserverstate;          // if 1, then ascomserver is enabled
+    byte webserverstate;            // if 1, then webserver is enabled
+    byte temperatureprobestate;     // if 1, then temperature probe is enabled
+    byte inoutledstate;             // if 1, in out leds are enabled [only if board supports them]
+    byte showhpswmessages;          // if 1, home position switch msg's show on display if enabled
+    byte forcedownload;             // if 1, in the MANAGEMENT SERVER, a file is downloaded instead of being displayed is web browser window
 };

@@ -9,14 +9,12 @@
 // (c) Copyright Holger M, 2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-
 // ----------------------------------------------------------------------------------------------
 // EXTERNALS
 // ----------------------------------------------------------------------------------------------
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+
 #include <Arduino.h>
-
-// We should NOT include graphics code if the user has NOT defined its use
-
 #include "myBoards.h"
 #include "focuserconfig.h"
 #include "FocuserSetupData.h"
@@ -104,10 +102,11 @@ OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, G
     setFont(ArialMT_Plain_10);
     setTextAlignment(TEXT_ALIGN_LEFT);
     clear();
-#if defined(SHOWSTARTSCRN)
-    drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
-    drawString(0, 12, ProgramAuthor);
-#endif
+    if ( mySetupData->get_showstartscreen() )
+    {
+      drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
+      drawString(0, 12, ProgramAuthor);
+    }
     display();
 
     timestamp = millis();
@@ -206,13 +205,16 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
 
   setTextAlignment(TEXT_ALIGN_LEFT);
 
-#ifdef TEMPERATUREPROBE
+  if ( mySetupData->get_temperatureprobestate() == 1)
+  {
+    snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", read_temp(0));
+    drawString(54, 54, buffer);
+  }
+  else
+  {
+    snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", 20.0);
+  }
 
-  snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", read_temp(0));
-  drawString(54, 54, buffer);
-#else
-  //  String tmbuffer = "20.0";
-#endif
   snprintf(buffer, sizeof(buffer), "BL: %i", mySetupData->get_backlashsteps_out());
   drawString(0, 54, buffer);
 
@@ -287,11 +289,14 @@ void OLED_TEXT::displaylcdpage0(void)      // displaylcd screen
 
   //Temperature
   print(TEMPSTR);
-#if defined(TEMPERATUREPROBE)
-  print(String(read_temp(0)));
-#else
-  print("20.0");
-#endif
+  if ( mySetupData->get_temperatureprobestate() == 1)
+  {
+    print(String(read_temp(0)));
+  }
+  else
+  {
+    print("20.0");
+  }
   println(" c");
 
   //Motor Speed
@@ -351,28 +356,30 @@ void OLED_TEXT::displaylcdpage2(void)
   println();
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
-#if defined(WEBSERVER)
-  setCursor(0, 0);
-  println(WEBSERVERSTR);
+  if ( mySetupData->get_webserverstate() == 1)
+  {
+    setCursor(0, 0);
+    println(WEBSERVERSTR);
 #if defined(ACCESSPOINT)
-  println(ACCESSPOINTSTR);
+    println(ACCESSPOINTSTR);
 #endif
 #if defined(STATIONMODE)
-  println(STATIONMODESTR);
+    println(STATIONMODESTR);
 #endif
-  print(IPADDRESSSTR);
-  print(ipStr);
-  print(STARTSTR);
-  println(SERVERPORT);
-#endif // webserver
-#if defined(ASCOMREMOTE)
-  setCursor(0, 0);
-  println(ASCOMREMOTESTR);
-  print(IPADDRESSSTR);
-  print(ipStr);
-  print(STARTSTR);
-  println(ALPACAPORT);
-#endif
+    print(IPADDRESSSTR);
+    print(ipStr);
+    print(STARTSTR);
+    println(String(mySetupData->get_webserverport()));
+  }
+  if ( mySetupData->get_ascomserverstate() == 1)
+  {
+    setCursor(0, 0);
+    println(ASCOMREMOTESTR);
+    print(IPADDRESSSTR);
+    print(ipStr);
+    print(STARTSTR);
+    println(mySetupData->get_ascomalpacaport());
+  }
 
 #if defined(BLUETOOTHMODE)
   setCursor(0, 0);
@@ -476,17 +483,18 @@ OLED_TEXT::OLED_TEXT(void)
 
     set400kHz();
     setFont(Adafruit5x7);
-    setcolor(WHITE);                        // Draw white text
+    //setcolor(WHITE);                    // Draw white text
     clear();                            // clrscr OLED
     //Display_Normal();                 // black on white
     //Display_On();                     // display ON
     //Display_Rotate(0);                // portrait, not rotated
     //Display_Bright();
-#ifdef SHOWSTARTSCRN
-    println(DRVBRD_ID);               // print startup screen
-    println(programVersion);
-    println(ProgramAuthor);
-#endif // showstartscreen
+    if ( mySetupData->get_showstartscreen() )
+    {
+      println(DRVBRD_ID);                 // print startup screen
+      println(programVersion);
+      println(ProgramAuthor);
+    }
   }
 }
 
@@ -528,11 +536,14 @@ void OLED_TEXT::display_oledtext_page0(void)           // displaylcd screen
 
   //Temperature
   print(TEMPSTR);
-#ifdef TEMPERATUREPROBE
-  print(String(read_temp(0), 2));
-#else
-  print("20.0");
-#endif
+  if ( mySetupData->get_temperatureprobestate() == 1)
+  {
+    print(String(read_temp(0), 2));
+  }
+  else
+  {
+    print("20.0");
+  }
   print(" c");
   clearToEOL();
   println();
@@ -614,33 +625,35 @@ void OLED_TEXT::display_oledtext_page2(void)
   println();
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
-#if defined(WEBSERVER)
-  //setCursor(0, 0);
-  print(WEBSERVERSTR);
-  clearToEOL();
-  println();
-  print(IPADDRESSSTR);
-  print(ipStr);
-  clearToEOL();
-  println();
-  print(PORTSTR);
-  print(SERVERPORT);
-  clearToEOL();
-  println();
-#endif // webserver
-#if defined(ASCOMREMOTE)
-  print(ASCOMREMOTESTR);
-  clearToEOL();
-  println();
-  print(IPADDRESSSTR);
-  print(ipStr);
-  clearToEOL();
-  println();
-  print(PORTSTR);
-  print(ALPACAPORT);
-  clearToEOL();
-  println();
-#endif
+  if ( mySetupData->get_webserverstate() == 1)
+  {
+    //setCursor(0, 0);
+    print(WEBSERVERSTR);
+    clearToEOL();
+    println();
+    print(IPADDRESSSTR);
+    print(ipStr);
+    clearToEOL();
+    println();
+    print(PORTSTR);
+    print(String(mySetupData->get_webserverport()));
+    clearToEOL();
+    println();
+  }
+  if ( mySetupData->get_ascomserverstate() == 1)
+  {
+    print(ASCOMREMOTESTR);
+    clearToEOL();
+    println();
+    print(IPADDRESSSTR);
+    print(ipStr);
+    clearToEOL();
+    println();
+    print(PORTSTR);
+    print(mySetupData->get_ascomalpacaport());
+    clearToEOL();
+    println();
+  }
 
 #if defined(BLUETOOTHMODE)
   setCursor(0, 0);
@@ -680,3 +693,5 @@ void OLED_TEXT::update_oledtextdisplay(void)
     displaypage++;
   }
 }
+
+#endif

@@ -1,25 +1,24 @@
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // myFP2ESP ASCOM SERVER ROUTINES AND DEFINITIONS
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // COPYRIGHT
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 #ifndef ascomserver_h
 #define ascomserver_h
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // EXTERNS
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // DATA AND DEFINITIONS - ASCOM SETUP WEB PAGE
-// ----------------------------------------------------------------------------------------------
-#ifdef ASCOMREMOTE
+// ---------------------------------------------------------------------------
 #define AS_COPYRIGHT              "<p>(c) R. Brown, Holger M, 2020. All rights reserved.</p>"
 #define AS_TITLE                  "<h3>myFP2ESP ASCOM REMOTE focus controller</h3>"
 #define AS_PAGETITLE              "<title>myFP2ESP ASCOM SERVER</title>"
@@ -57,12 +56,10 @@
 #define ASCOMERRORMSGERROR        "Error"
 #define ASCOMERRORMSGNULL         ""
 #define ASCOMERRORNOTIMPLEMENTED  "!implemented"
-#define ASCOMERRORMSGINVALID      "Invalid operation"
+#define ASCOMERRORMSGINVALID      "Bad operation"
 #define ASCOMNAME                 "\"myFP2ESPASCOMR\""
 #define ASCOMDESCRIPTION          "\"ASCOM driver for myFP2ESP controllers\""
 #define ASCOMDRIVERINFO           "\"myFP2ESP ASCOM Driver (c) R. Brown. 2020\""
 #define ASCOMMANAGEMENTINFO       "{\"ServerName\":\"myFP2ESP\",\"Manufacturer\":\"R. Brown\",\"ManufacturerVersion\":\"v1.0\",\"Location\":\"New Zealand\"}"
-
-#endif // ifdef ASCOMREMOTE
 
 #endif // ifndef ascomserver_h
