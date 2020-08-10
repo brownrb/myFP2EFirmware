@@ -19,7 +19,7 @@
 #define DEFAULTON               1
 #define DEFAULTCELSIUS          1
 #define DEFAULTFAHREN           0
-#define DEFAULTDOCSIZE          3000
+#define DEFAULTDOCSIZE          2048
 #define DEFAULTVARDOCSIZE       64
 
 class SetupData

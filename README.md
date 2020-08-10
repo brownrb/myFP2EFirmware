@@ -10,18 +10,18 @@ The source code is located in the **src** folder.
 To get a clear understanding of myFP2ESP features and options, it is essential to read the PDF.
 
 # Compiling for ESP8266
-Compiling the source code requires Arduino IDE **v1.8.9** with the ExpressIF ESP8266 Arduino extensions.
+Compiling the source code requires Arduino IDE **v1.8.13** with the ExpressIF ESP8266 Arduino extensions.
 You will need to add the JSON file for the ESP8266 library by using the File->Preferences menu of the 
 Arduino IDE and add the location for the library into the board manager
 http://arduino.esp8266.com/stable/package_esp8266com_index.json
 
-Once specified, open the board manager, scroll down to ESP8266 and install version **v2.4.0**.
+Once specified, open the board manager, scroll down to ESP8266 and install version **v2.7.4**.
 Then you can specify the target board as **Node MCU v1.0 (ESP-12E)** with Flash Size set to 4M (1MB SPIFFS) and upload speed of 115200.
 
 Note: Additional JSON files are separated in board manager by using a comma ,
 
 # Compiling for ESP32
-Compiling the source code requires Arduino IDE **v1.8.9** with the ExpressIF ESP32 Arduino extensions.
+Compiling the source code requires Arduino IDE **v1.8.13** with the ExpressIF ESP32 Arduino extensions.
 You will need to add the JSON file for the ESP32 library by using the File->Preferences menu of the 
 Arduino IDE and add the location for the library into the board manager
 https://dl.espressif.com/dl/package_esp32_index.json
@@ -49,7 +49,7 @@ To compile you will also need to import these libraries in the folder src/myFP2E
 Do not edit or replace any of these library files with others.
 
 # Additional Libraries which must be downloaded and installed
-To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file firat.
+To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file first.
 
 Graphics OLED [SSD1306 4.1.0]
 https://github.com/ThingPulse/esp8266-oled-ssd1306
@@ -79,10 +79,10 @@ Once you have done this, you can start programming the controller.
 One firmware file supports all driver boards [a different file supports the L293D motor shield driver board for the ESP8266]. The user must set the **DRVBRD** at the beginning of the firmware file [myBoards.h] to the correct driver board, eg, #define DRVBRD PRO2EULN2003 will set the driver board to an ULN2003 using an ESP8266 chip.
 
 # focuserconfig.h
-Configuration information about the controller is specified in the *focuserconfig.h* file. This is where you specify the controller options like TEMPERATURE PROBE and OLEDTEXT, as well as the controller mode such as ACCESSPOINT or STATIONMODE.
+Configuration information about the controller is specified in the *focuserconfig.h* file. This is where you specify the controller options like OLEDTEXT and HOMEPOSITIONSWITCH, as well as the controller mode such as ACCESSPOINT or STATIONMODE.
 
 # Controller Modes
-The controller supports the modes ACCESSPOINT, STATIONMODE, LOCALSERIAL, WEBSERVER and ASCOMREMOTE for ESP8266 with an additional BLUETOOTHMODE for the ESP32.
+The controller supports the modes ACCESSPOINT, STATIONMODE, LOCALSERIAL for ESP8266 with an additional BLUETOOTHMODE for the ESP32.
 
 # Command Process Handler Routine
 At present a single command process handler manages received commands for LOCALSERIAL, BLUETOOTH [ESP32 only] of TCP/IP. This must handle each controller mode, so some variables had to be made global to do this.
@@ -91,7 +91,7 @@ At present a single command process handler manages received commands for LOCALS
 At present these must be in the same folder as the .ino file, but will later migrate to a library. These files handle the SPIFFS data, saving, restoring and persistance of controller settings. A JSON file in file system SPIFFS area is used to store focuser data.
 
 # myBoards.cpp and .h files
-This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. Speed can be controlled by setting the step delay (in milliseconds). Increasing the value will slow down the stepper. There is one constructor for this class which accepts the boardtype, the user should never have to change the main code within the firmware file which sets up the driver boards. All pins mappings for the controller chip, hardware options and the driver board are specified here.
+This implements a driver board class for the supported driver boards [DRV8825, ULN2003, L298N, L293DMINI, L9110S]. There is one constructor for this class which accepts the boardtype, the user should never have to change the main code within the firmware file which sets up the driver boards. All pins mappings for the controller chip, hardware options and the driver board are specified here. DO NOT MODIFY THESE FILES.
 
 # generalDefinitions.h
 This file contains general definitions for all controllers, such as motor speed, step modes, focuser limits etc.
@@ -108,13 +108,12 @@ This is a special cut down version of the SSD1306AsciiWire library by Bill Greim
 # COMPILE ENVIRONMENT : Tested with 
 
 * Arduino IDE 1.8.13
-* ESP8266 Arduino Core 2.7.3
+* ESP8266 Arduino Core 2.7.4
 
 Libraries 
 
-* Arduino JSON 6.11.5 https://github.com/bblanchon/ArduinoJson.git
-* IRRemoteESP8266 https://github.com/crankyoldgit/IRremoteESP8266
-* IRRemoteESP32 as in Library Files
+* Arduino JSON 6.15.2 https://github.com/bblanchon/ArduinoJson.git
+* myfp2eIremoteESP8266 as in Library Files
 * myOLED as in Library Files
 * myHalfStepperESP32 as in Library Files
 * myDallas Temperature as in Library Files
