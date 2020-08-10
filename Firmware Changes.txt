@@ -41,6 +41,8 @@
 // Fix for low heap memory - only build strings for web/management/ascom server pages as required
 // Rewrite myBoards.cpp driverboard initialization code
 // Implement myfp2eIRemoteESP8266 library to handle IRREMOTE to reduce space footprint
+// Fix for focuser moving to 0 on reload
+// Fix for random reboots related to focusersetupdata.cpp
 
 // 122
 // Fix for OLED text on Management and Web server pages
