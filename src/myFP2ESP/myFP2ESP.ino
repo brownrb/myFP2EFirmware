@@ -5497,8 +5497,12 @@ void setup()
 
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
-  HDebugPrintln("setup(): driverboard");
-  driverboard = new DriverBoard(DRVBRD);
+  // Serial.println("setup(): driverboard");
+  // ensure targetposition will be same as focuser position
+  // otherwise after loading driverboard focuser will start moving immediately
+  ftargetPosition = mySetupData->get_fposition();
+  driverboard = new DriverBoard(DRVBRD, mySetupData->get_fposition() );
+  // ensure driverboard position is same as setupData
   DebugPrintln(DRVBRDDONESTR);
   oledtextmsg(DRVBRDDONESTR, -1, false, true);
   delay(5);
@@ -5869,14 +5873,16 @@ void loop()
         if ( halt_alert )
         {
           DebugPrintln("halt_alert");
-          halt_alert = false;                           // reset alert flag
-          int steps = driverboard->halt();              // halt returns stepcount
+          halt_alert = false;                             // reset alert flag
+          ftargetPosition = driverboard->getposition();
+          mySetupData->set_fposition(driverboard->getposition());
+          int haltsteps = driverboard->halt();            // halt returns stepcount
           // we no longer need to keep track of steps here or halt because driverboard updates position on every move
           DebugPrintln("Going to State_DelayAfterMove");
           MainStateMachine = State_DelayAfterMove;
           DebugPrintln(STATEDELAYAFTERMOVE);
         } // if ( halt_alert )
-        if (HPS_alert)                                  // check if home position sensor activated?
+        if (HPS_alert)                                    // check if home position sensor activated?
         {
           if (driverboard->getposition() > 0)
           {

@@ -204,7 +204,7 @@ extern const char* DRVBRD_ID;
 class DriverBoard
 {
   public:
-    DriverBoard(byte);          // constructor
+    DriverBoard(byte, unsigned long);           // constructor
     ~DriverBoard(void);         // destructor
     void      initmove(bool, unsigned long, byte, bool);
     void      movemotor(byte, bool);

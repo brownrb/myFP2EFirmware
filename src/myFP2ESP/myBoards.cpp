@@ -172,7 +172,7 @@ void IRAM_ATTR onTimer()
 }
 #endif
 
-DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
+DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(brdtype)
 {
   do {
 #if defined(ESP8266)
@@ -252,8 +252,8 @@ DriverBoard::DriverBoard(byte brdtype) : boardtype(brdtype)
       pinMode(this->inputPins[i], OUTPUT);
     }
 #endif
-    // set default focuser position -this will be updated when focuser code runs setup()
-    this->focuserposition = DEFAULTPOSITION;
+    // set default focuser position - ensure it is same as mySetupData when loaded
+    this->focuserposition = startposition;
   } while (0);
 }
 
