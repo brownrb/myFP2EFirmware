@@ -3443,6 +3443,11 @@ void WEBSERVER_handleismoving()
   webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(isMoving));          // Send isMoving value only to client ajax request
 }
 
+void WEBSERVER_handletargetposition()
+{
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition)); //Send targetPosition value only to client ajax request
+}
+
 // handles root page of webserver
 // this is called whenever a client requests home page of sebserver
 void WEBSERVER_handleroot()
@@ -3687,6 +3692,7 @@ void start_webserver(void)
   webserver->on("/presets", HTTP_POST,  WEBSERVER_handlepresets);
   webserver->on("/position",    WEBSERVER_handleposition);
   webserver->on("/ismoving",    WEBSERVER_handleismoving);
+  webserver->on("/target",      WEBSERVER_handletargetposition);
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
