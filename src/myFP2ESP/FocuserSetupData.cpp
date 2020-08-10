@@ -51,14 +51,14 @@ byte SetupData::LoadConfiguration()
   byte retval = 0;
 
   // Open file for reading
-  delay(10);
   File file = SPIFFS.open(filename_persistant, "r");
+  delay(10);
 
   if (!file)
   {
-    delay(10);
     DebugPrintln(F("no persistant data file, load default values"));
     LoadDefaultPersistantData();
+    delay(10);
   }
   else
   {
@@ -123,7 +123,7 @@ byte SetupData::LoadConfiguration()
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
   }
-
+  delay(10);
   file = SPIFFS.open(filename_variable, "r");
   if (!file)
   {
@@ -171,6 +171,7 @@ void SetupData::SetFocuserDefaults(void)
   {
     SPIFFS.remove(filename_persistant);
   }
+  delay(10);
   if ( SPIFFS.exists(filename_variable))
   {
     SPIFFS.remove(filename_variable);
@@ -239,6 +240,7 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
     this->ReqSaveData_var = true;
     this->SnapShotMillis = millis();
     DebugPrintln(F("++ request for saving variable data"));
+    delay(10);
   }
 
   byte status = false;
@@ -254,6 +256,7 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
       }
       else
       {
+        delay(10);
         DebugPrintln(F("++ persistant data saved"));
       }
       status = true;
@@ -268,6 +271,7 @@ boolean SetupData::SaveConfiguration(unsigned long currentPosition, byte DirOfTr
       }
       else
       {
+        delay(10);
         DebugPrintln(F("++ variable data saved"));
       }
       status = true;
@@ -284,10 +288,12 @@ boolean SetupData::SaveNow()                                // used by reboot to
 
 byte SetupData::SavePersitantConfiguration()
 {
+  delay(10);
   if ( SPIFFS.exists(filename_persistant))
   {
     SPIFFS.remove(filename_persistant);
   }
+  delay(10);
   File file = SPIFFS.open(filename_persistant, "w");         // Open file for writing
   if (!file)
   {
@@ -367,8 +373,10 @@ byte SetupData::SaveVariableConfiguration()
   {
     SPIFFS.remove(filename_variable);
   }
+  delay(10);
   SPIFFS.remove(filename_variable);
 
+  delay(10);
   // Open file for writing
   File file = SPIFFS.open(this->filename_variable, "w");
   if (!file)
@@ -864,6 +872,7 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
   // this does not work;
 #else
   File root = SPIFFS.open(dirname);
+  delay(10);
   if (!root)
   {
     DebugPrintln(F(" - failed to open directory"));
@@ -877,7 +886,7 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
     else
     {
       File file = root.openNextFile();
-
+      delay(10);
       int i = 0;
       while (file)
       {
@@ -904,6 +913,7 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
             DebugPrint(F("  "));
           }
         }
+        delay(10);
         file = root.openNextFile();
       }
       DebugPrintln("}");
