@@ -55,7 +55,6 @@ void SendMessage(const char *str)
 void SendPaket(const char token, const char *str)
 {
   char buffer[32];
-
   snprintf(buffer, sizeof(buffer), "%c%s%c", token,  str, EOFSTR);
   SendMessage(buffer);
 }
@@ -71,7 +70,6 @@ void SendPaket(const char token, const unsigned char val)
 void SendPaket(const char token, const int val)
 {
   char buffer[32];
-
   snprintf(buffer, sizeof(buffer), "%c%i%c", token,  val, EOFSTR);
   SendMessage(buffer);
 }
@@ -79,17 +77,18 @@ void SendPaket(const char token, const int val)
 void SendPaket(const char token, const unsigned long val)
 {
   char buffer[32];
-
   snprintf(buffer, sizeof(buffer), "%c%lu%c", token,  val, EOFSTR);
   SendMessage(buffer);
 }
 
 void SendPaket(const char token, const float val, int i)    // i => decimal place
 {
-  char buffer[32];
-
-  snprintf(buffer, sizeof(buffer), "%c%.2f%c", token,  val, EOFSTR);
-  SendMessage(buffer);
+  char buff[32];
+  char temp[8];
+  // Note Arduino snprintf does not support .2f
+  dtostrf(val, 4, i, temp); 
+  snprintf(buff, sizeof(buff), "%c%s%c", token, temp, EOFSTR);
+  SendMessage(buff);
 }
 
 void ESP_Communication()

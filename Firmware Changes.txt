@@ -43,6 +43,7 @@
 // Implement myfp2eIRemoteESP8266 library to handle IRREMOTE to reduce space footprint
 // Fix for focuser moving to 0 on reload
 // Fix for random reboots related to focusersetupdata.cpp
+// Fix for IRRemote key mapping for "5"
 // Change webserver index page to reload target position at regular intervals
 
 // 122

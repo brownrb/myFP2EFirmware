@@ -41,7 +41,7 @@
 #define KEY_TWO         16718055
 #define KEY_THREE       16743045
 #define KEY_FOUR        16716015
-#define KEY_FIVE        16743045
+#define KEY_FIVE        16726215
 #define KEY_SIX         16734885
 #define KEY_SEVEN       16728765
 #define KEY_EIGHT       16730805
