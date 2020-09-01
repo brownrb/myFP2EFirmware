@@ -5783,6 +5783,7 @@ void loop()
 #if defined(OLEDGRAPHICS)
         myoled->Update_Oled(oled, ConnectionStatus);
 #endif
+
         if ( mySetupData->get_temperatureprobestate() == 1)
         {
           update_temp();
