@@ -275,16 +275,19 @@ OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                      // holds address of the temperature probe
 
-#include "displays.h"
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
-#ifdef OLEDTEXT
-OLED_TEXT *myoled;
-#elif OLEDGRAPHICS
+//#include "displays.h"
+#ifdef OLEDGRAPHICS
 OLED_GRAPHIC *myoled;
 #else
-OLED_NON *myoled;
+//OLED_NON *myoled;
 #endif
-#endif // #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+
+#ifdef OLEDTEXT
+#include <Wire.h>                           // needed for I2C => OLED display
+#include <mySSD1306Ascii.h>
+#include <mySSD1306AsciiWire.h>
+SSD1306AsciiWire* myoled;
+#endif // #ifdef OLEDTEXT
 
 // ----------------------------------------------------------------------------------------------
 // 15: GLOBAL DATA -- DO NOT CHANGE
@@ -299,7 +302,7 @@ OLED_NON *myoled;
 
 DriverBoard* driverboard;
 
-unsigned long fcurrentPosition;             // current focuser position
+//unsigned long fcurrentPosition;             // current focuser position
 unsigned long ftargetPosition;              // target position
 volatile bool halt_alert;
 
@@ -333,6 +336,324 @@ SetupData *mySetupData;                           // focuser data
 //   ESP32 Dev Module or WEMOS ????
 
 #include "comms.h"                                // do not change or move
+
+// ----------------------------------------------------------------------------------------------
+// 19B: OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL
+// ----------------------------------------------------------------------------------------------
+#ifdef OLEDTEXT
+#endif // #ifdef OLEDTEXT
+// Enclose function code in #ifdef - #endif so function declarations are visible
+
+void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    if ( clrscr == true)                      // clear the screen?
+    {
+      myoled->clear();
+      myoled->setCursor(0, 0);
+    }
+    if ( nl == true )                         // need to print a new line?
+    {
+      if ( val != -1)                         // need to print a value?
+      {
+        myoled->print(str);
+        myoled->println(val);
+      }
+      else
+      {
+        myoled->println(str);
+      }
+    }
+    else
+    {
+      myoled->print(str);
+      if ( val != -1 )
+      {
+        myoled->print(val);
+      }
+    }
+  }
+#endif // OLEDTEXT
+}
+
+void display_oledtext_page0(void)           // displaylcd screen
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    char tempString[20];
+    myoled->home();
+    myoled->print(F(CURRENTPOSSTR));
+    myoled->print(fcurrentPosition);
+    myoled->clearToEOL();
+
+    myoled->println();
+    myoled->print(F(TARGETPOSSTR));
+    myoled->print(ftargetPosition);
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(COILPWRSTR));
+    myoled->print(mySetupData->get_coilpower());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(REVDIRSTR));
+    myoled->print(mySetupData->get_reversedirection());
+    myoled->clearToEOL();
+    myoled->println();
+
+    // stepmode setting
+    myoled->print(F(STEPMODESTR));
+    myoled->print(mySetupData->get_stepmode());
+    myoled->clearToEOL();
+    myoled->println();
+
+    //Temperature
+    myoled->print(F(TEMPSTR));
+#ifdef TEMPERATUREPROBE
+    myoled->print(String(read_temp(0), 2));
+#else
+    myoled->print("20.0");
+#endif
+    myoled->print(" c");
+    myoled->clearToEOL();
+    myoled->println();
+
+    //Motor Speed
+    myoled->print(F(MOTORSPEEDSTR));
+    myoled->print(mySetupData->get_motorSpeed());
+    myoled->clearToEOL();
+    myoled->println();
+
+    //MaxSteps
+    myoled->print(F(MAXSTEPSSTR));
+    ltoa(mySetupData->get_maxstep(), tempString, 10);
+    myoled->print(tempString);
+    myoled->clearToEOL();
+    myoled->println();
+  }
+#endif
+}
+
+void display_oledtext_page1(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    // temperature compensation
+    myoled->print(F(TCOMPSTEPSSTR));
+    myoled->print(mySetupData->get_tempcoefficient());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(TCOMPSTATESTR));
+    myoled->print(mySetupData->get_tempcompenabled());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(TCOMPDIRSTR));
+    myoled->print(mySetupData->get_tcdirection());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(BACKLASHINSTR));
+    myoled->print(mySetupData->get_backlash_in_enabled());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(BACKLASHOUTSTR));
+    myoled->print(mySetupData->get_backlash_out_enabled());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(BACKLASHINSTEPSSTR));
+    myoled->print(mySetupData->get_backlashsteps_in());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(BACKLASHOUTSTEPSSTR));
+    myoled->print(mySetupData->get_backlashsteps_out());
+    myoled->clearToEOL();
+    myoled->println();
+  }
+#endif
+}
+
+void display_oledtext_page2(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+    myoled->setCursor(0, 0);
+#if defined(ACCESSPOINT)
+    myoled->print(F(ACCESSPOINTSTR));
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+#if defined(STATIONMODE)
+    myoled->print(F(STATIONMODESTR));
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+    myoled->print(F(SSIDSTR));
+    myoled->print(mySSID);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(F(IPADDRESSSTR));
+    myoled->print(ipStr);
+    myoled->clearToEOL();
+    myoled->println();
+#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
+
+#if defined(WEBSERVER)
+    //myoled->setCursor(0, 0);
+    myoled->print(F(WEBSERVERSTR));
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(F(IPADDRESSSTR));
+    myoled->print(ipStr);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(PORTSTR);
+    myoled->print(String(mySetupData->get_webserverport()));
+    myoled->clearToEOL();
+    myoled->println();
+#endif // webserver
+#if defined(ASCOMREMOTE)
+    myoled->print(F(ASCOMREMOTESTR));
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(F(IPADDRESSSTR));
+    myoled->print(ipStr);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(PORTSTR);
+    myoled->print(String(mySetupData->get_ascomalpacaport()));
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+
+#if defined(BLUETOOTHMODE)
+    myoled->setCursor(0, 0);
+    myoled->print(F(BLUETOOTHSTR));
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+
+#if defined(LOCALSERIAL)
+    myoled->setCursor(0, 0);
+    myoled->println(F(LOCALSERIALSTR));
+#endif
+  }
+#endif // #ifdef OLEDTEXT
+}
+
+void update_oledtext_position(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    myoled->setCursor(0, 0);
+    myoled->print(F(CURRENTPOSSTR));
+    myoled->print(fcurrentPosition);
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(F(TARGETPOSSTR));
+    myoled->print(ftargetPosition);
+    myoled->clearToEOL();
+    myoled->println();
+  }
+#endif
+}
+
+void update_oledtextdisplay(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    static unsigned long currentMillis;
+    static unsigned long olddisplaytimestampNotMoving = millis();
+    static byte displaypage = 0;
+
+    currentMillis = millis();                       // see if the display needs updating
+    // if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
+    if (TimeCheck(olddisplaytimestampNotMoving, (int)mySetupData->get_lcdpagetime() * 1000))   // see if the display needs updating
+    {
+      olddisplaytimestampNotMoving = currentMillis; // update the timestamp
+      myoled->clear();                              // clrscr OLED
+      switch (displaypage)
+      {
+        case 0:   display_oledtext_page0();
+          break;
+        case 1:   display_oledtext_page1();
+          break;
+        case 2:   display_oledtext_page2();
+          break;
+        default:  display_oledtext_page0();
+          break;
+      }
+      displaypage++;
+      displaypage = (displaypage > 2) ? 0 : displaypage;
+    }
+  }
+#endif
+}
+
+void init_oledtextdisplay(void)
+{
+#ifdef OLEDTEXT
+#if defined(ESP8266)
+#if (DRVBRD == PRO2EL293DNEMA) || (DRVBRD == PRO2EL293D28BYJ48)
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);      // l293d esp8266 shield
+  DebugPrintln(F("Setup PRO2EL293DNEMA/PRO2EL293D28BYJ48 I2C"));
+#else
+  DebugPrintln(F("Setup esp8266 I2C"));
+  Wire.begin();
+#endif
+#else
+  DebugPrintln(F("Setup esp32 I2C"));
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);        // esp32
+#endif
+  Wire.beginTransmission(OLED_ADDR);        //check if OLED display is present
+  if (Wire.endTransmission() != 0)
+  {
+    TRACE();
+    DebugPrintln(F(I2CDEVICENOTFOUNDSTR));
+    displayfound = false;
+  }
+  else
+  {
+    displayfound = true;
+    myoled = new SSD1306AsciiWire();
+    // Setup the OLED
+#ifdef USE_SSD1306
+    // For the OLED 128x64 0.96" display using the SSD1306 driver
+    myoled->begin(&Adafruit128x64, OLED_ADDR);
+#endif
+#ifdef USE_SSH1106
+    // For the OLED 128x64 1.3" display using the SSH1106 driver
+    myoled->begin(&SH1106_128x64, OLED_ADDR);
+#endif
+    myoled->set400kHz();
+    myoled->setFont(Adafruit5x7);
+    myoled->clear();                          // clrscr OLED
+    myoled->Display_Normal();                 // black on white
+    myoled->Display_On();                     // display ON
+    myoled->Display_Rotate(0);                // portrait, not rotated
+    myoled->Display_Bright();
+#ifdef SHOWSTARTSCRN
+    myoled->println(programName);             // print startup screen
+    myoled->println(programVersion);
+    myoled->println(ProgramAuthor);
+#endif // showstartscreen
+  }
+#endif // OLEDTEXT
+}
 
 // ----------------------------------------------------------------------------------------------
 // 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
@@ -2645,7 +2966,7 @@ void WEBSERVER_buildpresets(void)
     WSpg.replace("%POR%", String(mySetupData->get_webserverport()));
     WSpg.replace("%VER%", String(programVersion));
     WSpg.replace("%NAM%", String(DRVBRD_ID));
-    WSpg.replace("%CPO%", String(fcurrentPosition));
+    WSpg.replace("%CPO%", String(driverboard->getposition()));
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MOV%", String(isMoving));
 
@@ -3140,7 +3461,7 @@ void WEBSERVER_buildmove(void)
     WSpg.replace("%POR%", String(mySetupData->get_webserverport()));
     WSpg.replace("%VER%", String(programVersion));
     WSpg.replace("%NAM%", String(DRVBRD_ID));
-    WSpg.replace("%CPO%", String(fcurrentPosition));
+    WSpg.replace("%CPO%", String(driverboard->getposition()));
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MOV%", String(isMoving));
     DebugPrintln(F(PROCESSPAGEENDSTR));
@@ -3204,13 +3525,13 @@ void WEBSERVER_handlemove()
     TRACE();
     DebugPrintln(fmv_str);
     temp = fmv_str.toInt();
-    long newtemp = (long) fcurrentPosition + temp;
+    long newtemp = (long) driverboard->getposition() + temp;
     newtemp = ( newtemp < 0 ) ? 0 : newtemp;
     newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
     ftargetPosition = (unsigned long) newtemp;
     DebugPrint("Move = "); DebugPrintln(fmv_str);
     DebugPrint(F(CURRENTPOSSTR));
-    DebugPrintln(fcurrentPosition);
+    DebugPrintln(driverboard->getposition());
     DebugPrint(F(TARGETPOSSTR));
     DebugPrintln(ftargetPosition);
   }
@@ -3262,7 +3583,7 @@ void WEBSERVER_buildhome(void)
     }
     else
     {
-      WSpg.replace("%CPO%", String(fcurrentPosition));
+      WSpg.replace("%CPO%", String(driverboard->getposition()));
     }
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MAX%", String(mySetupData->get_maxstep()));
@@ -3432,7 +3753,7 @@ void WEBSERVER_buildhome(void)
 
 void WEBSERVER_handleposition()
 {
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(fcurrentPosition)); // Send position value only to client ajax request
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(driverboard->getposition())); // Send position value only to client ajax request
 }
 
 void WEBSERVER_handleismoving()
@@ -3479,7 +3800,7 @@ void WEBSERVER_handleroot()
       temp = fp.toInt();
       temp = (temp < 0) ? 0 : temp;
       ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
-      fcurrentPosition = ftargetPosition;
+      driverboard->setposition(ftargetPosition);
     }
   }
 
@@ -3509,9 +3830,9 @@ void WEBSERVER_handleroot()
     DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
-    if ( temp < (long) fcurrentPosition )               // if maxstep is less than focuser position
+    if ( temp < (long) driverboard->getposition() )               // if maxstep is less than focuser position
     {
-      temp = (long) fcurrentPosition + 1;
+      temp = (long) driverboard->getposition() + 1;
     }
     if ( temp < FOCUSERLOWERLIMIT )                     // do not set it less then 1024
     {
@@ -3835,7 +4156,7 @@ void ASCOM_Create_Setup_Focuser_HomePage()
   // Convert IP address to a string;
   // already in ipStr
   // convert current values of focuserposition and focusermaxsteps to string types
-  String fpbuffer = String(fcurrentPosition);
+  String fpbuffer = String(driverboard->getposition());
   String mxbuffer = String(mySetupData->get_maxstep());
   String smbuffer = String(mySetupData->get_stepmode());
   int    eflag    = 0;
@@ -4220,7 +4541,8 @@ void ASCOM_handle_focuser_setup()
       temp = fp.toInt();
       temp = ( temp < 0) ? 0 : temp;
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
-      fcurrentPosition = ftargetPosition = (unsigned long) temp;
+      driverboard->setposition( (unsigned long) temp);
+      ftargetPosition = (unsigned long) temp;
     }
   }
 
@@ -4232,9 +4554,9 @@ void ASCOM_handle_focuser_setup()
     DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
-    if ( temp < (long) fcurrentPosition )               // if maxstep is less than focuser position
+    if ( temp < (long) driverboard->getposition() )               // if maxstep is less than focuser position
     {
-      temp = (long) fcurrentPosition + 1;
+      temp = (long) driverboard->getposition() + 1;
     }
     if ( temp < FOCUSERLOWERLIMIT )                     // do not set it less then 1024
     {
@@ -4609,7 +4931,7 @@ void  ASCOM_handlepositionget()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":" + String(fcurrentPosition) + "," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":" + String(driverboard->getposition()) + "," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
@@ -5145,40 +5467,6 @@ void init_leds()
   }
 }
 
-void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    if ( clrscr == true)                      // clear the screen?
-    {
-      myoled->clear();
-      myoled->setCursor(0, 0);
-    }
-    if ( nl == true )                         // need to print a new line?
-    {
-      if ( val != -1)                         // need to print a value?
-      {
-        myoled->print(str);
-        myoled->println(val);
-      }
-      else
-      {
-        myoled->println(str);
-      }
-    }
-    else
-    {
-      myoled->print(str);
-      if ( val != -1 )
-      {
-        myoled->print(val);
-      }
-    }
-  }
-#endif // OLEDTEXT
-}
-
 #ifdef READWIFICONFIG
 bool readwificonfig( char* xSSID, char* xPASSWORD)
 {
@@ -5301,12 +5589,9 @@ void setup()
   HDebugPrintln("setup(): oledtextdisplay()");
   displayfound = false;
 #ifdef OLEDTEXT
-  myoled = new OLED_TEXT;
-#elif OLEDGRAPHICS
-  myoled = new OLED_GRAPHIC();
-#else
-  //myoled = new OLED_NON;                       // create Object for non OLED
+  init_oledtextdisplay();
 #endif
+
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
@@ -5492,8 +5777,9 @@ void setup()
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
   // assign to current working values
-  ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
-
+  //ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
+  ftargetPosition = mySetupData->get_fposition();
+  
   DebugPrint(SETUPDRVBRDSTR);
   DebugPrintln(DRVBRD);
   oledtextmsg(SETUPDRVBRDSTR, DRVBRD, true, true);
@@ -5770,7 +6056,7 @@ void loop()
         if (mySetupData->get_displayenabled() == 1)
         {
 #if defined(OLEDTEXT)
-          myoled->update_oledtextdisplay();
+          update_oledtextdisplay();
 #endif
         }
         else
@@ -5850,7 +6136,9 @@ void loop()
         } // if (DirOfTravel != moving_main && backlash_count)
       } // if (mySetupData->get_focuserdirection() != DirOfTravel)
 
-      steps = (driverboard->getposition() > ftargetPosition) ? driverboard->getposition() - ftargetPosition : driverboard->getposition() - fcurrentPosition;
+      // if target pos > current pos then steps = target pos - current pos
+      // if target pos < current pos then steps = current pos - target pos
+      steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
       DebugPrint(STATEMOVINGSTR);
       DebugPrint(steps);
       HDebugPrint("heap before move : ");
