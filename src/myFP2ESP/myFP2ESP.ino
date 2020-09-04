@@ -3801,6 +3801,7 @@ void WEBSERVER_handleroot()
       temp = (temp < 0) ? 0 : temp;
       ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
       driverboard->setposition(ftargetPosition);
+      mySetupData->set_fposition(ftargetPosition);
     }
   }
 
@@ -4541,8 +4542,9 @@ void ASCOM_handle_focuser_setup()
       temp = fp.toInt();
       temp = ( temp < 0) ? 0 : temp;
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
-      driverboard->setposition( (unsigned long) temp);
       ftargetPosition = (unsigned long) temp;
+      driverboard->setposition(ftargetPosition);
+      mySetupData->set_fposition(ftargetPosition);
     }
   }
 
