@@ -183,6 +183,9 @@ DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(
     //Serial.print("Clock Freq: ");
     //Serial.println(clock_frequency);
 #endif
+
+    this->stepdelay = MSPEED;
+    
 #if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
     pinMode(ENABLEPIN, OUTPUT);
     pinMode(DIRPIN, OUTPUT);
@@ -190,8 +193,6 @@ DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(
     digitalWrite(ENABLEPIN, 1);
     digitalWrite(STEPPIN, 0);
     DriverBoard::setstepmode(DRV8825TEPMODE);
-    this->stepdelay = MSPEED;
-
 #elif( DRVBRD == PRO2ESP32DRV8825 )
     pinMode(ENABLEPIN, OUTPUT);
     pinMode(DIRPIN, OUTPUT);
@@ -201,47 +202,9 @@ DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(
     pinMode(MS1, OUTPUT);
     pinMode(MS2, OUTPUT);
     pinMode(MS3, OUTPUT);
-    this->stepdelay = MSPEED;
-
-#elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003)
-    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);  // appears to work
-    mystepper->setSpeed(5);
-    this->stepdelay = MSPEED;
-
-#elif (DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N)
-    // IN1L298N, IN2L298N, IN3L298N, IN4L298N
-    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-    mystepper->setSpeed(20);
-    this->stepdelay = MSPEED;
-
-#elif (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
-    // IN1L293DMINI, IN2L293DMINI, IN3L293DMINI, IN4L293DMINI
-    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-    mystepper->setSpeed(5);
-    this->stepdelay = MSPEED;
-
-#elif (DRVBRD == PRO2EL9110S || DRVBRD == PRO2ESP32L9110S)
-    // IN1L9110S, IN2L9110S, IN3L9110S, IN4L9110S
-    mystepper = new HalfStepper(STEPSPERREVOLUTION, IN1, IN2, IN3, IN4);
-    mystepper->setSpeed(5);
-    this->stepdelay = MSPEED;
-
-#elif (DRVBRD == PRO2EL293DNEMA )
-    mystepper = new Stepper(STEPSPERREVOLUTION, IN2, IN3, IN1, IN4);
-    mystepper->setSpeed(SPEEDNEMA);
-    setstepmode(STEP1);
-    this->stepdelay = MSPEED;
-
-#elif (DRVBRD == PRO2EL293D28BYJ48 )
-    mystepper = new Stepper(STEPSPERREVOLUTION, IN1, IN3, IN2, IN4);
-    mystepper->setSpeed(SPEEDBIPOLAR);
-    setstepmode(STEP1);
-    this->stepdelay = MSPEED;
-#endif
-
-#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S \
-  || DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI \
-  || DRVBRD == PRO2ESP32L9110S || DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
+#elif (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2ESP32L298N || \
+      DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2EL9110S || DRVBRD == PRO2ESP32L9110S)
+    // IN1, IN2, IN3, IN4);  // appears to work
     // Move the init of inputPins here before init of myStepper to prevent stepper motor jerk
     this->inputPins[0] = IN1;
     this->inputPins[1] = IN2;
@@ -251,22 +214,33 @@ DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(
     {
       pinMode(this->inputPins[i], OUTPUT);
     }
+#elif (DRVBRD == PRO2EL293DNEMA )
+    // IN2, IN3, IN1, IN4);
+    this->inputPins[0] = IN2;
+    this->inputPins[1] = IN3;
+    this->inputPins[2] = IN1;
+    this->inputPins[3] = IN4;
+    for (int i = 0; i < 4; i++)
+    {
+      pinMode(this->inputPins[i], OUTPUT);
+    }
+    setstepmode(STEP1);
+#elif (DRVBRD == PRO2EL293D28BYJ48 )
+    // IN1, IN3, IN2, IN4);
+    this->inputPins[0] = IN1;
+    this->inputPins[1] = IN3;
+    this->inputPins[2] = IN2;
+    this->inputPins[3] = IN4;
+    for (int i = 0; i < 4; i++)
+    {
+      pinMode(this->inputPins[i], OUTPUT);
+    }
+    setstepmode(STEP1);
+    this->stepdelay = MSPEED;
 #endif
     // set default focuser position - ensure it is same as mySetupData when loaded
     this->focuserposition = startposition;
   } while (0);
-}
-
-// destructor
-DriverBoard::~DriverBoard()
-{
-#if ( DRVBRD == PRO2EULN2003   || DRVBRD == PRO2ESP32ULN2003  \
-   || DRVBRD == PRO2EL298N     || DRVBRD == PRO2ESP32L298N    \
-   || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293MINI \
-   || DRVBRD == PRO2EL9110S    || DRVBRD == PRO2ESPL9110S)    \
-   || (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-  delete mystepper;
-#endif
 }
 
 byte DriverBoard::getstepmode(void)
@@ -331,15 +305,15 @@ void DriverBoard::setstepmode(byte smode)
     switch ( smode )
     {
       case STEP1:
-        mystepper->SetSteppingMode(SteppingMode::FULL);
+        //mystepper->SetSteppingMode(SteppingMode::FULL);
         this->stepmode = STEP1;
         break;
       case STEP2:
-        mystepper->SetSteppingMode(SteppingMode::HALF);
+        //mystepper->SetSteppingMode(SteppingMode::HALF);
         this->stepmode = STEP2;
         break;
       default:
-        mystepper->SetSteppingMode(SteppingMode::FULL);
+        //mystepper->SetSteppingMode(SteppingMode::FULL);
         this->stepmode = smode;
         break;
     }
@@ -373,6 +347,92 @@ void DriverBoard::releasemotor(void)
   digitalWrite(this->inputPins[3], 0 );
 #endif
 }
+
+/*
+   // PIN STATE SEQUENCES FOR STEPS
+  // Two pin step motor sequences
+  // NOTE: Only two variations exist; dual phasing is the same as half-stepping.
+  PROGMEM static const byte _STEP_SEQUENCES_TWO_PIN[2][4] =
+  {
+    { B00000001, B00000011, B00000010, B00000000 },
+    { B00000001, B00000010, B00000001, B00000010 }
+  };
+
+  // Four pin step motor sequences
+  // Structured by Stepping mode --> Phasing mode --> Sequence type.
+  PROGMEM static const byte _STEP_SEQUENCES_FOUR_PIN[2][2][2][8] =
+  {
+    {
+      {
+        { B00001000, B00000010, B00000100, B00000001, B00001000, B00000010, B00000100, B00000001 },
+        { B00001000, B00000100, B00000010, B00000001, B00001000, B00000100, B00000010, B00000001 }
+      },
+      {
+        { B00001100, B00000110, B00000110, B00000011, B00001100, B00000110, B00000110, B00000011 },
+        { B00001010, B00000110, B00000101, B00001001, B00001010, B00000110, B00000101, B00001001 }
+      }
+    },
+    {
+      {
+        { B00001000, B00001100, B00000100, B00000110, B00000010, B00000011, B00000001, B00001001 },
+        { B00001000, B00001010, B00000010, B00000110, B00000100, B00000101, B00000001, B00001001 }
+      },
+      {
+        { B00001000, B00001100, B00000100, B00000110, B00000010, B00000011, B00000001, B00001001 },
+        { B00001000, B00001010, B00000010, B00000110, B00000100, B00000101, B00000001, B00001001 }
+      }
+    }
+  };
+  }
+    _Steps = new byte[4];
+    for (int i = 0; i < 4; i++)
+      _Steps[i] = pgm_read_byte_near(&_STEP_SEQUENCES_TWO_PIN[BOOL_TO_INDEX((bool)_SteppingMode)][i]);
+
+  DoStep(byte stepIdx)
+  if (_PinCount == 4)
+  {
+    digitalWrite(_Pins[0], _Steps[stepIdx] & B1000 ? HIGH : LOW);
+    digitalWrite(_Pins[1], _Steps[stepIdx] & B0100 ? HIGH : LOW);
+    digitalWrite(_Pins[2], _Steps[stepIdx] & B0010 ? HIGH : LOW);
+    digitalWrite(_Pins[3], _Steps[stepIdx] & B0001 ? HIGH : LOW);
+  }
+
+  void HalfStepper::Step(long numSteps)
+  {
+  if (numSteps == 0)
+    return;
+
+  if (numSteps > 0)
+  {
+    _Direction = Direction::FORWARD;
+  }
+  else
+  {
+    _Direction = Direction::REVERSE;
+    numSteps = abs(numSteps);
+  }
+
+  while (numSteps-- > 0)
+  {
+    while (millis() - _LastStepMS < _DelayMS) delay(1);
+
+    _LastStepMS = millis();
+
+    if (_Direction == Direction::FORWARD)
+    {
+      if (_Position++ == _TotalSteps)
+        _Position = 0;
+    }
+    else
+    {
+      if (_Position-- == 0)
+        _Position = _TotalSteps;
+    }
+    this->DoStep(_Position % (_PinCount * 2));
+  }
+  }
+*/
+
 
 void DriverBoard::movemotor(byte dir, bool updatefpos)
 {
@@ -417,36 +477,76 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
   digitalWrite(STEPPIN, 0);               // Step pin off
 #endif // #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
 
-#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2EL9110S  || DRVBRD == PRO2EESP32ULN2003 || DRVBRD == PRO2EESP32L298N \
-  || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S )
-  (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
-  // keep same code here even though these driver boards do not require a pulse
-  // this makes timing the same for all driver boards
-#if defined(ESP8266)
-  asm1uS();                               // ESP8266 must be 2uS delay for DRV8825 chip
-  asm1uS();
-#else
-  // ESP32
-  asm1uS();                               // ESP32 must be 2uS delay for DRV8825 chip
-  asm1uS();
-  asm1uS();
-  asm1uS();
-  asm1uS();
-  asm1uS();
-#endif // #if defined(ESP8266)
+#if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EESP32ULN2003)
+  //(dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
+  if ( dir == 1 )     // assume 1 = anticlockwise()
+  {
+    if ( this->stepmode == STEP1)
+    {
+      if ( Step >= 4 )
+      {
+        Step = 0;
+      }
+      digitalWrite(this->inputPins[0], bitRead(ulnfull[Step], 0));
+      digitalWrite(this->inputPins[1], bitRead(ulnfull[Step], 1));
+      digitalWrite(this->inputPins[2], bitRead(ulnfull[Step], 2));
+      digitalWrite(this->inputPins[3], bitRead(ulnfull[Step], 3));
+    }
+    else // assume half stepping
+    {
+      if ( Step >= 8 )
+      {
+        Step = 0;
+      }
+      digitalWrite(this->inputPins[0], bitRead(ulnhalf[Step], 0));
+      digitalWrite(this->inputPins[1], bitRead(ulnhalf[Step], 1));
+      digitalWrite(this->inputPins[2], bitRead(ulnhalf[Step], 2));
+      digitalWrite(this->inputPins[3], bitRead(ulnhalf[Step], 3));
+    }
+    Step++;
+  }
+  else              // assume 0 = clockwise
+  {
+    if ( this->stepmode == STEP1)
+    {
+      if ( Step < 0 )
+      {
+        Step = 3;
+      }
+      digitalWrite(this->inputPins[0], bitRead(ulnfull[Step], 0));
+      digitalWrite(this->inputPins[1], bitRead(ulnfull[Step], 1));
+      digitalWrite(this->inputPins[2], bitRead(ulnfull[Step], 2));
+      digitalWrite(this->inputPins[3], bitRead(ulnfull[Step], 3));
+    }
+    else // assume half stepping
+    {
+      if ( Step < 0 )
+      {
+        Step = 7;
+      }
+      digitalWrite(this->inputPins[0], bitRead(ulnhalf[Step], 0));
+      digitalWrite(this->inputPins[1], bitRead(ulnhalf[Step], 1));
+      digitalWrite(this->inputPins[2], bitRead(ulnhalf[Step], 2));
+      digitalWrite(this->inputPins[3], bitRead(ulnhalf[Step], 3));
+    }
+    Step--;
+  }
 #endif
 
-#if (DRVBRD == PRO2EL293D28BYJ48)
-  (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
-  asm1uS();                               // ESP8266 must be 2uS delay for DRV8825 chip
-  asm1uS();
-#endif
+#if (DRVBRD == PRO2EL298N || DRVBRD == PRO2EESP32L298N )
+  // todo
+  // move motor
+#endif // #if (DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EESP32ULN2003)
 
-#if (DRVBRD == PRO2EL293DNEMA)
-  (dir == 0 ) ? mystepper->step(1) : mystepper->step(-1);
-  asm1uS();                               // ESP8266 must be 2uS delay for DRV8825 chip
-  asm1uS();
-#endif
+#if (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
+  // todo
+  // move motor
+#endif // (DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI)
+
+#if (DRVBRD == PRO2EL9110S || DRVBRD == PRO2ESP32L9110S )
+  // todo
+  // move motor
+#endif // #if (DRVBRD == PRO2EL9110S || DRVBRD == PRO2ESP32L9110S )
 
   // turn off leds
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )

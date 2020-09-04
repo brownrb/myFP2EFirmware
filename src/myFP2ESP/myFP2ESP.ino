@@ -1,23 +1,17 @@
-// COMPILE ISSUE
-// If OLEDTEXT and OLEDGRAPHIC is undefined then will not compile
-// IF OLEDTEXT or OLEDGRAPHIC is defined then it will not compile
+// CONFIG IS ACCESSPOINT AND MANAGEMENT SERVER
+// Target is ESP8266, Node MCU 12E
 
 // TODO
-// Use preset0=35000, preset1=4500, move from preset1 to preset0
-// TESTING DRVBRD PRO2EL293DNEMA again after recent changes to SPIFFS and DRVBRD code
-// PRO2EDRV8825BIG  DOES NOT WORK AT ALL
-// PRO2EL293D28BYJ48
-// PRO2EL298N
-// PRO2EL293DMINI
-// PRO2EL9110S
+// Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
+// During move, open Management server and click on each admin page one after the other [wait for each page to fully load] 
+// if crash then increase MSPEED value for that driver board
+// Test these driver boards and update driver board code to work
+// ULN2003 Driver Board
+// L298N Driver Board
+// L293DNEMA and L293D28BYJ48 Driver Board
+// L293DMINI Driver Board
+// L9110S Driver Board
 // Check IRREMOTE on ESP32 boards, try IRREMOTE test program - created new library to reduce footprint 60K -> 4K
-
-// COMPLETED
-// PRO2ESP32DRV8825 DONE 4000 NEMA
-// PRO2EL298N DONE 16500  NEMA
-// PRO2EULN2003 DONE 17500 28BYJ48
-// PRO2EL293DNEMA DONE 10500 NEMA
-// PRO2EL293D28BYJ48 TESTING 17500 28BYJ48
 
 // ISSUE 1: TODO
 // ListDir in FocuserSetupData DOES NOT COMPILE ON ESP8266
@@ -25,9 +19,12 @@
 // ISSUE 1: TODO
 // OLED - I have commented most out just to get a compile
 
+// COMPILE ISSUE
+// If OLEDTEXT and OLEDGRAPHIC is undefined then will not compile
+// IF OLEDTEXT or OLEDGRAPHIC is defined then it will not compile
 
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 128
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 127
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
