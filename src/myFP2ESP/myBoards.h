@@ -211,7 +211,6 @@ class DriverBoard
     uint32_t  halt(void);
     
     // getter
-    byte getmotorspeed(void);
     byte getstepmode(void);
     int getstepdelay(void);
     unsigned long getposition(void);
