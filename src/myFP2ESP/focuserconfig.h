@@ -24,7 +24,7 @@
 // Enable or disable the specific hardware below
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
-//#define OLEDTEXT 1
+#define OLEDTEXT 1
 
 // To enable the OLED GRAPHICS DISPLAY uncomment the next line
 //#define OLEDGRAPHICS 1

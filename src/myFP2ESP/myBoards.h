@@ -68,7 +68,7 @@
 #endif
 
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-//#include <Stepper.h>                    // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
+#include <Stepper.h>                    // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
@@ -205,6 +205,7 @@ class DriverBoard
 {
   public:
     DriverBoard(byte, unsigned long);           // constructor
+    ~DriverBoard(void);                         // destructor
     void      initmove(bool, unsigned long, byte, bool);
     void      movemotor(byte, bool);
     uint32_t  halt(void);
@@ -227,10 +228,10 @@ class DriverBoard
    || DRVBRD == PRO2EL298N     || DRVBRD == PRO2ESP32L298N    \
    || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293MINI \
    || DRVBRD == PRO2EL9110S    || DRVBRD == PRO2ESPL9110S)
-    // HalfStepper* mystepper;
+    HalfStepper* mystepper;
 #endif
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-    // Stepper* mystepper;
+    Stepper* mystepper;
 #endif
     unsigned long focuserposition;                  // current focuser position
     int  inputPins[4];                              // input pins for driving stepper boards
@@ -239,52 +240,5 @@ class DriverBoard
     int  stepdelay;                                 // time in milliseconds to wait between pulses when moving
     bool drvbrdleds;                                // true if DRVBRD supports INOUT leds - can be enabled/disabled
     unsigned int clock_frequency;                   // clock frequency used to generate 2us delay for ESP32 160Mhz/240Mhz
-    int Step;                                       // used to control step count
-
-    // DriverBoard driverboard(ULN2003, IN1, IN2, IN3, IN4);
-    // for esp8266 
-    //#define IN1                   13
-    //#define IN2                   12
-    //#define IN3                   14
-    //#define IN4                   2
-    int ulnfull[4] = {B01100, B00110, B00011, B01001};                                    // to be tested
-    int ulnhalf[8] = {B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001};    // to be tested
-
-    // DriverBoard driverboard(L293D, IN1L293D, IN2L293D, IN3L293D, IN4L293D);
-    // for esp8266 
-    //#define IN1                   13
-    //#define IN2                   12
-    //#define IN3                   14
-    //#define IN4                   2 
-#if (DRVBRD == PRO2EL293DNEMA)
-    // these need to be determined
-    int l293dfull[4] = {B01001, B01100, B00110, B00011};       // to be tested
-    int l293dhalf[8] = {B01001, B01000, B01100, B00100, B00110, B00010, B00011, B00001};      // to be tested
-#elif (DRVBRD == PRO2EL293D28BYJ48)
-    // these need to be determined
-    int l293dfull[4] = {B01001, B01100, B00110, B00011};       // to be tested
-    int l293dhalf[8] = {B01001, B01000, B01100, B00100, B00110, B00010, B00011, B00001};      // to be tested
-#endif    
-
-    //int uln8sfull[4] = { B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001  };    // to be tested
-    //int uln8shalf[8] = { B01000, B01100, B00100, B00110, B00010, B00011, B00001, B01001  };    // to be tested
-
-    // Half stepper codes - these are codes from the half stepper library that can be tested
-    // Note that the code also depends upon how the stepper wiring is configured - 
-    // The code could be right only for a specific wiring of the stepper motor 
-    //  { B00001, B00011, B00010, B00000 },
-    //  { B00001, B00010, B00001, B00010 }
-    //
-    // { B00001000, B00000010, B00000100, B00000001, B00001000, B00000010, B00000100, B00000001 },
-    // { B00001000, B00000100, B00000010, B00000001, B00001000, B00000100, B00000010, B00000001 }
-    // and
-    // { B00001100, B00000110, B00000110, B00000011, B00001100, B00000110, B00000110, B00000011 },
-    // { B00001010, B00000110, B00000101, B00001001, B00001010, B00000110, B00000101, B00001001 }
-    // or
-    // { B00001000, B00001100, B00000100, B00000110, B00000010, B00000011, B00000001, B00001001 },
-    // { B00001000, B00001010, B00000010, B00000110, B00000100, B00000101, B00000001, B00001001 }
-    // and
-    // { B00001000, B00001100, B00000100, B00000110, B00000010, B00000011, B00000001, B00001001 },
-    // { B00001000, B00001010, B00000010, B00000110, B00000100, B00000101, B00000001, B00001001 }  
 };
 #endif

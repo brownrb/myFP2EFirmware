@@ -12,9 +12,8 @@
 // ----------------------------------------------------------------------------------------------
 // EXTERNALS
 // ----------------------------------------------------------------------------------------------
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLEDGRAPHICS)
 
-/* 
 #include <Arduino.h>
 #include "myBoards.h"
 #include "focuserconfig.h"
@@ -74,13 +73,11 @@ OLED_NON::OLED_NON()
   connected = OledConnected();
 }
 
-
 // ----------------------------------------------------------------------------------------------
 // CODE OLED GRAPHICMODE
 // ----------------------------------------------------------------------------------------------
 
 //__constructor
-#if defined(OLEDGRAPHICS)
 //OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64)
 OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64) , OLED_NON()
 {
@@ -187,7 +184,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
   else
   {
     char dir = (mySetupData->get_focuserdirection() == moving_in ) ? '<' : '>';
-    snprintf(buffer, sizeof(buffer), "%lu:%i %c", fcurrentPosition, (int)(fcurrentPosition % driverboard->getstepmode()), dir);
+    snprintf(buffer, sizeof(buffer), "%lu:%i %c", driverboard->getposition(), (int)(driverboard->getposition() % driverboard->getstepmode()), dir);
     drawString(64, 28, buffer);
 
     setFont(ArialMT_Plain_10);
@@ -226,8 +223,7 @@ void OLED_GRAPHIC::oled_draw_reboot(void)
   drawString(64, 28, "REBOOT"); // Print currentPosition
   display();
 }
-#endif
 
 */ 
 
-#endif
+#endif // #if defined(OLEDGRAPHICS)

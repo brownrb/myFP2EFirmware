@@ -14,15 +14,14 @@
 // We should NOT include graphics code if the user has NOT defined its use and does not want any display
 // If the user explicitly does not want a display we should not include its code
 
-/*
 #if defined(OLEDGRAPHICS)
+
 #include <mySSD1306AsciiWire.h>               // ?
 #ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
 //#include <SSD1306Wire.h>
 #endif
 #ifdef USE_SSH1106                            // For the OLED 128x64 1.3" display using the SSH1106 driver
 //#include <SH1106Wire.h>
-#endif
 #endif
 
 // ----------------------------------------------------------------------------------------------
@@ -45,10 +44,6 @@ extern float read_temp(byte);
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find the correct address
 
 //__helper function
-
-
-
-
 
 // ----------------------------------------------------------------------------------------------
 // class boddies
@@ -74,7 +69,6 @@ class OLED_NON
     bool displayfound = false;
 };
 
-#if defined(OLEDGRAPHICS)
 #ifdef USE_SSD1306
 class OLED_GRAPHIC : public SSD1306Wire, public OLED_NON
 #else
@@ -94,7 +88,5 @@ class OLED_GRAPHIC : public SH1106Wire, public OLED_NON
     byte count_hb = 0;      // heart beat counter
     long timestamp;
 };
-#endif
 
-#endif
-*/
+#endif // #if defined(OLEDGRAPHICS)
