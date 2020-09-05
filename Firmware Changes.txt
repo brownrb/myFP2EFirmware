@@ -1,3 +1,10 @@
+// 127
+// Fix for print(F()) errors
+// Fix for OLEDTEXT compile error
+// Fix for Focuser position not being updated on display when moving
+// Fix for HalfStepperESP32 library code - must reinstall
+// Fix for fcurrentPosition compilation errors in some options
+
 // 126
 // Rewrite web/management/ascom-remote server send page routines
 // Move focuserposition to driverboard.cpp, simplifies a lot of code
