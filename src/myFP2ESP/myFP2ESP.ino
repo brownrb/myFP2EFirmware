@@ -1,33 +1,40 @@
-// COMPILE ISSUE
-// If OLEDTEXT and OLEDGRAPHIC is undefined then will not compile
-// IF OLEDTEXT or OLEDGRAPHIC is defined then it will not compile
+// CONFIG IS ACCESSPOINT AND MANAGEMENT SERVER
+// Target is ESP8266, Node MCU 12E
+
+// Test Procedure
+// Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
+// Test to see if crash when moving - if crash then increase MSPEED value for that driver board and retest
+
+// Incompatibility discovered:
+// An interrupt occuring whilst during SPIFFS access has a HIGH likelyhood of generating an exception causing a reboot
+// Implications: Cannot load web pages using webserserver/management server/ ascom remote aplaca server WHEN focuser is MOVING
+// If one disables interrupts during SPIFFS acccess then that causes significant pauses in motor rotation
+
+// Driver Boards
+// DRV8825 DONE
+// ULN2003 Driver Board DONE
+
+// Changes
+// Fix for print(F()) errors
+// Fix for OLEDTEXT compile error
+// Fix for Focuser position not being updated on display when moving
+// Fixes for HalfStepperESP32 library code - must reinstall
 
 // TODO
-// Use preset0=35000, preset1=4500, move from preset1 to preset0
-// TESTING DRVBRD PRO2EL293DNEMA again after recent changes to SPIFFS and DRVBRD code
-// PRO2EDRV8825BIG  DOES NOT WORK AT ALL
-// PRO2EL293D28BYJ48
-// PRO2EL298N
-// PRO2EL293DMINI
-// PRO2EL9110S
+// Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
+// Test these driver boards and update driver board code to work
+// L298N Driver Board
+// L293DNEMA and L293D28BYJ48 Driver Board
+// L293DMINI Driver Board
+// L9110S Driver Board
 // Check IRREMOTE on ESP32 boards, try IRREMOTE test program - created new library to reduce footprint 60K -> 4K
 
-// COMPLETED
-// PRO2ESP32DRV8825 DONE 4000 NEMA
-// PRO2EL298N DONE 16500  NEMA
-// PRO2EULN2003 DONE 17500 28BYJ48
-// PRO2EL293DNEMA DONE 10500 NEMA
-// PRO2EL293D28BYJ48 TESTING 17500 28BYJ48
-
-// ISSUE 1: TODO
-// ListDir in FocuserSetupData DOES NOT COMPILE ON ESP8266
-
-// ISSUE 1: TODO
-// OLED - I have commented most out just to get a compile
-
+// ISSUE 1: OLED
+// I have commented out display.h and display.cpp just to get a compile
+// If OLEDGRAPHIC is defined then it will not compile
 
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 128
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 130
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -278,16 +285,17 @@ OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                      // holds address of the temperature probe
 
-#include "displays.h"
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
 #ifdef OLEDTEXT
-OLED_TEXT *myoled;
-#elif OLEDGRAPHICS
+#include <Wire.h>                           // needed for I2C => OLED display
+#include <mySSD1306Ascii.h>
+#include <mySSD1306AsciiWire.h>
+SSD1306AsciiWire* myoled;
+#endif // #ifdef OLEDTEXT
+
+#ifdef OLEDGRAPHICS
+#include "displays.h"
 OLED_GRAPHIC *myoled;
-#else
-OLED_NON *myoled;
 #endif
-#endif // #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
 
 // ----------------------------------------------------------------------------------------------
 // 15: GLOBAL DATA -- DO NOT CHANGE
@@ -302,7 +310,7 @@ OLED_NON *myoled;
 
 DriverBoard* driverboard;
 
-unsigned long fcurrentPosition;             // current focuser position
+//unsigned long fcurrentPosition;             // current focuser position
 unsigned long ftargetPosition;              // target position
 volatile bool halt_alert;
 
@@ -336,6 +344,322 @@ SetupData *mySetupData;                           // focuser data
 //   ESP32 Dev Module or WEMOS ????
 
 #include "comms.h"                                // do not change or move
+
+// ----------------------------------------------------------------------------------------------
+// OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL
+// ----------------------------------------------------------------------------------------------
+// Enclose function code in #ifdef - #endif so function declarations are visible
+
+void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    if ( clrscr == true)                      // clear the screen?
+    {
+      myoled->clear();
+      myoled->setCursor(0, 0);
+    }
+    if ( nl == true )                         // need to print a new line?
+    {
+      if ( val != -1)                         // need to print a value?
+      {
+        myoled->print(str);
+        myoled->println(val);
+      }
+      else
+      {
+        myoled->println(str);
+      }
+    }
+    else
+    {
+      myoled->print(str);
+      if ( val != -1 )
+      {
+        myoled->print(val);
+      }
+    }
+  }
+#endif // OLEDTEXT
+}
+
+void display_oledtext_page0(void)           // displaylcd screen
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    char tempString[20];
+    myoled->home();
+    myoled->print(CURRENTPOSSTR);
+    myoled->print(driverboard->getposition());
+    myoled->clearToEOL();
+
+    myoled->println();
+    myoled->print(TARGETPOSSTR);
+    myoled->print(ftargetPosition);
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(COILPWRSTR);
+    myoled->print(mySetupData->get_coilpower());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(REVDIRSTR);
+    myoled->print(mySetupData->get_reversedirection());
+    myoled->clearToEOL();
+    myoled->println();
+
+    // stepmode setting
+    myoled->print(STEPMODESTR);
+    myoled->print(mySetupData->get_stepmode());
+    myoled->clearToEOL();
+    myoled->println();
+
+    //Temperature
+    myoled->print(TEMPSTR);
+#ifdef TEMPERATUREPROBE
+    myoled->print(String(read_temp(0), 2));
+#else
+    myoled->print("20.0");
+#endif
+    myoled->print(" c");
+    myoled->clearToEOL();
+    myoled->println();
+
+    //Motor Speed
+    myoled->print(MOTORSPEEDSTR);
+    myoled->print(mySetupData->get_motorSpeed());
+    myoled->clearToEOL();
+    myoled->println();
+
+    //MaxSteps
+    myoled->print(MAXSTEPSSTR);
+    ltoa(mySetupData->get_maxstep(), tempString, 10);
+    myoled->print(tempString);
+    myoled->clearToEOL();
+    myoled->println();
+  }
+#endif
+}
+
+void display_oledtext_page1(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    // temperature compensation
+    myoled->print(TCOMPSTEPSSTR);
+    myoled->print(mySetupData->get_tempcoefficient());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(TCOMPSTATESTR);
+    myoled->print(mySetupData->get_tempcompenabled());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(TCOMPDIRSTR);
+    myoled->print(mySetupData->get_tcdirection());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(BACKLASHINSTR);
+    myoled->print(mySetupData->get_backlash_in_enabled());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(BACKLASHOUTSTR);
+    myoled->print(mySetupData->get_backlash_out_enabled());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(BACKLASHINSTEPSSTR);
+    myoled->print(mySetupData->get_backlashsteps_in());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(BACKLASHOUTSTEPSSTR);
+    myoled->print(mySetupData->get_backlashsteps_out());
+    myoled->clearToEOL();
+    myoled->println();
+  }
+#endif
+}
+
+void display_oledtext_page2(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+    myoled->setCursor(0, 0);
+#if defined(ACCESSPOINT)
+    myoled->print(ACCESSPOINTSTR);
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+#if defined(STATIONMODE)
+    myoled->print(STATIONMODESTR);
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+    myoled->print(SSIDSTR);
+    myoled->print(mySSID);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(IPADDRESSSTR);
+    myoled->print(ipStr);
+    myoled->clearToEOL();
+    myoled->println();
+#endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
+
+#if defined(WEBSERVER)
+    //myoled->setCursor(0, 0);
+    myoled->print(WEBSERVERSTR);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(IPADDRESSSTR);
+    myoled->print(ipStr);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(PORTSTR);
+    myoled->print(String(mySetupData->get_webserverport()));
+    myoled->clearToEOL();
+    myoled->println();
+#endif // webserver
+#if defined(ASCOMREMOTE)
+    myoled->print(ASCOMREMOTESTR);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(IPADDRESSSTR);
+    myoled->print(ipStr);
+    myoled->clearToEOL();
+    myoled->println();
+    myoled->print(PORTSTR);
+    myoled->print(String(mySetupData->get_ascomalpacaport()));
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+
+#if defined(BLUETOOTHMODE)
+    myoled->setCursor(0, 0);
+    myoled->print(BLUETOOTHSTR);
+    myoled->clearToEOL();
+    myoled->println();
+#endif
+
+#if defined(LOCALSERIAL)
+    myoled->setCursor(0, 0);
+    myoled->println(LOCALSERIALSTR);
+#endif
+  }
+#endif // #ifdef OLEDTEXT
+}
+
+void update_oledtext_position(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    myoled->setCursor(0, 0);
+    myoled->print(CURRENTPOSSTR);
+    myoled->print(driverboard->getposition());
+    myoled->clearToEOL();
+    myoled->println();
+
+    myoled->print(TARGETPOSSTR);
+    myoled->print(ftargetPosition);
+    myoled->clearToEOL();
+    myoled->println();
+  }
+#endif
+}
+
+void update_oledtextdisplay(void)
+{
+#ifdef OLEDTEXT
+  if (displayfound == true)
+  {
+    static unsigned long currentMillis;
+    static unsigned long olddisplaytimestampNotMoving = millis();
+    static byte displaypage = 0;
+
+    currentMillis = millis();                       // see if the display needs updating
+    // if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
+    if (TimeCheck(olddisplaytimestampNotMoving, (int)mySetupData->get_lcdpagetime() * 1000))   // see if the display needs updating
+    {
+      olddisplaytimestampNotMoving = currentMillis; // update the timestamp
+      myoled->clear();                              // clrscr OLED
+      switch (displaypage)
+      {
+        case 0:   display_oledtext_page0();
+          break;
+        case 1:   display_oledtext_page1();
+          break;
+        case 2:   display_oledtext_page2();
+          break;
+        default:  display_oledtext_page0();
+          break;
+      }
+      displaypage++;
+      displaypage = (displaypage > 2) ? 0 : displaypage;
+    }
+  }
+#endif
+}
+
+void init_oledtextdisplay(void)
+{
+#ifdef OLEDTEXT
+#if defined(ESP8266)
+#if (DRVBRD == PRO2EL293DNEMA) || (DRVBRD == PRO2EL293D28BYJ48)
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);      // l293d esp8266 shield
+  DebugPrintln("Setup PRO2EL293DNEMA/PRO2EL293D28BYJ48 I2C");
+#else
+  DebugPrintln("Setup esp8266 I2C");
+  Wire.begin();
+#endif
+#else
+  DebugPrintln("Setup esp32 I2C");
+  Wire.begin(I2CDATAPIN, I2CCLKPIN);        // esp32
+#endif
+  Wire.beginTransmission(OLED_ADDR);        //check if OLED display is present
+  if (Wire.endTransmission() != 0)
+  {
+    TRACE();
+    DebugPrintln(I2CDEVICENOTFOUNDSTR);
+    displayfound = false;
+  }
+  else
+  {
+    displayfound = true;
+    myoled = new SSD1306AsciiWire();
+    // Setup the OLED
+#ifdef USE_SSD1306
+    // For the OLED 128x64 0.96" display using the SSD1306 driver
+    myoled->begin(&Adafruit128x64, OLED_ADDR);
+#endif
+#ifdef USE_SSH1106
+    // For the OLED 128x64 1.3" display using the SSH1106 driver
+    myoled->begin(&SH1106_128x64, OLED_ADDR);
+#endif
+    myoled->set400kHz();
+    myoled->setFont(Adafruit5x7);
+    myoled->clear();                          // clrscr OLED
+    myoled->Display_Normal();                 // black on white
+    myoled->Display_On();                     // display ON
+    myoled->Display_Rotate(0);                // portrait, not rotated
+    myoled->Display_Bright();
+#ifdef SHOWSTARTSCRN
+    myoled->println(programName);             // print startup screen
+    myoled->println(programVersion);
+    myoled->println(ProgramAuthor);
+#endif // showstartscreen
+  }
+#endif // OLEDTEXT
+}
 
 // ----------------------------------------------------------------------------------------------
 // 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
@@ -391,7 +715,7 @@ float read_temp(byte new_measurement)
   }
 
   float result = sensor1.getTempCByIndex(0);      // get temperature, always in celsius
-  DebugPrint(F(TEMPSTR));
+  DebugPrint(TEMPSTR);
   DebugPrintln(result);
   if (result > -40.0 && result < 80.0)            // avoid erronous readings
   {
@@ -939,10 +1263,10 @@ void MANAGEMENT_displaydeletepage()
   if ( SPIFFS.exists("/msdelete.html") )                // check for the webpage
   {
     File file = SPIFFS.open("/msdelete.html", "r");     // open it
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
 
     // Web page colors
     String bcol = mySetupData->get_wp_backcolor();
@@ -953,12 +1277,12 @@ void MANAGEMENT_displaydeletepage()
     MSpg.replace("%TIC%", ticol);
     String hcol = mySetupData->get_wp_headercolor();
     MSpg.replace("%HEC%", hcol);
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
     MSpg = FILENOTFOUNDSTR;
   }
   mserver.send(NORMALWEBPAGE, F(TEXTPAGETYPE), MSpg);
@@ -1045,10 +1369,10 @@ void MANAGEMENT_buildnotfound(void)
     // open file for read
     File file = SPIFFS.open("/msnotfound.html", "r");
     // read contents into string
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();
     file.close();
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     // Web page colors
     String bcol = mySetupData->get_wp_backcolor();
@@ -1064,12 +1388,12 @@ void MANAGEMENT_buildnotfound(void)
     // add code to handle reboot controller
     MSpg.replace("%BT%", String(CREBOOTSTR));
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
   delay(10);                                            // small pause so background tasks can run
@@ -1089,10 +1413,10 @@ void MANAGEMENT_buildupload(void)
   if ( SPIFFS.exists("/msupload.html"))                 // load page from fs - wsupload.html
   {
     File file = SPIFFS.open("/msupload.html", "r");     // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     MSpg.replace("%BKC%", bcol);
@@ -1106,12 +1430,12 @@ void MANAGEMENT_buildupload(void)
     MSpg.replace("%NAM%", String(DRVBRD_ID));
     // add code to handle reboot controller
     MSpg.replace("%BT%", String(CREBOOTSTR));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
   delay(10);                                            // small pause so background tasks can run
@@ -1172,12 +1496,12 @@ void MANAGEMENT_buildadminpg5(void)
 #endif
   if ( SPIFFS.exists("/msindex5.html"))                 // constructs admin page 5 of management server
   {
-    DebugPrintln(F(FILEFOUNDSTR));
+    DebugPrintln(FILEFOUNDSTR);
     File file = SPIFFS.open("/msindex5.html", "r");     // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     MSpg.replace("%BKC%", bcol);
@@ -1197,13 +1521,13 @@ void MANAGEMENT_buildadminpg5(void)
     // display heap memory for tracking memory loss?
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read file
     TRACE();
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
 #ifdef TIMEMSBUILDPG5
@@ -1238,12 +1562,12 @@ void MANAGEMENT_buildadminpg4(void)
 #endif
   if ( SPIFFS.exists("/msindex4.html"))                 // constructs admin page 4 of management server
   {
-    DebugPrintln(F(FILEFOUNDSTR));
+    DebugPrintln(FILEFOUNDSTR);
     File file = SPIFFS.open("/msindex4.html", "r");     // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     MSpg.replace("%BKC%", bcol);
@@ -1272,18 +1596,18 @@ void MANAGEMENT_buildadminpg4(void)
     MSpg.replace("%BT%", String(CREBOOTSTR));           // add code to handle reboot controller
 
     TRACE();
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
 
     // display heap memory for tracking memory loss?
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read index file from SPIFFS
     TRACE();
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
 #ifdef TIMEMSBUILDPG4
@@ -1326,7 +1650,7 @@ void MANAGEMENT_handleadminpg4(void)
     }
     if ( flag == false )
     {
-      DebugPrintln(F(BACKCOLORINVALIDSTR));
+      DebugPrintln(BACKCOLORINVALIDSTR);
     }
     else
     {
@@ -1351,11 +1675,11 @@ void MANAGEMENT_handleadminpg4(void)
     }
     if ( flag == false )
     {
-      DebugPrintln(F(TEXTCOLORINVALIDSTR));
+      DebugPrintln(TEXTCOLORINVALIDSTR);
     }
     else
     {
-      DebugPrint(F(NEWTEXTCOLORSTR));
+      DebugPrint(NEWTEXTCOLORSTR);
       DebugPrintln(str);
       mySetupData->set_wp_textcolor(str);               // set the new text color
     }
@@ -1378,11 +1702,11 @@ void MANAGEMENT_handleadminpg4(void)
     }
     if ( flag == false )
     {
-      DebugPrintln(F(HEADERCOLORINVALIDSTR));
+      DebugPrintln(HEADERCOLORINVALIDSTR);
     }
     else
     {
-      DebugPrint(F(NEWHEADERCOLORSTR));
+      DebugPrint(NEWHEADERCOLORSTR);
       DebugPrintln(str);
       mySetupData->set_wp_headercolor(str);             // set the new header color
     }
@@ -1405,11 +1729,11 @@ void MANAGEMENT_handleadminpg4(void)
     }
     if ( flag == false )
     {
-      DebugPrintln(F(TITLECOLORINVALIDSTR));
+      DebugPrintln(TITLECOLORINVALIDSTR);
     }
     else
     {
-      DebugPrint(F(NEWTITLECOLORSTR));
+      DebugPrint(NEWTITLECOLORSTR);
       DebugPrintln(str);
       mySetupData->set_wp_titlecolor(str);              // set the new header color
     }
@@ -1430,12 +1754,12 @@ void MANAGEMENT_buildadminpg3(void)
   // spiffs was started earlier when server was started so assume it has started
   if ( SPIFFS.exists("/msindex3.html"))                 // constructs admin page 3 of management server
   {
-    DebugPrintln(F(FILEFOUNDSTR));
+    DebugPrintln(FILEFOUNDSTR);
     File file = SPIFFS.open("/msindex3.html", "r");     // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     MSpg.replace("%BKC%", bcol);
@@ -1473,18 +1797,18 @@ void MANAGEMENT_buildadminpg3(void)
 
     MSpg.replace("%BT%", String(CREBOOTSTR));           // add code to handle reboot controller
 
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
 
     // display heap memory for tracking memory loss?
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read file
     TRACE();
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
 #ifdef TIMEMSBUILDPG3
@@ -1575,13 +1899,13 @@ void MANAGEMENT_buildadminpg2(void)
   DebugPrintln(F("management: FS mounted"));            // constructs admin page 2 of management server
   if ( SPIFFS.exists("/msindex2.html"))
   {
-    DebugPrintln(F(FILEFOUNDSTR));
+    DebugPrintln(FILEFOUNDSTR);
     File file = SPIFFS.open("/msindex2.html", "r");     // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     MSpg.replace("%BKC%", bcol);
@@ -1689,20 +2013,20 @@ void MANAGEMENT_buildadminpg2(void)
     // display heap memory for tracking memory loss, %HEA%
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
+    Serial.println("Interrupts back on");
   }
   else
   {
     // could not read file
     TRACE();
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
 #ifdef TIMEMSBUILDPG2
   Serial.print("ms_buildpg2: ");
   Serial.println(millis());
 #endif
-  delay(10);                                            // small pause so background tasks can run
 }
 
 void MANAGEMENT_handleadminpg2(void)
@@ -2052,13 +2376,13 @@ void MANAGEMENT_buildadminpg1(void)
   // spiffs was started earlier when server was started so assume it has started
   if ( SPIFFS.exists("/msindex1.html"))                 // constructs home page of management server
   {
-    DebugPrintln(F(FILEFOUNDSTR));
+    DebugPrintln(FILEFOUNDSTR);
     File file = SPIFFS.open("/msindex1.html", "r");     // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     MSpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     MSpg.replace("%BKC%", bcol);
@@ -2198,13 +2522,13 @@ void MANAGEMENT_buildadminpg1(void)
     // display heap memory for tracking memory loss?
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read file
     TRACE();
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     MSpg = MANAGEMENTNOTFOUNDSTR;
   }
 #ifdef TIMEMSBUILDPG1
@@ -2480,8 +2804,8 @@ void start_management(void)
   if ( !SPIFFS.begin() )
   {
     TRACE();
-    DebugPrintln(F(FSNOTSTARTEDSTR));
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(FSNOTSTARTEDSTR);
+    DebugPrintln(SERVERSTATESTOPSTR);
     managementserverstate = STOPPED;
     return;
   }
@@ -2514,7 +2838,7 @@ void start_management(void)
   mserver.begin();
   managementserverstate = RUNNING;
   TRACE();
-  DebugPrintln(F(SERVERSTATESTARTSTR));
+  DebugPrintln(SERVERSTATESTARTSTR);
   delay(10);                                            // small pause so background tasks can run
 }
 
@@ -2525,11 +2849,11 @@ void stop_management(void)
     mserver.stop();
     managementserverstate = STOPPED;
     TRACE();
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(SERVERSTATESTOPSTR);
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
 }
 #endif // #ifdef MANAGEMENT
@@ -2582,11 +2906,11 @@ void WEBSERVER_buildnotfound(void)
   if ( SPIFFS.exists("/wsnotfound.html"))               // load page from fs - wsnotfound.html
   {
     File file = SPIFFS.open("/wsnotfound.html", "r");   // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     WSpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     WSpg.replace("%IP%", ipStr);
     WSpg.replace("%POR%", String(mySetupData->get_webserverport()));
@@ -2600,13 +2924,13 @@ void WEBSERVER_buildnotfound(void)
     WSpg.replace("%TIC%", ticol);
     String hcol = mySetupData->get_wp_headercolor();
     WSpg.replace("%HEC%", hcol);
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WSpg = WEBSERVERNOTFOUNDSTR;
   }
   delay(10);                                            // small pause so background tasks can run
@@ -2629,11 +2953,11 @@ void WEBSERVER_buildpresets(void)
   if ( SPIFFS.exists("/wspresets.html"))                // load page from fs - wspresets.html
   {
     File file = SPIFFS.open("/wspresets.html", "r");    // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     WSpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     WSpg.replace("%BKC%", bcol);
@@ -2648,7 +2972,7 @@ void WEBSERVER_buildpresets(void)
     WSpg.replace("%POR%", String(mySetupData->get_webserverport()));
     WSpg.replace("%VER%", String(programVersion));
     WSpg.replace("%NAM%", String(DRVBRD_ID));
-    WSpg.replace("%CPO%", String(fcurrentPosition));
+    WSpg.replace("%CPO%", String(driverboard->getposition()));
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MOV%", String(isMoving));
 
@@ -2662,14 +2986,14 @@ void WEBSERVER_buildpresets(void)
     WSpg.replace("%WSP7%", String(mySetupData->get_focuserpreset(7)));
     WSpg.replace("%WSP8%", String(mySetupData->get_focuserpreset(8)));
     WSpg.replace("%WSP9%", String(mySetupData->get_focuserpreset(9)));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read preset file from SPIFFS
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WSpg = WEBSERVERNOTFOUNDSTR;
   }
 #ifdef TIMEWSBUILDPRESETS
@@ -3124,11 +3448,11 @@ void WEBSERVER_buildmove(void)
   if ( SPIFFS.exists("/wsmove.html"))                   // load page from fs - wsmove.html
   {
     File file = SPIFFS.open("/wsmove.html", "r");       // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     WSpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     WSpg.replace("%BKC%", bcol);
@@ -3143,17 +3467,17 @@ void WEBSERVER_buildmove(void)
     WSpg.replace("%POR%", String(mySetupData->get_webserverport()));
     WSpg.replace("%VER%", String(programVersion));
     WSpg.replace("%NAM%", String(DRVBRD_ID));
-    WSpg.replace("%CPO%", String(fcurrentPosition));
+    WSpg.replace("%CPO%", String(driverboard->getposition()));
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MOV%", String(isMoving));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read move file from SPIFFS
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WSpg = WEBSERVERNOTFOUNDSTR;
   }
 #ifdef TIMEWSBUILDMOVE
@@ -3207,14 +3531,14 @@ void WEBSERVER_handlemove()
     TRACE();
     DebugPrintln(fmv_str);
     temp = fmv_str.toInt();
-    long newtemp = (long) fcurrentPosition + temp;
+    long newtemp = (long) driverboard->getposition() + temp;
     newtemp = ( newtemp < 0 ) ? 0 : newtemp;
     newtemp = ( newtemp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newtemp;
     ftargetPosition = (unsigned long) newtemp;
     DebugPrint("Move = "); DebugPrintln(fmv_str);
-    DebugPrint(F(CURRENTPOSSTR));
-    DebugPrintln(fcurrentPosition);
-    DebugPrint(F(TARGETPOSSTR));
+    DebugPrint(CURRENTPOSSTR);
+    DebugPrintln(driverboard->getposition());
+    DebugPrint(TARGETPOSSTR);
     DebugPrintln(ftargetPosition);
   }
 
@@ -3237,11 +3561,11 @@ void WEBSERVER_buildhome(void)
   if ( SPIFFS.exists("/wsindex.html"))                  // load page from fs - wsindex.html
   {
     File file = SPIFFS.open("/wsindex.html", "r");      // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     WSpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     WSpg.replace("%BKC%", bcol);
@@ -3265,7 +3589,7 @@ void WEBSERVER_buildhome(void)
     }
     else
     {
-      WSpg.replace("%CPO%", String(fcurrentPosition));
+      WSpg.replace("%CPO%", String(driverboard->getposition()));
     }
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MAX%", String(mySetupData->get_maxstep()));
@@ -3416,14 +3740,14 @@ void WEBSERVER_buildhome(void)
 #else
     WSpg.replace("%OLE%", "<b>OLED:</b> Display not defined");
 #endif
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
     // could not read index file from SPIFFS
     TRACE();
-    DebugPrintln(F(FSFILENOTFOUNDSTR));
-    DebugPrintln(F(BUILDDEFAULTPAGESTR));
+    DebugPrintln(FSFILENOTFOUNDSTR);
+    DebugPrintln(BUILDDEFAULTPAGESTR);
     WSpg = WEBSERVERNOTFOUNDSTR;
   }
 #ifdef TIMEWSROOTBUILD
@@ -3435,7 +3759,7 @@ void WEBSERVER_buildhome(void)
 
 void WEBSERVER_handleposition()
 {
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(fcurrentPosition)); // Send position value only to client ajax request
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(driverboard->getposition())); // Send position value only to client ajax request
 }
 
 void WEBSERVER_handleismoving()
@@ -3482,7 +3806,8 @@ void WEBSERVER_handleroot()
       temp = fp.toInt();
       temp = (temp < 0) ? 0 : temp;
       ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
-      fcurrentPosition = ftargetPosition;
+      driverboard->setposition(ftargetPosition);
+      mySetupData->set_fposition(ftargetPosition);
     }
   }
 
@@ -3512,9 +3837,9 @@ void WEBSERVER_handleroot()
     DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
-    if ( temp < (long) fcurrentPosition )               // if maxstep is less than focuser position
+    if ( temp < (long) driverboard->getposition() )               // if maxstep is less than focuser position
     {
-      temp = (long) fcurrentPosition + 1;
+      temp = (long) driverboard->getposition() + 1;
     }
     if ( temp < FOCUSERLOWERLIMIT )                     // do not set it less then 1024
     {
@@ -3653,7 +3978,7 @@ void WEBSERVER_sendroot(void)
   Serial.println(millis());
 #endif
   WEBSERVER_buildhome();
-  DebugPrintln(F(SENDPAGESTR));
+  DebugPrintln(SENDPAGESTR);
   WEBSERVER_sendmyheader();
   WEBSERVER_sendmycontent();
   WSpg = "";
@@ -3669,8 +3994,8 @@ void start_webserver(void)
   if ( !SPIFFS.begin() )
   {
     TRACE();
-    DebugPrintln(F(FSNOTSTARTEDSTR));
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(FSNOTSTARTEDSTR);
+    DebugPrintln(SERVERSTATESTOPSTR);
     webserverstate = STOPPED;
     return;
   }
@@ -3696,7 +4021,7 @@ void start_webserver(void)
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;
-  DebugPrintln(F(SERVERSTATESTARTSTR));
+  DebugPrintln(SERVERSTATESTARTSTR);
   HDebugPrint("Heap after  start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   delay(10);                                            // small pause so background tasks can run
@@ -3710,11 +4035,11 @@ void stop_webserver(void)
     delete webserver;                                   // free the webserver pointer and associated memory/code
     webserverstate = STOPPED;
     TRACE();
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(SERVERSTATESTOPSTR);
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
   delay(10);                                            // small pause so background tasks can run
 }
@@ -3838,7 +4163,7 @@ void ASCOM_Create_Setup_Focuser_HomePage()
   // Convert IP address to a string;
   // already in ipStr
   // convert current values of focuserposition and focusermaxsteps to string types
-  String fpbuffer = String(fcurrentPosition);
+  String fpbuffer = String(driverboard->getposition());
   String mxbuffer = String(mySetupData->get_maxstep());
   String smbuffer = String(mySetupData->get_stepmode());
   int    eflag    = 0;
@@ -3955,11 +4280,11 @@ void ASCOM_Create_Setup_Focuser_HomePage()
     if ( SPIFFS.exists("/assetup.html"))
     {
       File file = SPIFFS.open("/assetup.html", "r");    // open file for read
-      DebugPrintln(F(READPAGESTR));                     // read contents into string
+      DebugPrintln(READPAGESTR);                     // read contents into string
       ASpg = file.readString();
       file.close();
 
-      DebugPrintln(F(PROCESSPAGESTARTSTR));
+      DebugPrintln(PROCESSPAGESTARTSTR);
       // process for dynamic data
       String bcol = mySetupData->get_wp_backcolor();
       ASpg.replace("%BKC%", bcol);
@@ -3979,7 +4304,7 @@ void ASCOM_Create_Setup_Focuser_HomePage()
       ASpg.replace("%RDB%", rdbuffer);
       ASpg.replace("%SMB%", smbuffer);
       ASpg.replace("%MSB%", msbuffer);
-      DebugPrintln(F(PROCESSPAGEENDSTR));
+      DebugPrintln(PROCESSPAGEENDSTR);
       eflag = 0;
     }
     else
@@ -4161,11 +4486,11 @@ void ASCOM_handle_setup()
   if ( SPIFFS.exists("/ashomepage.html"))               // read ashomepage.html from FS
   {
     File file = SPIFFS.open("/ashomepage.html", "r");   // open file for read
-    DebugPrintln(F(READPAGESTR));
+    DebugPrintln(READPAGESTR);
     ASpg = file.readString();                           // read contents into string
     file.close();
 
-    DebugPrintln(F(PROCESSPAGESTARTSTR));
+    DebugPrintln(PROCESSPAGESTARTSTR);
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
     ASpg.replace("%BKC%", bcol);
@@ -4179,7 +4504,7 @@ void ASCOM_handle_setup()
     ASpg.replace("%ALP%", String(mySetupData->get_ascomalpacaport()));
     ASpg.replace("%PRV%", String(programVersion));
     ASpg.replace("%PRN%", String(DRVBRD_ID));
-    DebugPrintln(F(PROCESSPAGEENDSTR));
+    DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
   {
@@ -4223,7 +4548,9 @@ void ASCOM_handle_focuser_setup()
       temp = fp.toInt();
       temp = ( temp < 0) ? 0 : temp;
       temp = ( temp > (long)mySetupData->get_maxstep()) ? (long) mySetupData->get_maxstep() : temp;
-      fcurrentPosition = ftargetPosition = (unsigned long) temp;
+      ftargetPosition = (unsigned long) temp;
+      driverboard->setposition(ftargetPosition);
+      mySetupData->set_fposition(ftargetPosition);
     }
   }
 
@@ -4235,9 +4562,9 @@ void ASCOM_handle_focuser_setup()
     DebugPrint("root() -maxsteps:");
     DebugPrintln(fmax_str);
     temp = fmax_str.toInt();
-    if ( temp < (long) fcurrentPosition )               // if maxstep is less than focuser position
+    if ( temp < (long) driverboard->getposition() )               // if maxstep is less than focuser position
     {
-      temp = (long) fcurrentPosition + 1;
+      temp = (long) driverboard->getposition() + 1;
     }
     if ( temp < FOCUSERLOWERLIMIT )                     // do not set it less then 1024
     {
@@ -4612,7 +4939,7 @@ void  ASCOM_handlepositionget()
   ASCOMErrorMessage = ASCOMERRORMSGNULL;
   ASCOM_getURLParameters();
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
-  jsonretstr = "{\"Value\":" + String(fcurrentPosition) + "," + ASCOM_addclientinfo( jsonretstr );
+  jsonretstr = "{\"Value\":" + String(driverboard->getposition()) + "," + ASCOM_addclientinfo( jsonretstr );
   // sendreply builds http header, sets content type, and then sends jsonretstr
   ASCOM_sendreply( NORMALWEBPAGE, JSONPAGETYPE, jsonretstr);
 }
@@ -4981,7 +5308,7 @@ void stop_ascomremoteserver(void)
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
 
   if ( ascomdiscoverystate == STOPPED )
@@ -4991,7 +5318,7 @@ void stop_ascomremoteserver(void)
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
   delay(10);                                            // small pause so background tasks can run
 }
@@ -5148,40 +5475,6 @@ void init_leds()
   }
 }
 
-void oledtextmsg(String str, int val, boolean clrscr, boolean nl)
-{
-#ifdef OLEDTEXT
-  if (displayfound == true)
-  {
-    if ( clrscr == true)                      // clear the screen?
-    {
-      myoled->clear();
-      myoled->setCursor(0, 0);
-    }
-    if ( nl == true )                         // need to print a new line?
-    {
-      if ( val != -1)                         // need to print a value?
-      {
-        myoled->print(str);
-        myoled->println(val);
-      }
-      else
-      {
-        myoled->println(str);
-      }
-    }
-    else
-    {
-      myoled->print(str);
-      if ( val != -1 )
-      {
-        myoled->print(val);
-      }
-    }
-  }
-#endif // OLEDTEXT
-}
-
 #ifdef READWIFICONFIG
 bool readwificonfig( char* xSSID, char* xPASSWORD)
 {
@@ -5304,12 +5597,9 @@ void setup()
   HDebugPrintln("setup(): oledtextdisplay()");
   displayfound = false;
 #ifdef OLEDTEXT
-  myoled = new OLED_TEXT;
-#elif OLEDGRAPHICS
-  myoled = new OLED_GRAPHIC();
-#else
-  //myoled = new OLED_NON;                       // create Object for non OLED
+  init_oledtextdisplay();
 #endif
+
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
@@ -5495,7 +5785,8 @@ void setup()
 #endif // if defined(ACCESSPOINT) || defined(STATIONMODE)
 
   // assign to current working values
-  ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
+  //ftargetPosition = fcurrentPosition = mySetupData->get_fposition();
+  ftargetPosition = mySetupData->get_fposition();
 
   DebugPrint(SETUPDRVBRDSTR);
   DebugPrintln(DRVBRD);
@@ -5773,7 +6064,7 @@ void loop()
         if (mySetupData->get_displayenabled() == 1)
         {
 #if defined(OLEDTEXT)
-          myoled->update_oledtextdisplay();
+          update_oledtextdisplay();
 #endif
         }
         else
@@ -5834,9 +6125,9 @@ void loop()
         {
           uint32_t sm = mySetupData->get_stepmode();
           uint32_t bl = backlash_count * sm;
-          DebugPrint(F("bl: "));
+          DebugPrint("bl: ");
           DebugPrint(bl);
-          DebugPrint(F(" "));
+          DebugPrint(" ");
 
           if (DirOfTravel == moving_out)
           {
@@ -5847,13 +6138,15 @@ void loop()
             backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
           }
 
-          DebugPrint(F("backlash_count: "));
+          DebugPrint("backlash_count: ");
           DebugPrint(backlash_count);
-          DebugPrint(F(" "));
+          DebugPrint(" ");
         } // if (DirOfTravel != moving_main && backlash_count)
       } // if (mySetupData->get_focuserdirection() != DirOfTravel)
 
-      steps = (driverboard->getposition() > ftargetPosition) ? driverboard->getposition() - ftargetPosition : driverboard->getposition() - fcurrentPosition;
+      // if target pos > current pos then steps = target pos - current pos
+      // if target pos < current pos then steps = current pos - target pos
+      steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
       DebugPrint(STATEMOVINGSTR);
       DebugPrint(steps);
       HDebugPrint("heap before move : ");
@@ -5925,7 +6218,7 @@ void loop()
             if ( updatecount > LCDUPDATEONMOVE )        // only update every 15th move to avoid overhead
             {
               updatecount = 0;
-#if defined(OLEDGRAPHICS)
+#if defined(OLEDTEXT)
               update_oledtext_position();
 #endif
             }  // !!!!!!!!!!!!!!!!!!!  no support for  Graphic OLED Mode !!!!!!!!!!!!!!!!!!!!!!!
@@ -5947,7 +6240,7 @@ void loop()
       }
       // HOME POSITION SWITCH IS CLOSED - Step out till switch opens then set position = 0
       stepstaken = 0;                                   // Count number of steps to prevent going too far
-      DebugPrintln(F(HPMOVETILLOPENSTR));
+      DebugPrintln(HPMOVETILLOPENSTR);
       DirOfTravel = !DirOfTravel;                       // We were going in, now we need to reverse and go out
       hpswstate = HPSWCLOSED;                           // We know we got here because switch was closed
       while ( hpswstate == HPSWCLOSED )
@@ -5963,7 +6256,7 @@ void loop()
         stepstaken++;                                   // increment steps taken
         if ( stepstaken > HOMESTEPS )                   // this prevents the endless loop if the hpsw is not connected or is faulty
         {
-          DebugPrintln(F(HPMOVEOUTERRORSTR));
+          DebugPrintln(HPMOVEOUTERRORSTR);
           hpswstate = HPSWOPEN;
         }
         else
@@ -5988,7 +6281,7 @@ void loop()
 #endif // #ifdef HOMEPOSITIONSWITCH
       MainStateMachine = State_DelayAfterMove;
       TimeStampDelayAfterMove = millis();
-      DebugPrintln(F(STATEDELAYAFTERMOVE));
+      DebugPrintln(STATEDELAYAFTERMOVE);
       break;
 
     //_______________________________State_DelayAfterMove
@@ -6004,12 +6297,12 @@ void loop()
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle
         MainStateMachine = State_Idle;
-        DebugPrint(F(">State_Idle "));
+        DebugPrint(">State_Idle ");
       }
       break;
 
     default:
-      DebugPrintln(F("Error: wrong State => State_Idle"));
+      DebugPrintln("Error: wrong State => State_Idle");
       MainStateMachine = State_Idle;
       break;
   }

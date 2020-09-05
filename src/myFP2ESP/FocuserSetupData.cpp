@@ -298,7 +298,7 @@ byte SetupData::SavePersitantConfiguration()
   if (!file)
   {
     TRACE();
-    DebugPrintln(F(CREATEFILEFAILSTR));
+    DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
 
@@ -354,13 +354,13 @@ byte SetupData::SavePersitantConfiguration()
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
-    DebugPrintln(F(WRITEFILEFAILSTR));
+    DebugPrintln(WRITEFILEFAILSTR);
     file.close();                                     // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    DebugPrintln(WRITEFILESUCCESSSTR);
     file.close();                                     // Close the file
     return true;
   }
@@ -382,7 +382,7 @@ byte SetupData::SaveVariableConfiguration()
   if (!file)
   {
     TRACE();
-    DebugPrintln(F(CREATEFILEFAILSTR));
+    DebugPrintln(CREATEFILEFAILSTR);
     return false;
   }
 
@@ -398,13 +398,13 @@ byte SetupData::SaveVariableConfiguration()
   if (serializeJson(doc, file) == 0)                // Serialize JSON to file
   {
     TRACE();
-    DebugPrintln(F(WRITEFILEFAILSTR));
+    DebugPrintln(WRITEFILEFAILSTR);
     file.close();                                   // Close the file
     return false;
   }
   else
   {
-    DebugPrintln(F(WRITEFILESUCCESSSTR));
+    DebugPrintln(WRITEFILESUCCESSSTR);
     file.close();     // Close the file
     return true;
   }
@@ -857,7 +857,7 @@ void SetupData::StartDelayedUpdate(String & org_data, String new_data)
     this->ReqSaveData_per = true;
     this->SnapShotMillis = millis();
     org_data = new_data;
-    DebugPrintln(F(CONFIGSAVEREQUESTSTR));
+    DebugPrintln("Save request for data_per.jsn");
   }
 }
 

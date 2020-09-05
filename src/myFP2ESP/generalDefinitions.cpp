@@ -9,7 +9,7 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-const char* programVersion        = "126";
+const char* programVersion        = "130";
 const char* ProgramAuthor         = "(c) R BROWN 2020";
 
 const char* STATEMOVINGSTR        = ">Moving";
@@ -107,3 +107,11 @@ const char* BACKLASHOUTSTEPSSTR =  "Backlash Ou#= ";
 const char* BLUETOOTHSTR        =  "Bluetooth Mode";
 const char* LOCALSERIALSTR      =  "Local Serial Mode";
 const char* FSFILENOTFOUNDSTR   = "FS file !found";
+
+const char* BACKCOLORINVALIDSTR = "Back color !valid";
+const char* NEWTITLECOLORSTR    = "Title color ";
+const char* TITLECOLORINVALIDSTR= "Title color !valid";
+const char* NEWHEADERCOLORSTR   = "Header color ";
+const char* HEADERCOLORINVALIDSTR = "Header color !valid";
+const char* NEWTEXTCOLORSTR     = "Text color ";
+const char* TEXTCOLORINVALIDSTR = "Text color !valid";

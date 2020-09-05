@@ -22,7 +22,7 @@
 
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
-//#define DRVBRD PRO2EULN2003
+#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EDRV8825
 //#define DRVBRD PRO2EL293DNEMA
 //#define DRVBRD PRO2EL293D28BYJ48
@@ -30,7 +30,7 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -205,13 +205,12 @@ class DriverBoard
 {
   public:
     DriverBoard(byte, unsigned long);           // constructor
-    ~DriverBoard(void);         // destructor
+    ~DriverBoard(void);                         // destructor
     void      initmove(bool, unsigned long, byte, bool);
     void      movemotor(byte, bool);
     uint32_t  halt(void);
     
     // getter
-    byte getmotorspeed(void);
     byte getstepmode(void);
     int getstepdelay(void);
     unsigned long getposition(void);
