@@ -40,7 +40,7 @@ SetupData::SetupData(void)
   else
   {
     DebugPrintln("FS mounted");
-    this->ListDir("/", 0);
+    // this->ListDir("/", 0);
   }
   this->LoadConfiguration();
 };
@@ -861,6 +861,7 @@ void SetupData::StartDelayedUpdate(String & org_data, String new_data)
   }
 }
 
+/*
 void SetupData::ListDir(const char * dirname, uint8_t levels)
 {
   // TODO
@@ -868,7 +869,7 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
 
   DebugPrint(F("Listing directory: {"));
 #if defined(ESP8266)
-  Serial.println("Stuffed");
+  Serial.println("SetupData::ListDir() does not work on ESP8266");
   // this does not work;
 #else
   File root = SPIFFS.open(dirname);
@@ -921,3 +922,4 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
   }
 #endif
 }
+*/

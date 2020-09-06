@@ -22,10 +22,10 @@
 
 // ESP8266 Boards
 //#define DRVBRD WEMOSDRV8825
-#define DRVBRD PRO2EULN2003
+//#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EDRV8825
 //#define DRVBRD PRO2EL293DNEMA
-//#define DRVBRD PRO2EL293D28BYJ48
+#define DRVBRD PRO2EL293D28BYJ48
 //#define DRVBRD PRO2EL298N
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
@@ -68,7 +68,8 @@
 #endif
 
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
-#include <Stepper.h>                    // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
+// Full stepping only on L293D Motor shield
+#include <myStepper.h>                  // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
@@ -99,7 +100,7 @@
 #define IN4           2
 #define MSPEED        17500
 #endif
-#if (DRVBRD == PRO2EL293DNEMA)          // TESTING NOW
+#if (DRVBRD == PRO2EL293DNEMA)          // DONE
 #define TEMPPIN       10                // Temperature somehow does not work now for this shield
 #define I2CDATAPIN    12                // GPIO12 is D6
 #define I2CCLKPIN     14                // GPIO14 is D5
@@ -107,9 +108,9 @@
 #define IN2           0                 // DIR B
 #define IN3           4                 // DIR A
 #define IN4           2                 // PWM_B 
-#define MSPEED        10500             // 8000=Crash
+#define MSPEED        10500             // 8000=Crash, 10500=long move of 30000 at fast = 0k
 #endif
-#if (DRVBRD == PRO2EL293D28BYJ48)       // 
+#if (DRVBRD == PRO2EL293D28BYJ48)       // DONE 
 #define TEMPPIN       10
 #define I2CDATAPIN    12
 #define I2CCLKPIN     14
@@ -127,7 +128,7 @@
 #define IN2           12
 #define IN3           14
 #define IN4           2
-#define MSPEED        16500             // crashed on 15000 for long move, 16500 for move of 30000 at fast = 0k
+#define MSPEED        16500             // 15000=Crash, 16500=long move of 30000 at fast = 0k
 #endif  
 #if (DRVBRD == PRO2EL293DMINI)          // 
 #define TEMPPIN       10

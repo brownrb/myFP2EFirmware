@@ -2,8 +2,10 @@
 // Fix for print(F()) errors
 // Fix for OLEDTEXT compile error
 // Fix for Focuser position not being updated on display when moving
-// Fix for HalfStepperESP32 library code - must reinstall
+// Fix for HalfStepperESP32 amd mystepper library code - must reinstall
 // Fix for fcurrentPosition compilation errors in some options
+// Fix for PRO2EL293D28BYJ48 and PRO2EL293DNEMA to use myStepper library
+// Add temperature XTML update to webserver home page wsindex.html
 
 // 126
 // Rewrite web/management/ascom-remote server send page routines

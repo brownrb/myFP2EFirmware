@@ -1,14 +1,15 @@
 // CONFIG IS ACCESSPOINT AND MANAGEMENT SERVER
 // Target is ESP8266, Node MCU 12E
 
+// Robert: For ESP8266, GPIO 6,7,8,9,10 & 11 are dedicated to the flash memory and not usable for other purposes.
+
 // Test Procedure
 // Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
 // Test to see if crash when moving - if crash then increase MSPEED value for that driver board and retest
 
 // Incompatibility discovered:
-// An interrupt occuring whilst during SPIFFS access has a HIGH likelyhood of generating an exception causing a reboot
-// Implications: Cannot load web pages using webserserver/management server/ ascom remote aplaca server WHEN focuser is MOVING
-// If one disables interrupts during SPIFFS acccess then that causes significant pauses in motor rotation
+// An interrupt occuring whilst during SPIFFS access has a HIGH likelyhood of generating an illegal exception causing a reboot
+// Implications: Cannot load web pages using webserver/management server/ ascom remote alpaca server WHEN focuser is MOVING
 
 // Driver Boards
 // DRV8825 DONE
@@ -419,11 +420,7 @@ void display_oledtext_page0(void)           // displaylcd screen
 
     //Temperature
     myoled->print(TEMPSTR);
-#ifdef TEMPERATUREPROBE
-    myoled->print(String(read_temp(0), 2));
-#else
-    myoled->print("20.0");
-#endif
+    myoled->print(read_temp(0), 2);
     myoled->print(" c");
     myoled->clearToEOL();
     myoled->println();
@@ -618,13 +615,13 @@ void init_oledtextdisplay(void)
   Wire.begin(I2CDATAPIN, I2CCLKPIN);      // l293d esp8266 shield
   DebugPrintln("Setup PRO2EL293DNEMA/PRO2EL293D28BYJ48 I2C");
 #else
-  DebugPrintln("Setup esp8266 I2C");
+  DebugPrintln("Setup esp8266 I2C");        // uln3003, l293d esp8266 shield
   Wire.begin();
 #endif
 #else
   DebugPrintln("Setup esp32 I2C");
   Wire.begin(I2CDATAPIN, I2CCLKPIN);        // esp32
-#endif
+#endif // #if defined(ESP8266)
   Wire.beginTransmission(OLED_ADDR);        //check if OLED display is present
   if (Wire.endTransmission() != 0)
   {
@@ -2014,7 +2011,6 @@ void MANAGEMENT_buildadminpg2(void)
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
     DebugPrintln(PROCESSPAGEENDSTR);
-    Serial.println("Interrupts back on");
   }
   else
   {
@@ -3594,31 +3590,17 @@ void WEBSERVER_buildhome(void)
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MAX%", String(mySetupData->get_maxstep()));
     WSpg.replace("%MOV%", String(isMoving));
-    if ( mySetupData->get_temperatureprobestate() == 1 )
+    if ( mySetupData->get_tempmode() == 1)
     {
-      if ( mySetupData->get_tempmode() == 1)
-      {
-        String tpstr = String(read_temp(1), 2) + " c";
-        WSpg.replace("%TEM%", tpstr);
-      }
-      else
-      {
-        float ft = read_temp(1);
-        ft = (ft * 1.8) + 32;
-        String tpstr = String(ft, 2) + " f";
-        WSpg.replace("%TEM%", tpstr);
-      }
+      WSpg.replace("%TEM%", String(read_temp(0), 2));
+      WSpg.replace("%TUN%", " c");
     }
     else
     {
-      if ( mySetupData->get_tempmode() == 1)
-      {
-        WSpg.replace("%TEM%", "20.00 c");
-      }
-      else
-      {
-        WSpg.replace("%TEM%", "68.00 f");
-      }
+      float ft = read_temp(0);
+      ft = (ft * 1.8) + 32;
+      WSpg.replace("%TEM%", String(ft, 2));
+      WSpg.replace("%TUN%", " f");
     }
     WSpg.replace("%TPR%", String(mySetupData->get_tempprecision()));
     String smbuffer = String(mySetupData->get_stepmode());
@@ -3769,7 +3751,12 @@ void WEBSERVER_handleismoving()
 
 void WEBSERVER_handletargetposition()
 {
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition)); //Send targetPosition value only to client ajax request
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition));   //Send targetPosition value only to client ajax request
+}
+
+void WEBSERVER_handletemperature()
+{
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(read_temp(0), 2));   //Send temperature value only to client ajax request
 }
 
 // handles root page of webserver
@@ -4018,6 +4005,7 @@ void start_webserver(void)
   webserver->on("/position",    WEBSERVER_handleposition);
   webserver->on("/ismoving",    WEBSERVER_handleismoving);
   webserver->on("/target",      WEBSERVER_handletargetposition);
+  webserver->on("/temp",        WEBSERVER_handletemperature);
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
   webserverstate = RUNNING;

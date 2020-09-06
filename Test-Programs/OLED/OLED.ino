@@ -45,9 +45,9 @@
 #include "myBoardTypes.h"
 
 //Set DRVBRD to the correct driver board above, ONLY ONE!!!!
-#define DRVBRD PRO2EDRV8825
+//#define DRVBRD PRO2EDRV8825
 //#define DRVBRD PRO2EULN2003
-//#define DRVBRD PRO2EL298N
+#define DRVBRD PRO2EL298N
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 //#define DRVBRD PRO2ESP32DRV8825

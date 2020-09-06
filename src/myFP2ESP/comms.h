@@ -137,14 +137,7 @@ void ESP_Communication()
       SendPaket('F', buffer);
       break;
     case 6: // get temperature
-      if ( mySetupData->get_temperatureprobestate() == 1)
-      {
         SendPaket('Z', read_temp(0), 3);
-      }
-      else
-      {
-        SendPaket('Z', "20.00");
-      }
       break;
     case 8: // get maxStep
       SendPaket('M', mySetupData->get_maxstep());
