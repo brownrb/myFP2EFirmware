@@ -1,6 +1,6 @@
 // CONFIG IS ACCESSPOINT AND MANAGEMENT SERVER
 // Target is ESP8266, Node MCU 12E
-// 
+//
 // DO NOT FORGET TO REINSTALL myHalfStepperESP32 library
 
 // Test Procedure
@@ -85,9 +85,9 @@
 // Libraries
 // Arduino JSON 6.15.2
 // myOLED as in myFP2ELibs
-// IRRemoteESP32 as in myFP2ELibs
-// HalfStepperESP32 as in myFP2ELibs
-// myDallas Temperature 3.7.3A as in myFP2ELibs
+// myfp2eIRremoteESP8266 as in myFP2ELibs
+// myHalfStepperESP32 as in myFP2ELibs
+// myDallasTemperature 3.7.3A as in myFP2ELibs
 // Wire [as installed with Arduino 1.8.13
 // OneWire 2.3.5
 // EasyDDNS 1.5.9
@@ -901,13 +901,13 @@ void update_irremote()
     long newpos;
     if ( adjpos < 0 )
     {
-      newpos = (long)fcurrentPosition + adjpos;
+      newpos = driverboard->getposition() + adjpos;
       newpos = (newpos < 0 ) ? 0 : newpos;
       ftargetPosition = newpos;
     }
     else if ( adjpos > 0)
     {
-      newpos = fcurrentPosition + adjpos;
+      newpos = driverboard->getposition() + adjpos;
       newpos = (newpos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newpos;
       ftargetPosition = newpos;
     }
@@ -5175,6 +5175,10 @@ void ASCOM_handleNotFound()
 
 void ASCOM_handleRoot()
 {
+#ifdef TIMEASCOMROOT
+  Serial.print("ASCOMROOT : ");
+  Serial.println(millis());
+#endif
   String ASpg;
   // spiffs was started earlier when server was started so assume it has started
   if ( SPIFFS.exists("/ashomepage.html"))               // read ashomepage.html from FS
@@ -5188,13 +5192,13 @@ void ASCOM_handleRoot()
     DebugPrintln("ascomserver: processing page start");
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
-    MSpg.replace("%BKC%", bcol);
+    ASpg.replace("%BKC%", bcol);
     String txtcol = mySetupData->get_wp_textcolor();
-    MSpg.replace("%TXC%", txtcol);
+    ASpg.replace("%TXC%", txtcol);
     String ticol = mySetupData->get_wp_titlecolor();
-    MSpg.replace("%TIC%", ticol);
+    ASpg.replace("%TIC%", ticol);
     String hcol = mySetupData->get_wp_headercolor();
-    MSpg.replace("%HEC%", hcol);
+    ASpg.replace("%HEC%", hcol);
     ASpg.replace("%IPS%", ipStr);
     ASpg.replace("%ALP%", String(mySetupData->get_ascomalpacaport()));
     ASpg.replace("%PRV%", String(programVersion));
@@ -5209,6 +5213,10 @@ void ASCOM_handleRoot()
   }
   ASCOMServerTransactionID++;
   ASCOM_sendreply( NORMALWEBPAGE, TEXTPAGETYPE, ASpg);
+#ifdef TIMEASCOMROOT
+  Serial.print("ASCOMROOT : ");
+  Serial.println(millis());
+#endif
   delay(10);                                            // small pause so background tasks can run
 }
 
@@ -5703,14 +5711,18 @@ void setup()
     DebugPrint(attempts);
     delay(1000);                                // wait 1s
 
+#ifdef OLEDGRAPHICS
     myoled->oled_draw_Wifi(attempts);
+#endif
     oledtextmsg(ATTEMPTSSTR, attempts, false, true);
     if (attempts > 9)                          // if this attempt is 10 or more tries
     {
       DebugPrintln(APCONNECTFAILSTR);
       DebugPrintln(WIFIRESTARTSTR);
       oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
+#ifdef OLEDGRAPHICS
       myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
+#endif
       delay(2000);
       software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }

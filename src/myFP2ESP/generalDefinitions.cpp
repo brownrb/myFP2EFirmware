@@ -87,8 +87,15 @@ const char* TPROBESTR             = "Tsensors= ";
 const char* TPROBENOTFOUNDSTR     = "Tprobe !found";
 const char* GETTEMPPROBESSTR      = "Get #Tsensors";
 const char* SETTPROBERESSTR       = "Set Tprecision to ";
-// oled messages
 
+// home position switch
+const char* HPCLOSEDFPNOT0STR     = "HP Sw=1, Pos !0";
+const char* HPCLOSEDFP0STR        = "HP Sw=1, Pos=0";
+const char* HPMOVETILLOPENSTR     = "HP Sw=0, Mov out";
+const char* HPMOVEOUTERRORSTR     = "HP Sw=0, Mov out err";
+const char* HPMOVEOUTFINISHEDSTR  = "HP Sw=0, Mov out ok";
+
+// oled messages
 const char* CURRENTPOSSTR       =  "Current Pos = ";
 const char* TARGETPOSSTR        =  "Target Pos  = ";
 const char* COILPWRSTR          =  "Coil power  = ";

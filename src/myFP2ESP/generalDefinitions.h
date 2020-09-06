@@ -334,7 +334,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ---------------------------------------------------------------------------
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef  DEBUG                                         // Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     // DPRINT is a macro, debug print
@@ -362,7 +362,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 5. TIMING TESTS - DO NOT CHANGE / DO NOT ENABLE
 // ---------------------------------------------------------------------------
-//#define TIMEDTESTS 1
+#define TIMEDTESTS 1
 
 #ifdef TIMEDTESTS
 
@@ -394,6 +394,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 #define TIMEMSHANDLEPG4             1
 #define TIMEMSHANDLEPG5             1
 
+#define TIMEASCOMROOT               1
 #define TIMEASCOMBUILDSETUP         1
 #define TIMEASCOMHANDLESETUP        1
 #define TIMEASCOMHANDLEFOCUSERSETUP 1
