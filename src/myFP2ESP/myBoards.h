@@ -64,12 +64,12 @@
    || DRVBRD == PRO2EL298N     || DRVBRD == PRO2ESP32L298N    \
    || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293MINI \
    || DRVBRD == PRO2EL9110S    || DRVBRD == PRO2ESPL9110S)
-#include <HalfStepperESP32.h>
+#include <myHalfStepperESP32.h>
 #endif
 
 #if (DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48 )
 // Full stepping only on L293D Motor shield
-#include <myStepper.h>                  // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
+#include <myStepperESP32.h>            // needed for stepper motor and L293D shield, see https://github.com/adafruit/Adafruit-Motor-Shield-library
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )

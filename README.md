@@ -42,7 +42,7 @@ The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
 
 * myOLED
-* HalfStepperESP32
+* myHalfStepperESP32
 * myDallasTemperature
 * myfp2eIRremoteESP8266
 

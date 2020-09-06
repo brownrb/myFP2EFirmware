@@ -1,6 +1,6 @@
 myFP2ELibs Libraries, and in that folder 
 There should be ZIP files
-	HalfStepperESP32
+	myHalfStepperESP32
 	myOLED
 	myDallasTemperature
 	myfp2eIRemoteESP8266

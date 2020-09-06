@@ -1,7 +1,7 @@
 // CONFIG IS ACCESSPOINT AND MANAGEMENT SERVER
 // Target is ESP8266, Node MCU 12E
-
-// Robert: For ESP8266, GPIO 6,7,8,9,10 & 11 are dedicated to the flash memory and not usable for other purposes.
+// 
+// DO NOT FORGET TO REINSTALL myHalfStepperESP32 library
 
 // Test Procedure
 // Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
@@ -13,19 +13,11 @@
 
 // Driver Boards
 // DRV8825 DONE
-// ULN2003 Driver Board DONE
-
-// Changes
-// Fix for print(F()) errors
-// Fix for OLEDTEXT compile error
-// Fix for Focuser position not being updated on display when moving
-// Fixes for HalfStepperESP32 library code - must reinstall
+// ULN2003 DONE
+// L293D NEMA and 28BYJ48 DONE
+// L298N DONE
 
 // TODO
-// Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
-// Test these driver boards and update driver board code to work
-// L298N Driver Board
-// L293DNEMA and L293D28BYJ48 Driver Board
 // L293DMINI Driver Board
 // L9110S Driver Board
 // Check IRREMOTE on ESP32 boards, try IRREMOTE test program - created new library to reduce footprint 60K -> 4K
