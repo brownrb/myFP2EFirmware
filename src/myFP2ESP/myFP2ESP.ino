@@ -1,30 +1,4 @@
-// CONFIG IS ACCESSPOINT AND MANAGEMENT SERVER
-// Target is ESP8266, Node MCU 12E
-//
-// DO NOT FORGET TO REINSTALL myHalfStepperESP32 library
-
-// Test Procedure
-// Open TCPIP app, connect to focuser, set position at 35000. use preset0=35000, preset1=4500, move from preset1 to preset0
-// Test to see if crash when moving - if crash then increase MSPEED value for that driver board and retest
-
-// Incompatibility discovered:
-// An interrupt occuring whilst during SPIFFS access has a HIGH likelyhood of generating an illegal exception causing a reboot
-// Implications: Cannot load web pages using webserver/management server/ ascom remote alpaca server WHEN focuser is MOVING
-
-// Driver Boards
-// DRV8825 DONE
-// ULN2003 DONE
-// L293D NEMA and 28BYJ48 DONE
-// L298N DONE
-
-// TODO
-// L293DMINI Driver Board
-// L9110S Driver Board
-// Check IRREMOTE on ESP32 boards, try IRREMOTE test program - created new library to reduce footprint 60K -> 4K
-
-// ISSUE 1: OLED
-// I have commented out display.h and display.cpp just to get a compile
-// If OLEDGRAPHIC is defined then it will not compile
+// DO NOT FORGET TO REINSTALL myHalfStepperESP32 and otherlibrary
 
 // ----------------------------------------------------------------------------------------------
 // TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 130
@@ -284,11 +258,6 @@ DeviceAddress tpAddress;                      // holds address of the temperatur
 #include <mySSD1306AsciiWire.h>
 SSD1306AsciiWire* myoled;
 #endif // #ifdef OLEDTEXT
-
-#ifdef OLEDGRAPHICS
-#include "displays.h"
-OLED_GRAPHIC *myoled;
-#endif
 
 // ----------------------------------------------------------------------------------------------
 // 15: GLOBAL DATA -- DO NOT CHANGE
@@ -2456,7 +2425,7 @@ void MANAGEMENT_buildadminpg1(void)
     }
 
     // display %OLE%
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLEDTEXT)
     if ( mySetupData->get_displayenabled() == 1 )
     {
       MSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -3702,7 +3671,7 @@ void WEBSERVER_buildhome(void)
     }
     WSpg.replace("%RDB%", rdbuffer);
     // display
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLEDTEXT)
     if ( mySetupData->get_displayenabled() == 1 )
     {
       WSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -5711,18 +5680,12 @@ void setup()
     DebugPrint(attempts);
     delay(1000);                                // wait 1s
 
-#ifdef OLEDGRAPHICS
-    myoled->oled_draw_Wifi(attempts);
-#endif
     oledtextmsg(ATTEMPTSSTR, attempts, false, true);
     if (attempts > 9)                          // if this attempt is 10 or more tries
     {
       DebugPrintln(APCONNECTFAILSTR);
       DebugPrintln(WIFIRESTARTSTR);
       oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
-#ifdef OLEDGRAPHICS
-      myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
-#endif
       delay(2000);
       software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
     }
@@ -5922,7 +5885,6 @@ void loop()
   static uint32_t steps = 0;
 
   static connection_status ConnectionStatus = disconnected;
-  static oled_state oled = oled_on;
 
 #ifdef HOMEPOSITIONSWITCH
   int stepstaken = 0;
@@ -5962,7 +5924,6 @@ void loop()
       DebugPrintln(TCPCLIENTDISCONNECTSTR);
       myclient.stop();
       ConnectionStatus = disconnected;
-      oled = oled_on;
     }
   }
 #endif // defined(ACCESSPOINT) || defined(STATIONMODE)
@@ -6037,7 +5998,6 @@ void loop()
         // focuser stationary. isMoving is 0
         if (mySetupData->SaveConfiguration(driverboard->getposition(), DirOfTravel)) // save config if needed
         {
-          oled = oled_off;
           DebugPrint(CONFIGSAVEDSTR);
         }
 
@@ -6059,14 +6019,6 @@ void loop()
           update_oledtextdisplay();
 #endif
         }
-        else
-        {
-          oled = oled_off;
-        }
-#if defined(OLEDGRAPHICS)
-        myoled->Update_Oled(oled, ConnectionStatus);
-#endif
-
         if ( mySetupData->get_temperatureprobestate() == 1)
         {
           update_temp();
@@ -6284,7 +6236,6 @@ void loop()
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
-        oled = oled_on;
         isMoving = 0;
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle

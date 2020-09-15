@@ -24,10 +24,7 @@
 // Enable or disable the specific hardware below
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
-//#define OLEDTEXT 1
-
-// To enable the OLED GRAPHICS DISPLAY uncomment the next line
-//#define OLEDGRAPHICS 1
+#define OLEDTEXT 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -124,7 +121,7 @@
 //#define USE_SSH1106   2
 
 // DO NOT CHANGE
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLEDTEXT)
 #if defined(USE_SSD1306) && defined(USE_SSH1106)
 #halt //Error - you can must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
 #endif
@@ -160,12 +157,6 @@
 #endif
 #endif // 
 
-#if defined(OLEDGRAPHICS)
-#if defined(OLEDTEXT)
-#halt // ERROR - you must have either OLEDGRAPHICS or OLEDTEXT defined, NOT BOTH
-#endif
-#endif
-
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
   || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
@@ -185,12 +176,6 @@
 #ifdef JOYSTICK1
 #ifdef JOYSTICK2
 #halt // ERROR - you cannot have both JOYSTICK1 or JOYSTICK2 defined at the same time
-#endif
-#endif
-
-#ifdef OLEDTEXT
-#ifdef OLEDGRAPHICS
-#halt // ERROR - you cannot have both OLEDTEXT or OLEDGRAPHICS defined at the same time
 #endif
 #endif
 

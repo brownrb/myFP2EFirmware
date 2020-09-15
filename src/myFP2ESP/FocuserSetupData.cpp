@@ -350,7 +350,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["fcdownld"]           = this->forcedownload;
 
   // Serialize JSON to file
-  Serial.println("Writing to file");
+  DebugPrintln("Writing to file");
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
