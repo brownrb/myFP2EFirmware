@@ -14,21 +14,21 @@
 // We should NOT include graphics code if the user has NOT defined its use and does not want any display
 // If the user explicitly does not want a display we should not include its code
 
-#if defined(OLEDGRAPHICS)
+#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
 
-#include <mySSD1306AsciiWire.h>               // ?
 #ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
-//#include <SSD1306Wire.h>
+#include <SSD1306Wire.h>
 #endif
 #ifdef USE_SSH1106                            // For the OLED 128x64 1.3" display using the SSH1106 driver
-//#include <SH1106Wire.h>
+#include <SH1106Wire.h>
 #endif
+
+#include <mySSD1306AsciiWire.h>
 
 // ----------------------------------------------------------------------------------------------
 // EXTERNALS - PROTOTYPES
 // ----------------------------------------------------------------------------------------------
 extern SetupData *mySetupData;
-extern unsigned long fcurrentPosition;      // current focuser position
 extern unsigned long ftargetPosition;       // target position
 extern char ipStr[];                        // ip address
 extern char mySSID[];
@@ -69,6 +69,24 @@ class OLED_NON
     bool displayfound = false;
 };
 
+class OLED_TEXT : public SSD1306AsciiWire, public OLED_NON
+{
+  public:
+    OLED_TEXT();
+    void oledtextmsg(String , int , boolean , boolean);
+    void update_oledtext_position(void);
+    void update_oledtextdisplay(void);
+  private:
+    void displaylcdpage0(void);      // displaylcd screen
+    void displaylcdpage1(void);
+    void displaylcdpage2(void);
+    void Update_OledText(void);
+    void UpdatePositionOledText(void);
+    void display_oledtext_page0(void);
+    void display_oledtext_page1(void);
+    void display_oledtext_page2(void);
+};
+
 #ifdef USE_SSD1306
 class OLED_GRAPHIC : public SSD1306Wire, public OLED_NON
 #else
@@ -89,4 +107,6 @@ class OLED_GRAPHIC : public SH1106Wire, public OLED_NON
     long timestamp;
 };
 
-#endif // #if defined(OLEDGRAPHICS)
+#endif // #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+
+#endif
