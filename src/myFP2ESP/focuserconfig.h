@@ -24,7 +24,7 @@
 // Enable or disable the specific hardware below
 
 // To enable the OLED TEXT DISPLAY uncomment the next line
-#define OLEDTEXT 1
+//#define OLEDTEXT 1
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
