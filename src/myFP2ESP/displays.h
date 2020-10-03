@@ -11,10 +11,6 @@
 #ifndef displays_h
 #define displays_h
 
-// We should NOT include graphics code if the user has NOT defined its use and does not want any display
-// If the user explicitly does not want a display we should not include its code
-
-//#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
 
 #ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
 #include <SSD1306Wire.h>
@@ -107,6 +103,4 @@ class OLED_GRAPHIC : public SH1106Wire, public OLED_NON
     long timestamp;
 };
 
-#endif // #if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
-
-//#endif
+#endif // #ifdef displays_h

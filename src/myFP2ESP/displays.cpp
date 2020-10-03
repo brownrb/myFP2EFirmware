@@ -21,12 +21,6 @@
 #include "generalDefinitions.h"
 #include "displays.h"
 
-//#ifdef OLEDTEXT
-//#include <Wire.h>                           // needed for I2C => OLED display text-only
-//#include <mySSD1306Ascii.h>
-//#include <mySSD1306AsciiWire.h>
-
-//#endif // #ifdef OLEDTEXT
 
 extern bool TimeCheck(unsigned long, unsigned long);
 
@@ -187,7 +181,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
     //    drawString(64, 0, driverboard->getboardname());
     drawString(64, 0, DRVBRD_ID);
     snprintf(buffer, sizeof(buffer), "IP= %s", ipStr);
-    drawString(64, 12, buffer);
+    drawString(64, 14, buffer);
   }
   else
   {
@@ -218,7 +212,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
   drawString(0, 54, buffer);
 
   snprintf(buffer, sizeof(buffer), "%c", heartbeat[++count_hb % 4]);
-  drawString(8, 12, buffer);
+  drawString(8, 14, buffer);
 
   display();
 }
@@ -692,8 +686,6 @@ void OLED_TEXT::update_oledtextdisplay(void)
     displaypage++;
   }
 }
-
-
 
 // ----------------------------------------------------------------------------------------------
 // OLED TEXT DISPLAY - CHANGE AT YOUR OWN PERIL
