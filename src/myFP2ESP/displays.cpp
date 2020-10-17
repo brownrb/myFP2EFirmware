@@ -494,12 +494,17 @@ OLED_TEXT::OLED_TEXT(void)
   begin(&SH1106_128x64, OLED_ADDR);
 #endif
   setFont(Adafruit5x7);
-    //setcolor(WHITE);                    // Draw white text
+//  setcolor(WHITE);                    // Draw white text
   clear();                            // clrscr OLED
-    //Display_Normal();                 // black on white
-    //Display_On();                     // display ON
-    //Display_Rotate(0);                // portrait, not rotated
-    //Display_Bright();
+  Display_Normal();                 // black on white
+  InverseCharOff();
+
+
+    Display_On();                     // display ON
+//    Display_Rotate(0);                // portrait, not rotated
+//    Display_Bright();
+
+
   if ( mySetupData->get_showstartscreen() )
   {
     println(DRVBRD_ID);                 // print startup screen
