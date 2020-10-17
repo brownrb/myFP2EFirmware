@@ -28,6 +28,8 @@ extern volatile bool halt_alert;
 extern float read_temp(byte);
 extern void temp_setresolution(byte);
 
+extern byte tprobe1;
+
 // ---------------------------------------------------------------------------
 // DATA
 // ---------------------------------------------------------------------------

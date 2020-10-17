@@ -162,6 +162,9 @@
 #include "FocuserSetupData.h"
 
 
+extern void init_temp(void);
+extern void update_temp(void);
+
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -275,11 +278,14 @@ String btline;                                // buffer for serial data
 #endif
 #endif // #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 
+/*
 #include <OneWire.h>                          // https://github.com/PaulStoffregen/OneWire
 #include <myDallasTemperature.h>
 OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                      // holds address of the temperature probe
+*/
+
 
 #include "displays.h"
 OLED_NON *myoled;
@@ -301,7 +307,7 @@ unsigned long ftargetPosition;              // target position
 volatile bool halt_alert;
 
 boolean displayfound;
-byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
+//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
 byte    isMoving;                           // is the motor currently moving
 char    ipStr[16];                          // shared between BT mode and other modes
 const char ip_zero[] = "0.0.0.0";
@@ -331,6 +337,7 @@ SetupData *mySetupData;                           // focuser data
 
 #include "comms.h"                                // do not change or move
 
+/*
 // ----------------------------------------------------------------------------------------------
 // 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
@@ -477,7 +484,7 @@ void update_temp(void)
     } // end of check for temperature needs updating
   } // end of if tprobe
 }
-
+*/
 // ----------------------------------------------------------------------------------------------
 // 18: INFRARED REMOTE CONTROLLER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
