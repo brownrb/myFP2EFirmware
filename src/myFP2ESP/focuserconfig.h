@@ -23,9 +23,11 @@
 // not fitted on the board.
 // Enable or disable the specific hardware below
 
-// To enable the OLED TEXT DISPLAY uncomment the next line
-//#define OLEDTEXT 1
-#define OLEDGRAPHICS 1
+// If you need no support for OLED skip section. To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line. 
+
+#define OLED_MODE OLED_TEXT   // OLED text only mode
+//#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
+
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line

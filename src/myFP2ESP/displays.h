@@ -22,16 +22,6 @@
 #include <mySSD1306AsciiWire.h>
 
 // ----------------------------------------------------------------------------------------------
-// EXTERNALS - PROTOTYPES
-// ----------------------------------------------------------------------------------------------
-extern SetupData *mySetupData;
-extern unsigned long ftargetPosition;       // target position
-extern char ipStr[];                        // ip address
-extern char mySSID[];
-extern DriverBoard* driverboard;
-extern float read_temp(byte);
-
-// ----------------------------------------------------------------------------------------------
 // DEFINITIONS
 // ----------------------------------------------------------------------------------------------
 
@@ -41,6 +31,8 @@ extern float read_temp(byte);
 
 //__helper function
 
+extern bool CheckOledConnected(void);
+
 // ----------------------------------------------------------------------------------------------
 // class boddies
 // ----------------------------------------------------------------------------------------------
@@ -48,21 +40,19 @@ class OLED_NON
 {
   public:
     OLED_NON();
-    void oledgraphicmsg(String &, int, bool);
-    void oled_draw_Wifi(int);
+    virtual void oledgraphicmsg(String &, int, bool);
+    virtual void oled_draw_Wifi(int);
 
-    void oledtextmsg(String, int, boolean, boolean);
-    void update_oledtext_position(void);
-    void update_oledtextdisplay(void);
-    void Update_Oled(const oled_state, const connection_status);
-    void oled_draw_reboot(void);
+    virtual void oledtextmsg(String, int, boolean, boolean);
+    virtual void update_oledtext_position(void);
+    virtual void update_oledtextdisplay(void);
+    virtual void Update_Oled(const oled_state, const connection_status);
+    virtual void oled_draw_reboot(void);
 
     byte  current_status = oled_on;
     byte  linecount = 0;
   protected:
-    bool OledConnected(void);
     bool connected = false;
-    bool displayfound = false;
 };
 
 class OLED_TEXT : public SSD1306AsciiWire, public OLED_NON

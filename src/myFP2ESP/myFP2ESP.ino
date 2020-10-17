@@ -161,6 +161,7 @@
 #include <SPI.h>
 #include "FocuserSetupData.h"
 
+
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -281,16 +282,7 @@ DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                      // holds address of the temperature probe
 
 #include "displays.h"
-
-#ifdef OLEDTEXT
-#define OLED_MODE OLED_TEXT
-#elif OLEDGRAPHICS
-#define OLED_MODE OLED_GRAPHIC
-#else
-#define OLED_MODE OLED_NON
-#endif
-OLED_MODE *myoled;
-
+OLED_NON *myoled;
 
 // ----------------------------------------------------------------------------------------------
 // 15: GLOBAL DATA -- DO NOT CHANGE
@@ -5275,7 +5267,22 @@ void setup()
   HDebugPrintln("setup(): oledtextdisplay()");
   displayfound = false;
 
-  myoled = new OLED_MODE;                       // Start configured OLED display object
+
+#ifdef OLED_MODE
+  if (CheckOledConnected())
+  {
+    myoled = new OLED_MODE;                       // Start configured OLED display object
+    DebugPrintln(F("init OLED OLED_MODE")); 
+  }
+  else
+  {
+    myoled = new OLED_NON;
+    DebugPrintln(F("init OLED OLED_NON"));     
+  }
+#else
+    myoled = new OLED_NON;    
+#endif
+
 
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
