@@ -40,7 +40,7 @@ SetupData::SetupData(void)
   else
   {
     DebugPrintln("FS mounted");
-    // this->ListDir("/", 0);
+    this->ListDir("/", 0);
   }
   this->LoadConfiguration();
 };
@@ -215,8 +215,8 @@ void SetupData::LoadDefaultPersistantData()
   this->headercolor           = "3399ff";
   this->titlecolor            = "8e44ad";
   this->ascomserverstate      = DEFAULTOFF;           // this should be default OFF
-  this->webserverstate        = DEFAULTOFF;           // this should be default OFF
-  this->temperatureprobestate = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
+  this->webserverstate        = DEFAULTON;           // this should be default OFF
+  this->temperatureprobestate = DEFAULTON;           // this should be default OFF - if HW not fitted could crash
   this->inoutledstate         = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
   this->showhpswmessages      = DEFAULTOFF;           // this should be default OFF
   this->forcedownload         = DEFAULTOFF;           // this should be default OFF, MANAGEMENT Server only
@@ -861,7 +861,7 @@ void SetupData::StartDelayedUpdate(String & org_data, String new_data)
   }
 }
 
-/*
+
 void SetupData::ListDir(const char * dirname, uint8_t levels)
 {
   // TODO
@@ -922,4 +922,4 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
   }
 #endif
 }
-*/
+

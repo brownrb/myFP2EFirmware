@@ -5275,7 +5275,7 @@ void setup()
   HDebugPrintln("setup(): oledtextdisplay()");
   displayfound = false;
 
-  myoled = new OLED_MODE;                       // Start OLED display object
+  myoled = new OLED_MODE;                       // Start configured OLED display object
 
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
@@ -5413,6 +5413,9 @@ void setup()
     }
   }
 #endif // end STATIONMODE
+
+  DebugPrint("WifiHostname: ");
+  DebugPrintln(WiFi.getHostname());
 
   myoled->oledtextmsg(CONNECTEDSTR, -1, true, true);
   delay(100);                                   // keep delays small else issue with ASCOM

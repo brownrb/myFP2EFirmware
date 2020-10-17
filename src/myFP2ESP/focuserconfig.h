@@ -70,10 +70,10 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-// #define ACCESSPOINT 2
+#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-#define STATIONMODE 3
+//#define STATIONMODE 3
 
 // to work only via USB cable as Serial port, uncomment the next line
 //#define LOCALSERIAL 4
