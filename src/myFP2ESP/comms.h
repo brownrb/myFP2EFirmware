@@ -25,10 +25,13 @@ extern char mySSID[64];
 extern void software_Reboot(int);
 extern volatile bool halt_alert;
 
-extern float read_temp(byte);
-extern void temp_setresolution(byte);
+//extern float read_temp(byte);
+//extern void temp_setresolution(byte);
 
-extern byte tprobe1;
+//extern byte tprobe1;
+
+extern TempProbe *myTempProbe;
+
 
 // ---------------------------------------------------------------------------
 // DATA
@@ -139,7 +142,7 @@ void ESP_Communication()
       SendPaket('F', buffer);
       break;
     case 6: // get temperature
-        SendPaket('Z', read_temp(0), 3);
+        SendPaket('Z', myTempProbe->read_temp(0), 3);
       break;
     case 8: // get maxStep
       SendPaket('M', mySetupData->get_maxstep());
@@ -251,7 +254,7 @@ void ESP_Communication()
       SendPaket('7', mySetupData->get_backlashsteps_out());
       break;
     case 83: // get if there is a temperature probe
-      SendPaket('c', tprobe1);
+      SendPaket('c', myTempProbe->get_tprobe1());
       break;
     case 87: // get tc direction
       SendPaket('k', mySetupData->get_tcdirection());
@@ -335,7 +338,7 @@ void ESP_Communication()
       mySetupData->set_tempprecision((byte) paramval);
       if ( mySetupData->get_temperatureprobestate() == 1)
       {
-        temp_setresolution((byte) paramval);
+        myTempProbe->temp_setresolution((byte) paramval);
       }
       break;
     case 22: // set the temperature compensation value to xxx

@@ -15,10 +15,11 @@
 
 #include <Arduino.h>
 #include "FocuserSetupData.h"
-#include "myBoards.h"
 #include "generalDefinitions.h"
+#include "myBoards.h"
 #include <OneWire.h>                          // https://github.com/PaulStoffregen/OneWire
-#include <myDallasTemperature.h>
+//#include <myDallasTemperature.h>
+#include "temp.h"
 
 OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
@@ -26,29 +27,28 @@ DeviceAddress tpAddress;                      // holds address of the temperatur
 
 extern SetupData *mySetupData;
 extern bool TimeCheck(unsigned long, unsigned long);
-extern unsigned long ftargetPosition;       // target position
+extern unsigned long ftargetPosition;         // target position
 
-byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
+//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
 
 
-// ----------------------------------------------------------------------------------------------
-// 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
-// ----------------------------------------------------------------------------------------------
-void init_temp(void)
+
+TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
 {
-  // start temp probe
-  pinMode(TEMPPIN, INPUT);                // Configure GPIO pin for temperature probe
+  pinMode(TEMPPIN, INPUT);                    // Configure GPIO pin for temperature probe
   DebugPrintln(CHECKFORTPROBESTR);
-  sensor1.begin();                        // start the temperature sensor1
+
+  begin();
   DebugPrintln(GETTEMPPROBESSTR);
-  tprobe1 = sensor1.getDeviceCount();     // should return 1 if probe connected
+  tprobe1 = getDeviceCount();                 // should return 1 if probe connected
   DebugPrint(TPROBESTR);
   DebugPrintln(tprobe1);
-  if (sensor1.getAddress(tpAddress, 0) == true)   // get the address so we can set the probe resolution
+  if (getAddress(tpAddress, 0) == true)       // get the address so we can set the probe resolution
   {
-    tprobe1 = 1;                                  // address was found so there was a probe
-    sensor1.setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
+    tprobe1 = 1;                              // address was found so there was a probe
+    setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
     DebugPrint(SETTPROBERESSTR);
+
     switch (mySetupData->get_tempprecision())
     {
       case 9: DebugPrintln(F("0.5"));
@@ -63,7 +63,7 @@ void init_temp(void)
         DebugPrintln(F("Unknown"));
         break;
     }
-    sensor1.requestTemperatures();                // request the sensor to begin a temperature reading
+    requestTemperatures();                    // request the sensor to begin a temperature reading
   }
   else
   {
@@ -71,23 +71,24 @@ void init_temp(void)
   }
 }
 
-void temp_setresolution(byte rval)
+
+void TempProbe::temp_setresolution(byte rval)
 {
-  sensor1.setResolution(tpAddress, rval);         // set the probe resolution (9=0.25, 12=0.00125)
+  setResolution(tpAddress, rval);             // set the probe resolution (9=0.25, 12=0.00125)
 }
 
-float read_temp(byte new_measurement)
+float TempProbe::read_temp(byte new_measurement)
 {
-  static float lasttemp = 20.0;                   // keep track of previous temperature value
+  static float lasttemp = 20.0;               // keep track of previous temperature value
   if (!new_measurement)
   {
-    return lasttemp;                              // return previous measurement
+    return lasttemp;                          // return previous measurement
   }
 
-  float result = sensor1.getTempCByIndex(0);      // get temperature, always in celsius
+  float result = getTempCByIndex(0);          // get temperature, always in celsius
   DebugPrint(TEMPSTR);
   DebugPrintln(result);
-  if (result > -40.0 && result < 80.0)            // avoid erronous readings
+  if (result > -40.0 && result < 80.0)        // avoid erronous readings
   {
     lasttemp = result;
   }
@@ -98,7 +99,7 @@ float read_temp(byte new_measurement)
   return result;
 }
 
-void update_temp(void)
+void TempProbe::update_temp(void)
 {
   static byte tcchanged = mySetupData->get_tempcompenabled();  // keeps track if tempcompenabled changes
 
@@ -131,7 +132,7 @@ void update_temp(void)
       }
       else
       {
-        sensor1.requestTemperatures();
+        requestTemperatures();
       }
 
       requesttempflag ^= 1; // toggle flag
@@ -176,4 +177,10 @@ void update_temp(void)
       } // end of check for tempcomp enabled
     } // end of check for temperature needs updating
   } // end of if tprobe
+}
+
+
+byte TempProbe::get_tprobe1(void)
+{
+  return  this->tprobe1;
 }

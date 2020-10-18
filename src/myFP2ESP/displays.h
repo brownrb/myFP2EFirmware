@@ -51,8 +51,6 @@ class OLED_NON
 
     byte  current_status = oled_on;
     byte  linecount = 0;
-  protected:
-    bool connected = false;
 };
 
 class OLED_TEXT : public SSD1306AsciiWire, public OLED_NON

@@ -20,6 +20,7 @@
 #include "images.h"
 #include "generalDefinitions.h"
 #include "displays.h"
+#include "temp.h"
 // ----------------------------------------------------------------------------------------------
 // EXTERNALS - PROTOTYPES
 // ----------------------------------------------------------------------------------------------
@@ -29,42 +30,11 @@ extern unsigned long ftargetPosition;       // target position
 extern char ipStr[];                        // ip address
 extern char mySSID[];
 extern DriverBoard* driverboard;
-extern float read_temp(byte);
+extern TempProbe *myTempProbe;
 extern bool TimeCheck(unsigned long, unsigned long);
 
 
 //__ helper function
-
-/*
-bool CheckOledConnected(void)
-{
-  Wire.begin();
-  Wire.setClock(400000L);                               // 400 kHZ max. speed on I2C
-
-#ifdef  DEBUG
-  //Scan all I2C addresses for device detection
-  Serial.print ("Scan for devices on I2C: ");
-  for (int i = 0; i < 128; i++)
-  {
-    Wire.beginTransmission(i);
-    if (!Wire.endTransmission ())
-    {
-      Serial.print(" 0x");
-      Serial.print(i, HEX);
-    }
-  }
-  Serial.println(F(""));
-#endif
-
-  Wire.beginTransmission(OLED_ADDR);                    //check if OLED display is present
-  if (Wire.endTransmission() != 0)
-  {
-    DebugPrintln(F("no I2C device found"));
-    return false;
-  }
-  return true;
-}
-*/
 
 
 bool CheckOledConnected(void)
@@ -94,11 +64,6 @@ bool CheckOledConnected(void)
 }
 
 
-
-
-
-
-
 // ----------------------------------------------------------------------------------------------
 // CODE NON OLED
 // ----------------------------------------------------------------------------------------------
@@ -110,13 +75,8 @@ void OLED_NON::update_oledtext_position(void) {}
 void OLED_NON::update_oledtextdisplay(void) {}
 void OLED_NON::Update_Oled(const oled_state x, const connection_status y) {}
 void OLED_NON::oled_draw_reboot(void) {}
-//void OLED_NON::println(const char *c){}
 
-OLED_NON::OLED_NON()
-{
-//  connected = OledConnected();
-  connected = 1;
-}
+OLED_NON::OLED_NON()  {}
 
 
 // ----------------------------------------------------------------------------------------------
@@ -128,46 +88,39 @@ OLED_NON::OLED_NON()
 //OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64)
 OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64) , OLED_NON()
 {
-  if (connected)
+  Serial.println(F("start init()"));
+  delay(1000);
+  this->init();
+  delay(1000);
+
+  flipScreenVertically();
+  setFont(ArialMT_Plain_10);
+  setTextAlignment(TEXT_ALIGN_LEFT);
+  clear();
+  if (mySetupData->get_showstartscreen())
   {
-
-    Serial.println(F("start init()"));
-    delay(1000);
-    this->init();
-    delay(1000);
-
-    flipScreenVertically();
-    setFont(ArialMT_Plain_10);
-    setTextAlignment(TEXT_ALIGN_LEFT);
-    clear();
-    if ( mySetupData->get_showstartscreen() )
-    {
-      drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
-      drawString(0, 12, ProgramAuthor);
-    }
-    display();
-
-    timestamp = millis();
+    drawString(0, 0, "myFocuserPro2 v:" + String(programVersion));
+    drawString(0, 12, ProgramAuthor);
   }
+  display();
+
+  timestamp = millis();
 }
 
 void OLED_GRAPHIC::Update_Oled(const oled_state oled, const connection_status ConnectionStatus)
 {
-  if (connected)
+  if (TimeCheck(timestamp, 750))
   {
-    if (TimeCheck(timestamp, 750))
-    {
-      timestamp = millis();
+    timestamp = millis();
 
-      if (oled == oled_on)
-      {
-        oled_draw_main_update(ConnectionStatus);
-      }
-      else
-      {
-        clear();
-        display();
-      }
+    if (oled == oled_on)
+    {
+      oled_draw_main_update(ConnectionStatus);
+    }
+    else
+    {
+      clear();
+      display();
     }
   }
 }
@@ -190,7 +143,6 @@ void OLED_GRAPHIC::oledgraphicmsg(String &str, int val, boolean clrscr)
   drawString(0, linecount * 12, str);
   display();
   linecount++;
-
 }
 
 void OLED_GRAPHIC::oled_draw_Wifi(int j)
@@ -205,7 +157,6 @@ void OLED_GRAPHIC::oled_draw_Wifi(int j)
     drawXbm(12 * i, 56, 8, 8, (i == j) ? activeSymbol : inactiveSymbol);
 
   display();
-
 }
 
 const char heartbeat[] = { '-', '/' , '|', '\\'};
@@ -245,7 +196,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
 
   if ( mySetupData->get_temperatureprobestate() == 1)
   {
-    snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", read_temp(0));
+    snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", myTempProbe->read_temp(0));
     drawString(54, 54, buffer);
   }
   else
@@ -329,7 +280,7 @@ void OLED_TEXT::displaylcdpage0(void)      // displaylcd screen
   print(TEMPSTR);
   if ( mySetupData->get_temperatureprobestate() == 1)
   {
-    print(String(read_temp(0)));
+    print(String(myTempProbe->read_temp(0)));
   }
   else
   {
@@ -554,7 +505,7 @@ void OLED_TEXT::display_oledtext_page0(void)           // displaylcd screen
   print(TEMPSTR);
   if ( mySetupData->get_temperatureprobestate() == 1)
   {
-    print(String(read_temp(0), 2));
+    print(String(myTempProbe->read_temp(0), 2));
   }
   else
   {

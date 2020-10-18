@@ -162,9 +162,6 @@
 #include "FocuserSetupData.h"
 
 
-extern void init_temp(void);
-extern void update_temp(void);
-
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -285,6 +282,8 @@ OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
 DeviceAddress tpAddress;                      // holds address of the temperature probe
 */
+#include "temp.h"
+TempProbe *myTempProbe;
 
 
 #include "displays.h"
@@ -337,154 +336,7 @@ SetupData *mySetupData;                           // focuser data
 
 #include "comms.h"                                // do not change or move
 
-/*
-// ----------------------------------------------------------------------------------------------
-// 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
-// ----------------------------------------------------------------------------------------------
-void init_temp(void)
-{
-  // start temp probe
-  pinMode(TEMPPIN, INPUT);                // Configure GPIO pin for temperature probe
-  DebugPrintln(CHECKFORTPROBESTR);
-  sensor1.begin();                        // start the temperature sensor1
-  DebugPrintln(GETTEMPPROBESSTR);
-  tprobe1 = sensor1.getDeviceCount();     // should return 1 if probe connected
-  DebugPrint(TPROBESTR);
-  DebugPrintln(tprobe1);
-  if (sensor1.getAddress(tpAddress, 0) == true)   // get the address so we can set the probe resolution
-  {
-    tprobe1 = 1;                                  // address was found so there was a probe
-    sensor1.setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
-    DebugPrint(SETTPROBERESSTR);
-    switch (mySetupData->get_tempprecision())
-    {
-      case 9: DebugPrintln(F("0.5"));
-        break;
-      case 10: DebugPrint(F("0.25"));
-        break;
-      case 11: DebugPrintln(F("0.125"));
-        break;
-      case 12: DebugPrintln(F("0.0625"));
-        break;
-      default:
-        DebugPrintln(F("Unknown"));
-        break;
-    }
-    sensor1.requestTemperatures();                // request the sensor to begin a temperature reading
-  }
-  else
-  {
-    DebugPrintln(TPROBENOTFOUNDSTR);
-  }
-}
 
-void temp_setresolution(byte rval)
-{
-  sensor1.setResolution(tpAddress, rval);         // set the probe resolution (9=0.25, 12=0.00125)
-}
-
-float read_temp(byte new_measurement)
-{
-  static float lasttemp = 20.0;                   // keep track of previous temperature value
-  if (!new_measurement)
-  {
-    return lasttemp;                              // return previous measurement
-  }
-
-  float result = sensor1.getTempCByIndex(0);      // get temperature, always in celsius
-  DebugPrint(TEMPSTR);
-  DebugPrintln(result);
-  if (result > -40.0 && result < 80.0)            // avoid erronous readings
-  {
-    lasttemp = result;
-  }
-  else
-  {
-    result = lasttemp;
-  }
-  return result;
-}
-
-void update_temp(void)
-{
-  static byte tcchanged = mySetupData->get_tempcompenabled();  // keeps track if tempcompenabled changes
-
-  if (tprobe1 == 1)
-  {
-    static unsigned long lasttempconversion = 0;
-    static byte requesttempflag = 0;                  // start with request
-    unsigned long tempnow = millis();
-
-    // see if the temperature needs updating - done automatically every 1.5s
-    if (TimeCheck(lasttempconversion, TEMPREFRESHRATE))   // see if the temperature needs updating
-    {
-      static float tempval;
-      static float starttemp;                         // start temperature to use when temperature compensation is enabled
-
-      if ( tcchanged != mySetupData->get_tempcompenabled() )
-      {
-        tcchanged = mySetupData->get_tempcompenabled();
-        if ( tcchanged == 1 )
-        {
-          starttemp = read_temp(1);
-        }
-      }
-
-      lasttempconversion = tempnow;                   // update time stamp
-
-      if (requesttempflag)
-      {
-        tempval = read_temp(1);
-      }
-      else
-      {
-        sensor1.requestTemperatures();
-      }
-
-      requesttempflag ^= 1; // toggle flag
-
-      if (mySetupData->get_tempcompenabled() == 1)    // check for temperature compensation
-      {
-        if ((abs)(starttemp - tempval) >= 1)          // calculate if temp has moved by more than 1 degree
-        {
-          unsigned long newPos;
-          byte temperaturedirection;                  // did temperature fall (1) or rise (0)?
-          temperaturedirection = (tempval < starttemp) ? 1 : 0;
-          if (mySetupData->get_tcdirection() == 0)    // check if tc direction for compensation is inwards
-          {
-            // temperature compensation direction is in, if a fall then move in else move out
-            if ( temperaturedirection == 1 )          // check if temperature is falling
-            {
-              newPos = ftargetPosition - mySetupData->get_tempcoefficient();    // then move inwards
-            }
-            else
-            {
-              newPos = ftargetPosition + mySetupData->get_tempcoefficient();    // else move outwards
-            }
-          }
-          else
-          {
-            // temperature compensation direction is out, if a fall then move out else move in
-            if ( temperaturedirection == 1 )
-            {
-              newPos = ftargetPosition + mySetupData->get_tempcoefficient();
-            }
-            else
-            {
-              newPos = ftargetPosition - mySetupData->get_tempcoefficient();
-            }
-          }
-          newPos = (newPos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newPos;
-          // newPos should be checked for < 0 but cannot due to unsigned
-          // newPos = (newPos < 0 ) ? 0 : newPos;
-          ftargetPosition = newPos;
-          starttemp = tempval;                        // save this current temp point for future reference
-        } // end of check for tempchange >=1
-      } // end of check for tempcomp enabled
-    } // end of check for temperature needs updating
-  } // end of if tprobe
-}
-*/
 // ----------------------------------------------------------------------------------------------
 // 18: INFRARED REMOTE CONTROLLER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
@@ -1982,7 +1834,7 @@ void MANAGEMENT_handleadminpg2(void)
     else
     {
       mySetupData->set_temperatureprobestate(1);
-      init_temp();                                                    // we need to reinitialise it
+//      init_temp();                                                    // we need to reinitialise it   ????????????????????????????????????????????????????????????????????????????????????????????
     }
   }
   msg = mserver.arg("stoptp");
@@ -3275,12 +3127,12 @@ void WEBSERVER_buildhome(void)
     {
       if ( mySetupData->get_tempmode() == 1)
       {
-        String tpstr = String(read_temp(1), 2) + " c";
+        String tpstr = String(myTempProbe->read_temp(1), 2) + " c";
         WSpg.replace("%TEM%", tpstr);
       }
       else
       {
-        float ft = read_temp(1);
+        float ft = myTempProbe->read_temp(1);
         ft = (ft * 1.8) + 32;
         String tpstr = String(ft, 2) + " f";
         WSpg.replace("%TEM%", tpstr);
@@ -4595,7 +4447,7 @@ void ASCOM_handletemperatureget()
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
   if ( mySetupData->get_temperatureprobestate() == 1 )
   {
-    jsonretstr = "{\"Value\":" + String(read_temp(0)) + "," + ASCOM_addclientinfo( jsonretstr );
+    jsonretstr = "{\"Value\":" + String(myTempProbe->read_temp(0)) + "," + ASCOM_addclientinfo( jsonretstr );
   }
   else
   {
@@ -5228,7 +5080,7 @@ void setup()
 {
   Serial.begin(SERIALPORTSPEED);
 #if defined(DEBUG)
-  Serial.begin(SERIALPORTSPEED);
+//  Serial.begin(SERIALPORTSPEED);
   DebugPrintln(SERIALSTARTSTR);
   DebugPrintln(DEBUGONSTR);
 #endif
@@ -5365,8 +5217,12 @@ void setup()
 
   if ( mySetupData->get_temperatureprobestate() == 1)
   {
-    init_temp();                                        // start temp probe
+//    init_temp();                                        // start temp probe
+    myTempProbe = new TempProbe;    
   }
+
+
+
 
 #ifdef READWIFICONFIG
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
@@ -5548,7 +5404,7 @@ void setup()
 
   if ( mySetupData->get_temperatureprobestate() == 1)
   {
-    read_temp(1);
+    myTempProbe->read_temp(1);
   }
 
 #ifdef OTAUPDATES
@@ -5771,7 +5627,7 @@ void loop()
 
         if ( mySetupData->get_temperatureprobestate() == 1)
         {
-          update_temp();
+          myTempProbe->update_temp();
         }
 
         if (Parked == false)
