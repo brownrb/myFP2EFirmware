@@ -335,6 +335,8 @@ extern WebServer mserver;
 
 extern String MSpg;
 extern void start_management(void);
+extern void start_ascomremoteserver(void);
+extern void checkASCOMALPACADiscovery(void);
 
 
 // ----------------------------------------------------------------------------------------------
@@ -1860,6 +1862,39 @@ void stop_webserver(void)
 }
 // WEBSERVER END -------------------------------------------------------------
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(ESP8266)
+extern ESP8266WebServer *ascomserver;
+#else
+extern WebServer *ascomserver;
+#endif // if defined(esp8266)
+
+
+
+
+
+/*
 // ----------------------------------------------------------------------------------------------
 // 24: ASCOMSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
@@ -3138,6 +3173,25 @@ void stop_ascomremoteserver(void)
   delay(10);                                            // small pause so background tasks can run
 }
 // ASCOM REMOTE END ----------------------------------------------------------
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ----------------------------------------------------------------------------------------------
 // 25: OTAUPDATES - CHANGE AT YOUR OWN PERIL
