@@ -346,6 +346,8 @@ extern WebServer *ascomserver;
 #endif // if defined(esp8266)
 
 
+extern void start_webserver(void);
+
 
 // ----------------------------------------------------------------------------------------------
 // 16: FIRMWARE CODE START - CHANGE AT YOUR OWN PERIL
@@ -683,6 +685,19 @@ void stop_mdns_service(void)
 }
 #endif // #ifdef MDNSSERVER
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ----------------------------------------------------------------------------------------------
 // 23: WEBSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
@@ -696,10 +711,35 @@ void stop_mdns_service(void)
 #include "webserver.h"
 #if defined(ESP8266)
 #undef DEBUG_ESP_HTTP_SERVER
-ESP8266WebServer *webserver;
+extern ESP8266WebServer *webserver;
 #else
-WebServer *webserver;
+extern WebServer *webserver;
 #endif // if defined(esp8266)
+
+
+
+
+
+
+
+
+
+
+/*
+
+// ----------------------------------------------------------------------------------------------
+// 23: WEBSERVER - CHANGE AT YOUR OWN PERIL
+// ----------------------------------------------------------------------------------------------
+#if defined(ESP8266)
+#undef DEBUG_ESP_HTTP_SERVER
+#include <ESP8266WebServer.h>
+#else
+#include <WebServer.h>
+#endif // if defined(esp8266)
+
+#include "webserver.h"
+
+
 String WSpg;
 
 void WEBSERVER_sendACAOheader(void)
@@ -1869,6 +1909,24 @@ void stop_webserver(void)
   delay(10);                                            // small pause so background tasks can run
 }
 // WEBSERVER END -------------------------------------------------------------
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ----------------------------------------------------------------------------------------------
 // 25: OTAUPDATES - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
