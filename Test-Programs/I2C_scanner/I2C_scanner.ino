@@ -1,12 +1,18 @@
 #include <Wire.h>
-#define I2CDATAPIN    21            // D21 is SDA
-#define I2CCLKPIN     22            // D22 is SCL
+//#define I2CDATAPIN    21            // D21 is SDA
+//#define I2CCLKPIN     22            // D22 is SCL
+
+#define I2CDATAPIN    5     // ESP8266 ULN2003, L298N
+#define I2CCLKPIN     4
+
 void setup()
 {
   Serial.begin (115200);
   Serial.println ("****** simple I2C bus scanner ********");
 
-  Wire.begin(I2CDATAPIN, I2CCLKPIN);                    // esp32
+  Wire.begin();
+  
+ // Wire.begin(I2CDATAPIN, I2CCLKPIN);                    // esp32
 
   Serial.println("Scan at 100 kHz");
   scan(100000L);

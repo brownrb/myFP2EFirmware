@@ -11,29 +11,15 @@
 #ifndef displays_h
 #define displays_h
 
-// We should NOT include graphics code if the user has NOT defined its use and does not want any display
-// If the user explicitly does not want a display we should not include its code
 
-#if defined(OLEDGRAPHICS)
-
-#include <mySSD1306AsciiWire.h>               // ?
 #ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
-//#include <SSD1306Wire.h>
+#include <SSD1306Wire.h>
 #endif
 #ifdef USE_SSH1106                            // For the OLED 128x64 1.3" display using the SSH1106 driver
-//#include <SH1106Wire.h>
+#include <SH1106Wire.h>
 #endif
 
-// ----------------------------------------------------------------------------------------------
-// EXTERNALS - PROTOTYPES
-// ----------------------------------------------------------------------------------------------
-extern SetupData *mySetupData;
-extern unsigned long fcurrentPosition;      // current focuser position
-extern unsigned long ftargetPosition;       // target position
-extern char ipStr[];                        // ip address
-extern char mySSID[];
-extern DriverBoard* driverboard;
-extern float read_temp(byte);
+#include <mySSD1306AsciiWire.h>
 
 // ----------------------------------------------------------------------------------------------
 // DEFINITIONS
@@ -45,6 +31,8 @@ extern float read_temp(byte);
 
 //__helper function
 
+extern bool CheckOledConnected(void);
+
 // ----------------------------------------------------------------------------------------------
 // class boddies
 // ----------------------------------------------------------------------------------------------
@@ -52,21 +40,35 @@ class OLED_NON
 {
   public:
     OLED_NON();
-    void oledgraphicmsg(String &, int, bool);
-    void oled_draw_Wifi(int);
+    virtual void oledgraphicmsg(String &, int, bool);
+    virtual void oled_draw_Wifi(int);
 
-    void oledtextmsg(String, int, boolean, boolean);
-    void update_oledtext_position(void);
-    void update_oledtextdisplay(void);
-    void Update_Oled(const oled_state, const connection_status);
-    void oled_draw_reboot(void);
+    virtual void oledtextmsg(String, int, boolean, boolean);
+    virtual void update_oledtext_position(void);
+    virtual void update_oledtextdisplay(void);
+    virtual void Update_Oled(const oled_state, const connection_status);
+    virtual void oled_draw_reboot(void);
 
     byte  current_status = oled_on;
     byte  linecount = 0;
-  protected:
-    bool OledConnected(void);
-    bool connected = false;
-    bool displayfound = false;
+};
+
+class OLED_TEXT : public SSD1306AsciiWire, public OLED_NON
+{
+  public:
+    OLED_TEXT();
+    void oledtextmsg(String , int , boolean , boolean);
+    void update_oledtext_position(void);
+    void update_oledtextdisplay(void);
+  private:
+    void displaylcdpage0(void);      // displaylcd screen
+    void displaylcdpage1(void);
+    void displaylcdpage2(void);
+    void Update_OledText(void);
+    void UpdatePositionOledText(void);
+    void display_oledtext_page0(void);
+    void display_oledtext_page1(void);
+    void display_oledtext_page2(void);
 };
 
 #ifdef USE_SSD1306
@@ -89,4 +91,4 @@ class OLED_GRAPHIC : public SH1106Wire, public OLED_NON
     long timestamp;
 };
 
-#endif // #if defined(OLEDGRAPHICS)
+#endif // #ifdef displays_h

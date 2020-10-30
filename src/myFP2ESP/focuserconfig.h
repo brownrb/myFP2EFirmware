@@ -23,11 +23,11 @@
 // not fitted on the board.
 // Enable or disable the specific hardware below
 
-// To enable the OLED TEXT DISPLAY uncomment the next line
-#define OLEDTEXT 1
+// If you need no support for OLED skip section. To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line. 
 
-// To enable the OLED GRAPHICS DISPLAY uncomment the next line
-//#define OLEDGRAPHICS 1
+#define OLED_MODE OLED_TEXT   // OLED text only mode
+//#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
+
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -100,7 +100,7 @@
 
 // to enable reading SSID and PASSWORD 
 // from SPIFFS file wificonfig at boot time, uncomment the following file
-//#define READWIFICONFIG 1
+#define READWIFICONFIG 1
 
 // to enable this focuser for ASCOMREMOTE support [Port 4040], uncomment the next line
 // This has moved to MANAGEMENT SERVER
@@ -124,7 +124,7 @@
 //#define USE_SSH1106   2
 
 // DO NOT CHANGE
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLEDTEXT)
 #if defined(USE_SSD1306) && defined(USE_SSH1106)
 #halt //Error - you can must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
 #endif
@@ -160,12 +160,6 @@
 #endif
 #endif // 
 
-#if defined(OLEDGRAPHICS)
-#if defined(OLEDTEXT)
-#halt // ERROR - you must have either OLEDGRAPHICS or OLEDTEXT defined, NOT BOTH
-#endif
-#endif
-
 // DO NOT CHANGE
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
   || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
@@ -185,12 +179,6 @@
 #ifdef JOYSTICK1
 #ifdef JOYSTICK2
 #halt // ERROR - you cannot have both JOYSTICK1 or JOYSTICK2 defined at the same time
-#endif
-#endif
-
-#ifdef OLEDTEXT
-#ifdef OLEDGRAPHICS
-#halt // ERROR - you cannot have both OLEDTEXT or OLEDGRAPHICS defined at the same time
 #endif
 #endif
 

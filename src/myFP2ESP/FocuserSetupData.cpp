@@ -215,8 +215,8 @@ void SetupData::LoadDefaultPersistantData()
   this->headercolor           = "3399ff";
   this->titlecolor            = "8e44ad";
   this->ascomserverstate      = DEFAULTOFF;           // this should be default OFF
-  this->webserverstate        = DEFAULTOFF;           // this should be default OFF
-  this->temperatureprobestate = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
+  this->webserverstate        = DEFAULTON;           // this should be default OFF
+  this->temperatureprobestate = DEFAULTON;           // this should be default OFF - if HW not fitted could crash
   this->inoutledstate         = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
   this->showhpswmessages      = DEFAULTOFF;           // this should be default OFF
   this->forcedownload         = DEFAULTOFF;           // this should be default OFF, MANAGEMENT Server only
@@ -350,7 +350,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["fcdownld"]           = this->forcedownload;
 
   // Serialize JSON to file
-  Serial.println("Writing to file");
+  DebugPrintln("Writing to file");
   if (serializeJson(doc, file) == 0)
   {
     TRACE();
@@ -861,6 +861,7 @@ void SetupData::StartDelayedUpdate(String & org_data, String new_data)
   }
 }
 
+
 void SetupData::ListDir(const char * dirname, uint8_t levels)
 {
   // TODO
@@ -868,7 +869,7 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
 
   DebugPrint(F("Listing directory: {"));
 #if defined(ESP8266)
-  Serial.println("Stuffed");
+  Serial.println("SetupData::ListDir() does not work on ESP8266");
   // this does not work;
 #else
   File root = SPIFFS.open(dirname);
@@ -921,3 +922,4 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
   }
 #endif
 }
+
