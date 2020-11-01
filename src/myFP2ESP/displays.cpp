@@ -50,7 +50,7 @@ bool CheckOledConnected(void)
 #endif
 #else
   DebugPrintln("Setup esp32 I2C");
-//  Wire.begin(I2CDATAPIN, I2CCLKPIN);          // esp32
+  //  Wire.begin(I2CDATAPIN, I2CCLKPIN);          // esp32
   Wire.begin();
 #endif
 
@@ -392,8 +392,8 @@ void OLED_TEXT::update_oledtextdisplay(void)
   if (((currentMillis - olddisplaytimestampNotMoving) > ((int)mySetupData->get_lcdpagetime() * 1000)) || (currentMillis < olddisplaytimestampNotMoving))
   {
     olddisplaytimestampNotMoving = currentMillis; // update the timestamp
-    clear();                              // clrscr OLED
-    switch (displaypage % 3)
+    clear();                                      // clrscr OLED
+    switch (displaypage)
     {
       case 2:   display_oledtext_page2();
         break;
@@ -404,6 +404,7 @@ void OLED_TEXT::update_oledtextdisplay(void)
         break;
     }
     displaypage++;
+    displaypage = (displaypage > 2) ? 0 : displaypage;
   }
 }
 
@@ -415,7 +416,6 @@ void OLED_TEXT::UpdatePositionOledText(void)
 
   print(TARGETPOSSTR);
   println(ftargetPosition);
-  //  display();
 }
 
 void OLED_TEXT::update_oledtext_position(void)
@@ -430,30 +430,29 @@ void OLED_TEXT::update_oledtext_position(void)
   print(ftargetPosition);
   clearToEOL();
   println();
-  //  display();
 }
 
 OLED_TEXT::OLED_TEXT(void)
 {
-    // Setup the OLED
+  // Setup the OLED
 #ifdef USE_SSD1306
-    // For the OLED 128x64 0.96" display using the SSD1306 driver
+  // For the OLED 128x64 0.96" display using the SSD1306 driver
   begin(&Adafruit128x64, OLED_ADDR);
 #endif
 #ifdef USE_SSH1106
-    // For the OLED 128x64 1.3" display using the SSH1106 driver
+  // For the OLED 128x64 1.3" display using the SSH1106 driver
   begin(&SH1106_128x64, OLED_ADDR);
 #endif
   setFont(Adafruit5x7);
-//  setcolor(WHITE);                    // Draw white text
+  //  setcolor(WHITE);                    // Draw white text
   clear();                            // clrscr OLED
   Display_Normal();                 // black on white
   InverseCharOff();
 
 
-    Display_On();                     // display ON
-//    Display_Rotate(0);                // portrait, not rotated
-//    Display_Bright();
+  Display_On();                     // display ON
+  //    Display_Rotate(0);                // portrait, not rotated
+  //    Display_Bright();
 
 
   if ( mySetupData->get_showstartscreen() )
@@ -461,7 +460,7 @@ OLED_TEXT::OLED_TEXT(void)
     println(DRVBRD_ID);                 // print startup screen
     println(programVersion);
     println(ProgramAuthor);
-  }    
+  }
 }
 
 // ----------------------------------------------------------------------------------------------

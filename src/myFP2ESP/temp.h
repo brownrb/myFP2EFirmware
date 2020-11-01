@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// temp.h : myFP2ESP support for DS18B20 Temperature Sensor
+// TEMPERATURE PROBE : myFP2ESP support for DS18B20 Temperature Sensor
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
@@ -9,28 +9,24 @@
 // (c) Copyright Holger Manz, 2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-/*
-#include "myBoards.h"
-#include <OneWire.h>                          // https://github.com/PaulStoffregen/OneWire
-*/
 #include <myDallasTemperature.h>
 
-
 // ----------------------------------------------------------------------------------------------
-// 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
+// TEMPERATURE - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-
 
 class TempProbe : public DallasTemperature
 {
   public:
     TempProbe();
-    void init_temp(void);
-    void temp_setresolution(byte rval);
+    ~TempProbe();
+    void  start_temp_probe(void);
+    void  stop_temp_probe(void);
+    void  temp_setresolution(byte rval);
     float read_temp(byte new_measurement);
-    void update_temp(void);
-    byte get_tprobe1(void);
+    void  update_temp(void);
+    byte  get_tprobe1(void);
 
 private:
-    byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
+    byte  tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
 };

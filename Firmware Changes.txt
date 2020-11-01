@@ -1,3 +1,35 @@
+// 131
+// Fix compilation errors
+// Fix setting of temp probe resolution
+// Fix forward declation errors for TimeCheck not found
+// Fix issue around stopping and restarting services
+// Prevent webserver and ascom remote server being started if using Bluetooth or LOCALSERIAL
+// Fix for Local serial mode error
+// Fix error in DEBUG
+// Fix for ASCOM Server page not replacing page values in ASCOM_Create_Setup_Focuser_HomePage()
+// Add page display option for enabling/disabling specific OLED pages to management server
+// Add page display time option to management server
+// Add management set/get calls to comms.h to support on/off services via winapp
+// Add HALT function to IRREMOTE code
+// Add calls to MANAGEMENT server to support on/off services
+// Fix for in/out leds lighting up when enabled in the management server
+// Fix for OLEDTEXT code
+// Ignore requested moves with IRREMOTE if already moving
+// Changes to shutdown in software_reboot()
+// Changes to msindex3.htm and MANAGEMENT_buildadminpg3()
+// Fix for Local serial mode error
+// Fix error in DEBUG
+// Add page display option for enabling/disabling specific OLED pages to management server
+// Add page display time option to management server
+// Add management set/get calls to comms.h to support on/off services via winapp
+// Add HALT function to IRREMOTE code
+// Add calls to MANAGEMENT server to support on/off services
+// Fix for in/out leds lighting up when enabled in the management server
+// Fix for OLEDTEXT code
+// Ignore requested moves with IRREMOTE if already moving
+// Changes to shutdown in software_reboot()
+// Changes to msindex3.htm and MANAGEMENT_buildadminpg3()
+
 // 130
 // Fix for print(F()) errors
 // Fix for OLEDTEXT compile error
@@ -11,6 +43,10 @@
 // Add temperature XHTML update to webserver home page wsindex.html
 // Add HPSW messages to generaldefinitions.h/.cpp
 // Completed test for all driver boards L9110S, L293D, ULN2003, L293DMINI, L298N, DRV8825
+// Extract Webserver into webserver.cpp
+// Extract Management Server into ManagementServer.cpp
+// Extract ASCOM server into Ascom.cpp
+// Extract Temperature Probe into temp.cpp
 
 // 126
 // Rewrite web/management/ascom-remote server send page routines

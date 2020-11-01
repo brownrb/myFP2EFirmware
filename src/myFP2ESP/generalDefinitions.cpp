@@ -9,7 +9,7 @@
 // (c) Copyright Holger M, 2019-2020. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-const char* programVersion        = "130";
+const char* programVersion        = "131";
 const char* ProgramAuthor         = "(c) R BROWN 2020";
 
 const char* STATEMOVINGSTR        = ">Moving";
@@ -70,6 +70,8 @@ const char* REBOOTCNTLRSTR        = "Rebooting controller";
 const char* REBOOTASCOMSTR        = "Rebooting ASCOM remote server";
 const char* ASCOMSERVERNOTDEFINEDSTR = "ASCOM remote server not defined";
 const char* WEBSERVERNOTDEFINEDSTR = "Web server not defined";
+const char* SETPGOPTIONSTR        = "set OLED pg opt";
+const char* SETPGTIMESTR          = "set OLED pg time";
 
 const char* MANAGEMENTURLNOTFOUNDSTR  = "<html><head><title>Management server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
 const char* WEBSERVERURLNOTFOUNDSTR   = "<html><head><title>Web-server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
@@ -94,6 +96,7 @@ const char* HPCLOSEDFP0STR        = "HP Sw=1, Pos=0";
 const char* HPMOVETILLOPENSTR     = "HP Sw=0, Mov out";
 const char* HPMOVEOUTERRORSTR     = "HP Sw=0, Mov out err";
 const char* HPMOVEOUTFINISHEDSTR  = "HP Sw=0, Mov out ok";
+const char* HPMOVEOUTSTEPSSTR     = "HP Steps, Mov out: ";
 
 // oled messages
 const char* CURRENTPOSSTR       =  "Current Pos = ";
@@ -113,7 +116,7 @@ const char* BACKLASHINSTEPSSTR  =  "Backlash In#= ";
 const char* BACKLASHOUTSTEPSSTR =  "Backlash Ou#= ";
 const char* BLUETOOTHSTR        =  "Bluetooth Mode";
 const char* LOCALSERIALSTR      =  "Local Serial Mode";
-const char* FSFILENOTFOUNDSTR   = "FS file !found";
+const char* FSFILENOTFOUNDSTR   =  "FS file !found";
 
 const char* BACKCOLORINVALIDSTR = "Back color !valid";
 const char* NEWTITLECOLORSTR    = "Title color ";

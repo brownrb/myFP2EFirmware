@@ -1,21 +1,28 @@
+// ---------------------------------------------------------------------------
+// myFP2ESP WEB SERVER
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// COPYRIGHT
+// ---------------------------------------------------------------------------
+// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// ---------------------------------------------------------------------------
 
 #include "generalDefinitions.h"
 #include "FocuserSetupData.h"
 #include "myBoards.h"
 #include "temp.h"
 
-
-
-#if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE
-#undef DEBUG_ESP_HTTP_SERVER                // prevent messages from WiFiServer 
+#if defined(ESP8266)                              // this "define(ESP8266)" comes from Arduino IDE
+#undef DEBUG_ESP_HTTP_SERVER                      // prevent messages from WiFiServer 
 #include <ESP8266WiFi.h>
-#include <FS.h>                             // include the SPIFFS library  
-#else                                       // otherwise assume ESP32
+#include <FS.h>                                   // include the SPIFFS library  
+#else                                             // otherwise assume ESP32
 #include <WiFi.h>
 #include "SPIFFS.h"
 #endif
 #include <SPI.h>
-
 
 extern char    ipStr[16];                          // shared between BT mode and other modes
 extern SetupData *mySetupData;
@@ -26,15 +33,11 @@ extern volatile bool halt_alert;
 extern TempProbe *myTempProbe;
 extern bool webserverstate;
 
-
-
-
 void WEBSERVER_sendpresets(void);
 void WEBSERVER_sendroot(void);
 
-
 // ----------------------------------------------------------------------------------------------
-// 23: WEBSERVER - CHANGE AT YOUR OWN PERIL
+// WEBSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 #if defined(ESP8266)
 #undef DEBUG_ESP_HTTP_SERVER
@@ -902,19 +905,6 @@ void WEBSERVER_buildhome(void)
       rdbuffer = "<input type=\"checkbox\" name=\"rd\" value=\"rd\" Checked> ";
     }
     WSpg.replace("%RDB%", rdbuffer);
-    // display
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
-    if ( mySetupData->get_displayenabled() == 1 )
-    {
-      WSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
-    }
-    else
-    {
-      WSpg.replace("%OLE%", String(DISPLAYOFFSTR));
-    }
-#else
-    WSpg.replace("%OLE%", "<b>OLED:</b> Display not defined");
-#endif
     DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
@@ -944,7 +934,12 @@ void WEBSERVER_handleismoving()
 
 void WEBSERVER_handletargetposition()
 {
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition)); //Send targetPosition value only to client ajax request
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition)); // Send targetPosition value only to client ajax request
+}
+
+void WEBSERVER_handletemperature()
+{
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(myTempProbe->read_temp(0), 2));   // Send temperature value only to client ajax request
 }
 
 // handles root page of webserver
@@ -1116,6 +1111,10 @@ void WEBSERVER_handleroot()
       temp = 12;
     }
     mySetupData->set_tempprecision(temp);
+    if ( mySetupData->get_temperatureprobestate() == 1)
+    {
+      myTempProbe->temp_setresolution((byte) temp);
+    }
   }
 
   // if update display state
@@ -1171,7 +1170,7 @@ void start_webserver(void)
     TRACE();
     DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(SERVERSTATESTOPSTR);
-    webserverstate = STOPPED;
+    mySetupData->set_webserverstate(0);     // disable web server
     return;
   }
   WSpg.reserve(MAXWEBPAGESIZE);
@@ -1179,36 +1178,44 @@ void start_webserver(void)
   HDebugPrint("Heap before start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   HDebugPrintf("%u\n", ESP.getFreeHeap());
+  if ( mySetupData->get_webserverstate() == 0)
+  {
 #if defined(ESP8266)
-  webserver = new ESP8266WebServer(mySetupData->get_webserverport());
+    webserver = new ESP8266WebServer(mySetupData->get_webserverport());
 #else
-  webserver = new WebServer(mySetupData->get_webserverport());
+    webserver = new WebServer(mySetupData->get_webserverport());
 #endif // if defined(esp8266) 
-  webserver->on("/", HTTP_GET,  WEBSERVER_sendroot);
-  webserver->on("/", HTTP_POST, WEBSERVER_handleroot);
-  webserver->on("/move",    HTTP_GET,   WEBSERVER_sendmove);
-  webserver->on("/move",    HTTP_POST,  WEBSERVER_handlemove);
-  webserver->on("/presets", HTTP_GET,   WEBSERVER_sendpresets);
-  webserver->on("/presets", HTTP_POST,  WEBSERVER_handlepresets);
-  webserver->on("/position",    WEBSERVER_handleposition);
-  webserver->on("/ismoving",    WEBSERVER_handleismoving);
-  webserver->on("/target",      WEBSERVER_handletargetposition);
-  webserver->onNotFound(WEBSERVER_handlenotfound);
-  webserver->begin();
-  webserverstate = RUNNING;
-  DebugPrintln(SERVERSTATESTARTSTR);
-  HDebugPrint("Heap after  start_webserver = ");
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  delay(10);                                            // small pause so background tasks can run
+    webserver->on("/",        HTTP_GET,   WEBSERVER_sendroot);
+    webserver->on("/",        HTTP_POST,  WEBSERVER_handleroot);
+    webserver->on("/move",    HTTP_GET,   WEBSERVER_sendmove);
+    webserver->on("/move",    HTTP_POST,  WEBSERVER_handlemove);
+    webserver->on("/presets", HTTP_GET,   WEBSERVER_sendpresets);
+    webserver->on("/presets", HTTP_POST,  WEBSERVER_handlepresets);
+    webserver->on("/position",            WEBSERVER_handleposition);
+    webserver->on("/ismoving",            WEBSERVER_handleismoving);
+    webserver->on("/target",              WEBSERVER_handletargetposition);
+    webserver->on("/temp",                WEBSERVER_handletemperature);
+    webserver->onNotFound(WEBSERVER_handlenotfound);
+    webserver->begin();
+    mySetupData->set_webserverstate(1);
+    DebugPrintln(SERVERSTATESTARTSTR);
+    HDebugPrint("Heap after  start_webserver = ");
+    HDebugPrintf("%u\n", ESP.getFreeHeap());
+    delay(10);                                            // small pause so background tasks can run
+  }
+  else
+  {
+    DebugPrintln(F("Web server already running"));    // Web server already running
+  }
 }
 
 void stop_webserver(void)
 {
-  if ( webserverstate == RUNNING )
+  if ( mySetupData->get_webserverstate() == 1)
   {
     webserver->close();
     delete webserver;                                   // free the webserver pointer and associated memory/code
-    webserverstate = STOPPED;
+    mySetupData->set_webserverstate(0);
     TRACE();
     DebugPrintln(SERVERSTATESTOPSTR);
   }
@@ -1219,4 +1226,3 @@ void stop_webserver(void)
   delay(10);                                            // small pause so background tasks can run
 }
 // WEBSERVER END -------------------------------------------------------------
-

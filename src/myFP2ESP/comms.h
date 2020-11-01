@@ -15,23 +15,22 @@
 // ---------------------------------------------------------------------------
 // EXTERNS
 // ---------------------------------------------------------------------------
+extern volatile bool halt_alert;
 extern unsigned long ftargetPosition;          // target position
 extern byte isMoving;
 extern char ipStr[];
+extern char mySSID[64];
 extern const char* programVersion;
 extern const char* DRVBRD_ID;
 extern DriverBoard* driverboard;
-extern char mySSID[64];
-extern void software_Reboot(int);
-extern volatile bool halt_alert;
-
-//extern float read_temp(byte);
-//extern void temp_setresolution(byte);
-
-//extern byte tprobe1;
-
 extern TempProbe *myTempProbe;
 
+extern void software_Reboot(int);
+extern void stop_ascomremoteserver(void);
+extern void start_ascomremoteserver(void);
+extern void init_leds(void);
+extern void stop_webserver(void);
+extern void start_webserver(void);
 
 // ---------------------------------------------------------------------------
 // DATA
@@ -91,7 +90,7 @@ void SendPaket(const char token, const float val, int i)    // i => decimal plac
   char buff[32];
   char temp[8];
   // Note Arduino snprintf does not support .2f
-  dtostrf(val, 4, i, temp); 
+  dtostrf(val, 4, i, temp);
   snprintf(buff, sizeof(buff), "%c%s%c", token, temp, EOFSTR);
   SendMessage(buff);
 }
@@ -131,7 +130,7 @@ void ESP_Communication()
       break;
     case 3: // get firmware version
 #ifdef INDI
-      SendPaket('F', "291");
+      SendPaket('F', "300");
 #else
       SendPaket('F', programVersion);
 #endif
@@ -142,7 +141,7 @@ void ESP_Communication()
       SendPaket('F', buffer);
       break;
     case 6: // get temperature
-        SendPaket('Z', myTempProbe->read_temp(0), 3);
+      SendPaket('Z', myTempProbe->read_temp(0), 3);
       break;
     case 8: // get maxStep
       SendPaket('M', mySetupData->get_maxstep());
@@ -264,6 +263,35 @@ void ESP_Communication()
         byte preset = (byte) (receiveString[3] - '0');
         preset = (preset > 9) ? 9 : preset;
         SendPaket('h', mySetupData->get_focuserpreset(preset));
+      }
+      break;
+    case 93: // get OLED page display option
+      {
+        char tempbuff[5];
+        mySetupData->get_oledpageoption().toCharArray(tempbuff, mySetupData->get_oledpageoption().length() + 1);
+        SendPaket('l', tempbuff);
+      }
+      break;
+    case 95: // get management option
+      {
+        int option = 0;
+        if ( mySetupData->get_ascomserverstate() == 1)
+        {
+          option += 1;
+        }
+        if ( mySetupData->get_inoutledstate() == 1 )
+        {
+          option += 2;
+        }
+        if (mySetupData->get_temperatureprobestate() == 1)
+        {
+          option += 4;
+        }
+        if ( mySetupData->get_webserverstate() == 1)
+        {
+          option += 8;
+        }
+        SendPaket('l', option);
       }
       break;
 
@@ -486,6 +514,94 @@ void ESP_Communication()
         WorkString = receiveString.substring(4, receiveString.length() - 1);
         unsigned long tmppos = (unsigned long)WorkString.toInt();
         mySetupData->set_focuserpreset( preset, tmppos );
+      }
+      break;
+    case 92: // Set OLED page display option
+      WorkString = receiveString.substring(3, receiveString.length() - 1);
+      mySetupData->set_oledpageoption(WorkString);
+      break;
+    case 94: // Set management options
+      {
+        WorkString = receiveString.substring(3, receiveString.length() - 1);
+        int option = WorkString.toInt();
+        if ( (option & 1) == 1 )
+        {
+          // ascom server start if not already started
+          if ( mySetupData->get_ascomserverstate() == 0)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            start_ascomremoteserver();
+#endif
+          }
+        }
+        else
+        {
+          // ascom server stop if running
+          if ( mySetupData->get_ascomserverstate() == 1)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            stop_ascomremoteserver();
+#endif
+          }
+        }
+        if ( (option & 2) == 2)
+        {
+          // in out leds start
+          if ( mySetupData->get_inoutledstate() == 0)
+          {
+            mySetupData->set_inoutledstate(1);
+            // reinitialise pins
+#if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
+            init_leds();
+#endif
+          }
+        }
+        else
+        {
+          // in out leds stop
+          // if disabled then enable
+          if ( mySetupData->get_inoutledstate() == 1)
+          {
+            mySetupData->set_inoutledstate(0);
+          }
+        }
+        if ( (option & 4) == 4)
+        {
+          // temp probe start
+          if (mySetupData->get_temperatureprobestate() == 0)
+          {
+            mySetupData->set_temperatureprobestate(1);
+            myTempProbe->start_temp_probe();                                                    // we need to reinitialise it
+          }
+        }
+        else
+        {
+          // temp probe stop
+          if (mySetupData->get_temperatureprobestate() == 1)
+          {
+            myTempProbe->stop_temp_probe();
+            mySetupData->set_temperatureprobestate(0);
+          }
+        }
+        if ( (option & 8) == 8 )
+        {
+          // set web server option
+          if ( mySetupData->get_webserverstate() == 0)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            start_webserver();
+#endif
+          }
+        }
+        else
+        {
+          if ( mySetupData->get_webserverstate() == 1)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            stop_webserver();
+#endif
+          }
+        }
       }
       break;
 

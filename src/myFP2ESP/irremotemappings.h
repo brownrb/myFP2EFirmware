@@ -78,4 +78,7 @@
 #define IR_PRESET8      -4
 #define IR_PRESET9      -6
 
+// Halt
+#define IR_HALT         KEY_EIGHT
+
 #endif

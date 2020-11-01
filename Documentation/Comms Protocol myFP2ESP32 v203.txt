@@ -1,0 +1,181 @@
+F// myFP2ESP32 v2.03 25th September 2020
+
+// Command Protocol, commands to controller begin with : and end with #
+// responses from controller begin with Char, then response and end with #
+// the char response indicates what command requested the response, ie. P = Get focuser Position
+
+// Simplifies Windows and ASCOM application/driver because no need to remember last command or to 
+// use blocking, hence the receive processing can be a simple switch on the first received char
+// Not all commands return responses 
+
+Compatibility with myFocuserPro2 in LOCALSERIALMODE
+:44xxx#		None		Set motorspeed threshold when moving - switches to slowspeed when nearing destination
+:45#		Gxxx#		Get TSWTHRESHOLD - value for which stepper slows down at end of its move (valid 0 - 400)
+:46x#		None		Set enable/disable motorspeed change when moving
+:47#		Jx#		Get state of motorspeedchange, enabled/disabled
+:57#		None		Set Super Slow Jogging Speed
+:58#		mxxxx#		Get features [deprecated]
+:60xx#		None		Set MotorSpeed when jogging
+:65xx#		None		Set jogging state enable/disable
+:66#		Kxx#		Get jogging state enabled/disabled
+:67#		None		Set jogging direction, 0=IN, 1=OUT
+:68#		Vxx#		Get jogging direction, 0=IN, 1=OUT
+:89#		9x#		Get Stepper Power [no stepper power detect circuit in myFP2ESP]
+
+COMMANDS THAT SEND RESPONSES (and thus must be handled in the driver/app)
+:00#		Pxxxx#		Get current focuser position
+:01#		Ixx#		Get motor moving status - 01 if moving, 00 otherwise
+:02#		EOK#		Get motor controller status - Controller Response to "Are we connected"- also see Wifi	
+:03#		F204#		Get Controller firmware version string (Fxxx#)
+:04#	  	FString#	Get firmware version string (Fprogram name, version, #)
+:05xxxxxx#    	None		Set new targetposition to xxxxxx (and focuser initiates immediate move to xxxxxx)
+:06#      	Zxxxxxx#	Get temperature as a double XXXX
+:07xxxxxx#  	None		Set MaxStep between 1000 and 2000000
+:08#      	Mxxxxxx#	Get MaxStep, returns XXXXXX
+:10#      	Yxxxxxx#	Get MaxIncrement, returns maxsteps value xxxxx
+:11#      	Oxx#		Get coil pwr setting (00 = coils released after move, 01 = coil pwr on after move)
+:12xx#    	None		Set coil pwr 0=release pwr after move, 1=keep power on after move
+:13#      	Rxx#		Get reverse direction setting, 0 off, 1 on 
+:14xx#    	None		Set reverse direction setting 0=normal, 1=reverse
+:15xx#    	None		Set MotorSpeed, 0 = Slow, 1 = Med, 2 = Fast
+:16#		None		Display in Celsius (LCD or TFT)
+:17#		None		Display in Fahrenheit (LCD or TFT)
+:180#		None		Set the return of user specified stepsize to be OFF - default
+:181#		None		Set the return of user specified stepsize to be ON 
+:19xxxx#	None		Set the step size value - double type, eg 2.1 (0.001-50.0)
+:20xx#		None		Set the temperature resolution setting for the DS18B20 temperature probe
+:21#		Qxx#		Get temperature probe resolution setting (9, 10, 11 or 12)
+:22xxx#		None		Set the temperature coeefficient value to xxx
+:23x#		None		Set the temperature compensation ON (1) or OFF (0)
+:24#		1xx#		Get state of Temperature Compensation, 10=disabled, 11=enabled
+:25#		Ax#		Get if Temperature Compensation available 0=No, 1=Yes
+:26#		Bxxx#		Get Temperature Coefficient (in steps per degree)
+:27#		None		Stop a move - like a Halt
+:28# 		None		Home the motor to position 0
+:29#	  	Sxx#		Get stepmode, returns XX#
+:30xx#	  	None		Set stepmode (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
+:31xxxxxx#	None		Set current motor position to xxxxxx (does not move, updates currentpos and targetpos to xxxxxx)
+:32#		Ux#		Get if stepsize is enabled in controller (true or false, 0/1)
+:33#		Txxxxx#		Get step size in microns (if enabled by controller)
+:34#		Xxxxxx#		Get the time that an LCD screen is displayed for (in milliseconds, eg 2 = 2seconds
+:35xxxx#	None		Set length of time an LCD page is displayed for in seconds 2-10s * 1000
+:360#		None		Disable Display
+:361#		None		Enable Display
+:37#		Dxx#		Get Display status 0=disabled, 1=enabled
+:38#		b#		Get Temperature Mode, Celcius=1, Fahrenheit=0
+:39# 		Nxxxxxx#	Get the new motor position (target) XXXXXX (not used yet)
+:40#		None		ReSetArduino controller
+:41#            String#		Troubleshooting only
+:42#    	None    	ReSet focuser defaults
+:43#		Cx#		Get motorspeed (0=slow, 1=medium, 2=fast)
+:48#		None		Save settings in EEPROM
+:49#		aString#	Get authenticated firmware MD5 Hash
+:51#		dipaddr#	Get ESP-WiFiController IP Address
+:52#		enum#		Get ESP-WiFiController number of TCP packets sent
+:53#		fnum#		Get ESP-WiFiController number of TCP packets received
+:54#		gstr#		Get ESP-WiFiController SSID
+:55		0xxxx#		Get motor speed delay (for current speed setting)	
+:56xxxx#			Set motor speed delay (for current speed setting)
+:57#		None		Set Super Slow Jogging Speed
+:58#		mxxxx#		get Features [now redundant]
+:61xx#		None		Set update of position on lcd when moving (00=disable, 01=enable)
+:62#		Lxx#		Get update of position on lcd when moving (00=disable, 01=enable)
+:63#		Hxx#		Get status of home position switch (0=off, 1=closed, position 0)
+:64xxx#		None		Move a specified number of steps
+:71xxx#		None		Set DelayAfterMove
+:72#		3xxx#		Get DelayAfterMove
+:730#		None		Disable backlash IN (going to lower focuser position)
+:731#		None		Enable backlash IN
+:74#		4x#		Get backlash IN enabled status
+:750#		None		Disable backlash OUT (going to higher focuser position)
+:751#		None		Enable backlash OUT
+:76#		5x#		Get backlash OUT enabled status
+:77xx#		None		Set backlash steps IN
+:78#		6xx#		Get number of backlash steps IN
+:79xx#		None		Set backlash steps OUT
+:80#		7xx#		Get number of backlash steps OUT
+:81#		8xxx#		Get number of backlashmaximum steps
+:82xxx#		None		Set backlash maximum steps
+:83#		cx#		Get if there is a temperature probe, 0 = No, 1 = Yes
+:87#		kx#		Get Temperature compensation direction (1=IN, 0 =OUT)
+:88x#		None		Set Temperature compensation direction (1=IN, 0 =OUT)
+:89x#		9x#		Get stepper power [myFP2]
+
+:90xyyyy#	None		Set preset x [0-9] with position value yyyy [unsigned long]
+:91x#		hyyyyy#		Get preset number x [0-9] [as unsigned long]
+:92xxx#		None		Set OLED page display option
+:93#		lxxx#		Get OLED page display option		
+
+:94x#		None		Set management options (ascom server=1, in-out leds=2, temp probe=4, webserver=8)	
+:95#		mx#		Get management options (ascom server=1, in-out leds=2, temp probe=4, webserver=8)
+
+09
+44
+45
+46
+47	
+57
+58
+59
+60
+65
+66
+67
+68
+89
+96
+97
+98
+99
+
+RETURNED VALUES BEGIN WITH A CHAR, FOLLOWED BY A VALUE (AS A STRING) AND TERMINATED WITH A HASH #
+Char	Cmd 	
+1	24			Get Temperature Compensation0=disabled, 1=enabled
+2	49			Serial number/Author Code
+3	71			Get DelayAfterMove
+4	74			Get backlash IN enabled status
+5	76			Get backlash OUT enabled status
+6	78			Get number of backlash steps IN
+7	80			Get number of backlash steps OUT
+8	81			Get number of backlashmaximum steps
+9	89			Get Stepper Power [myFP2]
+0	56			Get motor speed delays [firmware 102+]
+A	Reserved
+a	49	
+B	26			Get Temperature Coefficient
+b	39			Get Temperature mode, Celsius or Fahrenheight
+C	43			Get MotorSpeed
+c	83			Get if there is a temperature probe, 0 = No, 1 = Yes
+D	37			Get Controller Display Status (0=off, 1=on)
+d	51			Get ESP32-WiFiController IP Address
+E	02			Get Response EOK
+e	52			Get ESP-WiFiController number of TCP packets sent
+F	04			Get Firmware Version (WinApp) 
+f	53			Get ESP-WiFiController number of TCP packets received
+F	03			Get Controller Firmware rev Fx.x.x# (ASCOM)
+G	45			Get MotorSpeedChange Threshold value
+g	54			Get ESP-WiFiController SSID, IP address and Signal Strength value
+H	63			Get status of home position switch (00=open, 01=closed)
+h	91
+i	55			Get motorstepdelay
+I	01			Get IsMoving
+j	85			Get Serial Port Speed - Nextion
+J	47			Get MotorSpeedChange status	
+K	66			Get Jogging Status
+k	87			Get temperature compensation direction 
+L	62			Get status of position on lcd when moving (00=disable, 01=enable)
+l	93			Get OLED page display option	
+M	08			Get maxStep
+m	95
+N	39			Get New Focus Position
+O	11			Get Coil Power
+P	00			Get Position
+Q	21			Get dsb1820 probe resolution
+R	13			Get Reverse Direction
+S	29			Get Stepmode
+T	33			Get Stepsize
+U	32			Get if Stepsize is enabled
+V	68			Get Jogging Direction (IN=false)
+X	34			Get the time that an LCD screen is displayed for
+Y	10			Get maxIncrement
+Z	06			Get Temperature

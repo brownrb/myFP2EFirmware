@@ -1,27 +1,34 @@
+// ---------------------------------------------------------------------------
+// myFP2ESP ASCOM REMOTE SERVER
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// COPYRIGHT
+// ---------------------------------------------------------------------------
+// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// ---------------------------------------------------------------------------
+
 #include "generalDefinitions.h"
 #include "FocuserSetupData.h"
 #include "myBoards.h"
 #include "temp.h"
 
-
 // ----------------------------------------------------------------------------------------------
-// 24: ASCOMSERVER - CHANGE AT YOUR OWN PERIL
+// ASCOMSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
 
 #include <WiFiServer.h>
 #include <WiFiClient.h>
 
-extern SetupData *mySetupData;
-extern DriverBoard* driverboard;
-extern char ipStr[]; 
-extern unsigned long ftargetPosition;              // target position
-extern TempProbe *myTempProbe;
-extern volatile bool halt_alert;
-extern byte    isMoving;                           // is the motor currently moving
-extern String MSpg;
-extern bool ascomserverstate;
-extern bool ascomdiscoverystate;
-
+extern SetupData 		  *mySetupData;
+extern DriverBoard* 	driverboard;
+extern char 			    ipStr[];
+extern unsigned long 	ftargetPosition;              // target position
+extern TempProbe 		  *myTempProbe;
+extern volatile bool 	halt_alert;
+extern byte    			  isMoving;                           // is the motor currently moving
+extern bool 			    ascomdiscoverystate;
 
 #if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE
 #undef DEBUG_ESP_HTTP_SERVER                // prevent messages from WiFiServer 
@@ -33,13 +40,11 @@ extern bool ascomdiscoverystate;
 #endif
 #include <SPI.h>
 
-
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
-
 
 #if defined(ESP8266)
 #undef DEBUG_ESP_HTTP_SERVER
@@ -48,30 +53,28 @@ extern ESP8266WebServer mserver;
 extern WebServer mserver;
 #endif // if defined(esp8266)
 
-
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
 #else
 #include "webserver.h"
 #endif // if defined(esp8266)
 
-#include "ascomserver.h"
+#include "ascom.h"
 // Implement ASCOM ALPACA DISCOVERY PROTOCOL
 #include <WiFiUdp.h>
 WiFiUDP ASCOMDISCOVERYUdp;
 char packetBuffer[255];                                 // buffer to hold incoming UDP packet
 
-String ASpg;                                            // url:/setup/v1/focuser/0/setup
-unsigned int ASCOMClientID;
-unsigned int ASCOMClientTransactionID;
-unsigned int ASCOMServerTransactionID = 0;
-int          ASCOMErrorNumber = 0;
-String       ASCOMErrorMessage = "";
-long         ASCOMpos = 0L;
-byte         ASCOMTempCompState = 0;
-byte         ASCOMConnectedState = 0;
-WiFiClient   ascomclient;
-
+String 			ASpg;                                            // url:/setup/v1/focuser/0/setup
+unsigned int 	ASCOMClientID;
+unsigned int 	ASCOMClientTransactionID;
+unsigned int 	ASCOMServerTransactionID = 0;
+int          	ASCOMErrorNumber = 0;
+String       	ASCOMErrorMessage = "";
+long         	ASCOMpos = 0L;
+byte         	ASCOMTempCompState = 0;
+byte         	ASCOMConnectedState = 0;
+WiFiClient   	ascomclient;
 
 #if defined(ESP8266)
 ESP8266WebServer *ascomserver;
@@ -484,7 +487,7 @@ void ASCOM_handle_setup()
   // url /setup
   // The web page must describe the overall device, including name, manufacturer and version number.
   // content-type: text/html
-  String ASpg;
+
   // spiffs was started earlier when server was started so assume it has started
   if ( SPIFFS.exists("/ashomepage.html"))               // read ashomepage.html from FS
   {
@@ -1198,7 +1201,6 @@ void ASCOM_handleNotFound()
 
 void ASCOM_handleRoot()
 {
-  String ASpg;
   // spiffs was started earlier when server was started so assume it has started
   if ( SPIFFS.exists("/ashomepage.html"))               // read ashomepage.html from FS
   {
@@ -1211,13 +1213,13 @@ void ASCOM_handleRoot()
     DebugPrintln("ascomserver: processing page start");
     // process for dynamic data
     String bcol = mySetupData->get_wp_backcolor();
-    MSpg.replace("%BKC%", bcol);
+    ASpg.replace("%BKC%", bcol);
     String txtcol = mySetupData->get_wp_textcolor();
-    MSpg.replace("%TXC%", txtcol);
+    ASpg.replace("%TXC%", txtcol);
     String ticol = mySetupData->get_wp_titlecolor();
-    MSpg.replace("%TIC%", ticol);
+    ASpg.replace("%TIC%", ticol);
     String hcol = mySetupData->get_wp_headercolor();
-    MSpg.replace("%HEC%", hcol);
+    ASpg.replace("%HEC%", hcol);
     ASpg.replace("%IPS%", ipStr);
     ASpg.replace("%ALP%", String(mySetupData->get_ascomalpacaport()));
     ASpg.replace("%PRV%", String(programVersion));
@@ -1242,7 +1244,7 @@ void start_ascomremoteserver(void)
     TRACE();
     DebugPrintln(F(FSNOTSTARTEDSTR));
     DebugPrintln(F(SERVERSTATESTOPSTR));
-    ascomserverstate = STOPPED;
+    mySetupData->set_ascomserverstate(0);
     return;
   }
   ASpg.reserve(MAXASCOMPAGESIZE);
@@ -1250,63 +1252,70 @@ void start_ascomremoteserver(void)
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   DebugPrintln("start ascom server");
 
+  if ( mySetupData->get_ascomserverstate() == 0)
+  {
 #if defined(ESP8266)
-  ascomserver = new ESP8266WebServer(mySetupData->get_ascomalpacaport());
+    ascomserver = new ESP8266WebServer(mySetupData->get_ascomalpacaport());
 #else
-  ascomserver = new WebServer(mySetupData->get_ascomalpacaport());
+    ascomserver = new WebServer(mySetupData->get_ascomalpacaport());
 #endif // if defined(esp8266) 
 
-  if ( ascomdiscoverystate == STOPPED )
-  {
-    ASCOMDISCOVERYUdp.begin(ASCOMDISCOVERYPORT);
-    ascomdiscoverystate = RUNNING;
+    if ( ascomdiscoverystate == STOPPED )
+    {
+      ASCOMDISCOVERYUdp.begin(ASCOMDISCOVERYPORT);
+      ascomdiscoverystate = RUNNING;
+    }
+    ascomserver->on("/", ASCOM_handleRoot);               // handle root access
+    ascomserver->onNotFound(ASCOM_handleNotFound);        // handle url not found 404
+
+    ascomserver->on("/management/apiversions",              ASCOM_handleapiversions);
+    ascomserver->on("/management/v1/description",           ASCOM_handleapidescription);
+    ascomserver->on("/management/v1/configureddevices",     ASCOM_handleapiconfigureddevices);
+
+    ascomserver->on("/setup",                               ASCOM_handle_setup);
+    ascomserver->on("/setup/v1/focuser/0/setup",            ASCOM_handle_focuser_setup);
+
+    ascomserver->on("/api/v1/focuser/0/connected",          HTTP_PUT, ASCOM_handleconnectedput);
+    ascomserver->on("/api/v1/focuser/0/interfaceversion",   HTTP_GET, ASCOM_handleinterfaceversionget);
+    ascomserver->on("/api/v1/focuser/0/name",               HTTP_GET, ASCOM_handlenameget);
+    ascomserver->on("/api/v1/focuser/0/description",        HTTP_GET, ASCOM_handledescriptionget);
+    ascomserver->on("/api/v1/focuser/0/driverinfo",         HTTP_GET, ASCOM_handledriverinfoget);
+    ascomserver->on("/api/v1/focuser/0/driverversion",      HTTP_GET, ASCOM_handledriverversionget);
+    ascomserver->on("/api/v1/focuser/0/absolute",           HTTP_GET, ASCOM_handleabsoluteget);
+    ascomserver->on("/api/v1/focuser/0/maxstep",            HTTP_GET, ASCOM_handlemaxstepget);
+    ascomserver->on("/api/v1/focuser/0/maxincrement",       HTTP_GET, ASCOM_handlemaxincrementget);
+    ascomserver->on("/api/v1/focuser/0/temperature",        HTTP_GET, ASCOM_handletemperatureget);
+    ascomserver->on("/api/v1/focuser/0/position",           HTTP_GET, ASCOM_handlepositionget);
+    ascomserver->on("/api/v1/focuser/0/halt",               HTTP_PUT, ASCOM_handlehaltput);
+    ascomserver->on("/api/v1/focuser/0/ismoving",           HTTP_GET, ASCOM_handleismovingget);
+    ascomserver->on("/api/v1/focuser/0/stepsize",           HTTP_GET, ASCOM_handlestepsizeget);
+    ascomserver->on("/api/v1/focuser/0/connected",          HTTP_GET, ASCOM_handleconnectedget);
+    ascomserver->on("/api/v1/focuser/0/tempcomp",           HTTP_GET, ASCOM_handletempcompget);
+    ascomserver->on("/api/v1/focuser/0/tempcomp",           HTTP_PUT, ASCOM_handletempcompput);
+    ascomserver->on("/api/v1/focuser/0/tempcompavailable",  HTTP_GET, ASCOM_handletempcompavailableget);
+    ascomserver->on("/api/v1/focuser/0/move",               HTTP_PUT, ASCOM_handlemoveput);
+    ascomserver->on("/api/v1/focuser/0/supportedactions",   HTTP_GET, ASCOM_handlesupportedactionsget);
+    ascomserver->begin();
+    mySetupData->set_ascomserverstate(1);
+    DebugPrintln(F("start ascom server: RUNNING"));
+    HDebugPrint("Heap after  start_ascomremoteserver = ");
+    HDebugPrintf("%u\n", ESP.getFreeHeap());
+    delay(10);                                            // small pause so background tasks can run
   }
-  ascomserver->on("/", ASCOM_handleRoot);               // handle root access
-  ascomserver->onNotFound(ASCOM_handleNotFound);        // handle url not found 404
-
-  ascomserver->on("/management/apiversions",              ASCOM_handleapiversions);
-  ascomserver->on("/management/v1/description",           ASCOM_handleapidescription);
-  ascomserver->on("/management/v1/configureddevices",     ASCOM_handleapiconfigureddevices);
-
-  ascomserver->on("/setup",                               ASCOM_handle_setup);
-  ascomserver->on("/setup/v1/focuser/0/setup",            ASCOM_handle_focuser_setup);
-
-  ascomserver->on("/api/v1/focuser/0/connected",          HTTP_PUT, ASCOM_handleconnectedput);
-  ascomserver->on("/api/v1/focuser/0/interfaceversion",   HTTP_GET, ASCOM_handleinterfaceversionget);
-  ascomserver->on("/api/v1/focuser/0/name",               HTTP_GET, ASCOM_handlenameget);
-  ascomserver->on("/api/v1/focuser/0/description",        HTTP_GET, ASCOM_handledescriptionget);
-  ascomserver->on("/api/v1/focuser/0/driverinfo",         HTTP_GET, ASCOM_handledriverinfoget);
-  ascomserver->on("/api/v1/focuser/0/driverversion",      HTTP_GET, ASCOM_handledriverversionget);
-  ascomserver->on("/api/v1/focuser/0/absolute",           HTTP_GET, ASCOM_handleabsoluteget);
-  ascomserver->on("/api/v1/focuser/0/maxstep",            HTTP_GET, ASCOM_handlemaxstepget);
-  ascomserver->on("/api/v1/focuser/0/maxincrement",       HTTP_GET, ASCOM_handlemaxincrementget);
-  ascomserver->on("/api/v1/focuser/0/temperature",        HTTP_GET, ASCOM_handletemperatureget);
-  ascomserver->on("/api/v1/focuser/0/position",           HTTP_GET, ASCOM_handlepositionget);
-  ascomserver->on("/api/v1/focuser/0/halt",               HTTP_PUT, ASCOM_handlehaltput);
-  ascomserver->on("/api/v1/focuser/0/ismoving",           HTTP_GET, ASCOM_handleismovingget);
-  ascomserver->on("/api/v1/focuser/0/stepsize",           HTTP_GET, ASCOM_handlestepsizeget);
-  ascomserver->on("/api/v1/focuser/0/connected",          HTTP_GET, ASCOM_handleconnectedget);
-  ascomserver->on("/api/v1/focuser/0/tempcomp",           HTTP_GET, ASCOM_handletempcompget);
-  ascomserver->on("/api/v1/focuser/0/tempcomp",           HTTP_PUT, ASCOM_handletempcompput);
-  ascomserver->on("/api/v1/focuser/0/tempcompavailable",  HTTP_GET, ASCOM_handletempcompavailableget);
-  ascomserver->on("/api/v1/focuser/0/move",               HTTP_PUT, ASCOM_handlemoveput);
-  ascomserver->on("/api/v1/focuser/0/supportedactions",   HTTP_GET, ASCOM_handlesupportedactionsget);
-  ascomserver->begin();
-  ascomserverstate = RUNNING;
-  DebugPrintln(F("start ascom server: RUNNING"));
-  HDebugPrint("Heap after  start_ascomremoteserver = ");
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  delay(10);                                            // small pause so background tasks can run
+  else
+  {
+    DebugPrintln(F("Ascom server already running"));
+  }
 }
 
 void stop_ascomremoteserver(void)
 {
-  if ( ascomserverstate == RUNNING )
+  if ( mySetupData->get_ascomserverstate() == 1)
   {
     DebugPrintln("stop ascom server");
     ascomserver->close();
     delete ascomserver;                                 // free the ascomserver pointer and associated memory/code
-    ascomserverstate = STOPPED;
+    mySetupData->set_ascomserverstate(0);
     ASCOMDISCOVERYUdp.stop();                           // stop discovery service
   }
   else

@@ -18,8 +18,9 @@
 #include "generalDefinitions.h"
 #include "myBoards.h"
 #include <OneWire.h>                          // https://github.com/PaulStoffregen/OneWire
-//#include <myDallasTemperature.h>
 #include "temp.h"
+
+extern TempProbe *myTempProbe;
 
 OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);
@@ -29,11 +30,12 @@ extern SetupData *mySetupData;
 extern bool TimeCheck(unsigned long, unsigned long);
 extern unsigned long ftargetPosition;         // target position
 
-//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
-
-
-
 TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
+{
+  start_temp_probe();
+}
+
+void TempProbe::start_temp_probe(void)
 {
   pinMode(TEMPPIN, INPUT);                    // Configure GPIO pin for temperature probe
   DebugPrintln(CHECKFORTPROBESTR);
@@ -43,38 +45,60 @@ TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
   tprobe1 = getDeviceCount();                 // should return 1 if probe connected
   DebugPrint(TPROBESTR);
   DebugPrintln(tprobe1);
-  if (getAddress(tpAddress, 0) == true)       // get the address so we can set the probe resolution
+  // check current setting
+  if ( mySetupData->get_temperatureprobestate() == 1 )
   {
-    tprobe1 = 1;                              // address was found so there was a probe
-    setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
-    DebugPrint(SETTPROBERESSTR);
-
-    switch (mySetupData->get_tempprecision())
-    {
-      case 9: DebugPrintln(F("0.5"));
-        break;
-      case 10: DebugPrint(F("0.25"));
-        break;
-      case 11: DebugPrintln(F("0.125"));
-        break;
-      case 12: DebugPrintln(F("0.0625"));
-        break;
-      default:
-        DebugPrintln(F("Unknown"));
-        break;
-    }
-    requestTemperatures();                    // request the sensor to begin a temperature reading
+    // already running so just return
   }
   else
   {
-    DebugPrintln(TPROBENOTFOUNDSTR);
+    // search for probe
+    if (getAddress(tpAddress, 0) == true)                         // get the address so we can set the probe resolution
+    {
+      tprobe1 = 1;                                                // address was found so there was a probe
+      setResolution(tpAddress, mySetupData->get_tempprecision()); // set probe resolution
+      DebugPrint(SETTPROBERESSTR);
+
+      switch (mySetupData->get_tempprecision())
+      {
+        case 9: DebugPrintln(F("0.5"));
+          break;
+        case 10: DebugPrint(F("0.25"));
+          break;
+        case 11: DebugPrintln(F("0.125"));
+          break;
+        case 12: DebugPrintln(F("0.0625"));
+          break;
+        default:
+          DebugPrintln(F("Unknown"));
+          break;
+      }
+      requestTemperatures();                    // request the sensor to begin a temperature reading
+    }
+    else
+    {
+      DebugPrintln(TPROBENOTFOUNDSTR);
+    }
+    mySetupData->set_temperatureprobestate(1);
   }
 }
 
+TempProbe::~TempProbe(void)
+{
+  // TODO
+}
+
+void TempProbe::stop_temp_probe(void)
+{
+  mySetupData->set_temperatureprobestate(0);
+  tprobe1 = 0; 
+}
 
 void TempProbe::temp_setresolution(byte rval)
 {
   setResolution(tpAddress, rval);             // set the probe resolution (9=0.25, 12=0.00125)
+  mySetupData->set_tempprecision(rval);
+  // YOU HAVE TO MAKE SURE THAT THIS MIRRORS WHAT IS IN SETUPDATA
 }
 
 float TempProbe::read_temp(byte new_measurement)
@@ -182,5 +206,5 @@ void TempProbe::update_temp(void)
 
 byte TempProbe::get_tprobe1(void)
 {
-  return  this->tprobe1;
+  return tprobe1;
 }

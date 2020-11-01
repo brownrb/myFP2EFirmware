@@ -24,7 +24,6 @@
 // Enable or disable the specific hardware below
 
 // If you need no support for OLED skip section. To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line. 
-
 #define OLED_MODE OLED_TEXT   // OLED text only mode
 //#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
 
@@ -100,7 +99,7 @@
 
 // to enable reading SSID and PASSWORD 
 // from SPIFFS file wificonfig at boot time, uncomment the following file
-#define READWIFICONFIG 1
+//#define READWIFICONFIG 1
 
 // to enable this focuser for ASCOMREMOTE support [Port 4040], uncomment the next line
 // This has moved to MANAGEMENT SERVER
