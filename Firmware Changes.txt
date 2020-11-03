@@ -14,7 +14,7 @@
 // Add calls to MANAGEMENT server to support on/off services
 // Fix for in/out leds lighting up when enabled in the management server
 // Fix for OLEDTEXT code
-// Ignore requested moves with IRREMOTE if already moving
+// Fix for webserver
 // Changes to shutdown in software_reboot()
 // Changes to msindex3.htm and MANAGEMENT_buildadminpg3()
 // Fix for Local serial mode error
@@ -26,7 +26,6 @@
 // Add calls to MANAGEMENT server to support on/off services
 // Fix for in/out leds lighting up when enabled in the management server
 // Fix for OLEDTEXT code
-// Ignore requested moves with IRREMOTE if already moving
 // Changes to shutdown in software_reboot()
 // Changes to msindex3.htm and MANAGEMENT_buildadminpg3()
 

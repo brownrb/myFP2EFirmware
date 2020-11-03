@@ -23,8 +23,9 @@
 // not fitted on the board.
 // Enable or disable the specific hardware below
 
-// If you need no support for OLED skip section. To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line. 
-#define OLED_MODE OLED_TEXT   // OLED text only mode
+// If you need no support for OLED skip section. 
+// To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line below. 
+//#define OLED_MODE OLED_TEXT   // OLED text only mode
 //#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
 
 

@@ -55,29 +55,6 @@ WebServer *webserver;
 #endif // if defined(esp8266)
 String WSpg;
 
-void WEBSERVER_sendACAOheader(void)
-{
-  webserver->sendHeader("Access-Control-Allow-Origin", "*");
-}
-
-void WEBSERVER_sendmyheader(void)
-{
-  //webserver->sendHeader(F(CACHECONTROLSTR), F(NOCACHENOSTORESTR));
-  //webserver->sendHeader(F(PRAGMASTR), F(NOCACHESTR));
-  //webserver->sendHeader(F(EXPIRESSTR), "-1");
-  //webserver->setContentLength(CONTENT_LENGTH_UNKNOWN);
-  //webserver->send(NORMALWEBPAGE, F(TEXTPAGETYPE), "");
-  webserver->client().println("HTTP/1.1 200 OK");
-  webserver->client().println("Content-type:text/html");
-  //webserver->client().println("Connection: close");       // only valid on http/1.0
-  webserver->client().println();
-}
-
-void WEBSERVER_sendmycontent()
-{
-  webserver->client().print(WSpg);
-}
-
 void WEBSERVER_buildnotfound(void)
 {
   // spiffs was started earlier when server was started so assume it has started
@@ -605,8 +582,7 @@ void WEBSERVER_sendpresets(void)
   WEBSERVER_buildpresets();
   // send the presetspage to a connected client
   DebugPrintln(SENDPAGESTR);
-  WEBSERVER_sendmyheader();
-  WEBSERVER_sendmycontent();
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WSpg );
   WSpg = "";
 #ifdef TIMEWSSENDPRESETS
   Serial.print("ws:sendpresets: ");
@@ -673,8 +649,7 @@ void WEBSERVER_sendmove(void)
 #endif
   WEBSERVER_buildmove();
   DebugPrintln(SENDPAGESTR);
-  WEBSERVER_sendmyheader();
-  WEBSERVER_sendmycontent();
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WSpg );  // send the movepage to a connected client
   WSpg = "";
 #ifdef TIMEWSSENDMOVE
   Serial.print("ws:sendmove: ");
@@ -774,28 +749,32 @@ void WEBSERVER_buildhome(void)
     WSpg.replace("%MOV%", String(isMoving));
     if ( mySetupData->get_temperatureprobestate() == 1 )
     {
+      float ft = myTempProbe->read_temp(0);
       if ( mySetupData->get_tempmode() == 1)
       {
-        String tpstr = String(myTempProbe->read_temp(1), 2) + " c";
-        WSpg.replace("%TEM%", tpstr);
+        float ft = myTempProbe->read_temp(0);
+        WSpg.replace("%TEM%", String(ft, 2));
+        WSpg.replace("%TUN%", " c");
       }
       else
       {
-        float ft = myTempProbe->read_temp(1);
+        float ft = myTempProbe->read_temp(0);
         ft = (ft * 1.8) + 32;
-        String tpstr = String(ft, 2) + " f";
-        WSpg.replace("%TEM%", tpstr);
+        WSpg.replace("%TEM%", String(ft, 2));
+        WSpg.replace("%TUN%", " f");
       }
     }
     else
     {
       if ( mySetupData->get_tempmode() == 1)
       {
-        WSpg.replace("%TEM%", "20.00 c");
+        WSpg.replace("%TEM%", "20.00");
+        WSpg.replace("%TUN%", " c");
       }
       else
       {
-        WSpg.replace("%TEM%", "68.00 f");
+        WSpg.replace("%TEM%", "68.00");
+        WSpg.replace("%TUN%", " f");
       }
     }
     WSpg.replace("%TPR%", String(mySetupData->get_tempprecision()));
@@ -1153,8 +1132,7 @@ void WEBSERVER_sendroot(void)
 #endif
   WEBSERVER_buildhome();
   DebugPrintln(SENDPAGESTR);
-  WEBSERVER_sendmyheader();
-  WEBSERVER_sendmycontent();
+  webserver->send(NORMALWEBPAGE, TEXTPAGETYPE, WSpg );  // send the homepage to a connected client
   WSpg = "";
 #ifdef TIMEWSROOTSEND
   Serial.print("ws_sendroot: ");
@@ -1173,7 +1151,10 @@ void start_webserver(void)
     mySetupData->set_webserverstate(0);     // disable web server
     return;
   }
-  WSpg.reserve(MAXWEBPAGESIZE);
+  if ( WSpg == "" )
+  {
+    WSpg.reserve(MAXWEBPAGESIZE);
+  }
   DebugPrintln(F(STARTWEBSERVERSTR));
   HDebugPrint("Heap before start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
@@ -1191,10 +1172,10 @@ void start_webserver(void)
     webserver->on("/move",    HTTP_POST,  WEBSERVER_handlemove);
     webserver->on("/presets", HTTP_GET,   WEBSERVER_sendpresets);
     webserver->on("/presets", HTTP_POST,  WEBSERVER_handlepresets);
-    webserver->on("/position",            WEBSERVER_handleposition);
-    webserver->on("/ismoving",            WEBSERVER_handleismoving);
-    webserver->on("/target",              WEBSERVER_handletargetposition);
-    webserver->on("/temp",                WEBSERVER_handletemperature);
+    webserver->on("/position", HTTP_GET, WEBSERVER_handleposition);
+    webserver->on("/ismoving", HTTP_GET, WEBSERVER_handleismoving);
+    webserver->on("/target",  HTTP_GET,  WEBSERVER_handletargetposition);
+    webserver->on("/temp",    HTTP_GET,  WEBSERVER_handletemperature);
     webserver->onNotFound(WEBSERVER_handlenotfound);
     webserver->begin();
     mySetupData->set_webserverstate(1);
@@ -1218,6 +1199,7 @@ void stop_webserver(void)
     mySetupData->set_webserverstate(0);
     TRACE();
     DebugPrintln(SERVERSTATESTOPSTR);
+    WSpg = "";
   }
   else
   {

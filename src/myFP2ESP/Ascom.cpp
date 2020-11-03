@@ -1323,7 +1323,7 @@ void stop_ascomremoteserver(void)
     DebugPrintln(SERVERNOTRUNNINGSTR);
   }
 
-  if ( ascomdiscoverystate == STOPPED )
+  if ( ascomdiscoverystate == RUNNING )
   {
     ASCOMDISCOVERYUdp.stop();
     ascomdiscoverystate = STOPPED;

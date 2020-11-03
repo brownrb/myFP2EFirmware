@@ -22,8 +22,8 @@ class TempProbe : public DallasTemperature
     ~TempProbe();
     void  start_temp_probe(void);
     void  stop_temp_probe(void);
-    void  temp_setresolution(byte rval);
-    float read_temp(byte new_measurement);
+    void  temp_setresolution(byte);
+    float read_temp(byte);
     void  update_temp(void);
     byte  get_tprobe1(void);
 

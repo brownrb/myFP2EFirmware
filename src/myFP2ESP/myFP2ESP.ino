@@ -342,6 +342,7 @@ void update_irremote()
     {
       lastcode = results.value;
     }
+    
     if ( (isMoving == 1) && (lastcode == IR_HALT))
     {
       halt_alert = true;
