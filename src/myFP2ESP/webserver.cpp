@@ -1155,17 +1155,18 @@ void start_webserver(void)
   {
     WSpg.reserve(MAXWEBPAGESIZE);
   }
-  DebugPrintln(F(STARTWEBSERVERSTR));
+  DebugPrintln(STARTWEBSERVERSTR);
   HDebugPrint("Heap before start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  if ( mySetupData->get_webserverstate() == 0)
+
+  if ( mySetupData->get_webserverstate() == 1)
   {
 #if defined(ESP8266)
     webserver = new ESP8266WebServer(mySetupData->get_webserverport());
 #else
     webserver = new WebServer(mySetupData->get_webserverport());
 #endif // if defined(esp8266) 
+
     webserver->on("/",        HTTP_GET,   WEBSERVER_sendroot);
     webserver->on("/",        HTTP_POST,  WEBSERVER_handleroot);
     webserver->on("/move",    HTTP_GET,   WEBSERVER_sendmove);

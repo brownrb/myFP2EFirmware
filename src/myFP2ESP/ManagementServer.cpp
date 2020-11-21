@@ -136,6 +136,7 @@ void MANAGEMENT_sendmycontent()
 }
 
 // send the requested file to the client (if it exists)
+
 bool MANAGEMENT_handlefileread(String path)
 {
   DebugPrintln("handleFileRead: " + path);
@@ -163,7 +164,7 @@ bool MANAGEMENT_handlefileread(String path)
   else
   {
     TRACE();
-    DebugPrintln(F(FILENOTFOUNDSTR));
+    DebugPrintln(FILENOTFOUNDSTR);
     return false;                                       // if the file doesn't exist, return false
   }
 }
@@ -209,7 +210,7 @@ void MANAGEMENT_displaydeletepage()
     DebugPrintln(FSFILENOTFOUNDSTR);
     MSpg = FILENOTFOUNDSTR;
   }
-  mserver.send(NORMALWEBPAGE, F(TEXTPAGETYPE), MSpg);
+  mserver.send(NORMALWEBPAGE, TEXTPAGETYPE, MSpg);  
 }
 
 void MANAGEMENT_handledeletefile()

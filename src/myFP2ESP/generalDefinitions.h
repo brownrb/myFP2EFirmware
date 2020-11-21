@@ -239,89 +239,89 @@ extern const char* LOCALSERIALSTR;
 extern const char* FSFILENOTFOUNDSTR;
 
 // joystick messages
-#define UPDATEJOYSTICKSTR         "joystick: update joystick"
-#define JOYSTICKVALSTR            "Raw joyval:"
-#define JOYSTICKXINVALSTR         "X IN joyval:"
-#define JOYSTICKSPEEDSTR          ", Speed:"
-#define JOYSTICKXOUTVALSTR        "X OUT joyval:"
+extern const char* UPDATEJOYSTICKSTR;
+extern const char* JOYSTICKVALSTR;
+extern const char* JOYSTICKXINVALSTR;
+extern const char* JOYSTICKSPEEDSTR;
+extern const char* JOYSTICKXOUTVALSTR;
 
 // defines for ASCOMSERVER, MDNSSERVER, WEBSERVER
-#define ASCOMREMOTESTR            "ASCOM Remote: "
-#define WEBSERVERSTR              "Webserver: "
+extern const char* WEBSERVERSTR;
+
 #define NORMALWEBPAGE             200
 #define FILEUPLOADSUCCESS         300
 #define BADREQUESTWEBPAGE         400
 #define NOTFOUNDWEBPAGE           404
 #define INTERNALSERVERERROR       500
 
-#define TEXTPAGETYPE              "text/html"
-#define PLAINTEXTPAGETYPE         "text/plain"
-#define JSONTEXTPAGETYPE          "text/json"
-#define JSONPAGETYPE              "application/json"
-#define FILENOTFOUNDSTR           "File!found"
-#define FILEFOUNDSTR              "File found"
-#define CANNOTCREATEFILESTR       "!create file"
+extern const char* TEXTPAGETYPE;
+extern const char* PLAINTEXTPAGETYPE;
+extern const char* JSONTEXTPAGETYPE;
+extern const char* JSONPAGETYPE;
+extern const char* FILENOTFOUNDSTR;
+extern const char* FILEFOUNDSTR;
+extern const char* CANNOTCREATEFILESTR;
 
-#define FSNOTSTARTEDSTR           "!start FS"
-#define BUILDDEFAULTPAGESTR       "build default page"
-#define SPIFFSFILENOTFOUNDSTR     "file !found"
-#define READPAGESTR               "read page into string"
-#define PROCESSPAGESTARTSTR       "process page start"
-#define PROCESSPAGEENDSTR         "process page done"
-#define STARTASCOMSERVERSTR       "start ascom server"
-#define STOPASCOMSERVERSTR        "stop ascom server"
-#define STARTWEBSERVERSTR         "start web server"
-#define STOPWEBSERVERSTR          "stop web server"
-#define STOPMDNSSERVERSTR         "stop mdns server"
+extern const char* FSNOTSTARTEDSTR;
+extern const char* BUILDDEFAULTPAGESTR;
+extern const char* SPIFFSFILENOTFOUNDSTR;
+extern const char* READPAGESTR;
+extern const char* PROCESSPAGESTARTSTR;
+extern const char* PROCESSPAGEENDSTR;
+extern const char* STARTASCOMSERVERSTR;
+extern const char* STOPASCOMSERVERSTR;
+extern const char* STARTWEBSERVERSTR;
+extern const char* STOPWEBSERVERSTR;
+extern const char* STOPMDNSSERVERSTR;
 
-#define SERVERSTATESTOPSTR        "STOPPED"
-#define SERVERSTATESTARTSTR       "STARTED"
-#define SERVERSTATERUNSTR         "RUNNING"
-#define SENDPAGESTR               "Send page"
-#define ENABLEDSTR                "Enabled"
-#define NOTENABLEDSTR             "Disabled"
+extern const char* SERVERSTATESTOPSTR;
+extern const char* SERVERSTATESTARTSTR;
+extern const char* SERVERSTATERUNSTR;
+extern const char* SENDPAGESTR;
+extern const char* ENABLEDSTR;
+extern const char* NOTENABLEDSTR;
 
-#define MANAGEMENTNOTFOUNDSTR   "<html><head><title>Management Server</title></head><body><p>URL not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>"
-#define WEBSERVERNOTFOUNDSTR    "<html><head><title>Web Server</title></head><body><p>URL not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOMEPAGE\"></form></p></body></html>"
-#define ASCOMSERVERNOTFOUNDSTR  "<html><head><title>ASCOM REMOTE Server</title></head><body><p>FS not started</p><p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p></body></html>";
+extern const char* MANAGEMENTNOTFOUNDSTR;
+extern const char* WEBSERVERNOTFOUNDSTR;
+extern const char* ASCOMSERVERNOTFOUNDSTR;
 
-#define MDNSSTARTFAILSTR          "Err setting up MDNS responder"
-#define MDNSSTARTEDSTR            "mDNS responder started"
+extern const char* MDNSSTARTFAILSTR;
+extern const char* MDNSSTARTEDSTR;
 
-#define CREBOOTSTR                "<form action=\"/\" method =\"post\"><input type=\"hidden\" name=\"srestart\" value=\"true\"><input type=\"submit\" value=\"REBOOT CONTROLLER\"></form>"
+extern const char* CREBOOTSTR;
 
-#define ENABLEBKINSTR             "<form action=\"/msindex3\" method=\"post\"><b>BL-IN State</b> [%STI%]: <input type=\"hidden\" name=\"enin\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
-#define DISABLEBKINSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-IN State</b> [%STI%]: <input type=\"hidden\" name=\"diin\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
-#define ENABLEBKOUTSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"enou\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
-#define DISABLEBKOUTSTR           "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"diou\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
-#define BLINSTEPSTR               "<form action=\"/msindex3\" method =\"post\"><b>BL-In &nbsp;Steps:</b> <input type=\"text\" name=\"bis\" size=\"6\" value=\"%bins%\"> <input type=\"submit\" name=\"setbis\" value=\"Set\"></form>"
-#define BLOUTSTEPSTR              "<form action=\"/msindex3\" method =\"post\"><b>BL-Out Steps:</b> <input type=\"text\" name=\"bos\" size=\"6\" value=\"%bous%\"> <input type=\"submit\" name=\"setbos\" value=\"Set\"></form>"
+extern const char* ENABLEBKINSTR;
+extern const char* DISABLEBKINSTR;
+extern const char* ENABLEBKOUTSTR;
+extern const char* DISABLEBKOUTSTR;
+extern const char* BLINSTEPSTR;
+extern const char* BLOUTSTEPSTR;
 
-#define ENABLELEDSTR              "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"startle\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
-#define DISABLELEDSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"stople\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
-#define ENABLETEMPSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%TPE%]: <input type=\"hidden\" name=\"starttp\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
-#define DISABLETEMPSTR            "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%TPE%]: <input type=\"hidden\" name=\"stoptp\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
-#define STOPTSSTR                 "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%TST%]: <input type=\"hidden\" name=\"stopts\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define STARTTSSTR                "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%TST%]: <input type=\"hidden\" name=\"startts\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
-#define STOPWSSTR                 "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%WST%]: <input type=\"hidden\" name=\"stopws\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define STARTWSSTR                "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%WST%]: <input type=\"hidden\" name=\"startws\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
-#define STOPASSTR                 "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%ABT%]: <input type=\"hidden\" name=\"stopas\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define STARTASSTR                "<form action=\"/msindex2\" method=\"post\"><b>Status</b> [%ABT%]: <input type=\"hidden\" name=\"startas\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
-#define DISPLAYCSTR               "<form action=\"/msindex2\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"cel\" Checked><input type=\"submit\" value=\"Enable Celsius\"></form>"
-#define DISPLAYFSTR               "<form action=\"/msindex2\" method=\"post\"><b>Temp Mode: </b><input type=\"hidden\" name=\"tm\" value=\"fah\"><input type=\"submit\" value=\"Enable Fahrenheit\"></form>"
+extern const char* ENABLELEDSTR;
+extern const char* DISABLELEDSTR;
+extern const char* ENABLETEMPSTR;
+extern const char* DISABLETEMPSTR;
+extern const char* STOPTSSTR;
+extern const char* STARTTSSTR;
+extern const char* STOPWSSTR;
+extern const char* STARTWSSTR;
+extern const char* STOPASSTR;
+extern const char* STARTASSTR;
+extern const char* DISPLAYCSTR;
+extern const char* DISPLAYFSTR;
 
-#define MDNSTOPSTR                "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"stopmdns\" value=\"true\"><input type=\"submit\" value=\"STOP\"></form>"
-#define MDNSSTARTSTR              "<form action=\"/\" method=\"post\"><input type=\"hidden\" name=\"startmdns\" value=\"true\"><input type=\"submit\" value=\"START\"></form>"
-#define DISPLAYONSTR              "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"doff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
-#define DISPLAYOFFSTR             "<form action=\"/\" method=\"post\"><b>Display: </b><input type=\"hidden\" name=\"di\" value=\"don\"><input type=\"submit\" value=\"Turn On\"></form>"
-#define STARTSCREENONSTR          "<form action=\"/\" method=\"post\"><b>Startscreen: </b><input type=\"hidden\" name=\"ss\" value=\"ssoff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
-#define STARTSCREENOFFSTR         "<form action=\"/\" method=\"post\"><b>Startscreen: </b><input type=\"hidden\" name=\"ss\" value=\"sson\"><input type=\"submit\" value=\"Turn On\"></form>"
-#define STARTHPSWMONSTR           "<form action=\"/\" method=\"post\"><b>HPSW Messages: </b><input type=\"hidden\" name=\"hp\" value=\"hpoff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
-#define STARTHPSWMOFFSTR          "<form action=\"/\" method=\"post\"><b>HPSW Messages: </b><input type=\"hidden\" name=\"hp\" value=\"hpon\"><input type=\"submit\" value=\"Turn On\"></form>"
-#define STARTFMDLONSTR            "<form action=\"/\" method=\"post\"><b>MS Forcedownload: </b><input type=\"hidden\" name=\"fd\" value=\"fdoff\" Checked><input type=\"submit\" value=\"Turn Off\"></form>"
-#define STARTFMDLOFFSTR           "<form action=\"/\" method=\"post\"><b>MS Forcedownload: </b><input type=\"hidden\" name=\"fd\" value=\"fdon\"><input type=\"submit\" value=\"Turn On\"></form>"
+extern const char* MDNSTOPSTR;
+extern const char* MDNSSTARTSTR;
+extern const char* DISPLAYONSTR;
+extern const char* DISPLAYOFFSTR;
+extern const char* STARTSCREENONSTR;
+extern const char* STARTSCREENOFFSTR;
+extern const char* STARTHPSWMONSTR;
+extern const char* STARTHPSWMOFFSTR;
+extern const char* STARTFMDLONSTR;
+extern const char* STARTFMDLOFFSTR;
 
-#define NOTDEFINEDSTR             "!defined in firmware"
+extern const char* NOTDEFINEDSTR;
 
 // ---------------------------------------------------------------------------
 // 2. TRACING -- DO NOT CHANGE
@@ -341,7 +341,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ---------------------------------------------------------------------------
-//#define DEBUG 1
+#define DEBUG 1
 
 #ifdef  DEBUG                                         // Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     // DPRINT is a macro, debug print
@@ -354,7 +354,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 4. HEAP DEBUGGING - DO NOT CHANGE / DO NOT ENABLE
 // ---------------------------------------------------------------------------
-//#define HEAPDEBUG     1
+#define HEAPDEBUG     1
 
 #ifdef  HEAPDEBUG   
 #define HDebugPrint(...) Serial.print(__VA_ARGS__)      // HDebugPrint is a macro, serial print

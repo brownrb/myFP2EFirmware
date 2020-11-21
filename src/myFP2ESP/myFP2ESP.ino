@@ -810,7 +810,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
   String PASSWORD;
   boolean status = false;
 
-  DebugPrintln(F(CHECKWIFICONFIGFILESTR));
+  DebugPrintln(CHECKWIFICONFIGFILESTR);
   // SPIFFS may have failed to start
   if ( !SPIFFS.begin() )
   {
@@ -822,7 +822,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
   if (!f)
   {
     TRACE();
-    DebugPrintln(F(FILENOTFOUNDSTR));
+    DebugPrintln(FILENOTFOUNDSTR);
   }
   else
   {
@@ -836,7 +836,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
     if (error)
     {
       TRACE();
-      DebugPrintln(F(DESERIALIZEERRORSTR));
+      DebugPrintln(DESERIALIZEERRORSTR);
     }
     else
     {
@@ -924,6 +924,7 @@ void setup()
   HDebugPrintln("setup(): oledtextdisplay()");
   displayfound = false;
 
+  
 #ifdef OLED_MODE
   if (CheckOledConnected())
   {
@@ -942,6 +943,7 @@ void setup()
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
+/*
   DebugPrint(F("fposition= "));                 // Print Loaded Values from SPIFF
   DebugPrintln(mySetupData->get_fposition());
   DebugPrint(F("focuserdirection= "));
@@ -1016,6 +1018,7 @@ void setup()
   DebugPrintln(mySetupData->get_forcedownload());
   DebugPrint(F("Display page option="));
   DebugPrintln(mySetupData->get_oledpageoption());
+*/
 
   // attempt start of temperatrure probe
   // if the state is 0, then myTempProbe will still be Null
@@ -1092,9 +1095,7 @@ void setup()
   }
 #endif // end STATIONMODE
 
-  DebugPrint("WifiHostname: ");
-  DebugPrintln(WiFi.getHostname());
-
+  
   myoled->oledtextmsg(CONNECTEDSTR, -1, true, true);
   delay(100);                                   // keep delays small else issue with ASCOM
 
@@ -1226,15 +1227,18 @@ void setup()
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
-  DebugPrintln("setup(): web server");
+ 
   if ( mySetupData->get_webserverstate() == 1)
   {
+    DebugPrintln("setup(): web server");
     start_webserver();
   }
 
-  DebugPrintln("setup(): ascom server");
+  delay(4000);
+ 
   if ( mySetupData->get_ascomserverstate() == 1)
   {
+    DebugPrintln("setup(): ascom server");
     start_ascomremoteserver();
   }
 
@@ -1618,9 +1622,9 @@ void loop()
           hpswstate = !(digitalRead(HPSWPIN));          // read state of HPSW
         }
       }
-      DebugPrint(F(HPMOVEOUTSTEPSSTR));
+      DebugPrint(HPMOVEOUTSTEPSSTR);
       DebugPrintln(stepstaken);
-      DebugPrintln(F(HPMOVEOUTFINISHEDSTR));
+      DebugPrintln(HPMOVEOUTFINISHEDSTR);
       ftargetPosition = 0;
       driverboard->setposition(0);
       mySetupData->set_fposition(0);

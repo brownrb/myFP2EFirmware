@@ -59,7 +59,7 @@ extern WebServer mserver;
 #include "webserver.h"
 #endif // if defined(esp8266)
 
-#include "ascom.h"
+#include "Ascom.h"
 // Implement ASCOM ALPACA DISCOVERY PROTOCOL
 #include <WiFiUdp.h>
 WiFiUDP ASCOMDISCOVERYUdp;
@@ -1242,8 +1242,8 @@ void start_ascomremoteserver(void)
   if ( !SPIFFS.begin() )
   {
     TRACE();
-    DebugPrintln(F(FSNOTSTARTEDSTR));
-    DebugPrintln(F(SERVERSTATESTOPSTR));
+    DebugPrintln(FSNOTSTARTEDSTR);
+    DebugPrintln(SERVERSTATESTOPSTR);
     mySetupData->set_ascomserverstate(0);
     return;
   }
