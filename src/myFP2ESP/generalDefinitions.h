@@ -354,7 +354,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 4. HEAP DEBUGGING - DO NOT CHANGE / DO NOT ENABLE
 // ---------------------------------------------------------------------------
-#define HEAPDEBUG     1
+//#define HEAPDEBUG     1
 
 #ifdef  HEAPDEBUG   
 #define HDebugPrint(...) Serial.print(__VA_ARGS__)      // HDebugPrint is a macro, serial print

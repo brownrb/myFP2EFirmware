@@ -132,6 +132,9 @@ inline void asm1uS()                  // 1uS on ESP8266, 1/3uS on ESP32
 // timer ISR  Interrupt Service Routine
 #if defined(ESP8266)
 ICACHE_RAM_ATTR void onTimer()
+#else
+void IRAM_ATTR onTimer()
+#endif
 {
   static bool mjob = false;      // motor job is running or not
   if (stepcount  && !(HPS_alert && stepdir == moving_in))
@@ -150,7 +153,7 @@ ICACHE_RAM_ATTR void onTimer()
     }
   }
 }
-#else
+/*#else
 void IRAM_ATTR onTimer()
 {
   static bool mjob = false;      // motor job is running or not
@@ -170,7 +173,7 @@ void IRAM_ATTR onTimer()
     }
   }
 }
-#endif
+#endif */
 
 DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(brdtype)
 {
@@ -496,25 +499,18 @@ void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool 
   DebugPrint(steps);
   DebugPrint(F(" "));
 
-  //Serial.print("initmove: ");
-  //Serial.print(dir);
-  //Serial.print(" : ");
-  //Serial.print(steps);
-  //Serial.print(" : ");
-  //Serial.print(motorspeed);
-  //Serial.print(" : ");
-  //Serial.println(leds);
-#if defined(ESP8266)
   unsigned long curspd = DriverBoard::getstepdelay();
   switch ( motorspeed )
   {
     case 0: // slow, 1/3rd the speed
       curspd *= 3;
       break;
-    case 1: // med, 1/2 the speed
+    case 1: // med, 1/2 the speed    
       curspd *= 2;
       break;
   }
+
+#if defined(ESP8266)
   if (myfp2Timer.attachInterruptInterval(curspd, onTimer) == false)
   {
     DebugPrint(F("Can't set myfp2Timer correctly. Select another freq. or interval"));
@@ -527,16 +523,6 @@ void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool 
 
   // Set alarm to call onTimer function every second (value in microseconds).
   // Repeat the alarm (third parameter)
-  unsigned long curspd = DriverBoard::getstepdelay();
-  switch ( motorspeed )
-  {
-    case 0: // slow, 1/3rd the speed
-      curspd *= 3;
-      break;
-    case 1: // med, 1/2 the speed
-      curspd *= 2;
-      break;
-  }
   timerAlarmWrite(myfp2timer, curspd, true);   // timer for ISR
   timerAlarmEnable(myfp2timer);                // start timer alarm
 #endif

@@ -30,7 +30,7 @@ extern void stop_ascomremoteserver(void);
 extern void start_ascomremoteserver(void);
 extern void init_leds(void);
 extern void stop_webserver(void);
-extern void start_webserver(void);
+extern byte start_webserver(void);
 
 // ---------------------------------------------------------------------------
 // DATA
@@ -589,7 +589,7 @@ void ESP_Communication()
           if ( mySetupData->get_webserverstate() == 0)
           {
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-            start_webserver();
+            mySetupData->set_webserverstate(start_webserver());
 #endif
           }
         }

@@ -300,7 +300,7 @@ extern ESP8266WebServer *ascomserver;
 extern WebServer *ascomserver;
 #endif // if defined(esp8266)
 
-extern void start_webserver(void);
+extern byte start_webserver(void);
 
 // ----------------------------------------------------------------------------------------------
 // 16: FIRMWARE CODE START - CHANGE AT YOUR OWN PERIL
@@ -846,7 +846,6 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
 
       SSID.toCharArray(xSSID, SSID.length() + 1);
       PASSWORD.toCharArray(xPASSWORD, PASSWORD.length() + 1);
-
       status = true;
     }
   }
@@ -1033,16 +1032,13 @@ void setup()
 #endif
 #endif
 
+  HDebugPrint("setup(): accesspoint ");
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
-  HDebugPrintln("setup(): accesspoint");
+
 #ifdef ACCESSPOINT
   myoled->oledtextmsg(STARTAPSTR, -1, true, true);
   DebugPrintln(STARTAPSTR);
-  HDebugPrintln("setup(): accesspoint");
-  HDebugPrint("Heap = ");
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  HDebugPrintln();
   WiFi.mode(WIFI_AP);
   delay(200);
   WiFi.softAP(mySSID, myPASSWORD);
@@ -1231,10 +1227,8 @@ void setup()
   if ( mySetupData->get_webserverstate() == 1)
   {
     DebugPrintln("setup(): web server");
-    start_webserver();
+    mySetupData->set_webserverstate(start_webserver());
   }
-
-  delay(4000);
  
   if ( mySetupData->get_ascomserverstate() == 1)
   {

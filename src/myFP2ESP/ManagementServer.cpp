@@ -43,7 +43,7 @@ extern TempProbe *myTempProbe;
 
 extern void start_tcpipserver(void);
 extern void stop_tcpipserver(void);
-extern void start_webserver(void);
+extern byte start_webserver(void);
 extern void stop_webserver(void);
 extern void start_ascomremoteserver(void);
 extern void stop_ascomremoteserver(void);
@@ -1043,7 +1043,7 @@ void MANAGEMENT_handleadminpg2(void)
     DebugPrintln(F("adminpg2: startws: "));
     if ( mySetupData->get_webserverstate() == 0 )
     {
-      start_webserver();
+      mySetupData->set_webserverstate(start_webserver());
     }
   }
   msg = mserver.arg("stopws");
@@ -1878,7 +1878,7 @@ void MANAGEMENT_webserveron(void)
   if ( mySetupData->get_webserverstate() == 0)
   {
     DebugPrintln("webserver on");
-    start_webserver();
+    mySetupData->set_webserverstate(start_webserver());    
   }
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Web-Server On");
 }

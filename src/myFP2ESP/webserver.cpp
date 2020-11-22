@@ -49,9 +49,9 @@ void WEBSERVER_sendroot(void);
 #include "webserver.h"
 #if defined(ESP8266)
 #undef DEBUG_ESP_HTTP_SERVER
-ESP8266WebServer *webserver;
+ESP8266WebServer *webserver = NULL;
 #else
-WebServer *webserver;
+WebServer *webserver = NULL;
 #endif // if defined(esp8266)
 String WSpg;
 
@@ -1141,7 +1141,7 @@ void WEBSERVER_sendroot(void)
   delay(10);                                            // small pause so background ESP8266 tasks can run
 }
 
-void start_webserver(void)
+byte start_webserver(void)
 {
   if ( !SPIFFS.begin() )
   {
@@ -1149,7 +1149,7 @@ void start_webserver(void)
     DebugPrintln(FSNOTSTARTEDSTR);
     DebugPrintln(SERVERSTATESTOPSTR);
     mySetupData->set_webserverstate(0);     // disable web server
-    return;
+    return 0;
   }
   if ( WSpg == "" )
   {
@@ -1159,8 +1159,9 @@ void start_webserver(void)
   HDebugPrint("Heap before start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
-  if ( mySetupData->get_webserverstate() == 1)
+  if ( webserver == NULL)   // if webserver doesn't exist, build it
   {
+
 #if defined(ESP8266)
     webserver = new ESP8266WebServer(mySetupData->get_webserverport());
 #else
@@ -1179,16 +1180,14 @@ void start_webserver(void)
     webserver->on("/temp",    HTTP_GET,  WEBSERVER_handletemperature);
     webserver->onNotFound(WEBSERVER_handlenotfound);
     webserver->begin();
-    mySetupData->set_webserverstate(1);
+
     DebugPrintln(SERVERSTATESTARTSTR);
     HDebugPrint("Heap after  start_webserver = ");
     HDebugPrintf("%u\n", ESP.getFreeHeap());
     delay(10);                                            // small pause so background tasks can run
   }
-  else
-  {
-    DebugPrintln(F("Web server already running"));    // Web server already running
-  }
+  
+  return 1;
 }
 
 void stop_webserver(void)
@@ -1197,6 +1196,8 @@ void stop_webserver(void)
   {
     webserver->close();
     delete webserver;                                   // free the webserver pointer and associated memory/code
+    webserver = NULL;
+
     mySetupData->set_webserverstate(0);
     TRACE();
     DebugPrintln(SERVERSTATESTOPSTR);
