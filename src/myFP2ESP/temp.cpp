@@ -20,7 +20,7 @@
 #include <OneWire.h>                          // https://github.com/PaulStoffregen/OneWire
 #include "temp.h"
 
-extern TempProbe *myTempProbe;
+TempProbe *myTempProbe;
 
 OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
 DallasTemperature sensor1(&oneWirech1);

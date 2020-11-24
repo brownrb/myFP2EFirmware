@@ -51,6 +51,7 @@ const char* DRVBRD_ID = "UNKNOWN";
 
 volatile bool timerSemaphore = false;
 volatile uint32_t stepcount = 0;
+volatile uint32_t backlash_count = 0;
 bool stepdir;
 extern DriverBoard* driverboard;
 
@@ -132,7 +133,7 @@ inline void asm1uS()                  // 1uS on ESP8266, 1/3uS on ESP32
 // timer ISR  Interrupt Service Routine
 #if defined(ESP8266)
 ICACHE_RAM_ATTR void onTimer()
-#else
+#else // ESP32
 void IRAM_ATTR onTimer()
 #endif
 {
@@ -153,27 +154,6 @@ void IRAM_ATTR onTimer()
     }
   }
 }
-/*#else
-void IRAM_ATTR onTimer()
-{
-  static bool mjob = false;      // motor job is running or not
-  if (stepcount  && !(HPS_alert && stepdir == moving_in))
-  {
-    driverboard->movemotor(stepdir, true);
-    stepcount--;
-    mjob = true;                  // mark a running job
-  }
-  else
-  {
-    if (mjob == true)
-    {
-      stepcount = 0;              // just in case HPS_alert was fired up
-      mjob = false;               // wait, and do nothing
-      timerSemaphore = true;
-    }
-  }
-}
-#endif */
 
 DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(brdtype)
 {
@@ -464,12 +444,22 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
     ( dir == moving_in ) ? digitalWrite(INLEDPIN, 0) : digitalWrite(OUTLEDPIN, 0);
   }
 #endif
+
   // update focuser position
   if ( updatefpos )
   {
-    ( stepdir == moving_in ) ? this->focuserposition-- : this->focuserposition++;
+    if (backlash_count > 0)
+    { 
+      backlash_count--;
+    }
+    else
+    {
+      (stepdir == moving_in) ? this->focuserposition-- : this->focuserposition++;
+    }    
   }
 }
+
+
 
 uint32_t DriverBoard::halt(void)
 {
@@ -485,19 +475,22 @@ uint32_t DriverBoard::halt(void)
   return stepcount;
 }
 
-void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool leds)
+void DriverBoard::initmove(bool dir, uint32_t steps, uint32_t backlash, byte motorspeed, bool leds)
 {
-  stepcount = steps;
+  stepcount = steps + backlash;
+  backlash_count = backlash;
   stepdir = dir;
   DriverBoard::enablemotor();
   drvbrdleds = leds;
   timerSemaphore = false;
 
-  DebugPrint(F(">initmove "));
+  DebugPrintln();
+  DebugPrint(F("  >initmove "));
   DebugPrint(dir);
   DebugPrint(F(":"));
-  DebugPrint(steps);
-  DebugPrint(F(" "));
+  DebugPrint(stepcount);
+  DebugPrint(F("  bl"));
+  DebugPrintln(backlash_count);
 
   unsigned long curspd = DriverBoard::getstepdelay();
   switch ( motorspeed )

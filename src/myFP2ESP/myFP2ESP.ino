@@ -240,7 +240,7 @@ String btline;                                // buffer for serial data
 #endif // #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 
 #include "temp.h"
-TempProbe *myTempProbe;
+extern TempProbe *myTempProbe;
 
 #include "displays.h"
 OLED_NON *myoled;
@@ -1246,7 +1246,8 @@ void setup()
 #endif
 
   DebugPrint(CURRENTPOSSTR);
-  DebugPrintln(driverboard->getposition());
+  DebugPrint(driverboard->getposition());
+  DebugPrint("  ");
   DebugPrint(TARGETPOSSTR);
   DebugPrintln(ftargetPosition);
   DebugPrintln(SETUPENDSTR);
@@ -1269,7 +1270,7 @@ void setup()
 
 //_____________________ loop()___________________________________________
 
-extern volatile uint32_t stepcount;     // number of steps to go in timer interrupt service routine
+//extern volatile uint32_t stepcount;     // number of steps to go in timer interrupt service routine
 extern volatile bool timerSemaphore;
 
 void loop()
@@ -1478,11 +1479,13 @@ void loop()
         if (DirOfTravel != moving_main && backlash_count)
         {
           uint32_t sm = mySetupData->get_stepmode();
-          uint32_t bl = backlash_count * sm;
+//          uint32_t bl = backlash_count * sm;
+          uint32_t bl = backlash_count;          
           DebugPrint("bl: ");
           DebugPrint(bl);
           DebugPrint(" ");
 
+/*
           if (DirOfTravel == moving_out)
           {
             backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
@@ -1491,21 +1494,18 @@ void loop()
           {
             backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
           }
-
+*/
           DebugPrint("backlash_count: ");
           DebugPrint(backlash_count);
           DebugPrint(" ");
         } // if (DirOfTravel != moving_main && backlash_count)
       } // if (mySetupData->get_focuserdirection() != DirOfTravel)
 
-      // if target pos > current pos then steps = target pos - current pos
-      // if target pos < current pos then steps = current pos - target pos
-      steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
+      //steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
+      steps = abs(ftargetPosition - driverboard->getposition());
       DebugPrint(STATEMOVINGSTR);
       DebugPrint(steps);
-      HDebugPrint("heap before move : ");
-      HDebugPrintf("%u\n", ESP.getFreeHeap());
-      driverboard->initmove(DirOfTravel, steps + backlash_count, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate());
+      driverboard->initmove(DirOfTravel, steps, (uint32_t)backlash_count, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate());
       MainStateMachine = State_Moving;
       break;
 
@@ -1639,8 +1639,6 @@ void loop()
     //_______________________________State_DelayAfterMove
 
     case State_DelayAfterMove:
-      HDebugPrint("Heap after move = ");
-      HDebugPrintf("%u\n", ESP.getFreeHeap());
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {

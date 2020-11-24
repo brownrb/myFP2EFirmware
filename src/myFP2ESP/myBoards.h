@@ -73,7 +73,8 @@
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
-#define TEMPPIN       4
+//#define TEMPPIN       4
+#define TEMPPIN       2
 #define I2CDATAPIN    2
 #define I2CCLKPIN     1
 #define DIRPIN        13                // D7 GPIOP13
@@ -207,7 +208,7 @@ class DriverBoard
   public:
     DriverBoard(byte, unsigned long);           // constructor
     ~DriverBoard(void);                         // destructor
-    void      initmove(bool, unsigned long, byte, bool);
+    void      initmove(bool, uint32_t, uint32_t, byte, bool);
     void      movemotor(byte, bool);
     uint32_t  halt(void);
     

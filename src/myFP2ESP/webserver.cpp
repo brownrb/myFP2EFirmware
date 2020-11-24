@@ -935,7 +935,7 @@ void WEBSERVER_handleroot()
   {
     DebugPrint("root() -halt:");
     DebugPrintln(halt_str);
-    halt_alert = true;;
+    halt_alert = true;
     //ftargetPosition = fcurrentPosition;
   }
 
