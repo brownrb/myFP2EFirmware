@@ -1351,11 +1351,11 @@ void MANAGEMENT_buildadminpg1(void)
     MSpg.replace("%MPO%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name=\"mdnsp\" size=\"8\" value=" + String(mySetupData->get_mdnsport()) + "> <input type=\"submit\" name=\"setmdnsport\" value=\"Set\"></form>");
     if ( mdnsserverstate == RUNNING)
     {
-      MSpg.replace("%MBT%", "STOP");
+      MSpg.replace("%MBT%", String(MDNSTOPSTR));
     }
     else
     {
-      MSpg.replace("%MBT%", "START");
+      MSpg.replace("%MBT%", String(MDNSSTARTSTR));
     }
 #else
     MSpg.replace("%MST%", "Not defined");
