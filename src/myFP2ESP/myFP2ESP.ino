@@ -466,13 +466,13 @@ void update_irremote()
     long newpos;
     if ( adjpos < 0 )
     {
-      newpos = (long)fcurrentPosition + adjpos;
+      newpos = mySetupData->get_fposition() + adjpos;
       newpos = (newpos < 0 ) ? 0 : newpos;
       ftargetPosition = newpos;
     }
     else if ( adjpos > 0)
     {
-      newpos = fcurrentPosition + adjpos;
+      newpos = mySetupData->get_fposition() + adjpos;
       newpos = (newpos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newpos;
       ftargetPosition = newpos;
     }
