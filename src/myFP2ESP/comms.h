@@ -270,7 +270,7 @@ void ESP_Communication()
         SendPaket('h', mySetupData->get_focuserpreset(preset));
       }
       break;
-          case 93: // get OLED page display option
+      case 93: // get OLED page display option
       {
         char tempbuff[5];
         mySetupData->get_oledpageoption().toCharArray(tempbuff, mySetupData->get_oledpageoption().length() + 1);
@@ -441,7 +441,7 @@ void ESP_Communication()
     case 36:
       // :360#    None    Disable Display
       // :361#    None    Enable Display
-#if defined(OLEDTEXT)
+#if defined(OLED_TEXT)
       mySetupData->set_displayenabled((byte) (receiveString[3] - '0'));
       if (mySetupData->get_displayenabled() == 1)
       {
@@ -457,7 +457,7 @@ void ESP_Communication()
           myoled->Display_Off();
         }
       }
-#endif // ifdef OLEDTEXT
+#endif // ifdef OLED_TEXT
       break;
     case 40: // reset Arduino myFocuserPro2E controller
       software_Reboot(2000);      // reboot with 2s delay
