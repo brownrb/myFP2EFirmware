@@ -5,8 +5,8 @@
 // ---------------------------------------------------------------------------
 // COPYRIGHT
 // ---------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ---------------------------------------------------------------------------
 
 #ifndef comms_h
