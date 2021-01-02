@@ -70,6 +70,8 @@ const char* REBOOTCNTLRSTR        = "Rebooting controller";
 const char* REBOOTASCOMSTR        = "Rebooting ASCOM remote server";
 const char* ASCOMSERVERNOTDEFINEDSTR = "ASCOM remote server not defined";
 const char* WEBSERVERNOTDEFINEDSTR = "Web server not defined";
+const char* SETPGOPTIONSTR        = "set OLED pg opt";
+const char* SETPGTIMESTR          = "set OLED pg time";
 
 const char* MANAGEMENTURLNOTFOUNDSTR  = "<html><head><title>Management server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
 const char* WEBSERVERURLNOTFOUNDSTR   = "<html><head><title>Web-server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
