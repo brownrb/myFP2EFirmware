@@ -1858,7 +1858,6 @@ void MANAGEMENT_tempon(void)
   {
     DebugPrintln("temp on");
     mySetupData->set_temperatureprobestate(1);
-    init_temp();                                                    // we need to reinitialise it
   }
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe On");
 }
