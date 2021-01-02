@@ -576,7 +576,6 @@ void ESP_Communication()
           if (mySetupData->get_temperatureprobestate() == 0)
           {
             mySetupData->set_temperatureprobestate(1);
-            init_temp();                                                    // we need to reinitialise it
           }
         }
         else
