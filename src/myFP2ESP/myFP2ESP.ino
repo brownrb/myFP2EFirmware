@@ -814,7 +814,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
   String PASSWORD;
   boolean status = false;
 
-  DebugPrintln(F(CHECKWIFICONFIGFILESTR));
+  DebugPrintln(CHECKWIFICONFIGFILESTR);
   // SPIFFS may have failed to start
   if ( !SPIFFS.begin() )
   {
@@ -840,7 +840,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
     if (error)
     {
       TRACE();
-      DebugPrintln(F(DESERIALIZEERRORSTR));
+      DebugPrintln(DESERIALIZEERRORSTR);
     }
     else
     {
