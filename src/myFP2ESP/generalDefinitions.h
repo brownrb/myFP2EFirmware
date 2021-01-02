@@ -179,6 +179,8 @@ extern const char* REBOOTCNTLRSTR;
 extern const char* REBOOTASCOMSTR;
 extern const char* ASCOMSERVERNOTDEFINEDSTR;
 extern const char* WEBSERVERNOTDEFINEDSTR;
+extern const char* SETPGOPTIONSTR;
+extern const char* SETPGTIMESTR;
 
 extern const char* MANAGEMENTNOTFOUNDSTR;
 extern const char* WEBSERVERNOTFOUNDSTR;
