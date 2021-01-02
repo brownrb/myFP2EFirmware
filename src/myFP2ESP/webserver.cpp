@@ -900,7 +900,7 @@ void WEBSERVER_buildhome(void)
     }
     WSpg.replace("%RDB%", rdbuffer);
     // display
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLED_TEXT) || defined(OLED_GRAPHICS)
     if ( mySetupData->get_displayenabled() == 1 )
     {
       WSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -1124,14 +1124,14 @@ void WEBSERVER_handleroot()
     if ( d_str == "don" )
     {
       mySetupData->set_displayenabled(1);
-#ifdef OLEDTEXT
+#ifdef OLED_TEXT
       myoled->Display_On();
 #endif
     }
     else
     {
       mySetupData->set_displayenabled(0);
-#ifdef OLEDTEXT
+#ifdef OLED_TEXT
       myoled->Display_Off();
 #endif
     }
