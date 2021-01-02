@@ -124,7 +124,7 @@
 //#define USE_SSH1106   2
 
 // DO NOT CHANGE
-#if defined(OLEDTEXT)
+#if defined(OLED_TEXT)
 #if defined(USE_SSD1306) && defined(USE_SSH1106)
 #halt //Error - you can must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
 #endif
