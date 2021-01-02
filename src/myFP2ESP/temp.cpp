@@ -29,10 +29,6 @@ extern SetupData *mySetupData;
 extern bool TimeCheck(unsigned long, unsigned long);
 extern unsigned long ftargetPosition;         // target position
 
-//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
-
-
-
 TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
 {
   pinMode(TEMPPIN, INPUT);                    // Configure GPIO pin for temperature probe
@@ -70,7 +66,6 @@ TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
     DebugPrintln(TPROBENOTFOUNDSTR);
   }
 }
-
 
 void TempProbe::temp_setresolution(byte rval)
 {
@@ -178,7 +173,6 @@ void TempProbe::update_temp(void)
     } // end of check for temperature needs updating
   } // end of if tprobe
 }
-
 
 byte TempProbe::get_tprobe1(void)
 {
