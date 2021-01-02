@@ -564,7 +564,7 @@ void MANAGEMENT_handleadminpg4(void)
     boolean flag = true;
     String str = msg;
     int len = str.length();
-    for ( int i = 0; i < len; i++ )
+    for ( unsigned int i = 0; i < len; i++ )
     {
       char ch = str[i];
       if ( ishexdigit(ch) == false )
