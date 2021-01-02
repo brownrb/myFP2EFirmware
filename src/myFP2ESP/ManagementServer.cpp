@@ -1395,7 +1395,7 @@ void MANAGEMENT_buildadminpg1(void)
     }
 
     // display %OLE%
-#if defined(OLED_TEXT) || defined(OLED_GRAPHIC))
+#if defined(OLED_TEXT) || defined(OLED_GRAPHIC)
     if ( mySetupData->get_displayenabled() == 1 )
     {
       MSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
