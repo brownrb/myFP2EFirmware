@@ -5,12 +5,11 @@
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger M, 2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2021. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 #ifndef displays_h
 #define displays_h
-
 
 #ifdef USE_SSD1306                            // For the OLED 128x64 0.96" display using the SSD1306 driver
 #include <SSD1306Wire.h>
