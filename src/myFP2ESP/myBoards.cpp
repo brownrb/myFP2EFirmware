@@ -52,6 +52,7 @@ const char* DRVBRD_ID = "UNKNOWN";
 volatile bool timerSemaphore = false;
 volatile uint32_t stepcount = 0;
 bool stepdir;
+byte reverse_dir;
 extern DriverBoard* driverboard;
 
 // timer Interrupt
@@ -414,7 +415,14 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
-  digitalWrite(DIRPIN, dir);            // set Direction of travel
+  if ( reverse_dir == 1 )
+  {
+    digitalWrite(DIRPIN, !dir);         // set Direction of travel
+  }
+  else
+  {
+    digitalWrite(DIRPIN, dir);          // set Direction of travel
+  }
   digitalWrite(ENABLEPIN, 0);           // Enable Motor Driver
   digitalWrite(STEPPIN, 1);             // Step pin on
 #if defined(ESP8266)
@@ -449,7 +457,28 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
     || DRVBRD == PRO2EL293DMINI || DRVBRD == PRO2ESP32L293DMINI \
     || DRVBRD == PRO2EL9110S    || DRVBRD == PRO2ESP32L9110S \
     || DRVBRD == PRO2EL293DNEMA || DRVBRD == PRO2EL293D28BYJ48)
-  ( dir == moving_in ) ? mystepper->step(-1) : mystepper->step(1);
+    if ( dir == moving_in )
+  {
+    if ( reverse_dir == 1 )
+    {
+      mystepper->step(1);
+    }
+    else
+    {
+      mystepper->step(-1);
+    }
+  }
+  else
+  {
+    if ( reverse_dir == 1 )
+    {
+      mystepper->step(-1);
+    }
+    else
+    {
+      mystepper->step(1);
+    }
+  }
   asm1uS();
   asm1uS();
 #endif
@@ -482,10 +511,11 @@ uint32_t DriverBoard::halt(void)
   return stepcount;
 }
 
-void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool leds)
+void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool leds, byte reversedir)
 {
   stepcount = steps;
   stepdir = dir;
+  reverse_dir = reversedir;
   DriverBoard::enablemotor();
   drvbrdleds = leds;
   timerSemaphore = false;
