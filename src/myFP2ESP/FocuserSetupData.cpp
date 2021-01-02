@@ -119,6 +119,7 @@ byte SetupData::LoadConfiguration()
       this->inoutledstate         = doc_per["leds"];
       this->showhpswmessages      = doc_per["hpswmsg"];
       this->forcedownload         = doc_per["fcdownld"];
+      this->oledpageoption        = doc_per["oledpg"].as<char*>();
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -220,6 +221,7 @@ void SetupData::LoadDefaultPersistantData()
   this->inoutledstate         = DEFAULTOFF;           // this should be default OFF - if HW not fitted could crash
   this->showhpswmessages      = DEFAULTOFF;           // this should be default OFF
   this->forcedownload         = DEFAULTOFF;           // this should be default OFF, MANAGEMENT Server only
+  this->oledpageoption        = OLEDPGOPTIONALL;
   this->SavePersitantConfiguration();                 // write default values to SPIFFS
 }
 
@@ -348,7 +350,8 @@ byte SetupData::SavePersitantConfiguration()
   doc["leds"]               = this->inoutledstate;
   doc["hpswmsg"]            = this->showhpswmessages;
   doc["fcdownld"]           = this->forcedownload;
-
+  doc["oledpg"]             = this->oledpageoption;
+  
   // Serialize JSON to file
   DebugPrintln("Writing to file");
   if (serializeJson(doc, file) == 0)
@@ -609,6 +612,11 @@ byte SetupData::get_forcedownload()
   return this->forcedownload;
 }
 
+String SetupData::get_oledpageoption()
+{
+  return this->oledpageoption;
+}
+
 //__Setter
 
 void SetupData::set_fposition(unsigned long fposition)
@@ -804,6 +812,11 @@ void SetupData::set_showhpswmsg(byte newval)
 void SetupData::set_forcedownload(byte newval)
 {
   this->StartDelayedUpdate(this->forcedownload, newval);
+}
+
+void SetupData::set_oledpageoption(String newval)
+{
+  this->StartDelayedUpdate(this->oledpageoption, newval);
 }
 
 void SetupData::StartDelayedUpdate(int & org_data, int new_data)
