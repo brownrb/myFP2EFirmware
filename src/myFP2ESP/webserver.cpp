@@ -4,8 +4,6 @@
 #include "myBoards.h"
 #include "temp.h"
 
-
-
 #if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE
 #undef DEBUG_ESP_HTTP_SERVER                // prevent messages from WiFiServer 
 #include <ESP8266WiFi.h>
@@ -16,7 +14,6 @@
 #endif
 #include <SPI.h>
 
-
 extern char    ipStr[16];                          // shared between BT mode and other modes
 extern SetupData *mySetupData;
 extern DriverBoard* driverboard;
@@ -26,12 +23,8 @@ extern volatile bool halt_alert;
 extern TempProbe *myTempProbe;
 extern bool webserverstate;
 
-
-
-
 void WEBSERVER_sendpresets(void);
 void WEBSERVER_sendroot(void);
-
 
 // ----------------------------------------------------------------------------------------------
 // 23: WEBSERVER - CHANGE AT YOUR OWN PERIL
@@ -773,26 +766,30 @@ void WEBSERVER_buildhome(void)
     {
       if ( mySetupData->get_tempmode() == 1)
       {
-        String tpstr = String(myTempProbe->read_temp(1), 2) + " c";
+        String tpstr = String(myTempProbe->read_temp(1), 2);
         WSpg.replace("%TEM%", tpstr);
+        WSpg.replace("%TUN%", " c");
       }
       else
       {
         float ft = myTempProbe->read_temp(1);
         ft = (ft * 1.8) + 32;
-        String tpstr = String(ft, 2) + " f";
+        String tpstr = String(ft, 2);
         WSpg.replace("%TEM%", tpstr);
+        WSpg.replace("%TUN%", " f");
       }
     }
     else
     {
       if ( mySetupData->get_tempmode() == 1)
       {
-        WSpg.replace("%TEM%", "20.00 c");
+        WSpg.replace("%TEM%", "20.00");
+        WSpg.replace("%TUN%", " c");
       }
       else
       {
-        WSpg.replace("%TEM%", "68.00 f");
+        WSpg.replace("%TEM%", "68.00");
+        WSpg.replace("%TUN%", " f");
       }
     }
     WSpg.replace("%TPR%", String(mySetupData->get_tempprecision()));
