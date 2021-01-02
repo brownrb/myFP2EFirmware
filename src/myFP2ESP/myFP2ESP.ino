@@ -341,78 +341,70 @@ void update_irremote()
     {
       lastcode = results.value;
     }
-    switch ( lastcode )
+    if ( (isMoving == 1) && (lastcode == IR_HALT))
     {
-      case IR_SLOW:
-        mySetupData->set_motorSpeed(SLOW);
-        break;
-      case IR_MEDIUM:
-        mySetupData->set_motorSpeed(MED);
-        break;
-      case IR_FAST:
-        mySetupData->set_motorSpeed(FAST);
-        break;
-      case IR_IN1:
-        adjpos = -1;
-        break;
-      case IR_OUT1:
-        adjpos = 1;
-        break;
-      case IR_IN10:
-        adjpos = -10;
-        break;
-      case IR_OUT10:
-        adjpos = 10;
-        break;
-      case IR_IN50:
-        adjpos = -50;
-        break;
-      case IR_OUT50:
-        adjpos = 50;
-        break;
-      case IR_IN100:
-        adjpos = -100;
-        break;
-      case IR_OUT100:
-        adjpos = 100;
-        break;
-      case IR_SETPOSZERO:                         // 0 RESET POSITION TO 0
-        adjpos = 0;
-        ftargetPosition = 0;
-        driverboard->setposition(0);
-        mySetupData->set_fposition(0);
-        break;
-      case IR_PRESET0:
-        ftargetPosition = mySetupData->get_focuserpreset(0);
-        break;
-      case IR_PRESET1:
-        ftargetPosition = mySetupData->get_focuserpreset(1);
-        break;
-      case IR_PRESET2:
-        ftargetPosition = mySetupData->get_focuserpreset(2);
-        break;
-      case IR_PRESET3:
-        ftargetPosition = mySetupData->get_focuserpreset(3);
-        break;
-      case IR_PRESET4:
-        ftargetPosition = mySetupData->get_focuserpreset(4);
-        break;
-      case IR_PRESET5:
-        ftargetPosition = mySetupData->get_focuserpreset(5);
-        break;
-      case IR_PRESET6:
-        ftargetPosition = mySetupData->get_focuserpreset(6);
-        break;
-      case IR_PRESET7:
-        ftargetPosition = mySetupData->get_focuserpreset(7);
-        break;
-      case IR_PRESET8:
-        ftargetPosition = mySetupData->get_focuserpreset(8);
-        break;
-      case IR_PRESET9:
-        ftargetPosition = mySetupData->get_focuserpreset(9);
-        break;
+      halt_alert = true;
     }
+    else
+    {
+      switch ( lastcode )
+      {
+        case IR_SLOW:
+          mySetupData->set_motorSpeed(SLOW);
+          break;
+        case IR_MEDIUM:
+          mySetupData->set_motorSpeed(MED);
+          break;
+        case IR_FAST:
+          mySetupData->set_motorSpeed(FAST);
+          break;
+        case IR_IN1:
+          adjpos = -1;
+          break;
+        case IR_OUT1:
+          adjpos = 1;
+          break;
+        case IR_IN10:
+          adjpos = -10;
+          break;
+        case IR_OUT10:
+          adjpos = 10;
+          break;
+        case IR_IN50:
+          adjpos = -50;
+          break;
+        case IR_OUT50:
+          adjpos = 50;
+          break;
+        case IR_IN100:
+          adjpos = -100;
+          break;
+        case IR_OUT100:
+          adjpos = 100;
+          break;
+        case IR_SETPOSZERO:                         // 0 RESET POSITION TO 0
+          adjpos = 0;
+          ftargetPosition = 0;
+          driverboard->setposition(0);
+          mySetupData->set_fposition(0);
+          break;
+        case IR_PRESET0:
+          ftargetPosition = mySetupData->get_focuserpreset(0);
+          break;
+        case IR_PRESET1:
+          ftargetPosition = mySetupData->get_focuserpreset(1);
+          break;
+        case IR_PRESET2:
+          ftargetPosition = mySetupData->get_focuserpreset(2);
+          break;
+        case IR_PRESET3:
+          ftargetPosition = mySetupData->get_focuserpreset(3);
+          break;
+        case IR_PRESET4:
+          ftargetPosition = mySetupData->get_focuserpreset(4);
+          break;
+      } // switch(lastcode)
+    } // if ( (isMoving == 1) && (lastcode == IR_HALT))
     irrecv.resume();                              // Receive the next value
     long newpos;
     if ( adjpos < 0 )
@@ -750,27 +742,10 @@ extern void stop_management(void);
 
 void software_Reboot(int Reboot_delay)
 {
-  myoled->oledtextmsg(WIFIRESTARTSTR, -1, true, false);
-#ifdef MDNSSERVER
-  stop_mdns_service();
-#endif
-  mySetupData->SaveNow();                               // save the focuser settings immediately
-#ifdef WEBSERVER
-  stop_webserver();
-#endif
-#ifdef ASCOMREMOTE
-  stop_ascomremoteserver();
-#endif
-#ifdef MANAGEMENT
-  stop_management();
-#endif
+  oledtextmsg(WIFIRESTARTSTR, -1, true, false);
+  mySetupData->SaveNow();                       // save the focuser settings immediately
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
-  if ( myclient.connected() )
-  {
-    myclient.stop();
-  }
-#endif
+  // a reboot causes everything to reset, so code to stop services etc is not really needed
   delay(Reboot_delay);
   ESP.restart();
 }
