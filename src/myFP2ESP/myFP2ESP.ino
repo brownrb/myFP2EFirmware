@@ -272,6 +272,7 @@ bool managementserverstate;
 bool tcpipserverstate;
 bool otaupdatestate;
 bool duckdnsstate;
+bool displaystate;
 
 SetupData *mySetupData;                           // focuser data
 
@@ -932,14 +933,17 @@ void setup()
   {
     myoled = new OLED_MODE;                       // Start configured OLED display object
     DebugPrintln(F("init OLED OLED_MODE")); 
+    displaystate = true;
   }
   else
   {
     myoled = new OLED_NON;
-    DebugPrintln(F("init OLED OLED_NON"));     
+    DebugPrintln(F("init OLED OLED_NON")); 
+    displaystate = false;
   }
 #else
-    myoled = new OLED_NON;    
+  myoled = new OLED_NON;   
+  displaystate = false;
 #endif
 
   HDebugPrint("Heap = ");
