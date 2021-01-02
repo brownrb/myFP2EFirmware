@@ -1395,7 +1395,7 @@ void MANAGEMENT_buildadminpg1(void)
     }
 
     // display %OLE%
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLED_TEXT) || defined(OLED_GRAPHIC))
     if ( mySetupData->get_displayenabled() == 1 )
     {
       MSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -1578,14 +1578,14 @@ void MANAGEMENT_handleadminpg1(void)
     if ( msg == "don" )
     {
       mySetupData->set_displayenabled(1);
-#ifdef OLEDTEXT
+#ifdef OLED_TEXT
       myoled->Display_On();
 #endif
     }
     else
     {
       mySetupData->set_displayenabled(0);
-#ifdef OLEDTEXT
+#ifdef OLED_TEXT
       myoled->Display_Off();
 #endif
     }
