@@ -5,8 +5,8 @@
 // ---------------------------------------------------------------------------
 // COPYRIGHT
 // ---------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ---------------------------------------------------------------------------
 
 #ifndef generalDefinitions_h
@@ -42,9 +42,9 @@ enum StateMachineStates { State_Idle, State_InitMove, State_Moving, State_DelayA
 #define REBOOTDELAY           2000          // When rebooting controller, delay (2s) from msg to actual reboot
 #define MotorReleaseDelay     120*1000      // motor release power after 120s
 
-#define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find correct address
-#define SCREEN_WIDTH          128           // OLED display width, in pixels
-#define SCREEN_HEIGHT         64            // OLED display height, in pixels
+#define MINOLEDPAGETIME       2000L
+#define MAXOLEDPAGETIME       10000L
+#define OLEDPGOPTIONALL       "111"         // oled page enable, ALL pages
 
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
@@ -179,6 +179,8 @@ extern const char* REBOOTCNTLRSTR;
 extern const char* REBOOTASCOMSTR;
 extern const char* ASCOMSERVERNOTDEFINEDSTR;
 extern const char* WEBSERVERNOTDEFINEDSTR;
+extern const char* SETPGOPTIONSTR;
+extern const char* SETPGTIMESTR;
 
 extern const char* MANAGEMENTNOTFOUNDSTR;
 extern const char* WEBSERVERNOTFOUNDSTR;
@@ -289,6 +291,8 @@ extern const char* FSFILENOTFOUNDSTR;
 #define DISABLEBKINSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-IN State</b> [%STI%]: <input type=\"hidden\" name=\"diin\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
 #define ENABLEBKOUTSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"enou\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
 #define DISABLEBKOUTSTR           "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"diou\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
+#define BLINSTEPSTR               "<form action=\"/msindex3\" method =\"post\"><b>BL-In &nbsp;Steps:</b> <input type=\"text\" name=\"bis\" size=\"6\" value=\"%bins%\"> <input type=\"submit\" name=\"setbis\" value=\"Set\"></form>"
+#define BLOUTSTEPSTR              "<form action=\"/msindex3\" method =\"post\"><b>BL-Out Steps:</b> <input type=\"text\" name=\"bos\" size=\"6\" value=\"%bous%\"> <input type=\"submit\" name=\"setbos\" value=\"Set\"></form>"
 
 #define ENABLELEDSTR              "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"startle\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
 #define DISABLELEDSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"stople\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
@@ -334,7 +338,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ---------------------------------------------------------------------------
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef  DEBUG                                         // Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     // DPRINT is a macro, debug print

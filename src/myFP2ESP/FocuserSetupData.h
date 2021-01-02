@@ -5,8 +5,8 @@
 // ---------------------------------------------------------------------------
 // COPYRIGHT
 // ---------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ---------------------------------------------------------------------------
 
 #include <Arduino.h>
@@ -71,7 +71,8 @@ class SetupData
     byte get_temperatureprobestate();
     byte get_showhpswmsg();
     byte get_forcedownload();
-
+    String  get_oledpageoption();
+  
     //__setter
     void set_fposition(unsigned long);
     void set_focuserdirection(byte);
@@ -112,6 +113,7 @@ class SetupData
     void set_inoutledstate(byte);
     void set_showhpswmsg(byte);
     void set_forcedownload(byte);
+    void set_oledpageoption(String);
      
   private:
     byte SavePersitantConfiguration();
@@ -178,4 +180,5 @@ class SetupData
     byte inoutledstate;             // if 1, in out leds are enabled [only if board supports them]
     byte showhpswmessages;          // if 1, home position switch msg's show on display if enabled
     byte forcedownload;             // if 1, in the MANAGEMENT SERVER, a file is downloaded instead of being displayed is web browser window
+    String oledpageoption;
 };

@@ -5,8 +5,8 @@
 // ---------------------------------------------------------------------------
 // COPYRIGHT
 // ---------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ---------------------------------------------------------------------------
 
 #include <Arduino.h>
@@ -18,7 +18,6 @@
 // ---------------------------------------------------------------------------
 // 1: SPECIFY HARDWARE OPTIONS HERE
 // ---------------------------------------------------------------------------
-
 // Caution: Do not enable a feature if the associated hardware circuits are 
 // not fitted on the board.
 // Enable or disable the specific hardware below
@@ -27,7 +26,6 @@
 
 #define OLED_MODE OLED_TEXT   // OLED text only mode
 //#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
-
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -124,10 +122,8 @@
 //#define USE_SSH1106   2
 
 // DO NOT CHANGE
-#if defined(OLEDTEXT)
 #if defined(USE_SSD1306) && defined(USE_SSH1106)
 #halt //Error - you can must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
-#endif
 #endif
 
 #ifndef USE_SSD1306

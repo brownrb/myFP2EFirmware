@@ -5,8 +5,8 @@
 // ---------------------------------------------------------------------------
 // COPYRIGHT
 // ---------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger M, 2019-2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ---------------------------------------------------------------------------
 
 #ifndef comms_h
@@ -31,7 +31,11 @@ extern volatile bool halt_alert;
 //extern byte tprobe1;
 
 extern TempProbe *myTempProbe;
-
+extern void  start_ascomremoteserver(void);
+extern void  stop_ascomremoteserver(void);
+extern void  init_leds(void);
+extern void  start_webserver();
+extern void  stop_webserver();
 
 // ---------------------------------------------------------------------------
 // DATA
@@ -266,6 +270,35 @@ void ESP_Communication()
         SendPaket('h', mySetupData->get_focuserpreset(preset));
       }
       break;
+      case 93: // get OLED page display option
+      {
+        char tempbuff[5];
+        mySetupData->get_oledpageoption().toCharArray(tempbuff, mySetupData->get_oledpageoption().length() + 1);
+        SendPaket('l', tempbuff);
+      }
+      break;
+    case 95: // get management option
+      {
+        int option = 0;
+        if ( mySetupData->get_ascomserverstate() == 1)
+        {
+          option += 1;
+        }
+        if ( mySetupData->get_inoutledstate() == 1 )
+        {
+          option += 2;
+        }
+        if (mySetupData->get_temperatureprobestate() == 1)
+        {
+          option += 4;
+        }
+        if ( mySetupData->get_webserverstate() == 1)
+        {
+          option += 8;
+        }
+        SendPaket('l', option);
+      }
+      break;
 
     // only the set commands are listed here as they do not require a response
     case 28:              // :28#       None    home the motor to position 0
@@ -408,7 +441,7 @@ void ESP_Communication()
     case 36:
       // :360#    None    Disable Display
       // :361#    None    Enable Display
-#if defined(OLEDTEXT)
+#if defined(OLED_TEXT)
       mySetupData->set_displayenabled((byte) (receiveString[3] - '0'));
       if (mySetupData->get_displayenabled() == 1)
       {
@@ -424,7 +457,7 @@ void ESP_Communication()
           myoled->Display_Off();
         }
       }
-#endif // ifdef OLEDTEXT
+#endif // ifdef OLED_TEXT
       break;
     case 40: // reset Arduino myFocuserPro2E controller
       software_Reboot(2000);      // reboot with 2s delay
@@ -488,7 +521,93 @@ void ESP_Communication()
         mySetupData->set_focuserpreset( preset, tmppos );
       }
       break;
-
+        case 92: // Set OLED page display option
+      WorkString = receiveString.substring(3, receiveString.length() - 1);
+      mySetupData->set_oledpageoption(WorkString);
+      break;
+    case 94: // Set management options
+      {
+        WorkString = receiveString.substring(3, receiveString.length() - 1);
+        int option = WorkString.toInt();
+        if ( (option & 1) == 1 )
+        {
+          // ascom server start if not already started
+          if ( mySetupData->get_ascomserverstate() == 0)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            start_ascomremoteserver();
+#endif
+          }
+        }
+        else
+        {
+          // ascom server stop if running
+          if ( mySetupData->get_ascomserverstate() == 1)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            stop_ascomremoteserver();
+#endif
+          }
+        }
+        if ( (option & 2) == 2)
+        {
+          // in out leds start
+          if ( mySetupData->get_inoutledstate() == 0)
+          {
+            mySetupData->set_inoutledstate(1);
+            // reinitialise pins
+#if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
+            init_leds();
+#endif
+          }
+        }
+        else
+        {
+          // in out leds stop
+          // if disabled then enable
+          if ( mySetupData->get_inoutledstate() == 1)
+          {
+            mySetupData->set_inoutledstate(0);
+          }
+        }
+        if ( (option & 4) == 4)
+        {
+          // temp probe start
+          if (mySetupData->get_temperatureprobestate() == 0)
+          {
+            mySetupData->set_temperatureprobestate(1);
+          }
+        }
+        else
+        {
+          // temp probe stop
+          if (mySetupData->get_temperatureprobestate() == 1)
+          {
+            mySetupData->set_temperatureprobestate(0);
+          }
+        }
+        if ( (option & 8) == 8 )
+        {
+          // set web server option
+          if ( mySetupData->get_webserverstate() == 0)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            start_webserver();
+#endif
+          }
+        }
+        else
+        {
+          if ( mySetupData->get_webserverstate() == 1)
+          {
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+            stop_webserver();
+#endif
+          }
+        }
+      }
+      break;
+      
     // compatibilty with myFocuserpro2 in LOCALSERIAL mode
     case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
       //ignore

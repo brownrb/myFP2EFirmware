@@ -1,14 +1,13 @@
-// ----------------------------------------------------------------------------------------------
-// ManagementServer.cpp : myFP2ESP temperature probe
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// myFP2ESP MANAGEMENT SERVER ROUTINES
+// ---------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // COPYRIGHT
-// ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger Manz, 2020. All Rights Reserved.
-// ----------------------------------------------------------------------------------------------
-
+// ---------------------------------------------------------------------------
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger M, 2019-2021. All Rights Reserved.
+// ---------------------------------------------------------------------------
 
 #include <Arduino.h>
 #include "myBoards.h"
@@ -50,15 +49,11 @@ extern void start_ascomremoteserver(void);
 extern void stop_ascomremoteserver(void);
 extern void init_leds(void);
 
-
 void MANAGEMENT_sendadminpg5(void);
 void MANAGEMENT_sendadminpg4(void);
 void MANAGEMENT_sendadminpg3(void);
 void MANAGEMENT_sendadminpg2(void);
 void MANAGEMENT_sendadminpg1(void);
-
-
-
 
 // ----------------------------------------------------------------------------------------------
 // 22: MANAGEMENT INTERFACE - CHANGE AT YOUR OWN PERIL
@@ -79,10 +74,7 @@ WebServer mserver(MSSERVERPORT);
 #endif // if defined(esp8266)
 
 String MSpg;
-
 File   fsUploadFile;
-
-
 
 boolean ishexdigit( char c )
 {
@@ -572,7 +564,7 @@ void MANAGEMENT_handleadminpg4(void)
     boolean flag = true;
     String str = msg;
     int len = str.length();
-    for ( int i = 0; i < len; i++ )
+    for ( unsigned int i = 0; i < len; i++ )
     {
       char ch = str[i];
       if ( ishexdigit(ch) == false )
@@ -724,9 +716,12 @@ void MANAGEMENT_buildadminpg3(void)
       MSpg.replace("%BOE%", String(ENABLEBKOUTSTR));
       MSpg.replace("%STO%", String(NOTENABLEDSTR));
     }
-    MSpg.replace("%BIS%", "<form action=\"/msindex3\" method =\"post\">BL-In &nbsp;Steps: <input type=\"text\" name=\"bis\" size=\"6\" value=" + String(mySetupData->get_backlashsteps_in()) + "> <input type=\"submit\" name=\"setbis\" value=\"Set\"></form>");
-    MSpg.replace("%BOS%", "<form action=\"/msindex3\" method =\"post\">BL-Out Steps: <input type=\"text\" name=\"bos\" size=\"6\" value=" + String(mySetupData->get_backlashsteps_out()) + "> <input type=\"submit\" name=\"setbos\" value=\"Set\"></form>");
-
+    
+    MSpg.replace("%BIS%", String(BLINSTEPSTR));
+    MSpg.replace("%BOS%", String(BLOUTSTEPSTR));
+    MSpg.replace("%bins%", String(mySetupData->get_backlashsteps_in()));
+    MSpg.replace("%bous%", String(mySetupData->get_backlashsteps_out()));
+    
     MSpg.replace("%BT%", String(CREBOOTSTR));           // add code to handle reboot controller
 
     DebugPrintln(PROCESSPAGEENDSTR);
@@ -901,7 +896,7 @@ void MANAGEMENT_buildadminpg2(void)
       MSpg.replace("%AST%", String(STARTASSTR));
       MSpg.replace("%ABT%", String(SERVERSTATESTOPSTR));
     }
-    MSpg.replace("%APO%", "<form action=\"/\" method =\"post\">Port: <input type=\"text\" name=\"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"></form>");
+    MSpg.replace("%APO%", "<form action=\"/msindex2\" method =\"post\">Port: <input type=\"text\" name=\"ap\" size=\"8\" value=" + String(mySetupData->get_ascomalpacaport()) + "> <input type=\"submit\" name=\"setasport\" value=\"Set\"></form>");
 
     // TEMPERATURE PROBE ENABLE/DISABLE, State %TPE%, Button %TPO%
     if ( mySetupData->get_temperatureprobestate() == 1 )
@@ -1400,7 +1395,7 @@ void MANAGEMENT_buildadminpg1(void)
     }
 
     // display %OLE%
-#if defined(OLEDTEXT) || defined(OLEDGRAPHICS)
+#if defined(OLED_TEXT) || defined(OLED_GRAPHIC))
     if ( mySetupData->get_displayenabled() == 1 )
     {
       MSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -1413,6 +1408,18 @@ void MANAGEMENT_buildadminpg1(void)
     MSpg.replace("%OLE%", "<b>Display:</b> not defined");
 #endif
 
+        // if oled display page group option update
+    // %PG% is current page option, %PGO% is option binary string
+    MSpg.replace("%PG%", mySetupData->get_oledpageoption() );
+    String oled;
+    oled = "<form action=\"/\" method=\"post\"><input type=\"text\" name=\"pg\" size=\"12\" value=" + String(mySetupData->get_oledpageoption()) + "> <input type=\"submit\" name=\"setpg\" value=\"Set\"></form>";
+    MSpg.replace("%PGO%", oled );
+
+    // page display time
+    MSpg.replace("%PT%", String(mySetupData->get_lcdpagetime()) );
+    oled = "<form action=\"/\" method=\"post\"><input type=\"text\" name=\"pt\" size=\"12\" value=" + String(mySetupData->get_lcdpagetime()) + "> <input type=\"submit\" name=\"setpt\" value=\"Set\"></form>";
+    MSpg.replace("%PGT%", oled );
+    
     // startscreen %SS%
     if ( mySetupData->get_showstartscreen() == 1 )
     {
@@ -1571,16 +1578,69 @@ void MANAGEMENT_handleadminpg1(void)
     if ( msg == "don" )
     {
       mySetupData->set_displayenabled(1);
-#ifdef OLEDTEXT
+#ifdef OLED_TEXT
       myoled->Display_On();
 #endif
     }
     else
     {
       mySetupData->set_displayenabled(0);
-#ifdef OLEDTEXT
+#ifdef OLED_TEXT
       myoled->Display_Off();
 #endif
+    }
+  }
+
+    // if oled display page group option update
+  // OLED Page Group Option [State] [options][SET]
+  msg = mserver.arg("setpg");
+  if ( msg != "" )
+  {
+    String tp = mserver.arg("pg");
+    if ( tp == "" )                                     // check for null
+    {
+      tp = OLEDPGOPTIONALL;
+    }
+    if ( tp.length() != 3  )                            // check for 3 digits
+    {
+      tp = OLEDPGOPTIONALL;
+    }
+    for ( int i = 0; i < tp.length(); i++)              // check for 0 or 1
+    {
+      if ( (tp[i] != '0') && (tp[i] != '1') )
+      {
+        tp = OLEDPGOPTIONALL;
+        break;
+      }
+    }
+    DebugPrint(SETPGOPTIONSTR);
+    DebugPrintln(msg);
+    mySetupData->set_oledpageoption(tp);
+  }
+
+  // if oled page time update
+  msg = mserver.arg("settm");
+  if ( msg != "" )
+  {
+    String tp = mserver.arg("pt");
+    if ( tp != "" )
+    {
+      unsigned long pgtime = tp.toInt();
+      if ( pgtime < MINOLEDPAGETIME )
+      {
+        pgtime = MINOLEDPAGETIME;                       // at least 2s
+      }
+      else if ( pgtime > MAXOLEDPAGETIME )
+      {
+        pgtime = MAXOLEDPAGETIME;
+      }
+      DebugPrint(SETPGTIMESTR);
+      DebugPrintln(msg);
+      mySetupData->set_lcdpagetime(pgtime);
+    }
+    else
+    {
+      // ignore
     }
   }
 
@@ -1731,7 +1791,97 @@ void MANAGEMENT_sendadminpg1(void)
   delay(10);
 }
 
+void MANAGEMENT_ascomoff(void)
+{
+  // ascom server stop
+  if ( mySetupData->get_ascomserverstate() == 1)
+  {
+    DebugPrintln("stop ascomserver");
+    stop_ascomremoteserver();
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "ASCOM Alpaca Server Off");
+}
 
+void MANAGEMENT_ascomon(void)
+{
+  // ascom server start
+  if ( mySetupData->get_ascomserverstate() == 0)
+  {
+    DebugPrintln("start ascomserver");
+    start_ascomremoteserver();
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "ASCOM Alpaca Server On");
+}
+
+void MANAGEMENT_ledsoff(void)
+{
+  // in out leds stop
+  // if disabled then enable
+  if ( mySetupData->get_inoutledstate() == 1)
+  {
+    DebugPrintln("leds off");
+    mySetupData->set_inoutledstate(0);
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "IN-OUT LED's Off");
+}
+
+void MANAGEMENT_ledson(void)
+{
+  // in out leds start
+  if ( mySetupData->get_inoutledstate() == 0)
+  {
+    DebugPrintln("leds on");
+    mySetupData->set_inoutledstate(1);
+    // reinitialise pins
+#if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
+    init_leds();
+#endif
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "IN-OUT LED's On");
+}
+
+void MANAGEMENT_tempoff(void)
+{
+  // temp probe stop
+  if (mySetupData->get_temperatureprobestate() == 1)
+  {
+    DebugPrintln("temp off");
+    mySetupData->set_temperatureprobestate(0);
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe Off");
+}
+
+void MANAGEMENT_tempon(void)
+{
+  // temp probe start
+  if (mySetupData->get_temperatureprobestate() == 0)
+  {
+    DebugPrintln("temp on");
+    mySetupData->set_temperatureprobestate(1);
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe On");
+}
+
+void MANAGEMENT_webserveroff(void)
+{
+  if ( mySetupData->get_webserverstate() == 1)
+  {
+    DebugPrintln("webserver off");
+    stop_webserver();
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Web-Server Off");
+}
+
+void MANAGEMENT_webserveron(void)
+{
+  // set web server option
+  if ( mySetupData->get_webserverstate() == 0)
+  {
+    DebugPrintln("webserver on");
+    start_webserver();
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Web-Server On");
+}
 
 void start_management(void)
 {
@@ -1760,6 +1910,16 @@ void start_management(void)
   mserver.on("/delete",   HTTP_POST, MANAGEMENT_handledeletefile);
   mserver.on("/list",     HTTP_GET,  MANAGEMENT_listFSfiles);
   mserver.on("/upload",   HTTP_GET,  MANAGEMENT_displayfileupload);
+  
+  mserver.on("/ascomoff",     HTTP_GET,  MANAGEMENT_ascomoff);
+  mserver.on("/ascomon",      HTTP_GET,  MANAGEMENT_ascomon);
+  mserver.on("/ledsoff",      HTTP_GET,  MANAGEMENT_ledsoff);
+  mserver.on("/ledson",       HTTP_GET,  MANAGEMENT_ledson);
+  mserver.on("/tempon",       HTTP_GET,  MANAGEMENT_tempon);
+  mserver.on("/tempoff",      HTTP_GET,  MANAGEMENT_tempoff);
+  mserver.on("/webserveroff", HTTP_GET,  MANAGEMENT_webserveroff);
+  mserver.on("/webserveron",  HTTP_GET,  MANAGEMENT_webserveron);
+  
   mserver.on("/upload",   HTTP_POST, []() {
     mserver.send(NORMALWEBPAGE);
   }, MANAGEMENT_handlefileupload );

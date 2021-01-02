@@ -5,8 +5,8 @@
 // ----------------------------------------------------------------------------------------------
 // COPYRIGHT
 // ----------------------------------------------------------------------------------------------
-// (c) Copyright Robert Brown 2014-2020. All Rights Reserved.
-// (c) Copyright Holger Manz, 2020. All Rights Reserved.
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger Manz, 2020-2021. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------------
@@ -28,10 +28,6 @@ DeviceAddress tpAddress;                      // holds address of the temperatur
 extern SetupData *mySetupData;
 extern bool TimeCheck(unsigned long, unsigned long);
 extern unsigned long ftargetPosition;         // target position
-
-//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
-
-
 
 TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
 {
@@ -70,7 +66,6 @@ TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
     DebugPrintln(TPROBENOTFOUNDSTR);
   }
 }
-
 
 void TempProbe::temp_setresolution(byte rval)
 {
@@ -178,7 +173,6 @@ void TempProbe::update_temp(void)
     } // end of check for temperature needs updating
   } // end of if tprobe
 }
-
 
 byte TempProbe::get_tprobe1(void)
 {
