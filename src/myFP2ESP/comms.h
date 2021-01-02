@@ -34,7 +34,6 @@ extern TempProbe *myTempProbe;
 extern void  start_ascomremoteserver(void);
 extern void  stop_ascomremoteserver(void);
 extern void  init_leds(void);
-extern void  init_temp(void);
 extern void  start_webserver();
 extern void  stop_webserver();
 
