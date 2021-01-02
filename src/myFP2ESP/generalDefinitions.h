@@ -45,6 +45,7 @@ enum StateMachineStates { State_Idle, State_InitMove, State_Moving, State_DelayA
 #define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find correct address
 #define SCREEN_WIDTH          128           // OLED display width, in pixels
 #define SCREEN_HEIGHT         64            // OLED display height, in pixels
+#define OLEDPGOPTIONALL       "111"         // oled page enable, ALL pages
 
 #define MOTORPULSETIME        2             // DO NOT CHANGE
 #define SERVERPORT            2020          // TCPIP port for myFP2ESP
@@ -334,7 +335,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ---------------------------------------------------------------------------
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef  DEBUG                                         // Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     // DPRINT is a macro, debug print
