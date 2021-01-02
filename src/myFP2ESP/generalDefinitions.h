@@ -42,9 +42,6 @@ enum StateMachineStates { State_Idle, State_InitMove, State_Moving, State_DelayA
 #define REBOOTDELAY           2000          // When rebooting controller, delay (2s) from msg to actual reboot
 #define MotorReleaseDelay     120*1000      // motor release power after 120s
 
-#define OLED_ADDR             0x3C          // some OLED displays maybe at 0x3F, use I2Cscanner to find correct address
-#define SCREEN_WIDTH          128           // OLED display width, in pixels
-#define SCREEN_HEIGHT         64            // OLED display height, in pixels
 #define MINOLEDPAGETIME       2000L
 #define MAXOLEDPAGETIME       10000L
 #define OLEDPGOPTIONALL       "111"         // oled page enable, ALL pages
