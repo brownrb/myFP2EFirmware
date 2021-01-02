@@ -290,6 +290,8 @@ extern const char* FSFILENOTFOUNDSTR;
 #define DISABLEBKINSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-IN State</b> [%STI%]: <input type=\"hidden\" name=\"diin\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
 #define ENABLEBKOUTSTR            "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"enou\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
 #define DISABLEBKOUTSTR           "<form action=\"/msindex3\" method=\"post\"><b>BL-OUT State</b> [%STO%]: <input type=\"hidden\" name=\"diou\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
+#define BLINSTEPSTR               "<form action=\"/msindex3\" method =\"post\"><b>BL-In &nbsp;Steps:</b> <input type=\"text\" name=\"bis\" size=\"6\" value=\"%bins%\"> <input type=\"submit\" name=\"setbis\" value=\"Set\"></form>"
+#define BLOUTSTEPSTR              "<form action=\"/msindex3\" method =\"post\"><b>BL-Out Steps:</b> <input type=\"text\" name=\"bos\" size=\"6\" value=\"%bous%\"> <input type=\"submit\" name=\"setbos\" value=\"Set\"></form>"
 
 #define ENABLELEDSTR              "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"startle\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
 #define DISABLELEDSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%INL%]: <input type=\"hidden\" name=\"stople\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
