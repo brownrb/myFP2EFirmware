@@ -9,7 +9,7 @@
 // (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-const char* programVersion        = "134";
+const char* programVersion        = "135";
 const char* ProgramAuthor         = "(c) R BROWN 2020";
 
 const char* STATEMOVINGSTR        = ">Moving";
@@ -62,7 +62,7 @@ const char* TCPCLIENTCONNECTSTR   = "tcp client connected";
 const char* TCPCLIENTDISCONNECTSTR = "tcp client disconnected";
 const char* APCONNECTFAILSTR      = "Did not connect to AP ";
 const char* CONNECTEDSTR          = "Connected";
-const char* I2CDEVICENOTFOUNDSTR  = "I2C device !found";
+const char* I2CDEVICENOTFOUNDSTR  = "I2C device not found";
 const char* ASCOMREMOTESTR        = "ASCOM Remote";
 const char* REBOOTWSSTR           = "Rebooting web-server";
 const char* REBOOTTCPSTR          = "Rebooting tcp/ip-server";
@@ -77,21 +77,21 @@ const char* MANAGEMENTURLNOTFOUNDSTR  = "<html><head><title>Management server></
 const char* WEBSERVERURLNOTFOUNDSTR   = "<html><head><title>Web-server></title></head><body><p>URL was not found</p><p><form action=\"/\" method=\"GET\"><input type=\"submit\" value=\"HOME\"></form></p></body></html>";
 const char* ASCOMSERVERURLNOTFOUNDSTR = "<html><head><title>ASCOM REMOTE SERVER</title></head><body><p>File not found</p><p><p><a href=\"/setup/v1/focuser/0/setup\">Setup page</a></p></body></html>";
 
-const char* WRITEFILEFAILSTR      = "!write to file";
-const char* WRITEFILESUCCESSSTR   = "Write to file OK";
-const char* CREATEFILEFAILSTR     = "!create file";
+const char* WRITEFILEFAILSTR      = "write to file: fail";
+const char* WRITEFILESUCCESSSTR   = "write to file OK";
+const char* CREATEFILEFAILSTR     = "create fileL fail";
 const char* CHECKWIFICONFIGFILESTR = "check for Wifi config file";
 const char* DESERIALIZEERRORSTR   = "Deserialization err";
-const char* SERVERNOTRUNNINGSTR   = "Server !running";
+const char* SERVERNOTRUNNINGSTR   = "Server not running";
 
 // temperature probe messages
 const char* TPROBESTR             = "Tsensors= ";
-const char* TPROBENOTFOUNDSTR     = "Tprobe !found";
+const char* TPROBENOTFOUNDSTR     = "Tprobe not found";
 const char* GETTEMPPROBESSTR      = "Get #Tsensors";
 const char* SETTPROBERESSTR       = "Set Tprecision to ";
 
 // home position switch
-const char* HPCLOSEDFPNOT0STR     = "HP Sw=1, Pos !0";
+const char* HPCLOSEDFPNOT0STR     = "HP Sw=1, Pos not 0";
 const char* HPCLOSEDFP0STR        = "HP Sw=1, Pos=0";
 const char* HPMOVETILLOPENSTR     = "HP Sw=0, Mov out";
 const char* HPMOVEOUTERRORSTR     = "HP Sw=0, Mov out err";
@@ -115,12 +115,12 @@ const char* BACKLASHINSTEPSSTR  =  "Backlash In#= ";
 const char* BACKLASHOUTSTEPSSTR =  "Backlash Ou#= ";
 const char* BLUETOOTHSTR        =  "Bluetooth Mode";
 const char* LOCALSERIALSTR      =  "Local Serial Mode";
-const char* FSFILENOTFOUNDSTR   = "FS file !found";
+const char* FSFILENOTFOUNDSTR   = "FS file not found";
 
-const char* BACKCOLORINVALIDSTR = "Back color !valid";
+const char* BACKCOLORINVALIDSTR = "Back color invalid";
 const char* NEWTITLECOLORSTR    = "Title color ";
-const char* TITLECOLORINVALIDSTR= "Title color !valid";
+const char* TITLECOLORINVALIDSTR= "Title color invalid";
 const char* NEWHEADERCOLORSTR   = "Header color ";
-const char* HEADERCOLORINVALIDSTR = "Header color !valid";
+const char* HEADERCOLORINVALIDSTR = "Header color invalid";
 const char* NEWTEXTCOLORSTR     = "Text color ";
-const char* TEXTCOLORINVALIDSTR = "Text color !valid";
+const char* TEXTCOLORINVALIDSTR = "Text color invalid";
