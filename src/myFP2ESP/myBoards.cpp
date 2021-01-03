@@ -54,6 +54,7 @@ volatile uint32_t stepcount = 0;
 bool stepdir;
 byte reverse_dir;
 extern DriverBoard* driverboard;
+extern bool HPS_alert(void);
 
 // timer Interrupt
 #if defined(ESP8266)
@@ -135,7 +136,7 @@ inline void asm1uS()                  // 1uS on ESP8266, 1/3uS on ESP32
 ICACHE_RAM_ATTR void onTimer()
 {
   static bool mjob = false;      // motor job is running or not
-  if (stepcount  && !(HPS_alert && stepdir == moving_in))
+  if (stepcount  && !(HPS_alert() && stepdir == moving_in))
   {
     driverboard->movemotor(stepdir, true);
     stepcount--;
@@ -155,7 +156,7 @@ ICACHE_RAM_ATTR void onTimer()
 void IRAM_ATTR onTimer()
 {
   static bool mjob = false;      // motor job is running or not
-  if (stepcount  && !(HPS_alert && stepdir == moving_in))
+  if (stepcount  && !(HPS_alert() && stepdir == moving_in))
   {
     driverboard->movemotor(stepdir, true);
     stepcount--;
