@@ -72,12 +72,6 @@ enum StateMachineStates { State_Idle, State_InitMove, State_Moving, State_DelayA
 #define MAXASCOMPAGESIZE      2200
 #define MAXMANAGEMENTPAGESIZE 3400
 
-#ifdef HOMEPOSITIONSWITCH
-#define HPS_alert             !((bool)digitalRead(HPSWPIN))
-#else
-#define HPS_alert             false
-#endif
-
 #ifndef SLOW
 #define SLOW                  0             // motorspeeds
 #endif
