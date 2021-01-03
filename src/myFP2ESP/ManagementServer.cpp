@@ -1395,7 +1395,7 @@ void MANAGEMENT_buildadminpg1(void)
     }
 
     // display %OLE%
-#if defined(OLED_TEXT)
+#if (OLED_TEXT)
     if ( mySetupData->get_displayenabled() == 1 )
     {
       MSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -1406,9 +1406,9 @@ void MANAGEMENT_buildadminpg1(void)
     }
 #else
     MSpg.replace("%OLE%", "<b>Display:</b> not defined");
-#endif // #if defined(OLED_TEXT)
+#endif // #if (OLED_TEXT)
 
-        // if oled display page group option update
+    // if oled display page group option update
     // %PG% is current page option, %PGO% is option binary string
     MSpg.replace("%PG%", mySetupData->get_oledpageoption() );
     String oled;
@@ -1578,14 +1578,14 @@ void MANAGEMENT_handleadminpg1(void)
     if ( msg == "don" )
     {
       mySetupData->set_displayenabled(1);
-#if defined(OLED_TEXT)
+#if (OLED_TEXT)
       myoled->Display_On();
 #endif
     }
     else
     {
       mySetupData->set_displayenabled(0);
-#if defined(OLED_TEXT)
+#if (OLED_TEXT)
       myoled->Display_Off();
 #endif
     }
