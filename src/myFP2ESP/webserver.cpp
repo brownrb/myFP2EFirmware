@@ -910,7 +910,7 @@ void WEBSERVER_buildhome(void)
     }
     WSpg.replace("%RDB%", rdbuffer);
     // display
-#if defined(OLED_TEXT) || defined(OLED_GRAPHICS)
+#if defined(OLED_MODE)
     if ( mySetupData->get_displayenabled() == 1 )
     {
       WSpg.replace("%OLE%", String(DISPLAYONSTR));      // checked already
@@ -921,7 +921,7 @@ void WEBSERVER_buildhome(void)
     }
 #else
     WSpg.replace("%OLE%", "<b>OLED:</b> Display not defined");
-#endif
+#endif // #if defined(OLED_MODE)
     DebugPrintln(PROCESSPAGEENDSTR);
   }
   else
@@ -1134,16 +1134,16 @@ void WEBSERVER_handleroot()
     if ( d_str == "don" )
     {
       mySetupData->set_displayenabled(1);
-#ifdef OLED_TEXT
+#if (OLED_TEXT)
       myoled->Display_On();
-#endif
+#endif // #if (OLED_TEXT)
     }
     else
     {
       mySetupData->set_displayenabled(0);
-#ifdef OLED_TEXT
+#if (OLED_TEXT)
       myoled->Display_Off();
-#endif
+#endif // #if (OLED_TEXT)
     }
   }
   WEBSERVER_sendroot();
