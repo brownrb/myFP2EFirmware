@@ -120,7 +120,6 @@
 #include <SPI.h>
 #include "FocuserSetupData.h"
 
-
 // ----------------------------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
 // ----------------------------------------------------------------------------------------------
@@ -313,6 +312,15 @@ extern void start_webserver(void);
 //   ESP32 Dev Module or WEMOS ????
 
 #include "comms.h"                                // do not change or move
+
+bool HPS_alert()
+{
+#ifdef HOMEPOSITIONSWITCH
+  return !((bool)digitalRead(HPSWPIN));
+#else
+  return false;
+#endif
+}
 
 // ----------------------------------------------------------------------------------------------
 // 18: INFRARED REMOTE CONTROLLER - CHANGE AT YOUR OWN PERIL
@@ -742,7 +750,7 @@ extern void stop_management(void);
 
 void software_Reboot(int Reboot_delay)
 {
-  oledtextmsg(WIFIRESTARTSTR, -1, true, false);
+  myoled->oledtextmsg(WIFIRESTARTSTR, -1, true, false);
   mySetupData->SaveNow();                       // save the focuser settings immediately
 
   // a reboot causes everything to reset, so code to stop services etc is not really needed
@@ -1389,18 +1397,14 @@ void loop()
 #endif
         if (mySetupData->get_displayenabled() == 1)
         {
-
           myoled->update_oledtextdisplay();
-
         }
         else
         {
           oled = oled_off;
         }
-
         myoled->Update_Oled(oled, ConnectionStatus);
-
-
+        
         if ( mySetupData->get_temperatureprobestate() == 1)
         {
           myTempProbe->update_temp();
@@ -1508,7 +1512,7 @@ void loop()
           MainStateMachine = State_DelayAfterMove;
           DebugPrintln(STATEDELAYAFTERMOVE);
         } // if ( halt_alert )
-        if (HPS_alert)                                    // check if home position sensor activated?
+        if (HPS_alert() )                                 // check if home position sensor activated?
         {
           if (driverboard->getposition() > 0)
           {
@@ -1532,7 +1536,7 @@ void loop()
           }
           // we should jump to
           MainStateMachine = State_SetHomePosition;
-        } // if (HPS_alert)
+        } // if (HPS_alert() )
 
         // if the update position on display when moving is enabled, then update the display
         if ( mySetupData->get_lcdupdateonmove() == 1)
