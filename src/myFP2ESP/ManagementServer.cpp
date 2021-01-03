@@ -1488,17 +1488,6 @@ void MANAGEMENT_handleadminpg1(void)
 
   MANAGEMENT_checkreboot();                              // if reboot controller;
 
-  msg = mserver.arg("reboot");
-  if ( msg != "" )
-  {
-    DebugPrintln(F("MANAGEMENT_handleadminpg1: reboot controller: "));
-    // services are stopped in the reboot() code
-
-    String WaitPage = "<html><meta http-equiv=refresh content=\"" + String(MSREBOOTPAGEDELAY) + "\"><head><title>Management Server></title></head><body><p>Please wait, controller rebooting.</p></body></html>";
-    mserver.send(NORMALWEBPAGE, TEXTPAGETYPE, WaitPage );
-    software_Reboot(REBOOTDELAY);
-  }
-
   // mdns server
   msg = mserver.arg("startmdns");
   if ( msg != "" )
