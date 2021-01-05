@@ -32,7 +32,7 @@ extern byte    isMoving;                           // is the motor currently mov
 extern String MSpg;
 extern bool ascomserverstate;
 extern bool ascomdiscoverystate;
-
+extern bool reboot;
 
 #if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE
 #undef DEBUG_ESP_HTTP_SERVER                // prevent messages from WiFiServer 
@@ -44,13 +44,11 @@ extern bool ascomdiscoverystate;
 #endif
 #include <SPI.h>
 
-
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
-
 
 #if defined(ESP8266)
 #undef DEBUG_ESP_HTTP_SERVER
@@ -82,7 +80,6 @@ long         ASCOMpos = 0L;
 byte         ASCOMTempCompState = 0;
 byte         ASCOMConnectedState = 0;
 WiFiClient   ascomclient;
-
 
 #if defined(ESP8266)
 ESP8266WebServer *ascomserver;
@@ -1246,21 +1243,8 @@ void ASCOM_handleRoot()
   delay(10);                                            // small pause so background tasks can run
 }
 
-void start_ascomremoteserver(void)
+void setup_ascomremoteserver(void)
 {
-  if ( !SPIFFS.begin() )
-  {
-    TRACE();
-    DebugPrintln(F(FSNOTSTARTEDSTR));
-    DebugPrintln(F(SERVERSTATESTOPSTR));
-    ascomserverstate = STOPPED;
-    return;
-  }
-  ASpg.reserve(MAXASCOMPAGESIZE);
-  HDebugPrint("Heap before start_ascomremoteserver = ");
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  DebugPrintln("start ascom server");
-
 #if defined(ESP8266)
   ascomserver = new ESP8266WebServer(mySetupData->get_ascomalpacaport());
 #else
@@ -1303,11 +1287,40 @@ void start_ascomremoteserver(void)
   ascomserver->on("/api/v1/focuser/0/move",               HTTP_PUT, ASCOM_handlemoveput);
   ascomserver->on("/api/v1/focuser/0/supportedactions",   HTTP_GET, ASCOM_handlesupportedactionsget);
   ascomserver->begin();
-  ascomserverstate = RUNNING;
+  mySetupData->set_ascomserverstate(1);
   DebugPrintln(F("start ascom server: RUNNING"));
   HDebugPrint("Heap after  start_ascomremoteserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   delay(10);                                            // small pause so background tasks can run
+}
+
+void start_ascomremoteserver(void)
+{
+  if ( !SPIFFS.begin() )
+  {
+    TRACE();
+    DebugPrintln(F(FSNOTSTARTEDSTR));
+    DebugPrintln(F(SERVERSTATESTOPSTR));
+    ascomserverstate = STOPPED;
+    return;
+  }
+  ASpg.reserve(MAXASCOMPAGESIZE);
+  HDebugPrint("Heap before start_ascomremoteserver = ");
+  HDebugPrintf("%u\n", ESP.getFreeHeap());
+  DebugPrintln("start ascom server");
+  // on a reboot this test will be a 1
+  if ( reboot == true )
+  {
+    setup_ascomremoteserver();
+  }
+  if ( (reboot == false ) && (mySetupData->get_ascomserverstate() == 0) )
+  {
+    setup_ascomremoteserver();
+  }
+  else
+  {
+    DebugPrintln(F("Ascom server already running"));
+  }
 }
 
 void stop_ascomremoteserver(void)
