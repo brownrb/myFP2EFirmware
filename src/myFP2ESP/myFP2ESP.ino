@@ -272,6 +272,7 @@ bool tcpipserverstate;
 bool otaupdatestate;
 bool duckdnsstate;
 bool displaystate;
+bool restart;
 
 SetupData *mySetupData;                           // focuser data
 
@@ -876,6 +877,7 @@ void setup()
   Serial.println(millis());
 #endif
 
+  reboot = true;
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   HDebugPrintln("setup(): mySetupData()");
@@ -1241,6 +1243,7 @@ void setup()
   }
 
   halt_alert = false;
+  reboot = false;
 #ifdef TIMESETUP
   Serial.print("setup(): ");
   Serial.println(millis());
