@@ -272,7 +272,7 @@ bool tcpipserverstate;
 bool otaupdatestate;
 bool duckdnsstate;
 bool displaystate;
-bool restart;
+bool reboot;
 
 SetupData *mySetupData;                           // focuser data
 
