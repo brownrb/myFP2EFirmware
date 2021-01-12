@@ -955,6 +955,12 @@ void WEBSERVER_handletargetposition()
   webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition)); //Send targetPosition value only to client ajax request
 }
 
+void WEBSERVER_handletemperature()
+{
+  String tpstr = String(myTempProbe->read_temp(1), 2);
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, tpstr); //Send temperature value only to client ajax request
+}
+
 // handles root page of webserver
 // this is called whenever a client requests home page of sebserver
 void WEBSERVER_handleroot()
