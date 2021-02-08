@@ -1234,6 +1234,7 @@ void start_webserver(void)
   {
     DebugPrintln(F("Web-server already running"));
   }
+    webserverstate = RUNNING;
 }
 
 void stop_webserver(void)
