@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 13x
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 14x
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -120,23 +120,18 @@
 #include <SPI.h>
 #include "FocuserSetupData.h"
 
-// ----------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 // 7: WIFI NETWORK SSID AND PASSWORD CONFIGURATION
-// ----------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 // 1. For access point mode this is the network you connect to
-// 2. For station mode, change these to match your network details
+// 2. For station mode, change mySSID and myPASSWORD to match your network details
 
-#if defined(ACCESSPOINT) || defined(STATIONMODE)
-char mySSID[64]     = "myfp2eap";           // you need to set this to your WiFi network SSID
-char myPASSWORD[64] = "myfp2eap";           // and you need to set the correct password
+char mySSID[64]     = "myfp2eap";
+char myPASSWORD[64] = "myfp2eap";
 
-IPAddress ESP32IPAddress;
-String ServerLocalIP;
-WiFiServer myserver(SERVERPORT);
-WiFiClient myclient;                          // only one client supported, multiple connections denied
-IPAddress myIP;
-long rssi;
-#endif
+// Alternative network credentials if initial details above did not work
+char mySSID_1[64]     = "FireFox";            // alternate network id
+char myPASSWORD_1[64] = "AllYeWhoEnter";      // alternate network id
 
 // ----------------------------------------------------------------------------------------------
 // 8: OTAUPDATES (OVER THE AIR UPDATE) SSID AND PASSWORD CONFIGURATION
@@ -233,6 +228,15 @@ String btline;                                // buffer for serial data
 #endif
 #endif // #if defined(BLUETOOTHMODE) || defined(LOCALSERIAL)
 
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+IPAddress ESP32IPAddress;
+String ServerLocalIP;
+WiFiServer myserver(SERVERPORT);
+WiFiClient myclient;                          // only one client supported, multiple connections denied
+IPAddress myIP;
+long rssi;
+#endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
+
 #include "temp.h"
 TempProbe *myTempProbe;
 
@@ -256,7 +260,6 @@ unsigned long ftargetPosition;              // target position
 volatile bool halt_alert;
 
 boolean displayfound;
-//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
 byte    isMoving;                           // is the motor currently moving
 char    ipStr[16];                          // shared between BT mode and other modes
 const char ip_zero[] = "0.0.0.0";
@@ -791,20 +794,20 @@ void init_leds()
 }
 
 #ifdef READWIFICONFIG
-bool readwificonfig( char* xSSID, char* xPASSWORD)
+bool readwificonfig( char* xSSID, char* xPASSWORD, bool retry )
 {
   const String filename = "/wificonfig.json";
-  String SSID;
-  String PASSWORD;
-  boolean status = false;
+  String SSID_1, SSID_2;
+  String PASSWORD_1, PASSWORD_2;
+  boolean mstatus = false;
 
-  DebugPrintln(CHECKWIFICONFIGFILESTR);
+  DebugPrintln(F(CHECKWIFICONFIGFILESTR));
   // SPIFFS may have failed to start
   if ( !SPIFFS.begin() )
   {
     TRACE();
     DebugPrintln(F("Failed to read wificonfig.jsn"));
-    return status;
+    return mstatus;
   }
   File f = SPIFFS.open(filename, "r");                  // file open to read
   if (!f)
@@ -824,21 +827,33 @@ bool readwificonfig( char* xSSID, char* xPASSWORD)
     if (error)
     {
       TRACE();
-      DebugPrintln(DESERIALIZEERRORSTR);
+      DebugPrintln(F(DESERIALIZEERRORSTR));
     }
     else
     {
       // Decode JSON/Extract values
-      SSID     =  doc["mySSID"].as<char*>();
-      PASSWORD =  doc["myPASSWORD"].as<char*>();
+      SSID_1     =  doc["mySSID"].as<char*>();
+      PASSWORD_1 =  doc["myPASSWORD"].as<char*>();
+      SSID_2     =  doc["mySSID_1"].as<char*>();
+      PASSWORD_2 =  doc["myPASSWORD_1"].as<char*>();
 
-      SSID.toCharArray(xSSID, SSID.length() + 1);
-      PASSWORD.toCharArray(xPASSWORD, PASSWORD.length() + 1);
-
-      status = true;
+      if ( retry == false )
+      {
+        // get first pair
+        SSID_1.toCharArray(xSSID, SSID_1.length() + 1);
+        PASSWORD_1.toCharArray(xPASSWORD, PASSWORD_1.length() + 1);
+        mstatus = true;
+      }
+      else
+      {
+        // get second pair
+        SSID_2.toCharArray(xSSID, SSID_2.length() + 1);
+        PASSWORD_2.toCharArray(xPASSWORD, PASSWORD_2.length() + 1);
+        mstatus = true;
+      }
     }
   }
-  return status;
+  return mstatus;
 }
 #endif
 
@@ -1010,7 +1025,7 @@ void setup()
 
 #ifdef READWIFICONFIG
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-  readwificonfig(mySSID, myPASSWORD);                   // read mySSID,myPASSWORD from FS if exist, otherwise use defaults
+  readwificonfig(mySSID, myPASSWORD, 0);                // read mySSID,myPASSWORD from FS if exist, otherwise use defaults
 #endif
 #endif
 
@@ -1027,43 +1042,81 @@ void setup()
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
-  // this is setup as a station connecting to an existing wifi network
+ // this is setup as a station connecting to an existing wifi network
 #ifdef STATIONMODE
   DebugPrintln(STARTSMSTR);
-  myoled->oledtextmsg(STARTSMSTR, -1, false, true);
-  if (staticip == STATICIPON)                   // if staticip then set this up before starting
-  {
-    DebugPrintln(SETSTATICIPSTR);
-    myoled->oledtextmsg(SETSTATICIPSTR, -1, false, true);
-    WiFi.config(ip, dns, gateway, subnet);
-    delay(5);
-  }
+  oledtextmsg(STARTSMSTR, -1, false, true);
 
   // Log on to LAN
   WiFi.mode(WIFI_STA);
-  byte status = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
+  if (staticip == STATICIPON)                   // if staticip then set this up before starting
+  {
+    DebugPrintln(SETSTATICIPSTR);
+    oledtextmsg(SETSTATICIPSTR, -1, false, true);
+    WiFi.config(ip, dns, gateway, subnet);
+    delay(5);
+  }
+  
+  // attempt to connect using mySSID and myPASSWORD
+  byte connstatus = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
   DebugPrint(WIFIBEGINSTATUSSTR);
-  DebugPrintln(String(status));
-  delay(1000);                                  // wait 500ms
-
+  DebugPrintln(String(connstatus));
+  delay(1000);                                      // wait 1s
   for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
   {
     DebugPrint(ATTEMPTCONNSTR);
     DebugPrintln(mySSID);
     DebugPrint(ATTEMPTSSTR);
     DebugPrint(attempts);
-    delay(1000);                                // wait 1s
+    delay(1000);                                    // wait 1s
 
-    myoled->oled_draw_Wifi(attempts);
-    myoled->oledtextmsg(ATTEMPTSSTR, attempts, false, true);
-    if (attempts > 9)                          // if this attempt is 10 or more tries
+    oledtextmsg(ATTEMPTSSTR, attempts, false, true);
+    if (attempts > 9)                               // if this attempt is 10 or more tries
     {
       DebugPrintln(APCONNECTFAILSTR);
       DebugPrintln(WIFIRESTARTSTR);
-      myoled->oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
-      myoled->oledgraphicmsg(APSTARTFAILSTR + String(mySSID), -1, true);
+      oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
       delay(2000);
-      software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
+      break;                                        // jump out of this for loop
+    }
+  }
+
+  // check if connected after using first set of credentials - if not connected try second pair of credentials
+  if ( WiFi.status() != WL_CONNECTED )
+  {
+#ifdef READWIFICONFIG
+    // try alternative credentials, mySSID_1, myPASSWORD_1 in the wificonfig.json file
+    readwificonfig(mySSID, myPASSWORD, 1);
+#else
+    // there was no wificonfig.json file specified
+    // so we will try again with 2nd pair of credentials
+    // and reboot after 10 attempts to log on
+    memset( mySSID, 0, 64);
+    memset( myPASSWORD, 0, 64);
+    memcpy( mySSID, mySSID_1, (sizeof(mySSID_1 / sizeof(mySSID_1[0]) );
+    memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1 / sizeof(myPASSWORD_1[0]) );
+#endif
+    connstatus = WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
+    DebugPrint(WIFIBEGINSTATUSSTR);
+    DebugPrintln(String(connstatus));
+    delay(1000);                                  // wait 1s
+    for (int attempts = 0; WiFi.status() != WL_CONNECTED; attempts++)
+    {
+      DebugPrint(ATTEMPTCONNSTR);
+      DebugPrintln(mySSID);
+      DebugPrint(ATTEMPTSSTR);
+      DebugPrint(attempts);
+      delay(1000);                                // wait 1s
+
+      oledtextmsg(ATTEMPTSSTR, attempts, false, true);
+      if (attempts > 9)                           // if this attempt is 10 or more tries
+      {
+        DebugPrintln(APCONNECTFAILSTR);
+        DebugPrintln(WIFIRESTARTSTR);
+        oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
+        delay(2000);
+        software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
+      }
     }
   }
 #endif // end STATIONMODE
@@ -1430,12 +1483,15 @@ void loop()
       break;
 
     case State_InitMove:
+      Serial.println("State_InitMove");
       isMoving = 1;
       backlash_count = 0;
       DirOfTravel = (ftargetPosition > driverboard->getposition()) ? moving_out : moving_in;
+      Serial.print("DirOfTravel: "); Serial.println(DirOfTravel);
       driverboard->enablemotor();
       if (mySetupData->get_focuserdirection() != DirOfTravel)
       {
+        Serial.println("Direction of move != DirOfTravel");
         mySetupData->set_focuserdirection(DirOfTravel);
         // move is in opposite direction, check for backlash enabled
         // get backlash settings
@@ -1443,47 +1499,98 @@ void loop()
         {
           if (mySetupData->get_backlash_in_enabled())
           {
+            Serial.println("Backlash_in_enabled = true");
             backlash_count = mySetupData->get_backlashsteps_in();
+            Serial.println("DirOfTravel == moving_in");
+            Serial.print("backlash_count = ");
+            Serial.println(backlash_count);
+          }
+          else
+          {
+            Serial.println("Backlash_in_enabled = false");
           }
         }
         else
         {
           if (mySetupData->get_backlash_out_enabled())
           {
+            Serial.println("Backlash_out_enabled = true");
             backlash_count = mySetupData->get_backlashsteps_out();
-          }
-        } // if ( DirOfTravel == moving_in)
-
-        if (DirOfTravel != moving_main && backlash_count)
-        {
-          uint32_t sm = mySetupData->get_stepmode();
-          uint32_t bl = backlash_count * sm;
-          DebugPrint("bl: ");
-          DebugPrint(bl);
-          DebugPrint(" ");
-
-          if (DirOfTravel == moving_out)
-          {
-            backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
+            Serial.println("DirOfTravel == moving_out");
+            Serial.print("backlash_count = ");
+            Serial.println(backlash_count);
           }
           else
           {
-            backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
+            Serial.println("Backlash_out_enabled = false");
           }
+        } // if ( DirOfTravel == moving_in)
+        Serial.print("backlash_count = ");
+        Serial.println(backlash_count);
 
-          DebugPrint("backlash_count: ");
-          DebugPrint(backlash_count);
-          DebugPrint(" ");
-        } // if (DirOfTravel != moving_main && backlash_count)
+        /*
+                Serial.println("DirOfTravel != moving_main && backlash_count");
+                if (DirOfTravel != moving_main && backlash_count)
+                {
+                  Serial.println("true");
+                  uint32_t sm = mySetupData->get_stepmode();
+                  uint32_t bl = backlash_count * sm;
+                  DebugPrint("bl: ");
+                  DebugPrint(bl);
+                  DebugPrint(" ");
+
+                  if (DirOfTravel == moving_out)
+                  {
+                    backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
+                  }
+                  else
+                  {
+                    backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
+                  }
+
+                  DebugPrint("backlash_count: ");
+                  DebugPrint(backlash_count);
+                  DebugPrint(" ");
+                } // if (DirOfTravel != moving_main && backlash_count)
+                else
+                {
+                    Serial.println("false");
+                }
+        */
       } // if (mySetupData->get_focuserdirection() != DirOfTravel)
 
-      // if target pos > current pos then steps = target pos - current pos
-      // if target pos < current pos then steps = current pos - target pos
       steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
-      DebugPrint(STATEMOVINGSTR);
-      DebugPrint(steps);
-      HDebugPrint("heap before move : ");
-      HDebugPrintf("%u\n", ESP.getFreeHeap());
+      
+      // Error - cannot combine backlash steps to steps because that alters position
+      // Backlash move SHOULD NOT alter focuser position as focuser is not actually moving
+      // backlash is taking up the slack in the stepper motor/focuser mechanism, so position is not actually changing
+      if ( backlash_count != 0 )
+      {
+        MainStateMachine = State_Backlash;
+      }
+      else
+      {
+        // if target pos > current pos then steps = target pos - current pos
+        // if target pos < current pos then steps = current pos - target pos
+        driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
+        Serial.print("Steps: "); Serial.println(steps);
+        MainStateMachine = State_Moving;
+      }
+      break;
+
+    case State_Backlash:
+      // apply backlash
+      Serial.print("Apply Backlash: Steps=");
+      Serial.println(backlash_count);     
+      while ( backlash_count != 0 )
+      {
+        steppermotormove(DirOfTravel);                            // take 1 step
+        delayMicroseconds(driverboard->getstepdelay());           // ensure delay between steps
+        backlash_count--;
+      }
+      Serial.println("Backlash done"); 
+      Serial.print("Initiate motor move- steps: ");
+      Serial.println(steps);
       driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
       MainStateMachine = State_Moving;
       break;
