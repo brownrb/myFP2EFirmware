@@ -898,6 +898,7 @@ void setup()
   DebugPrintln(BLUETOOTHSTARTSTR);
 #endif
 
+  
   // Setup LEDS, use as controller power up indicator
   if ( mySetupData->get_inoutledstate() == 1)
   {
@@ -908,20 +909,16 @@ void setup()
   init_pushbuttons();
 #endif
 
-  HDebugPrint("Heap = ");
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  HDebugPrintln("setup(): oledtextdisplay()");
-  displayfound = false;
-
 #ifdef OLED_MODE
   if (CheckOledConnected())
   {
     myoled = new OLED_MODE;                       // Start configured OLED display object
-    DebugPrintln(F("init OLED OLED_MODE")); 
+    DebugPrint(F("init OLED ")); 
+    DebugPrintln("OLED_MODE");
     displaystate = true;
   }
   else
-  {
+  { 
     myoled = new OLED_NON;
     DebugPrintln(F("init OLED OLED_NON")); 
     displaystate = false;
@@ -1248,6 +1245,9 @@ void setup()
   Serial.print("setup(): ");
   Serial.println(millis());
 #endif
+
+DebugPrint("***webserverstate: ");
+DebugPrintln(webserverstate);
 }
 
 //_____________________ loop()___________________________________________
@@ -1268,6 +1268,7 @@ void loop()
 
   static connection_status ConnectionStatus = disconnected;
   static oled_state oled = oled_on;
+  static bool alt_bl = false;
 
 #ifdef HOMEPOSITIONSWITCH
   int stepstaken = 0;
@@ -1454,7 +1455,8 @@ void loop()
           }
         } // if ( DirOfTravel == moving_in)
 
-        if (DirOfTravel != moving_main && backlash_count)
+#ifdef ALT_Backlash
+        if ((DirOfTravel != moving_main) && backlash_count)
         {
           uint32_t sm = mySetupData->get_stepmode();
           uint32_t bl = backlash_count * sm;
@@ -1471,32 +1473,33 @@ void loop()
             backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
           }
 
-          DebugPrint("backlash_count: ");
-          DebugPrint(backlash_count);
-          DebugPrint(" ");
+          DebugPrint("alt_bl/backlash_count: ");
+          DebugPrintln(backlash_count);
+          alt_bl = true;
         } // if (DirOfTravel != moving_main && backlash_count)
+#endif  // end ALT_Backlash        
       } // if (mySetupData->get_focuserdirection() != DirOfTravel)
+
+
 
       // if target pos > current pos then steps = target pos - current pos
       // if target pos < current pos then steps = current pos - target pos
       steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
+     
       DebugPrint(STATEMOVINGSTR);
       DebugPrint(steps);
       HDebugPrint("heap before move : ");
       HDebugPrintf("%u\n", ESP.getFreeHeap());
-      driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
+      driverboard->initmove(DirOfTravel, steps+backlash_count, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
       MainStateMachine = State_Moving;
       break;
 
     //_______________________________State_Moving
 
     case State_Moving:
-      //Serial.println("S_M");
       if ( timerSemaphore == true )
       {
         // move has completed, the driverboard keeps track of focuser position
-        DebugPrintln("Move completed");
-        DebugPrintln("Going to State_DelayAfterMove");
         MainStateMachine = State_DelayAfterMove;
         DebugPrintln(STATEDELAYAFTERMOVE);
       }
@@ -1620,6 +1623,17 @@ void loop()
     case State_DelayAfterMove:
       HDebugPrint("Heap after move = ");
       HDebugPrintf("%u\n", ESP.getFreeHeap());
+
+      if (alt_bl) 
+      {
+        alt_bl = false;
+      }
+      else
+      {
+        driverboard->setposition(ftargetPosition);        // take backlash count out 
+      }
+      
+      
       // apply Delayaftermove, this MUST be done here in order to get accurate timing for DelayAfterMove
       if (TimeCheck(TimeStampDelayAfterMove , mySetupData->get_DelayAfterMove()))
       {
@@ -1628,7 +1642,7 @@ void loop()
         TimeStampPark  = millis();                      // catch current time
         Parked = false;                                 // mark to park the motor in State_Idle
         MainStateMachine = State_Idle;
-        DebugPrint(">State_Idle ");
+        DebugPrintln(">State_Idle ");
       }
       break;
 

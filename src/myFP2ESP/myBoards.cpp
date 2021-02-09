@@ -405,8 +405,6 @@ void DriverBoard::releasemotor(void)
 
 void DriverBoard::movemotor(byte dir, bool updatefpos)
 {
-  //Serial.print("movemotor() : ");
-  //Serial.println(dir);
   // only some boards have in out leds ESP32 only
 #if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
   if ( drvbrdleds )
@@ -521,20 +519,12 @@ void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool 
   drvbrdleds = leds;
   timerSemaphore = false;
 
-  DebugPrint(F(">initmove "));
+  DebugPrint(F(">DriverBoard::initmove "));
   DebugPrint(dir);
   DebugPrint(F(":"));
   DebugPrint(steps);
   DebugPrint(F(" "));
-
-  //Serial.print("initmove: ");
-  //Serial.print(dir);
-  //Serial.print(" : ");
-  //Serial.print(steps);
-  //Serial.print(" : ");
-  //Serial.print(motorspeed);
-  //Serial.print(" : ");
-  //Serial.println(leds);
+  
 #if defined(ESP8266)
   unsigned long curspd = DriverBoard::getstepdelay();
   switch ( motorspeed )

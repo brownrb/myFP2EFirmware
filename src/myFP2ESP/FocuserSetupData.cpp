@@ -49,6 +49,7 @@ SetupData::SetupData(void)
 byte SetupData::LoadConfiguration()
 {
   byte retval = 0;
+  String data;
 
   // Open file for reading
   File file = SPIFFS.open(filename_persistant, "r");
@@ -63,7 +64,7 @@ byte SetupData::LoadConfiguration()
   else
   {
     delay(10);
-    String data = file.readString();                  // read content of the text file
+    data = file.readString();                  // read content of the text file
     DebugPrint(F("FS. Persistant SetupData= "));
     DebugPrintln(data);                               // ... and print on serial
 
@@ -124,7 +125,7 @@ byte SetupData::LoadConfiguration()
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
   }
-  delay(10);
+
   file = SPIFFS.open(filename_variable, "r");
   if (!file)
   {
@@ -134,10 +135,9 @@ byte SetupData::LoadConfiguration()
   }
   else
   {
-    String data = file.readString();                // read content of the text file
+    data = file.readString();                // read content of the text file
     DebugPrint(F("FS. Variable SetupData= "));
     DebugPrintln(data);                             // ... and print on serial
-
     // Allocate a temporary JsonDocument
     DynamicJsonDocument doc_var(DEFAULTVARDOCSIZE);
 

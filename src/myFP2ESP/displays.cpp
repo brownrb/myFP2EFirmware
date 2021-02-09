@@ -88,11 +88,10 @@ OLED_NON::OLED_NON()  {}
 
 //OLED_GRAPHIC::OLED_GRAPHIC(uint8_t _address, uint8_t _sda, uint8_t _scl)  :   SSD1306Wire(_address, _sda,_scl, GEOMETRY_128_64)
 OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, I2CDATAPIN, I2CCLKPIN, GEOMETRY_128_64) , OLED_NON()
+//OLED_GRAPHIC::OLED_GRAPHIC()  :  SSD1306Wire(OLED_ADDR, SDA, SCL, GEOMETRY_128_64) , OLED_NON()
 {
-  DebugPrintln(F("start init()"));
+  DebugPrintln(F("OLED_GRAPHIC constructor"));
   this->init();             // init SSD1306Wire
-  delay(1000);
-
   flipScreenVertically();
   setFont(ArialMT_Plain_10);
   setTextAlignment(TEXT_ALIGN_LEFT);

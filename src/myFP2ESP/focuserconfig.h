@@ -24,8 +24,8 @@
 
 // If you need no support for OLED skip section. To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line. 
 
-#define OLED_MODE OLED_TEXT   // OLED text only mode
-//#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
+//#define OLED_MODE OLED_TEXT   // OLED text only mode
+#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -70,10 +70,10 @@
 //#define BLUETOOTHMODE 1
 
 // to work as an access point, define accesspoint - cannot use DUCKDNS
-#define ACCESSPOINT 2
+//#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-//#define STATIONMODE 3
+#define STATIONMODE 3
 
 // to work only via USB cable as Serial port, uncomment the next line
 //#define LOCALSERIAL 4
@@ -110,6 +110,9 @@
 // To download the file [MANAGEMENTFORCEDOWNLOAD] instead of displaying file 
 // content in web browser, uncomment the next line
 // This has moved to MANAGEMENT SERVER
+
+// Experimental Backlash Compensation
+ #define ALT_Backlash
 
 // ----------------------------------------------------------------------------
 // 3: SPECIFY OLED DISPLAY TYPE

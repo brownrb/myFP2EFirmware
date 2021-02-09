@@ -1199,7 +1199,8 @@ void setup_webserver(void)
 
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
-  mySetupData->set_webserverstate(1);
+  //mySetupData->set_webserverstate(1);
+  webserverstate = RUNNING;
   DebugPrintln(F(SERVERSTATESTARTSTR));
   HDebugPrint("Heap after  start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());

@@ -21,8 +21,8 @@
 // Uncomment only your board - ONLY ONE BOARD SHOULD BE UNCOMMENTED
 
 // ESP8266 Boards
-//#define DRVBRD WEMOSDRV8825
-#define DRVBRD PRO2EULN2003
+#define DRVBRD WEMOSDRV8825
+//#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EDRV8825
 //#define DRVBRD PRO2EL293DNEMA
 //#define DRVBRD PRO2EL293D28BYJ48
@@ -38,13 +38,14 @@
 //#define DRVBRD PRO2ESP32R3WEMOS
 
 // THIS MUST MATCH THE STEPMODE SET IN HARDWARE JUMPERS ON THE PCB ESP8266-DRV
-#define DRV8825TEPMODE    STEP1         // jumpers MS1/2/3 on the PCB for ESP8266
+//#define DRV8825TEPMODE    STEP1         // jumpers MS1/2/3 on the PCB for ESP8266
+#define DRV8825TEPMODE    STEP16         // jumpers MS1/2/3 on the PCB for ESP8266
 
 // stepper motor steps per full revolution using full steps
 // WARNING: USE THE CORRECT ONE - IF YOU THEN CHANGE STEPMODE THE STEPS MOVED WILL BE INVALID
-#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
+//#define STEPSPERREVOLUTION 2048        // 28BYJ-48 stepper motor unipolar with ULN2003 board
 //#define STEPSPERREVOLUTION  200        // NEMA17 FULL STEPPED
-//#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
+#define STEPSPERREVOLUTION  400        // NEMA14HM11-0404S 0.9 motor FULL STEPPED
 //#define STEPSPERREVOLUTION 1028        // 17HS13-0404S-PG5
 //#define STEPSPERREVOLUTION 5370        // NEMA17HS13-0404S-PG27
 //#define STEPSPERREVOLUTION 1036        // NEMA14HS13-0804S-PG5
@@ -73,13 +74,14 @@
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
-#define TEMPPIN       4
-#define I2CDATAPIN    2
-#define I2CCLKPIN     1
-#define DIRPIN        13                // D7 GPIOP13
+#define TEMPPIN       2                 // D4
+#define I2CDATAPIN    4
+#define I2CCLKPIN     5
+#define DIRPIN        13                // D7 GPIO13
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
-#define MSPEED        8000
+//#define MSPEED        8000
+#define MSPEED        2000
 #endif
 #if (DRVBRD == PRO2EDRV8825 )           // 
 #define TEMPPIN       10
