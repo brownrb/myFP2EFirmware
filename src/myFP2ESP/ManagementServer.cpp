@@ -727,6 +727,9 @@ void MANAGEMENT_buildadminpg3(void)
     MSpg.replace("%bins%", String(mySetupData->get_backlashsteps_in()));
     MSpg.replace("%bous%", String(mySetupData->get_backlashsteps_out()));
     
+    // motor speed delay
+    MSpg.replace("%MS%", "<form action=\"/msindex3\" method=\"post\">Delay: <input type=\"text\" name=\"msd\" size=\"6\" value=" + String(driverboard->getstepdelay()) + "> <input type=\"submit\" name=\"setmsd\" value=\"Set\"></form>");
+
     MSpg.replace("%BT%", String(CREBOOTSTR));           // add code to handle reboot controller
 
     DebugPrintln(PROCESSPAGEENDSTR);
@@ -814,6 +817,23 @@ void MANAGEMENT_handleadminpg3(void)
     mySetupData->set_backlashsteps_out(steps);
   }
 
+ // motor speed delay
+  msg = mserver.arg("setmsd");
+  if ( msg != "" )
+  {
+    DebugPrint("set motor speed delay: ");
+    DebugPrintln(msg);
+    String ms = mserver.arg("msd");                      // process new motor speed delay
+    if ( ms != "" )
+    {
+      unsigned long newspeed = 0;
+      newspeed = ms.toInt();
+      newspeed = (newspeed < 1000) ? 1000: newspeed;    // ensure it is not too low
+      driverboard->setstepdelay(newspeed);
+      mySetupData->set_motorspeeddelay(newspeed);
+    }
+  }
+  
   MANAGEMENT_sendadminpg3();
 #ifdef TIMEMSHANDLEPG3
   Serial.print("ms_handlepg3: ");
