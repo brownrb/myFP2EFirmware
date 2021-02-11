@@ -1780,6 +1780,20 @@ void MANAGEMENT_sendadminpg1(void)
   delay(10);
 }
 
+void MANAGEMENT_sendACAOheader(void)
+{
+  mserver.sendHeader("Access-Control-Allow-Origin", "*");
+}
+
+void MANAGEMENT_sendjson(String str)
+{
+  //if ( mySetupData->get_crossdomain() == 1 )
+  {
+    MANAGEMENT_sendACAOheader();                               // add a cross origin header
+  }
+  mserver.send(NORMALWEBPAGE, JSONPAGETYPE, str );
+}
+
 // generic get
 void MANAGEMENT_handleget(void)
 {
