@@ -1210,6 +1210,18 @@ void setup()
   // set focuser position in DriverBoard
   driverboard->setposition(mySetupData->get_fposition());
 
+  // check for motorspeed delay
+  if( mySetupData->get_motorspeeddelay() == 0 )
+  {
+    // value has not been set
+    mySetupData->set_motorspeeddelay(driverboard->getstepdelay());
+  }
+  else
+  {
+    // a value was save previously so use that value
+    driverboard->setstepdelay(mySetupData->get_motorspeeddelay());
+  }
+                                       
   // set coilpower
   DebugPrintln(CHECKCPWRSTR);
   if (mySetupData->get_coilpower() == 0)
