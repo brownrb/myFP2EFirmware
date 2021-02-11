@@ -1,31 +1,13 @@
 # myFP2ESP Firmware for ESP32 and ESP8266 myFP2 Controllers
 This is the firmware for the myFocuserPro2E ESP8266 and ESP32 focus controller projects on Sourceforge.
+https://sourceforge.net/projects/myfocuserpro2-esp32/
 
 (c) Robert Brown and Holger Manz, 2019-2021. All rights reserved.
 
 The source code is located in the **src** folder. 
 
-#APPLICATIONS
-The Windows applications are found on Sourceforge.  
-https://sourceforge.net/projects/myfocuserpro2-esp32/files/Windows%20Application/  
-
-The Linux application and source code is found on Sourceforge.  
-https://sourceforge.net/projects/myfocuserpro2-esp32/files/Linux%20Application/  
-
-The ASCOM drivers are found on Sourceforge.  
-https://sourceforge.net/projects/myfocuserpro2-esp32/files/ASCOM%20Drivers/  
-
-# FIRMWARE
-The firmware is found on GitHub. Download as a zip file then extract the zip file to access the library files and firmware.  
-https://github.com/brownrb/myFP2EFirmware  
-
-# PCB GERBER FILES  
-The Gerbers files for the PCB are found on Sourceforge.  
-https://sourceforge.net/projects/myfocuserpro2-esp32/files/PCB%20Gerber%20Files/  
-
 # PDF
-To get a clear understanding of myFP2ESP features and options, it is essential to read the PDF.  
-https://sourceforge.net/projects/myfocuserpro2-esp32/files/Documentation/  
+To get a clear understanding of myFP2ESP features and options, it is essential to read the PDF.
 
 # Compiling for ESP8266
 Compiling the source code requires Arduino IDE **v1.8.13** with the ExpressIF ESP8266 Arduino extensions.
@@ -42,7 +24,7 @@ Note: Additional JSON files are separated in board manager by using a comma ,
 Compiling the source code requires Arduino IDE **v1.8.13** with the ExpressIF ESP32 Arduino extensions.
 You will need to add the JSON file for the ESP32 library by using the File->Preferences menu of the 
 Arduino IDE and add the location for the library into the board manager
-https://dl.espressif.com/dl/package_esp32_index.json  
+https://dl.espressif.com/dl/package_esp32_index.json
 
 Once specified, open the board manager, scroll down to ESP32 and install the latest version
 Then you can specify the target board as **ESP32 Dev** with Flash Size set t 4M (1MB SPIFFS) and upload speed of 115200.
@@ -54,7 +36,7 @@ When installed the folder C:\Program Files (x86)\Arduino\libraries\WiFi prevents
 
 # Additional JSON library Needed
 Make sure you install the library ArduinoJson into the Arduino IDE else firmware will not compile.
-The latest version is at https://github.com/bblanchon/ArduinoJson/releases  
+The latest version is at https://github.com/bblanchon/ArduinoJson/releases
 
 # Libraries
 To compile you will also need to import these libraries in the folder src/myFP2ELibs into the Arduino IDE environment using the Menu - Sketch - Include Library - Add .Zip file
@@ -69,20 +51,23 @@ Do not edit or replace any of these library files with others.
 # Additional Libraries which must be downloaded and installed
 To compile this firmware you need to ensure that you have installed a number of "library" files into the Arduino environment. For each of the links below, you need to DOWNLOAD the ZIP file first.
 
+Graphics OLED [SSD1306 4.1.0]
+https://github.com/ThingPulse/esp8266-oled-ssd1306
+
 OneWire
-https://github.com/PaulStoffregen/OneWire  
+https://github.com/PaulStoffregen/OneWire
 
 IRRemote
-https://github.com/crankyoldgit/IRremoteESP8266  
+https://github.com/crankyoldgit/IRremoteESP8266
 
 DuckDNS
-https://github.com/ayushsharma82/EasyDDNS  
+https://github.com/ayushsharma82/EasyDDNS
 
 ESP32 Sketch Data uploader
-https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/  
+https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
 
 ESP8266 Sketch Data uploader
-https://github.com/esp8266/arduino-esp8266fs-plugin  
+https://github.com/esp8266/arduino-esp8266fs-plugin
 
 After downloading the zip files, you then need to install these into the Arduino IDE environment. To do that, start the Arduino IDE, select Sketch, Include Library, Add .Zip library, then navigate to where the ZIP files are stored and select them (you can only load 1 zip file at a time so please repeat this for all ZIP files).
 
@@ -127,13 +112,13 @@ This is a special cut down version of the SSD1306AsciiWire library by Bill Greim
 
 Libraries 
 
-* Arduino JSON 6.15.2 https://github.com/bblanchon/ArduinoJson.git  
+* Arduino JSON 6.15.2 https://github.com/bblanchon/ArduinoJson.git
 * myfp2eIremoteESP8266 as in Library Files
 * myOLED as in Library Files
 * myHalfStepperESP32 as in Library Files
 * myDallas Temperature as in Library Files
 * Wire [as installed with Arduino 1.8.13]
-* OneWire http://www.pjrc.com/teensy/td_libs_OneWire.html  
+* OneWire http://www.pjrc.com/teensy/td_libs_OneWire.html
 
 # Notes:
 You may need to turn 12V off to reprogram chip. Speed is 115200. Sometimes you might need to
@@ -148,4 +133,3 @@ chip either.
 
 # TODO
 Look at what need to be when chip starts up, do we need a delay reset circuit?
-

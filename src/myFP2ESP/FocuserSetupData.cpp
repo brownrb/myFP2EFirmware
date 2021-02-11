@@ -223,7 +223,7 @@ void SetupData::LoadDefaultPersistantData()
   this->showhpswmessages      = DEFAULTOFF;           // this should be default OFF
   this->forcedownload         = DEFAULTOFF;           // this should be default OFF, MANAGEMENT Server only
   this->oledpageoption        = OLEDPGOPTIONALL;
-  this->motorspeeddelay       = 0;                    // needs to come from driverboard  
+  this->motorspeeddelay       = 0;                    // needs to come from driverboard
   this->SavePersitantConfiguration();                 // write default values to SPIFFS
 }
 
@@ -354,7 +354,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["fcdownld"]           = this->forcedownload;
   doc["oledpg"]             = this->oledpageoption;
   doc["msdelay"]            = this->motorspeeddelay;
-  
+    
   // Serialize JSON to file
   DebugPrintln("Writing to file");
   if (serializeJson(doc, file) == 0)
@@ -948,4 +948,3 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
   }
 #endif
 }
-

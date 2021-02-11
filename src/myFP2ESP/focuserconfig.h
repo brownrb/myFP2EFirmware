@@ -18,13 +18,14 @@
 // ---------------------------------------------------------------------------
 // 1: SPECIFY HARDWARE OPTIONS HERE
 // ---------------------------------------------------------------------------
-
 // Caution: Do not enable a feature if the associated hardware circuits are 
 // not fitted on the board.
 // Enable or disable the specific hardware below
 
-// To enable the OLED TEXT DISPLAY uncomment the next line
-//#define OLED_TEXT 1
+// If you need no support for OLED skip section. To enable the OLED TEXT or GRAPHIC DISPLAY uncomment the related line. 
+
+#define OLED_MODE OLED_TEXT   // OLED text only mode
+//#define OLED_MODE OLED_GRAPHIC  // OLED graphic mode
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
@@ -43,20 +44,21 @@
 // To enable the Infrared remote controller [ESP32 only], uncomment the next line
 //#define INFRAREDREMOTE
 
-// To enable TEMPERATUREPROBE
+// To enable TEMPERATUREPROBE, uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
-// To enable BACKLASH IN/OUT in this firmware
+// To enable BACKLASH IN/OUT in this firmware, uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
-// To enable INOUTLEDS [ESP32 only]
+// To enable INOUTLEDS [ESP32 only], uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
-// To enable SHOWSTARTSCRN - the start boot screen showing startup messages
+// To enable SHOWSTARTSCRN - the start boot screen showing startup messages, 
+// uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
 // To enable SHOWHPSWMESSAGES - display Home Position Switch Messages 
-// on the display
+// on the display, uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
 // ---------------------------------------------------------------------------
@@ -64,49 +66,49 @@
 //    THERE ARE RESTRICTIONS ON WHAT CAN BE COMBINED TOGETHER
 // ---------------------------------------------------------------------------
 
-// to work only via USB cable as Serial port, uncomment the next line
-//#define LOCALSERIAL 1
-
 // to enable Bluetooth mode, uncomment the next line [ESP32 only]
-//#define BLUETOOTHMODE 2
+//#define BLUETOOTHMODE 1
 
-// To make the firmware return the correct firmware value when used with
-// myFocuserpro2 INDI driver, uncomment the following line
-//#define INDI 3
-
-// to work as an access point, define accesspoint below - cannot use DUCKDNS
-#define ACCESSPOINT 4
+// to work as an access point, define accesspoint - cannot use DUCKDNS
+#define ACCESSPOINT 2
 
 // to work as a station accessing a AP, define stationmode
-//#define STATIONMODE 5
+//#define STATIONMODE 3
 
-// to enable reading SSID and PASSWORD from SPIFFS file wificonfig at boot time, 
-// uncomment the following file
-//#define READWIFICONFIG 6
-
-// Management Server Control Interface [Port 6060] - DO NOT CHANGE
-#define MANAGEMENT 7
+// to work only via USB cable as Serial port, uncomment the next line
+//#define LOCALSERIAL 4
 
 // To enable OTA updates, uncomment the next line [only works in STATIONMODE]
-//#define OTAUPDATES 8
+//#define OTAUPDATES 5
 
 // mdns support [myfp2eap.local:8080]
 // to enable multicast DNS, uncomment the next line [only works in STATIONMODE]
-//#define MDNSSERVER 9
+//#define MDNSSERVER 8
+
+// Management Server Control Interface [Port 6060] - DO NOT CHANGE
+#define MANAGEMENT 9
+
+// To make the firmware return the correct firmware value when talking to a
+// myFocuserpro2 INDI driver [use only for INDI support], uncomment the following line
+//#define INDI
 
 // Cannot use DuckDNS with ACCESSPOINT, BLUETOOTHMODE or LOCALSERIAL mode
 // To enable DUCKDNS [STATIONMODE only]
-//#define USEDUCKDNS 10
+//#define USEDUCKDNS 1
 
-// to enable this focuser for ASCOMREMOTE support [Port 4040]
+// to enable reading SSID and PASSWORD 
+// from SPIFFS file wificonfig at boot time, uncomment the following file
+#define READWIFICONFIG 1
+
+// to enable this focuser for ASCOMREMOTE support [Port 4040], uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
 // [recommend use Internet Explorer or Microsoft Edge Browser]
-// to enable WEBSERVER interface [Port 80]
+// to enable WEBSERVER interface [Port 80], uncomment the next line 
 // This has moved to MANAGEMENT SERVER
 
 // To download the file [MANAGEMENTFORCEDOWNLOAD] instead of displaying file 
-// content in web browser
+// content in web browser, uncomment the next line
 // This has moved to MANAGEMENT SERVER
 
 // ----------------------------------------------------------------------------
@@ -120,10 +122,8 @@
 //#define USE_SSH1106   2
 
 // DO NOT CHANGE
-#if defined(OLEDTEXT)
 #if defined(USE_SSD1306) && defined(USE_SSH1106)
 #halt //Error - you can must define either USE_SSD1306 or USE_SSH1106 if using an OLEDDISPLAY
-#endif
 #endif
 
 #ifndef USE_SSD1306
@@ -249,6 +249,12 @@
 #endif
 #ifdef DEBUG
 #halt // Error Cannot enable DEBUG with LOCALSERIAL
+#endif
+#endif
+
+#ifdef INDI
+#ifndef LOCALSERIAL
+#halt // ERROR Cannot enable INDI without also enabling LOCALSERIAL
 #endif
 #endif
 

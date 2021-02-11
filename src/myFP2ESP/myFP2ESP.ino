@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 14x
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 13x
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -260,6 +260,7 @@ unsigned long ftargetPosition;              // target position
 volatile bool halt_alert;
 
 boolean displayfound;
+//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
 byte    isMoving;                           // is the motor currently moving
 char    ipStr[16];                          // shared between BT mode and other modes
 const char ip_zero[] = "0.0.0.0";
@@ -275,7 +276,6 @@ bool tcpipserverstate;
 bool otaupdatestate;
 bool duckdnsstate;
 bool displaystate;
-bool reboot;
 
 SetupData *mySetupData;                           // focuser data
 
@@ -892,7 +892,6 @@ void setup()
   Serial.println(millis());
 #endif
 
-  reboot = true;
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   HDebugPrintln("setup(): mySetupData()");
@@ -1039,10 +1038,11 @@ void setup()
   WiFi.mode(WIFI_AP);
   WiFi.softAP(mySSID, myPASSWORD);
 #endif // end ACCESSPOINT
+
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
 
- // this is setup as a station connecting to an existing wifi network
+  // this is setup as a station connecting to an existing wifi network
 #ifdef STATIONMODE
   DebugPrintln(STARTSMSTR);
   oledtextmsg(STARTSMSTR, -1, false, true);
@@ -1056,7 +1056,7 @@ void setup()
     WiFi.config(ip, dns, gateway, subnet);
     delay(5);
   }
-  
+
   // attempt to connect using mySSID and myPASSWORD
   byte connstatus = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
   DebugPrint(WIFIBEGINSTATUSSTR);
@@ -1094,7 +1094,7 @@ void setup()
     memset( mySSID, 0, 64);
     memset( myPASSWORD, 0, 64);
     memcpy( mySSID, mySSID_1, (sizeof(mySSID_1 / sizeof(mySSID_1[0]) );
-    memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1 / sizeof(myPASSWORD_1[0]) );
+                               memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1 / sizeof(myPASSWORD_1[0]) );
 #endif
     connstatus = WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
     DebugPrint(WIFIBEGINSTATUSSTR);
@@ -1218,10 +1218,10 @@ void setup()
   }
   else
   {
-    // a value was save previously so use that value
+    // a value was saved previously so use that value
     driverboard->setstepdelay(mySetupData->get_motorspeeddelay());
   }
-                                       
+  
   // set coilpower
   DebugPrintln(CHECKCPWRSTR);
   if (mySetupData->get_coilpower() == 0)
@@ -1308,7 +1308,6 @@ void setup()
   }
 
   halt_alert = false;
-  reboot = false;
 #ifdef TIMESETUP
   Serial.print("setup(): ");
   Serial.println(millis());
@@ -1495,15 +1494,12 @@ void loop()
       break;
 
     case State_InitMove:
-      Serial.println("State_InitMove");
       isMoving = 1;
       backlash_count = 0;
       DirOfTravel = (ftargetPosition > driverboard->getposition()) ? moving_out : moving_in;
-      Serial.print("DirOfTravel: "); Serial.println(DirOfTravel);
       driverboard->enablemotor();
       if (mySetupData->get_focuserdirection() != DirOfTravel)
       {
-        Serial.println("Direction of move != DirOfTravel");
         mySetupData->set_focuserdirection(DirOfTravel);
         // move is in opposite direction, check for backlash enabled
         // get backlash settings
@@ -1511,98 +1507,47 @@ void loop()
         {
           if (mySetupData->get_backlash_in_enabled())
           {
-            Serial.println("Backlash_in_enabled = true");
             backlash_count = mySetupData->get_backlashsteps_in();
-            Serial.println("DirOfTravel == moving_in");
-            Serial.print("backlash_count = ");
-            Serial.println(backlash_count);
-          }
-          else
-          {
-            Serial.println("Backlash_in_enabled = false");
           }
         }
         else
         {
           if (mySetupData->get_backlash_out_enabled())
           {
-            Serial.println("Backlash_out_enabled = true");
             backlash_count = mySetupData->get_backlashsteps_out();
-            Serial.println("DirOfTravel == moving_out");
-            Serial.print("backlash_count = ");
-            Serial.println(backlash_count);
+          }
+        } // if ( DirOfTravel == moving_in)
+
+        if (DirOfTravel != moving_main && backlash_count)
+        {
+          uint32_t sm = mySetupData->get_stepmode();
+          uint32_t bl = backlash_count * sm;
+          DebugPrint("bl: ");
+          DebugPrint(bl);
+          DebugPrint(" ");
+
+          if (DirOfTravel == moving_out)
+          {
+            backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
           }
           else
           {
-            Serial.println("Backlash_out_enabled = false");
+            backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
           }
-        } // if ( DirOfTravel == moving_in)
-        Serial.print("backlash_count = ");
-        Serial.println(backlash_count);
 
-        /*
-                Serial.println("DirOfTravel != moving_main && backlash_count");
-                if (DirOfTravel != moving_main && backlash_count)
-                {
-                  Serial.println("true");
-                  uint32_t sm = mySetupData->get_stepmode();
-                  uint32_t bl = backlash_count * sm;
-                  DebugPrint("bl: ");
-                  DebugPrint(bl);
-                  DebugPrint(" ");
-
-                  if (DirOfTravel == moving_out)
-                  {
-                    backlash_count = bl + sm - ((ftargetPosition + bl) % sm); // Trip to tuning point should be a fullstep position
-                  }
-                  else
-                  {
-                    backlash_count = bl + sm + ((ftargetPosition - bl) % sm); // Trip to tuning point should be a fullstep position
-                  }
-
-                  DebugPrint("backlash_count: ");
-                  DebugPrint(backlash_count);
-                  DebugPrint(" ");
-                } // if (DirOfTravel != moving_main && backlash_count)
-                else
-                {
-                    Serial.println("false");
-                }
-        */
+          DebugPrint("backlash_count: ");
+          DebugPrint(backlash_count);
+          DebugPrint(" ");
+        } // if (DirOfTravel != moving_main && backlash_count)
       } // if (mySetupData->get_focuserdirection() != DirOfTravel)
 
+      // if target pos > current pos then steps = target pos - current pos
+      // if target pos < current pos then steps = current pos - target pos
       steps = (ftargetPosition > driverboard->getposition()) ? ftargetPosition - driverboard->getposition() : driverboard->getposition() - ftargetPosition;
-      
-      // Error - cannot combine backlash steps to steps because that alters position
-      // Backlash move SHOULD NOT alter focuser position as focuser is not actually moving
-      // backlash is taking up the slack in the stepper motor/focuser mechanism, so position is not actually changing
-      if ( backlash_count != 0 )
-      {
-        MainStateMachine = State_Backlash;
-      }
-      else
-      {
-        // if target pos > current pos then steps = target pos - current pos
-        // if target pos < current pos then steps = current pos - target pos
-        driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
-        Serial.print("Steps: "); Serial.println(steps);
-        MainStateMachine = State_Moving;
-      }
-      break;
-
-    case State_Backlash:
-      // apply backlash
-      Serial.print("Apply Backlash: Steps=");
-      Serial.println(backlash_count);     
-      while ( backlash_count != 0 )
-      {
-        steppermotormove(DirOfTravel);                            // take 1 step
-        delayMicroseconds(driverboard->getstepdelay());           // ensure delay between steps
-        backlash_count--;
-      }
-      Serial.println("Backlash done"); 
-      Serial.print("Initiate motor move- steps: ");
-      Serial.println(steps);
+      DebugPrint(STATEMOVINGSTR);
+      DebugPrint(steps);
+      HDebugPrint("heap before move : ");
+      HDebugPrintf("%u\n", ESP.getFreeHeap());
       driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
       MainStateMachine = State_Moving;
       break;

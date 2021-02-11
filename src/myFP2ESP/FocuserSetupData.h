@@ -73,7 +73,7 @@ class SetupData
     byte get_forcedownload();
     String  get_oledpageoption();
     int get_motorspeeddelay();
-  
+      
     //__setter
     void set_fposition(unsigned long);
     void set_focuserdirection(byte);
@@ -116,7 +116,7 @@ class SetupData
     void set_forcedownload(byte);
     void set_oledpageoption(String);
     void set_motorspeeddelay(int);
-  
+         
   private:
     byte SavePersitantConfiguration();
     byte SaveVariableConfiguration();

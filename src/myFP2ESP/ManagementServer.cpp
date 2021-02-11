@@ -27,9 +27,14 @@
 #endif
 
 extern SetupData *mySetupData;
-extern DriverBoard* driverboard;
+extern DriverBoard *driverboard;
+
+#include "temp.h"
+extern TempProbe *myTempProbe;
+
 extern volatile bool halt_alert;
 extern unsigned long ftargetPosition;
+extern byte isMoving;
 extern int  packetsreceived;
 extern int  packetssent;
 extern bool mdnsserverstate;                       // states for services, RUNNING | STOPPED
@@ -40,10 +45,7 @@ extern bool managementserverstate;
 extern bool tcpipserverstate;
 extern bool otaupdatestate;
 extern bool duckdnsstate;
-extern int staticip;
-extern byte isMoving; 
-#include "temp.h"
-extern TempProbe *myTempProbe;
+extern int  staticip;
 
 extern void start_tcpipserver(void);
 extern void stop_tcpipserver(void);
@@ -729,7 +731,7 @@ void MANAGEMENT_buildadminpg3(void)
     
     // motor speed delay
     MSpg.replace("%MS%", "<form action=\"/msindex3\" method=\"post\">Delay: <input type=\"text\" name=\"msd\" size=\"6\" value=" + String(driverboard->getstepdelay()) + "> <input type=\"submit\" name=\"setmsd\" value=\"Set\"></form>");
-
+   
     MSpg.replace("%BT%", String(CREBOOTSTR));           // add code to handle reboot controller
 
     DebugPrintln(PROCESSPAGEENDSTR);
@@ -817,7 +819,7 @@ void MANAGEMENT_handleadminpg3(void)
     mySetupData->set_backlashsteps_out(steps);
   }
 
- // motor speed delay
+  // motor speed delay
   msg = mserver.arg("setmsd");
   if ( msg != "" )
   {
@@ -1952,13 +1954,9 @@ void MANAGEMENT_handleset(void)
       DebugPrintln("Tempprobe: ON");
       if ( mySetupData->get_temperatureprobestate() == 0)
       {
-          myTempProbe = new TempProbe;
-          mySetupData->set_temperatureprobestate(1);
-          rflag = true;
-      }
-      else
-      {
-        // do nothing, probe is already on
+        mySetupData->set_temperatureprobestate(1);
+        myTempProbe = new TempProbe;
+        rflag = true;
       }
     }
     else if ( value == "off" )
@@ -2263,9 +2261,6 @@ void start_management(void)
   
   mserver.on("/set",                 MANAGEMENT_handleset);               // generic set function
   mserver.on("/get",                 MANAGEMENT_handleget);               // generic get function
-
-  mserver.on("/halt",     HTTP_GET,  MANAGEMENT_halt);
-  mserver.on("/reboot",   HTTP_GET,  MANAGEMENT_reboot);
   
   mserver.on("/upload",   HTTP_POST, []() {
     mserver.send(NORMALWEBPAGE);
@@ -2299,4 +2294,3 @@ void stop_management(void)
 }
 
 #endif // #ifdef MANAGEMENT
-

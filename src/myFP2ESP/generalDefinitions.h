@@ -21,7 +21,7 @@
 enum oled_state { oled_off, oled_on };
 enum connection_status { disconnected, connected };
 //  StateMachine definition
-enum StateMachineStates { State_Idle, State_InitMove, State_backlash, State_Moving, State_DelayAfterMove, State_FinishedMove, State_SetHomePosition };
+enum StateMachineStates { State_Idle, State_InitMove, State_Moving, State_DelayAfterMove, State_FinishedMove, State_SetHomePosition };
 
 #define DEFAULTPOSITION       5000L
 #define DEFAULTMAXSTEPS       80000L
