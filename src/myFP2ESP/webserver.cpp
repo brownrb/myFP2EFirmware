@@ -24,14 +24,15 @@
 #endif
 #include <SPI.h>
 
-extern char    ipStr[16];                          // shared between BT mode and other modes
+extern char ipStr[16];                          // shared between BT mode and other modes
 extern SetupData *mySetupData;
 extern DriverBoard* driverboard;
-extern unsigned long ftargetPosition;              // target position
-extern byte    isMoving;                           // is the motor currently moving
+extern unsigned long ftargetPosition;           // target position
+extern byte isMoving;                           // is the motor currently moving
 extern volatile bool halt_alert;
 extern TempProbe *myTempProbe;
 extern bool webserverstate;
+extern bool reboot;
 
 void WEBSERVER_sendpresets(void);
 void WEBSERVER_sendroot(void);
@@ -939,21 +940,6 @@ void WEBSERVER_buildhome(void)
   delay(10);                                            // small pause so background tasks can run
 }
 
-void WEBSERVER_handleposition()
-{
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(driverboard->getposition())); // Send position value only to client ajax request
-}
-
-void WEBSERVER_handleismoving()
-{
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(isMoving));          // Send isMoving value only to client ajax request
-}
-
-void WEBSERVER_handletargetposition()
-{
-  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition)); //Send targetPosition value only to client ajax request
-}
-
 // handles root page of webserver
 // this is called whenever a client requests home page of sebserver
 void WEBSERVER_handleroot()
@@ -1171,59 +1157,105 @@ void WEBSERVER_sendroot(void)
   delay(10);                                            // small pause so background ESP8266 tasks can run
 }
 
-void start_webserver(void)
+void WEBSERVER_handleposition()
 {
-  if ( !SPIFFS.begin() )
-  {
-    TRACE();
-    DebugPrintln(FSNOTSTARTEDSTR);
-    DebugPrintln(SERVERSTATESTOPSTR);
-    webserverstate = STOPPED;
-    return;
-  }
-  WSpg.reserve(MAXWEBPAGESIZE);
-  DebugPrintln(F(STARTWEBSERVERSTR));
-  HDebugPrint("Heap before start_webserver = ");
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
-  HDebugPrintf("%u\n", ESP.getFreeHeap());
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(driverboard->getposition())); // Send position value only to client ajax request
+}
+
+void WEBSERVER_handleismoving()
+{
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(isMoving));          // Send isMoving value only to client ajax request
+}
+
+void WEBSERVER_handletargetposition()
+{
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(ftargetPosition));   //Send targetPosition value only to client ajax request
+}
+
+void WEBSERVER_handletemperature()
+{
+  webserver->send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(myTempProbe->read_temp(0), 2));   //Send temperature value only to client ajax request
+}
+
+void setup_webserver(void)
+{
 #if defined(ESP8266)
   webserver = new ESP8266WebServer(mySetupData->get_webserverport());
 #else
   webserver = new WebServer(mySetupData->get_webserverport());
 #endif // if defined(esp8266) 
-  webserver->on("/", HTTP_GET,  WEBSERVER_sendroot);
-  webserver->on("/", HTTP_POST, WEBSERVER_handleroot);
-  webserver->on("/move",    HTTP_GET,   WEBSERVER_sendmove);
-  webserver->on("/move",    HTTP_POST,  WEBSERVER_handlemove);
-  webserver->on("/presets", HTTP_GET,   WEBSERVER_sendpresets);
-  webserver->on("/presets", HTTP_POST,  WEBSERVER_handlepresets);
-  webserver->on("/position",    WEBSERVER_handleposition);
-  webserver->on("/ismoving",    WEBSERVER_handleismoving);
-  webserver->on("/target",      WEBSERVER_handletargetposition);
+  webserver->on("/",        HTTP_GET,  WEBSERVER_sendroot);
+  webserver->on("/",        HTTP_POST, WEBSERVER_handleroot);
+  webserver->on("/move",    HTTP_GET,  WEBSERVER_sendmove);
+  webserver->on("/move",    HTTP_POST, WEBSERVER_handlemove);
+  webserver->on("/presets", HTTP_GET,  WEBSERVER_sendpresets);
+  webserver->on("/presets", HTTP_POST, WEBSERVER_handlepresets);
+
+  webserver->on("/position", HTTP_GET, WEBSERVER_handleposition);
+  webserver->on("/ismoving", HTTP_GET, WEBSERVER_handleismoving);
+  webserver->on("/target",  HTTP_GET,  WEBSERVER_handletargetposition);
+  webserver->on("/temp",    HTTP_GET,  WEBSERVER_handletemperature);
+
   webserver->onNotFound(WEBSERVER_handlenotfound);
   webserver->begin();
-  webserverstate = RUNNING;
-  DebugPrintln(SERVERSTATESTARTSTR);
+  mySetupData->set_webserverstate(1);
+  DebugPrintln(F(SERVERSTATESTARTSTR));
   HDebugPrint("Heap after  start_webserver = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
+  delay(10);                                        // small pause so background tasks can run
+}
+
+void start_webserver(void)
+{
+  if ( !SPIFFS.begin() )
+  {
+    TRACE();
+    DebugPrintln(F(FSNOTSTARTEDSTR));
+    DebugPrintln(F(SERVERSTATESTOPSTR));
+    mySetupData->set_webserverstate(0);     // disable web server
+    return;
+  }
+  if ( WSpg == "" )
+  {
+    WSpg.reserve(MAXWEBPAGESIZE);
+  }
+  DebugPrintln(F(STARTWEBSERVERSTR));
+  HDebugPrint("Heap before start_webserver = ");
+  HDebugPrintf("%u\n", ESP.getFreeHeap());
+  HDebugPrintf("%u\n", ESP.getFreeHeap());
+  // on a reboot this test will be a 1
+  if ( reboot == true )
+  {
+    setup_webserver();
+  }
+  if ( (reboot == false) && (mySetupData->get_webserverstate() == 0) )
+  {
+    setup_webserver();
+  }
+  else
+  {
+    DebugPrintln(F("Web-server already running"));
+  }
+  webserverstate = RUNNING;
   delay(10);                                            // small pause so background tasks can run
 }
 
 void stop_webserver(void)
 {
-  if ( webserverstate == RUNNING )
+  if ( mySetupData->get_webserverstate() == 1)
   {
     webserver->close();
-    delete webserver;                                   // free the webserver pointer and associated memory/code
-    webserverstate = STOPPED;
+    delete webserver;             // free the webserver pointer and associated memory/code
+    mySetupData->set_webserverstate(0);
     TRACE();
-    DebugPrintln(SERVERSTATESTOPSTR);
+    DebugPrintln(F(SERVERSTATESTOPSTR));
+    WSpg = "";
   }
   else
   {
-    DebugPrintln(SERVERNOTRUNNINGSTR);
+    DebugPrintln(F(SERVERNOTRUNNINGSTR));
   }
-  delay(10);                                            // small pause so background tasks can run
+  webserverstate = STOPPED;
+  delay(10);                      // small pause so background tasks can run  delay(10);                                            // small pause so background tasks can run
 }
 // WEBSERVER END -------------------------------------------------------------
-

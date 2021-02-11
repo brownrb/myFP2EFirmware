@@ -276,8 +276,9 @@ bool tcpipserverstate;
 bool otaupdatestate;
 bool duckdnsstate;
 bool displaystate;
+bool reboot;                                // flag used to indicate a reboot has occurred
 
-SetupData *mySetupData;                           // focuser data
+SetupData *mySetupData;                     // focuser data
 
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
@@ -912,6 +913,8 @@ void setup()
   DebugPrintln(BLUETOOTHSTARTSTR);
 #endif
 
+  reboot = true;                                // booting up
+
   // Setup LEDS, use as controller power up indicator
   if ( mySetupData->get_inoutledstate() == 1)
   {
@@ -1308,6 +1311,8 @@ void setup()
   }
 
   halt_alert = false;
+  reboot = false;                                           // we have finished the reboot now
+    
 #ifdef TIMESETUP
   Serial.print("setup(): ");
   Serial.println(millis());
