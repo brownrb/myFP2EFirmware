@@ -1780,6 +1780,299 @@ void MANAGEMENT_sendadminpg1(void)
   delay(10);
 }
 
+// generic get
+void MANAGEMENT_handleget(void)
+{
+  // return json string of state, on or off or value
+  // ascom, leds, temp, webserver, position, ismoving, display, motorspeed, coilpower, reverse
+  String jsonstr;
+
+  if ( mserver.argName(0) == "ascom" )
+  {
+    jsonstr = "{\"ascomserver\":" + String(mySetupData->get_ascomserverstate()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "leds" )
+  {
+    jsonstr = "{\"ledstate\":" + String(mySetupData->get_inoutledstate()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "tempprobe" )
+  {
+    jsonstr = "{\"tempprobe\":" + String(mySetupData->get_temperatureprobestate()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "webserver" )
+  {
+    jsonstr = "{\"webserver\":" + String(mySetupData->get_webserverstate()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "position" )
+  {
+    jsonstr = "{ \"position\":" + String(mySetupData->get_fposition()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "ismoving" )
+  {
+    jsonstr = "{ \"ismoving\":" + String(isMoving) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "display" )
+  {
+    jsonstr = "{ \"display\":" + String(mySetupData->get_displayenabled()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "motorspeed" )
+  {
+    jsonstr = "{ \"motorspeed\":" + String(mySetupData->get_motorSpeed()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "coilpower" )
+  {
+    jsonstr = "{ \"coilpower\":" + String(mySetupData->get_coilpower()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else if ( mserver.argName(0) == "reverse" )
+  {
+    jsonstr = "{ \"reverse\":" + String(mySetupData->get_reversedirection()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+  else
+  {
+    jsonstr = "{ \"error\":\"unknown-command\" }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+}
+
+// generic set
+void MANAGEMENT_handleset(void)
+{
+  // get parameter after ?
+  String value;
+  bool rflag = false;
+  // ascom, leds, tempprobe, webserver, position, move, display, motorspeed, coilpower, reverse
+
+  // ascom remote server
+  value = mserver.arg("ascom");
+  if ( value != "" )
+  {
+    if ( value == "on" )
+    {
+      DebugPrintln("ASCOM server: ON");
+      if ( mySetupData->get_ascomserverstate() == 0)
+      {
+        start_ascomremoteserver();
+        rflag = true;
+      }
+    }
+    else if ( value == "off" )
+    {
+      DebugPrintln("ASCOM server: OFF");
+      if ( mySetupData->get_ascomserverstate() == 1)
+      {
+        stop_ascomremoteserver();
+        rflag = true;
+      }
+    }
+  }
+
+  // in out leds
+  value = mserver.arg("leds");
+  if ( value != "" )
+  {
+    if ( value == "on" )
+    {
+      DebugPrintln("LED's: ON");
+      if ( mySetupData->get_inoutledstate() == 0)
+      {
+        mySetupData->set_inoutledstate(1);
+        // reinitialise pins
+#if (DRVBRD == PRO2ESP32ULN2003 || DRVBRD == PRO2ESP32L298N || DRVBRD == PRO2ESP32L293DMINI || DRVBRD == PRO2ESP32L9110S) || (DRVBRD == PRO2ESP32DRV8825 )
+        init_leds();
+#endif
+        rflag = true;
+      }
+    }
+    else if ( value == "off" )
+    {
+      DebugPrintln("LED's: OFF");
+      if ( mySetupData->get_inoutledstate() == 1)
+      {
+        mySetupData->set_inoutledstate(0);
+        rflag = true;
+      }
+    }
+  }
+
+  // temperature probe
+  value = mserver.arg("tempprobe");
+  if ( value != "" )
+  {
+    if ( value == "on" )
+    {
+      DebugPrintln("Tempprobe: ON");
+      if ( mySetupData->get_temperatureprobestate() == 0)
+      {
+        mySetupData->set_temperatureprobestate(1);
+        init_temp();                                                    // we need to reinitialise it
+        rflag = true;
+      }
+    }
+    else if ( value == "off" )
+    {
+      DebugPrintln("Tempprobe: OFF");
+      if ( mySetupData->get_temperatureprobestate() == 1)
+      {
+        // there is no destructor call
+        mySetupData->set_temperatureprobestate(0);
+        rflag = true;
+      }
+    }
+  }
+
+  // web server
+  value = mserver.arg("webserver");
+  if ( value != "" )
+  {
+    if ( value == "on" )
+    {
+      DebugPrintln("weberver: ON");
+      if ( mySetupData->get_webserverstate() == 0)
+      {
+        start_webserver();
+        rflag = true;
+      }
+    }
+    else if ( value == "off" )
+    {
+      DebugPrintln("webserver: OFF");
+      if ( mySetupData->get_webserverstate() == 1)
+      {
+        stop_webserver();
+        rflag = true;
+      }
+    }
+  }
+
+  // position - does not move focuser
+  value = mserver.arg("position");
+  if ( value != "" )
+  {
+    unsigned long temp = value.toInt();
+    DebugPrint("Set position: ");
+    DebugPrintln(temp);
+    ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+    mySetupData->set_fposition(ftargetPosition);      // current position in SPIFFS
+    driverboard->setposition(ftargetPosition);        // current position in driver board
+    rflag = true;
+  }
+
+  // move - moves focuser position
+  value = mserver.arg("move");
+  if ( value != "" )
+  {
+    unsigned long temp = value.toInt();
+    DebugPrint("Move to position: ");
+    DebugPrintln(temp);
+    ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+    rflag = true;
+  }
+
+  // display
+  value = mserver.arg("display");
+  if ( value != "" )
+  {
+    if ( value == "on" )
+    {
+      DebugPrintln("display: ON");
+      mySetupData->set_displayenabled(1);
+#ifdef OLED_TEXT
+      myoled->Display_On();
+      rflag = true;
+#endif
+    }
+    else if ( value == "off" )
+    {
+      DebugPrintln("display: OFF");
+      if ( mySetupData->get_displayenabled() == 1)
+      {
+        mySetupData->set_displayenabled(0);
+#ifdef OLED_TEXT
+        myoled->Display_Off();
+        rflag = true;
+#endif
+      }
+    }
+  }
+
+  // motorspeed
+  value = mserver.arg("motorspeed");
+  if ( value != "" )
+  {
+    int tmp = value.toInt();
+    DebugPrint("Motorspeed: ");
+    DebugPrintln(tmp);
+    if ( tmp < SLOW )
+    {
+      tmp = SLOW;
+    }
+    if ( tmp > FAST )
+    {
+      tmp = FAST;
+    }
+    mySetupData->set_motorSpeed(tmp);
+    rflag = true;
+  }
+
+  // coilpower
+  value = mserver.arg("coilpower");
+  if ( value != "" )
+  {
+    DebugPrint("coilpower:");
+    DebugPrintln(value);
+    if ( value == "on" )
+    {
+      mySetupData->set_coilpower(1);
+      driverboard->enablemotor();
+      rflag = true;
+    }
+    else if ( value == "off" )
+    {
+      mySetupData->set_coilpower(0);
+      driverboard->releasemotor();
+      rflag = true;
+    }
+  }
+
+  // if reversedirection
+  value = mserver.arg("reverse");
+  if ( value != "" )
+  {
+    DebugPrint("reverse:");
+    DebugPrintln(value);
+    if ( value == "on" )
+    {
+      mySetupData->set_reversedirection(1);
+      rflag = true;
+    }
+    else if ( value == "off" )
+    {
+      mySetupData->set_reversedirection(0);
+      rflag = true;
+    }
+  }
+
+  // send generic OK
+  if ( rflag == true )
+  {
+    MANAGEMENT_sendjson("{ \"cmd:\":\"ok\" }");
+  }
+  else
+  {
+    MANAGEMENT_sendjson("{ \"cmd:\":\"nok\" }");
+  }
+}
+
 void MANAGEMENT_ascomoff(void)
 {
   // ascom server stop
@@ -1872,6 +2165,22 @@ void MANAGEMENT_webserveron(void)
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Web-Server On");
 }
 
+// halt
+void MANAGEMENT_halt(void)
+{
+  halt_alert = true;
+}
+
+// reboot controller
+void MANAGEMENT_reboot(void)
+{
+  String WaitPage = "<html><meta http-equiv=refresh content=\"" + String(MSREBOOTPAGEDELAY) + "\"><head><title>Management Server></title></head><body><p>Please wait, controller rebooting.</p></body></html>";
+  mserver.send(NORMALWEBPAGE, TEXTPAGETYPE, WaitPage );
+  WaitPage = "";
+  delay(1000);                                        // wait for page to be sent
+  software_Reboot(REBOOTDELAY);
+}
+
 void start_management(void)
 {
   if ( !SPIFFS.begin() )
@@ -1908,6 +2217,12 @@ void start_management(void)
   mserver.on("/tempoff",      HTTP_GET,  MANAGEMENT_tempoff);
   mserver.on("/webserveroff", HTTP_GET,  MANAGEMENT_webserveroff);
   mserver.on("/webserveron",  HTTP_GET,  MANAGEMENT_webserveron);
+  
+  mserver.on("/set",                 MANAGEMENT_handleset);               // generic set function
+  mserver.on("/get",                 MANAGEMENT_handleget);               // generic get function
+
+  mserver.on("/halt",     HTTP_GET,  MANAGEMENT_halt);
+  mserver.on("/reboot",   HTTP_GET,  MANAGEMENT_reboot);
   
   mserver.on("/upload",   HTTP_POST, []() {
     mserver.send(NORMALWEBPAGE);
