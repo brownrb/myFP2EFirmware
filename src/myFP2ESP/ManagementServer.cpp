@@ -27,8 +27,9 @@
 #endif
 
 extern SetupData *mySetupData;
-extern void software_Reboot(int);
-
+extern DriverBoard* driverboard;
+extern volatile bool halt_alert;
+extern unsigned long ftargetPosition;
 extern int  packetsreceived;
 extern int  packetssent;
 extern bool mdnsserverstate;                       // states for services, RUNNING | STOPPED
@@ -40,6 +41,9 @@ extern bool tcpipserverstate;
 extern bool otaupdatestate;
 extern bool duckdnsstate;
 extern int staticip;
+extern byte isMoving; 
+#include "temp.h"
+extern TempProbe *myTempProbe;
 
 extern void start_tcpipserver(void);
 extern void stop_tcpipserver(void);
@@ -48,6 +52,7 @@ extern void stop_webserver(void);
 extern void start_ascomremoteserver(void);
 extern void stop_ascomremoteserver(void);
 extern void init_leds(void);
+extern void software_Reboot(int);
 
 void MANAGEMENT_sendadminpg5(void);
 void MANAGEMENT_sendadminpg4(void);
@@ -1927,9 +1932,13 @@ void MANAGEMENT_handleset(void)
       DebugPrintln("Tempprobe: ON");
       if ( mySetupData->get_temperatureprobestate() == 0)
       {
-        mySetupData->set_temperatureprobestate(1);
-        init_temp();                                                    // we need to reinitialise it
-        rflag = true;
+          myTempProbe = new TempProbe;
+          mySetupData->set_temperatureprobestate(1);
+          rflag = true;
+      }
+      else
+      {
+        // do nothing, probe is already on
       }
     }
     else if ( value == "off" )
