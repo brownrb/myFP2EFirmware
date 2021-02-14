@@ -1048,14 +1048,14 @@ void setup()
   // this is setup as a station connecting to an existing wifi network
 #ifdef STATIONMODE
   DebugPrintln(STARTSMSTR);
-  oledtextmsg(STARTSMSTR, -1, false, true);
+  myoled->oledtextmsg(STARTSMSTR, -1, false, true);
 
   // Log on to LAN
   WiFi.mode(WIFI_STA);
   if (staticip == STATICIPON)                   // if staticip then set this up before starting
   {
     DebugPrintln(SETSTATICIPSTR);
-    oledtextmsg(SETSTATICIPSTR, -1, false, true);
+    myoled->oledtextmsg(SETSTATICIPSTR, -1, false, true);
     WiFi.config(ip, dns, gateway, subnet);
     delay(5);
   }
@@ -1073,12 +1073,12 @@ void setup()
     DebugPrint(attempts);
     delay(1000);                                    // wait 1s
 
-    oledtextmsg(ATTEMPTSSTR, attempts, false, true);
+    myoled->oledtextmsg(ATTEMPTSSTR, attempts, false, true);
     if (attempts > 9)                               // if this attempt is 10 or more tries
     {
       DebugPrintln(APCONNECTFAILSTR);
       DebugPrintln(WIFIRESTARTSTR);
-      oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
+      myoled->oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
       delay(2000);
       break;                                        // jump out of this for loop
     }
@@ -1096,8 +1096,8 @@ void setup()
     // and reboot after 10 attempts to log on
     memset( mySSID, 0, 64);
     memset( myPASSWORD, 0, 64);
-    memcpy( mySSID, mySSID_1, (sizeof(mySSID_1 / sizeof(mySSID_1[0]) );
-                               memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1 / sizeof(myPASSWORD_1[0]) );
+    memcpy( mySSID, mySSID_1, (sizeof(mySSID_1) / sizeof(mySSID_1[0]) ));
+    memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1 / sizeof(myPASSWORD_1[0]) );
 #endif
     connstatus = WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
     DebugPrint(WIFIBEGINSTATUSSTR);
@@ -1111,12 +1111,12 @@ void setup()
       DebugPrint(attempts);
       delay(1000);                                // wait 1s
 
-      oledtextmsg(ATTEMPTSSTR, attempts, false, true);
+      myoled->oledtextmsg(ATTEMPTSSTR, attempts, false, true);
       if (attempts > 9)                           // if this attempt is 10 or more tries
       {
         DebugPrintln(APCONNECTFAILSTR);
         DebugPrintln(WIFIRESTARTSTR);
-        oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
+        myoled->oledtextmsg(APCONNECTFAILSTR + String(mySSID), -1, true, true);
         delay(2000);
         software_Reboot(2000);                    // GPIO0 must be HIGH and GPIO15 LOW when calling ESP.restart();
       }
@@ -1312,7 +1312,7 @@ void setup()
 
   halt_alert = false;
   reboot = false;                                           // we have finished the reboot now
-    
+
 #ifdef TIMESETUP
   Serial.print("setup(): ");
   Serial.println(millis());

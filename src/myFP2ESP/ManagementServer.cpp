@@ -26,6 +26,9 @@
 #define STATICIPON    1
 #endif
 
+// ---------------------------------------------------------------------------
+// Extern Data
+// ---------------------------------------------------------------------------
 extern SetupData *mySetupData;
 extern DriverBoard *driverboard;
 
@@ -47,6 +50,9 @@ extern bool otaupdatestate;
 extern bool duckdnsstate;
 extern int  staticip;
 
+// ---------------------------------------------------------------------------
+// Extern functions
+// ---------------------------------------------------------------------------
 extern void start_tcpipserver(void);
 extern void stop_tcpipserver(void);
 extern void start_webserver(void);
@@ -56,6 +62,14 @@ extern void stop_ascomremoteserver(void);
 extern void init_leds(void);
 extern void software_Reboot(int);
 
+#ifdef MDNSSERVER
+extern void start_mdns_service(void);
+extern void stop_mdns_service(void);
+#endif
+
+// ---------------------------------------------------------------------------
+// Forward Declarations
+// ---------------------------------------------------------------------------
 void MANAGEMENT_sendadminpg5(void);
 void MANAGEMENT_sendadminpg4(void);
 void MANAGEMENT_sendadminpg3(void);

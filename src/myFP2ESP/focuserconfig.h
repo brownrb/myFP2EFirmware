@@ -98,7 +98,7 @@
 
 // to enable reading SSID and PASSWORD 
 // from SPIFFS file wificonfig at boot time, uncomment the following file
-#define READWIFICONFIG 1
+//#define READWIFICONFIG 1
 
 // to enable this focuser for ASCOMREMOTE support [Port 4040], uncomment the next line
 // This has moved to MANAGEMENT SERVER
@@ -249,12 +249,6 @@
 #endif
 #ifdef DEBUG
 #halt // Error Cannot enable DEBUG with LOCALSERIAL
-#endif
-#endif
-
-#ifdef INDI
-#ifndef LOCALSERIAL
-#halt // ERROR Cannot enable INDI without also enabling LOCALSERIAL
 #endif
 #endif
 
