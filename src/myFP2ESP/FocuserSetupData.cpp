@@ -474,7 +474,7 @@ byte SetupData::get_tempprecision()
   return this->tempprecision;         // precision of temperature measurement 9-12
 }
 
-byte SetupData::get_stepmode()
+int  SetupData::get_stepmode()
 {
   return this->stepmode;              // current step mode
 }
@@ -682,7 +682,7 @@ void SetupData::set_tempprecision(byte tempprecision)
   this->StartDelayedUpdate(this->tempprecision, tempprecision);
 }
 
-void SetupData::set_stepmode(byte stepmode)
+void SetupData::set_stepmode(int stepmode)
 {
   this->StartDelayedUpdate(this->stepmode, stepmode);
 }

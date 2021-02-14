@@ -212,13 +212,13 @@ class DriverBoard
     uint32_t  halt(void);
     
     // getter
-    byte getstepmode(void);
+    int getstepmode(void);
     int getstepdelay(void);
     unsigned long getposition(void);
     
     // setter
     void setstepdelay(int);
-    void setstepmode(byte);
+    void setstepmode(int);
     void enablemotor(void);
     void releasemotor(void);
     void setposition(unsigned long);
@@ -236,7 +236,7 @@ class DriverBoard
     unsigned long focuserposition;                  // current focuser position
     int  inputPins[4];                              // input pins for driving stepper boards
     byte boardtype;                                 // DRVBRD
-    byte stepmode;                                  // current step mode setting for board
+    int  stepmode;                                  // current step mode setting for board
     int  stepdelay;                                 // time in milliseconds to wait between pulses when moving
     bool drvbrdleds;                                // true if DRVBRD supports INOUT leds - can be enabled/disabled
     unsigned int clock_frequency;                   // clock frequency used to generate 2us delay for ESP32 160Mhz/240Mhz

@@ -296,12 +296,12 @@ DriverBoard::~DriverBoard()
 #endif
 }
 
-byte DriverBoard::getstepmode(void)
+int DriverBoard::getstepmode(void)
 {
   return this->stepmode;
 }
 
-void DriverBoard::setstepmode(byte smode)
+void DriverBoard::setstepmode(int smode)
 {
   do {
 #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32R3WEMOS )

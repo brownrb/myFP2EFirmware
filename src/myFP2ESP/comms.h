@@ -180,7 +180,7 @@ void ESP_Communication()
     case 10: // get maxIncrement
       SendPaket('Y', mySetupData->get_maxstep());
       break;
-    case 11: // get coilpower
+    case 11: // get coil power
       SendPaket('O', mySetupData->get_coilpower());
       break;
     case 12: // set coil power
@@ -198,7 +198,7 @@ void ESP_Communication()
         ( paramval == 1 ) ? mySetupData->set_reversedirection(1) : mySetupData->set_reversedirection(0);
       }
       break;
-    case 15: // set motorspeed
+    case 15: // set motor speed
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = (byte)WorkString.toInt() & 3;
       mySetupData->set_motorSpeed((byte) paramval);
@@ -265,7 +265,7 @@ void ESP_Communication()
     case 27: // stop a move - like a Halt
       halt_alert = true;
       break;
-     case 28:              // :28#       None    home the motor to position 0
+    case 28: // home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
       break;      
     case 29: // get stepmode
