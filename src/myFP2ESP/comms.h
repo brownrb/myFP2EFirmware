@@ -145,165 +145,6 @@ void ESP_Communication()
       snprintf(buffer, sizeof(buffer), "%s\r\n%s",  DRVBRD_ID, programVersion );
       SendPaket('F', buffer);
       break;
-    case 6: // get temperature
-        SendPaket('Z', myTempProbe->read_temp(0), 3);
-      break;
-    case 8: // get maxStep
-      SendPaket('M', mySetupData->get_maxstep());
-      break;
-    case 10: // get maxIncrement
-      SendPaket('Y', mySetupData->get_maxstep());
-      break;
-    case 11: // get coilpower
-      SendPaket('O', mySetupData->get_coilpower());
-      break;
-    case 13: // get reverse direction setting, 00 off, 01 on
-      SendPaket('R', mySetupData->get_reversedirection());
-      break;
-    case 21: // get temp probe resolution
-      SendPaket('Q', mySetupData->get_tempprecision());
-      break;
-    case 24: // get status of temperature compensation (enabled | disabled)
-      SendPaket('1', mySetupData->get_tempcompenabled());
-      break;
-    case 25: // get IF temperature compensation is available
-      if ( mySetupData->get_temperatureprobestate() == 1 )
-      {
-        SendPaket('A', "1"); // this focuser supports temperature compensation
-      }
-      else
-      {
-        SendPaket('A', "0");
-      }
-      break;
-    case 26: // get temperature coefficient steps/degree
-      SendPaket('B', mySetupData->get_tempcoefficient());
-      break;
-    case 29: // get stepmode
-      SendPaket('S', mySetupData->get_stepmode());
-      break;
-    case 32: // get if stepsize is enabled
-      SendPaket('U', mySetupData->get_stepsizeenabled());
-      break;
-    case 33: // get stepsize
-      SendPaket('T', mySetupData->get_stepsize(), 3);       // ????????????? check format
-      break;
-    case 34: // get the time that an LCD screen is displayed for
-      SendPaket('X', mySetupData->get_lcdpagetime());
-      break;
-    case 37: // get displaystatus
-      SendPaket('D', mySetupData->get_displayenabled());
-      break;
-    case 38: // :38#   Dxx#      Get Temperature mode 1=Celsius, 0=Fahrenheight
-      SendPaket('b', mySetupData->get_tempmode());
-      break;
-    case 39: // get the new motor position (target) XXXXXX
-      SendPaket('N', ftargetPosition);
-      break;
-    case 43: // get motorspeed
-      SendPaket('C', mySetupData->get_motorSpeed());
-      break;
-    case 49: // aXXXXX
-      SendPaket('a', "b552efd");
-      break;
-    case 51: // return ESP8266Wifi Controller IP Address
-      SendPaket('d', ipStr);
-      break;
-    case 52: // return ESP32 Controller number of TCP packets sent
-      SendPaket('e', packetssent);
-      break;
-    case 53: // return ESP32 Controller number of TCP packets received
-      SendPaket('f', packetsreceived);
-      break;
-    case 54: // return ESP32 Controller SSID
-#ifdef LOCALSERIAL
-      SendPaket('g', "SERIAL");
-#endif
-#ifdef BLUETOOTH
-      SendPaket('g', "BLUETOOTH");
-#endif
-#if !defined(LOCALSERIAL) && !defined(BLUETOOTHMODE)
-      SendPaket('g', mySSID);
-#endif
-      break;
-    case 55: // get motorspeed delay for current speed setting
-      SendPaket('0', driverboard->getstepdelay());
-      break;
-    case 58: // get controller features .. deprecated
-      SendPaket('m', 0);
-      break;
-    case 62: // get update of position on lcd when moving (00=disable, 01=enable)
-      SendPaket('L', mySetupData->get_lcdupdateonmove());
-      break;
-    case 63: // get status of home position switch (0=off, 1=closed, position 0)
-#ifdef HOMEPOSITIONSWITCH
-      SendPaket('H', digitalRead(HPSWPIN));
-#else
-      SendPaket('H', "0");
-#endif
-      break;
-    case 72: // get DelayAfterMove
-      SendPaket('3', mySetupData->get_DelayAfterMove());
-      break;
-    case 74: // get backlash in enabled status
-      SendPaket('4', mySetupData->get_backlash_in_enabled());
-      break;
-    case 76: // get backlash OUT enabled status
-      SendPaket('5', mySetupData->get_backlash_out_enabled());
-      break;
-    case 78: // return number of backlash steps IN
-      SendPaket('6', mySetupData->get_backlashsteps_in());
-      break;
-    case 80: // return number of backlash steps OUT
-      SendPaket('7', mySetupData->get_backlashsteps_out());
-      break;
-    case 83: // get if there is a temperature probe
-      SendPaket('c', myTempProbe->get_tprobe1());
-      break;
-    case 87: // get tc direction
-      SendPaket('k', mySetupData->get_tcdirection());
-      break;
-    case 91: // get focuserpreset [0-9]
-      {
-        byte preset = (byte) (receiveString[3] - '0');
-        preset = (preset > 9) ? 9 : preset;
-        SendPaket('h', mySetupData->get_focuserpreset(preset));
-      }
-      break;
-      case 93: // get OLED page display option
-      {
-        char tempbuff[5];
-        mySetupData->get_oledpageoption().toCharArray(tempbuff, mySetupData->get_oledpageoption().length() + 1);
-        SendPaket('l', tempbuff);
-      }
-      break;
-    case 95: // get management option
-      {
-        int option = 0;
-        if ( mySetupData->get_ascomserverstate() == 1)
-        {
-          option += 1;
-        }
-        if ( mySetupData->get_inoutledstate() == 1 )
-        {
-          option += 2;
-        }
-        if (mySetupData->get_temperatureprobestate() == 1)
-        {
-          option += 4;
-        }
-        if ( mySetupData->get_webserverstate() == 1)
-        {
-          option += 8;
-        }
-        SendPaket('l', option);
-      }
-      break;
-
-    // only the set commands are listed here as they do not require a response
-    case 28:              // :28#       None    home the motor to position 0
-      ftargetPosition = 0; // if this is a home then set target to 0
-      break;
     case 5: // :05xxxxxx# None    Set new target position to xxxxxx (and focuser initiates immediate move to xxxxxx)
       // only if not already moving
       if ( isMoving == 0 )
@@ -313,6 +154,9 @@ void ESP_Communication()
         ftargetPosition = (ftargetPosition > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : ftargetPosition;
         // main loop will update focuser positions
       }
+      break;
+    case 6: // get temperature
+      SendPaket('Z', myTempProbe->read_temp(0), 3);
       break;
     case 7: // set maxsteps
       {
@@ -328,10 +172,24 @@ void ESP_Communication()
         mySetupData->set_maxstep(tmppos);
       }
       break;
+    case 8: // get maxStep
+      SendPaket('M', mySetupData->get_maxstep());
+      break;
+    case 9:   // unused
+      break;
+    case 10: // get maxIncrement
+      SendPaket('Y', mySetupData->get_maxstep());
+      break;
+    case 11: // get coilpower
+      SendPaket('O', mySetupData->get_coilpower());
+      break;
     case 12: // set coil power
       paramval = (byte) (receiveString[3] - '0');
       ( paramval == 1 ) ? driverboard->enablemotor() : driverboard->releasemotor();
       mySetupData->set_coilpower(paramval);
+      break;
+    case 13: // get reverse direction setting, 00 off, 01 on
+      SendPaket('R', mySetupData->get_reversedirection());
       break;
     case 14: // set reverse direction
       if ( isMoving == 0 )
@@ -374,6 +232,9 @@ void ESP_Communication()
         myTempProbe->temp_setresolution((byte) paramval);
       }
       break;
+    case 21: // get temp probe resolution
+      SendPaket('Q', mySetupData->get_tempprecision());
+      break;
     case 22: // set the temperature compensation value to xxx
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
@@ -385,9 +246,32 @@ void ESP_Communication()
         mySetupData->set_tempcompenabled((byte) (receiveString[3] - '0'));
       }
       break;
+    case 24: // get status of temperature compensation (enabled | disabled)
+      SendPaket('1', mySetupData->get_tempcompenabled());
+      break;
+    case 25: // get IF temperature compensation is available
+      if ( mySetupData->get_temperatureprobestate() == 1 )
+      {
+        SendPaket('A', "1"); // this focuser supports temperature compensation
+      }
+      else
+      {
+        SendPaket('A', "0");
+      }
+      break;
+    case 26: // get temperature coefficient steps/degree
+      SendPaket('B', mySetupData->get_tempcoefficient());
+      break;
     case 27: // stop a move - like a Halt
       halt_alert = true;
       break;
+     case 28:              // :28#       None    home the motor to position 0
+      ftargetPosition = 0; // if this is a home then set target to 0
+      break;      
+    case 29: // get stepmode
+      SendPaket('S', mySetupData->get_stepmode());
+      break;
+
     case 30: // set step mode
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
@@ -431,6 +315,15 @@ void ESP_Communication()
         }
       }
       break;
+    case 32: // get if stepsize is enabled
+      SendPaket('U', mySetupData->get_stepsizeenabled());
+      break;
+    case 33: // get stepsize
+      SendPaket('T', mySetupData->get_stepsize(), 3);       // ????????????? check format
+      break;
+    case 34: // get the time that an LCD screen is displayed for
+      SendPaket('X', mySetupData->get_lcdpagetime());
+      break;
     case 35: // set length of time an LCD page is displayed for in seconds
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
@@ -459,6 +352,17 @@ void ESP_Communication()
       }
 #endif // ifdef OLED_TEXT
       break;
+    case 37: // get displaystatus
+      SendPaket('D', mySetupData->get_displayenabled());
+      break;
+    case 38: // :38#   Dxx#      Get Temperature mode 1=Celsius, 0=Fahrenheight
+      SendPaket('b', mySetupData->get_tempmode());
+      break;
+    case 39: // get the new motor position (target) XXXXXX
+      SendPaket('N', ftargetPosition);
+      break;
+    case 41:  // troubleshoot
+      break;
     case 40: // reset Arduino myFocuserPro2E controller
       software_Reboot(2000);      // reboot with 2s delay
       break;
@@ -471,16 +375,92 @@ void ESP_Communication()
         mySetupData->set_fposition(ftargetPosition);
       }
       break;
+    case 43: // get motorspeed
+      SendPaket('C', mySetupData->get_motorSpeed());
+      break;
+    case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
+      //ignore
+      break;
+    case 45: // get motorspeedchange threshold value
+      SendPaket('G', "200");
+      break;
+    case 46: // enable/Disable motorspeed change when moving
+      //ignore
+      break;
+    case 47: // get motorspeedchange enabled? on/off
+      SendPaket('J', "0");
+      break;
     case 48: // save settings to FS
       mySetupData->set_fposition(driverboard->getposition());       // need to save setting
       mySetupData->SaveNow();                                       // save the focuser settings immediately
+      break;      
+    case 49: // aXXXXX
+      SendPaket('a', "b552efd");
+      break;
+    case 50: // Get if Home Position Switch enabled in firmware, 0 = no, 1 = yes
+#if defined(HOMEPOSITIONSWITCH)
+      SendPaket('l', 1);
+#else
+      SendPaket('l', 0);
+#endif
+      break;
+    case 51: // return ESP8266Wifi Controller IP Address
+      SendPaket('d', ipStr);
+      break;
+    case 52: // return ESP32 Controller number of TCP packets sent
+      SendPaket('e', packetssent);
+      break;
+    case 53: // return ESP32 Controller number of TCP packets received
+      SendPaket('f', packetsreceived);
+      break;
+    case 54: // return ESP32 Controller SSID
+#ifdef LOCALSERIAL
+      SendPaket('g', "SERIAL");
+#endif
+#ifdef BLUETOOTH
+      SendPaket('g', "BLUETOOTH");
+#endif
+#if !defined(LOCALSERIAL) && !defined(BLUETOOTHMODE)
+      SendPaket('g', mySSID);
+#endif
+      break;
+    case 55: // get motorspeed delay for current speed setting
+      SendPaket('0', driverboard->getstepdelay());
       break;
     case 56: // set motorspeed delay for current speed setting
-      WorkString = receiveString.substring(3, receiveString.length() - 1);
-      driverboard->setstepdelay(WorkString.toInt());
+      {
+         int newdelay = 1000;
+         WorkString = receiveString.substring(3, receiveString.length() - 1);
+         newdelay = WorkString.toInt();
+         newdelay = (newdelay < 1000) ? 1000: newdelay;    // ensure it is not too low
+         driverboard->setstepdelay(newdelay);
+         mySetupData->set_motorspeeddelay(newdelay);
+      }
       break;
+    case 57: // set Super Slow Jogging Speed
+      // ignore
+      break;      
+    case 58: // get controller features .. deprecated
+      SendPaket('m', 0);
+      break;
+    case 59:  // Unused
+      // ignore
+      break;
+    case 60:  // set MotorSpeed when jogging
+      // ignore
+      break;   
     case 61: // set update of position on lcd when moving (0=disable, 1=enable)
       mySetupData->set_lcdupdateonmove((byte) (receiveString[3] - '0'));
+      break;
+    case 62: // get update of position on lcd when moving (00=disable, 01=enable)
+      SendPaket('L', mySetupData->get_lcdupdateonmove());
+      break;
+    case 63: // get status of home position switch (0=off, 1=closed, position 0)
+#ifdef HOMEPOSITIONSWITCH
+      SendPaket('H', digitalRead(HPSWPIN));
+#else
+      SendPaket('H', "0");
+#endif
       break;
     case 64: // move a specified number of steps
       if ( isMoving == 0 )
@@ -490,28 +470,74 @@ void ESP_Communication()
         pos  = (pos < 0) ? 0 : pos;
         ftargetPosition = ( pos > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)pos;
       }
+      break;  
+    case 65:  // Set jogging state enable/disable
+      // ignore
       break;
+    case 66:  // Get jogging state enabled/disabled
+      SendPaket('K', 0);
+      break;
+    case 67: // Set jogging direction, 0=IN, 1=OUT
+      // ignore
+      break;
+    case 68:  // Get jogging direction, 0=IN, 1=OUT
+      SendPaket('V', 0);
+      break;
+    case 69:  // RETIRED (sets EEPROMWRITES to 0. Do this one time only when first setting up focuser)
+      break;
+    case 70:  // RETIRED (gets number of EEPROMWrites so far, Nano up to 10,000)
+      SendPaket('W', 0);
+      break;                  
     case 71: // set DelayAfterMove in milliseconds
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_DelayAfterMove((byte)WorkString.toInt());
       break;
+    case 72: // get DelayAfterMove
+      SendPaket('3', mySetupData->get_DelayAfterMove());
+      break;
     case 73: // Disable/enable backlash IN (going to lower focuser position)
       mySetupData->set_backlash_in_enabled((byte) (receiveString[3] - '0'));
+      break;
+    case 74: // get backlash in enabled status
+      SendPaket('4', mySetupData->get_backlash_in_enabled());
       break;
     case 75: // Disable/enable backlash OUT (going to lower focuser position)
       mySetupData->set_backlash_out_enabled((byte) (receiveString[3] - '0'));
       break;
+    case 76: // get backlash OUT enabled status
+      SendPaket('5', mySetupData->get_backlash_out_enabled());
+      break;
     case 77: // set backlash in steps
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_backlashsteps_in((byte)WorkString.toInt());
+      break;      
+    case 78: // return number of backlash steps IN
+      SendPaket('6', mySetupData->get_backlashsteps_in());
       break;
     case 79: // set backlash OUT steps
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_backlashsteps_out((byte)WorkString.toInt());
+      break;   
+    case 80: // return number of backlash steps OUT
+      SendPaket('7', mySetupData->get_backlashsteps_out());
+      break;
+    case 81:  // Get number of backlashmaximum steps
+      SendPaket('8', 400);
+      break;
+    case 82:  // Set backlash maximum steps
+      break;         
+    case 83: // get if there is a temperature probe
+      SendPaket('c', myTempProbe->get_tprobe1());
+      break;
+    case 87: // get tc direction
+      SendPaket('k', mySetupData->get_tcdirection());
       break;
     case 88: // set tc direction
       mySetupData->set_tcdirection((byte) (receiveString[3] - '0'));
       break;
+    case 89:  // Get stepper power (reads from A7) - only valid if circuit is added (1=stepperpower ON)
+      SendPaket('9', 1);
+      break;   
     case 90: // Set preset x [0-9] with position value yyyy [unsigned long]
       {
         byte preset = (byte) (receiveString[3] - '0');
@@ -520,12 +546,31 @@ void ESP_Communication()
         unsigned long tmppos = (unsigned long)WorkString.toInt();
         mySetupData->set_focuserpreset( preset, tmppos );
       }
+      break;         
+    case 91: // get focuserpreset [0-9]
+      {
+        byte preset = (byte) (receiveString[3] - '0');
+        preset = (preset > 9) ? 9 : preset;
+        SendPaket('h', mySetupData->get_focuserpreset(preset));
+      }
       break;
-        case 92: // Set OLED page display option
+    case 92: // Set OLED page display option
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_oledpageoption(WorkString);
+      break;      
+    case 93: // get OLED page display option
+      {
+        char tempbuff[5];
+        mySetupData->get_oledpageoption().toCharArray(tempbuff, mySetupData->get_oledpageoption().length() + 1);
+        SendPaket('l', tempbuff);
+      }
       break;
-    case 94: // Set management options
+    case 94:  // Set DelayedDisplayUpdate (0=disabled, 1-enabled)
+      break;
+    case 95:  // Get DelayedDisplayUpdate (0=disabled, 1-enabled)
+      SendPaket('n', 0);
+      break;
+    case 96: // Set management options
       {
         WorkString = receiveString.substring(3, receiveString.length() - 1);
         int option = WorkString.toInt();
@@ -607,40 +652,27 @@ void ESP_Communication()
         }
       }
       break;
-      
-    // compatibilty with myFocuserpro2 in LOCALSERIAL mode
-    case 44: // set motorspeed threshold when moving - switches to slowspeed when nearing destination
-      //ignore
-      break;
-    case 45: // get motorspeedchange threshold value
-      SendPaket('G', "200");
-      break;
-    case 46: // enable/Disable motorspeed change when moving
-      //ignore
-      break;
-    case 47: // get motorspeedchange enabled? on/off
-      SendPaket('J', "0");
-      break;
-    case 57: // set Super Slow Jogging Speed
-      // ignore
-      break;
-    case 60: // set MotorSpeed when jogging
-      // ignore
-      break;
-    case 65: // set jogging state enable/disable
-      // ignore
-      break;
-    case 66: // get jogging state enabled/disabled
-      SendPaket('K', "0");
-      break;
-    case 67: // set jogging direction, 0=IN, 1=OUT
-      // ignore
-      break;
-    case 68: // get jogging direction, 0=IN, 1=OUT
-      SendPaket('V', "0");
-      break;
-    case 89:
-      SendPaket('9', "1");
+    case 97: // get management option
+      {
+        int option = 0;
+        if ( mySetupData->get_ascomserverstate() == 1)
+        {
+          option += 1;
+        }
+        if ( mySetupData->get_inoutledstate() == 1 )
+        {
+          option += 2;
+        }
+        if (mySetupData->get_temperatureprobestate() == 1)
+        {
+          option += 4;
+        }
+        if ( mySetupData->get_webserverstate() == 1)
+        {
+          option += 8;
+        }
+        SendPaket('o', option);
+      }
       break;
   }
 }

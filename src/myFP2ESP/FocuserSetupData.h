@@ -72,7 +72,8 @@ class SetupData
     byte get_showhpswmsg();
     byte get_forcedownload();
     String  get_oledpageoption();
-  
+    int get_motorspeeddelay();
+      
     //__setter
     void set_fposition(unsigned long);
     void set_focuserdirection(byte);
@@ -114,7 +115,8 @@ class SetupData
     void set_showhpswmsg(byte);
     void set_forcedownload(byte);
     void set_oledpageoption(String);
-     
+    void set_motorspeeddelay(int);
+         
   private:
     byte SavePersitantConfiguration();
     byte SaveVariableConfiguration();
@@ -181,4 +183,5 @@ class SetupData
     byte showhpswmessages;          // if 1, home position switch msg's show on display if enabled
     byte forcedownload;             // if 1, in the MANAGEMENT SERVER, a file is downloaded instead of being displayed is web browser window
     String oledpageoption;
+    int motorspeeddelay;
 };
