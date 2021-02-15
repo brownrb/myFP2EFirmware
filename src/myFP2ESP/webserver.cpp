@@ -1253,9 +1253,9 @@ void stop_webserver(void)
   }
   else
   {
-    DebugPrintln(F(SERVERNOTRUNNINGSTR));
+    DebugPrintln(SERVERNOTRUNNINGSTR);
   }
   webserverstate = STOPPED;
-  delay(10);                      // small pause so background tasks can run  delay(10);                                            // small pause so background tasks can run
+  delay(10);                      // small pause so background tasks can run
 }
 // WEBSERVER END -------------------------------------------------------------

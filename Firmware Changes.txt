@@ -1,5 +1,9 @@
 140
+Fix IR_HALT compile error if IRREMOTE is enabled
+Fix MDNS compile errors if MDNSSERVER is enabled
 Fix for Backlash
+Fix for oledtextmsg compile issues when OLED_TEXT enabled
+Change stepmode to int type (mySetupData and DriverBoard) to allow Trimac drivers in a future release
 Add generic get/set interface calls
 Add additional comms calls
 Add comms calls to support myFocuserPro2 INDI driver

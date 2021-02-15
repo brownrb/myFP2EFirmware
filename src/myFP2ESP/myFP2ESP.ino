@@ -802,7 +802,7 @@ bool readwificonfig( char* xSSID, char* xPASSWORD, bool retry )
   String PASSWORD_1, PASSWORD_2;
   boolean mstatus = false;
 
-  DebugPrintln(F(CHECKWIFICONFIGFILESTR));
+  DebugPrintln(CHECKWIFICONFIGFILESTR);
   // SPIFFS may have failed to start
   if ( !SPIFFS.begin() )
   {
@@ -823,12 +823,15 @@ bool readwificonfig( char* xSSID, char* xPASSWORD, bool retry )
     DebugPrintln(data);                                 // ... and print on serial
     f.close();
 
-    DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(2) + 120));  // allocate json buffer
+    // DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(1) + JSON_ARRAY_SIZE(2) + 120));  // allocate json buffer
+    // Using JSON assistant - https://arduinojson.org/v5/assistant/ - we need at least 372 additional bytes for esp32
+    // Remember that each of the arrays have UP TO 64 chars each
+    DynamicJsonDocument doc( (const size_t) (JSON_OBJECT_SIZE(4) + 372));
     DeserializationError error = deserializeJson(doc, data);    // Parse JSON object
     if (error)
     {
       TRACE();
-      DebugPrintln(F(DESERIALIZEERRORSTR));
+      DebugPrintln(DESERIALIZEERRORSTR);
     }
     else
     {
@@ -837,6 +840,15 @@ bool readwificonfig( char* xSSID, char* xPASSWORD, bool retry )
       PASSWORD_1 =  doc["myPASSWORD"].as<char*>();
       SSID_2     =  doc["mySSID_1"].as<char*>();
       PASSWORD_2 =  doc["myPASSWORD_1"].as<char*>();
+
+      DebugPrint(F("SSID_1:"));
+      DebugPrintln(SSID_1);
+      DebugPrint(F("PASSWORD_1:"));
+      DebugPrintln(PASSWORD_1);
+      DebugPrint(F("SSID_2:"));
+      DebugPrintln(SSID_2);
+      DebugPrint(F("PASSWORD_2:"));
+      DebugPrintln(PASSWORD_2);
 
       if ( retry == false )
       {
