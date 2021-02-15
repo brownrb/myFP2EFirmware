@@ -1579,26 +1579,41 @@ void loop()
         // if target pos > current pos then steps = target pos - current pos
         // if target pos < current pos then steps = current pos - target pos
         driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
-        Serial.print("Steps: "); Serial.println(steps);
+        DebugPrint("Steps: "); 
+        DebugPrintln(steps);
         MainStateMachine = State_Moving;
       }
       break;
 
     case State_Backlash:
       // apply backlash
-      Serial.print("Apply Backlash: Steps=");
-      Serial.println(backlash_count);
+      DebugPrint("Apply Backlash: Steps=");
+      DebugPrintln(backlash_count);
       while ( backlash_count != 0 )
       {
-        steppermotormove(DirOfTravel);                            // take 1 step
+        steppermotormove(DirOfTravel);                            // take 1 step and do not adjust position
         delayMicroseconds(driverboard->getstepdelay());           // ensure delay between steps
         backlash_count--;
+        if (HPS_alert() )                                         // check if home position sensor activated?
+        {
+          DebugPrintln("HPS_alert() during backlash move");
+          timerSemaphore = false;                                 // move finished
+          backlash_count = 0;                                     // drop out of while loop
+          MainStateMachine = State_Moving;                        // change state to State_Moving and handle HPSW
+        }
       }
-      Serial.println("Backlash done");
-      Serial.print("Initiate motor move- steps: ");
-      Serial.println(steps);
-      driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
-      MainStateMachine = State_Moving;
+      if ( MainStateMachine == State_Backlash )                   // finished backlash move, so now move motor #steps
+      {
+        DebugPrintln("Backlash done");
+        DebugPrint("Initiate motor move- steps: ");
+        DebugPrintln(steps);
+        driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
+        MainStateMachine = State_Moving;
+      }
+      else
+      {
+        // MainStateMachine is State_Moving - timerSemaphore is false. is then caught by if(HPS_alert() ) and HPSW is processed
+      }
       break;
 
     //_______________________________State_Moving
@@ -1622,7 +1637,7 @@ void loop()
           halt_alert = false;                             // reset alert flag
           ftargetPosition = driverboard->getposition();
           mySetupData->set_fposition(driverboard->getposition());
-          int haltsteps = driverboard->halt();            // halt returns stepcount
+          driverboard->halt();                            // disable interrupt timer that moves motor
           // we no longer need to keep track of steps here or halt because driverboard updates position on every move
           DebugPrintln("Going to State_DelayAfterMove");
           MainStateMachine = State_DelayAfterMove;
