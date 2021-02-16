@@ -50,7 +50,6 @@ extern bool otaupdatestate;
 extern bool duckdnsstate;
 extern int  staticip;
 extern int  tprobe1;
-extern long rssi;
 
 // ---------------------------------------------------------------------------
 // Extern functions
@@ -63,6 +62,7 @@ extern void start_ascomremoteserver(void);
 extern void stop_ascomremoteserver(void);
 extern void init_leds(void);
 extern void software_Reboot(int);
+extern long getrssi(void);
 
 #ifdef MDNSSERVER
 extern void start_mdns_service(void);
@@ -1904,9 +1904,10 @@ void MANAGEMENT_handleget(void)
   }
   else if ( mserver.argName(0) == "rssi" )
   {
+    long rssi = getrssi();
     jsonstr = "{ \"rssi\":" + String(rssi) + " }";
     MANAGEMENT_sendjson(jsonstr);
-  }
+  } 
   else
   {
     jsonstr = "{ \"error\":\"unknown-command\" }";
@@ -2254,6 +2255,7 @@ void MANAGEMENT_halt(void)
 
 void MANAGEMENT_rssi(void)
 {
+  long rssi = getrssi();
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(rssi) );
 }
 

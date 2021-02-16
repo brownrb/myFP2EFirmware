@@ -26,7 +26,6 @@ extern void software_Reboot(int);
 extern volatile bool halt_alert;
 extern int   tprobe1;
 extern float lasttemp;
-extern long  rssi;
 
 extern TempProbe *myTempProbe;
 extern void  start_ascomremoteserver(void);
@@ -34,6 +33,7 @@ extern void  stop_ascomremoteserver(void);
 extern void  init_leds(void);
 extern void  start_webserver();
 extern void  stop_webserver();
+extern long  getrssi(void);
 
 // ---------------------------------------------------------------------------
 // DATA
@@ -91,7 +91,7 @@ void SendPaket(const char token, const unsigned long val)
 void SendPaket(const char token, const long val)
 {
   char buffer[32];
-  snprintf(buffer, sizeof(buffer), "%c%l%c", token,  val, EOFSTR);
+  snprintf(buffer, sizeof(buffer), "%c%ld%c", token,  val, EOFSTR);
   SendMessage(buffer);
 }
 
@@ -696,7 +696,10 @@ void ESP_Communication()
       }
       break;
     case 98:
-      SendPaket('s', rssi);
+      {
+        long rssi = getrssi();
+        SendPaket('s', rssi);
+      }
       break;
   }
 }

@@ -1,3 +1,9 @@
+145
+Move HOMEPOSITIONSWITCH to Management Server
+
+144
+Fix for RSSI
+
 143
 Add rssi calls to comms.h and management server and webserver interfaces
 

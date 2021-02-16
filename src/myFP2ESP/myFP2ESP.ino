@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 143
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 144
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -795,6 +795,12 @@ void init_leds()
   }
 }
 
+long getrssi()
+{
+  long strength = WiFi.RSSI();
+  return strength;
+}
+
 #ifdef READWIFICONFIG
 bool readwificonfig( char* xSSID, char* xPASSWORD, bool retry )
 {
@@ -1169,7 +1175,7 @@ void setup()
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   HDebugPrintln("setup(): tcpip server");
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-  rssi = WiFi.RSSI();                           // get network strength
+  rssi = getrssi();                             // get network strength 
   // Starting TCP Server
   DebugPrintln(STARTTCPSERVERSTR);
   myoled->oledtextmsg(STARTTCPSERVERSTR, -1, false, true);
