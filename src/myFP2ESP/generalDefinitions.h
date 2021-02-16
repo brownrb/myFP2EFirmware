@@ -344,7 +344,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 3. DEBUGGING -- DO NOT CHANGE
 // ---------------------------------------------------------------------------
-//#define DEBUG 1
+#define DEBUG 1
 
 #ifdef  DEBUG                                         // Macros are usually in all capital letters.
 #define DebugPrint(...) Serial.print(__VA_ARGS__)     // DPRINT is a macro, debug print

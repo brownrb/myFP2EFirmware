@@ -997,8 +997,8 @@ void setup()
   DebugPrintln(mySetupData->get_backlashsteps_out());
   DebugPrint(F("tempcoefficient= "));
   DebugPrintln(mySetupData->get_tempcoefficient());
-  DebugPrint(F("tempprecision= "));
-  DebugPrintln(mySetupData->get_tempprecision());
+  //DebugPrint(F("tempprecision= "));
+  //DebugPrintln(mySetupData->get_tempprecision());
   DebugPrint(F("stepmode = "));
   DebugPrintln(mySetupData->get_stepmode());
   DebugPrint(F("coilpower= "));
@@ -1765,9 +1765,9 @@ void loop()
             hpswstate = !(digitalRead(HPSWPIN));          // read state of HPSW
           }
         }
-        DebugPrint(F(HPMOVEOUTSTEPSSTR));
+        DebugPrint(HPMOVEOUTSTEPSSTR);
         DebugPrintln(stepstaken);
-        DebugPrintln(F(HPMOVEOUTFINISHEDSTR));
+        DebugPrintln(HPMOVEOUTFINISHEDSTR);
         ftargetPosition = 0;
         driverboard->setposition(0);
         mySetupData->set_fposition(0);

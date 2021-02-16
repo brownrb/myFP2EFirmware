@@ -908,7 +908,7 @@ void SetupData::ListDir(const char * dirname, uint8_t levels)
 
   DebugPrint(F("Listing directory: {"));
 #if defined(ESP8266)
-  Serial.println("SetupData::ListDir() does not work on ESP8266");
+   DebugPrintln(F("SetupData::ListDir() does not work on ESP8266"));
   // this does not work;
 #else
   File root = SPIFFS.open(dirname);

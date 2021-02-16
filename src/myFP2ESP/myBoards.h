@@ -73,14 +73,15 @@
 #endif
 
 #if (DRVBRD == WEMOSDRV8825 )
-#define TEMPPIN       4
-#define I2CDATAPIN    2
-#define I2CCLKPIN     1
-#define DIRPIN        13                // D7 GPIOP13
+#define TEMPPIN       2                 // D4
+#define I2CDATAPIN    4
+#define I2CCLKPIN     5
+#define DIRPIN        13                // D7 GPIO13
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
-#define MSPEED        8000
+#define MSPEED        2000
 #endif
+
 #if (DRVBRD == PRO2EDRV8825 )           // 
 #define TEMPPIN       10
 #define I2CDATAPIN    5

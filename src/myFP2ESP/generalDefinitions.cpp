@@ -96,6 +96,7 @@ const char* HPCLOSEDFP0STR        = "HP Sw=1, Pos=0";
 const char* HPMOVETILLOPENSTR     = "HP Sw=0, Mov out";
 const char* HPMOVEOUTERRORSTR     = "HP Sw=0, Mov out err";
 const char* HPMOVEOUTFINISHEDSTR  = "HP Sw=0, Mov out ok";
+const char* HPMOVEOUTSTEPSSTR     = "HP Steps, Mov out: ";
 
 // oled messages
 const char* CURRENTPOSSTR       =  "Current Pos = ";
