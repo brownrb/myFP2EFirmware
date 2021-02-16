@@ -207,9 +207,9 @@ class DriverBoard
   public:
     DriverBoard(byte, unsigned long);           // constructor
     ~DriverBoard(void);                         // destructor
-    void      initmove(bool, unsigned long, byte, bool, byte);
-    void      movemotor(byte, bool);
-    uint32_t  halt(void);
+    void initmove(bool, unsigned long, byte, bool, byte);
+    void movemotor(byte, bool);
+    void halt(void);
     
     // getter
     int getstepmode(void);

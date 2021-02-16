@@ -498,7 +498,7 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
   }
 }
 
-uint32_t DriverBoard::halt(void)
+void DriverBoard::halt(void)
 {
 #if defined(ESP8266)
   myfp2Timer.detachInterrupt();
@@ -509,7 +509,6 @@ uint32_t DriverBoard::halt(void)
 #endif
   DebugPrint(F(">halt_alert "));
   delay(10);
-  return stepcount;
 }
 
 void DriverBoard::initmove(bool dir, unsigned long steps, byte motorspeed, bool leds, byte reversedir)

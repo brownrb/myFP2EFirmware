@@ -1,4 +1,3 @@
-// ---------------------------------------------------------------------------
 // myFP2ESP FOCUSER CONFIG DEFINITIONS - SPECIFY HARDWARE OPTIONS AND CONTROLLER MODES HERE
 // ---------------------------------------------------------------------------
 // 

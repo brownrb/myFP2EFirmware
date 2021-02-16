@@ -1,3 +1,9 @@
+141
+Change driverboard->halt() - no need to return stepcount
+Fix for using Serial.print commands in MachineStateBacklash - changed to DebugPrint
+Fix for 2nd network credential not being updated [readwificonifg() ]
+Fix for Home Position Switch not working in Backlash
+
 140
 Fix IR_HALT compile error if IRREMOTE is enabled
 Fix MDNS compile errors if MDNSSERVER is enabled
