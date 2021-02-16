@@ -1,4 +1,4 @@
-# myFP2ESP Firmware for ESP32 and ESP8266 myFP2 Controllers
+# myFP2ESP Firmware for ESP32 and ESP8266 myFP2ESP Controllers
 This is the firmware for the myFocuserPro2E ESP8266 and ESP32 focus controller projects on Sourceforge.
 
 (c) Robert Brown and Holger Manz, 2019-2021. All rights reserved.
@@ -17,7 +17,7 @@ https://sourceforge.net/projects/myfocuserpro2-esp32/files/ASCOM%20Drivers/
 
 # FIRMWARE
 The firmware is found on GitHub. Download as a zip file then extract the zip file to access the library files and firmware.  
-https://github.com/brownrb/myFP2EFirmware  
+https://github.com/brownrb/myFP2EFirmware/releases
 
 # PCB GERBER FILES  
 The Gerbers files for the PCB are found on Sourceforge.  
