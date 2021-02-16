@@ -14,7 +14,6 @@
 #include "myBoards.h"
 #include "temp.h"
 
-
 // ----------------------------------------------------------------------------------------------
 // 24: ASCOMSERVER - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
@@ -24,15 +23,14 @@
 
 extern SetupData *mySetupData;
 extern DriverBoard* driverboard;
-extern char ipStr[]; 
-extern unsigned long ftargetPosition;              // target position
-extern TempProbe *myTempProbe;
+extern unsigned long ftargetPosition;       // target position
 extern volatile bool halt_alert;
-extern byte    isMoving;                           // is the motor currently moving
+extern char   ipStr[]; 
+extern byte   isMoving;                     // is the motor currently moving
 extern String MSpg;
-extern bool ascomserverstate;
-extern bool ascomdiscoverystate;
-
+extern bool   ascomserverstate;
+extern bool   ascomdiscoverystate;
+extern float  lasttemp;
 
 #if defined(ESP8266)                        // this "define(ESP8266)" comes from Arduino IDE
 #undef DEBUG_ESP_HTTP_SERVER                // prevent messages from WiFiServer 
@@ -44,13 +42,11 @@ extern bool ascomdiscoverystate;
 #endif
 #include <SPI.h>
 
-
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
 #else
 #include <WebServer.h>
 #endif // if defined(esp8266)
-
 
 #if defined(ESP8266)
 #undef DEBUG_ESP_HTTP_SERVER
@@ -58,7 +54,6 @@ extern ESP8266WebServer mserver;
 #else
 extern WebServer mserver;
 #endif // if defined(esp8266)
-
 
 #if defined(ESP8266)
 #include <ESP8266WebServer.h>
@@ -82,7 +77,6 @@ long         ASCOMpos = 0L;
 byte         ASCOMTempCompState = 0;
 byte         ASCOMConnectedState = 0;
 WiFiClient   ascomclient;
-
 
 #if defined(ESP8266)
 ESP8266WebServer *ascomserver;
@@ -643,7 +637,7 @@ void ASCOM_handle_focuser_setup()
   }
 
   // if update stepmode
-  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128)
+  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128, 256=1/256)
   String fsm_str = ascomserver->arg("sm");
   if ( fsm_str != "" )
   {
@@ -655,9 +649,9 @@ void ASCOM_handle_focuser_setup()
     {
       temp1 = STEP1;
     }
-    if ( temp1 > STEP32 )
+    if ( temp1 > STEP256 )
     {
-      temp1 = STEP32;
+      temp1 = STEP256;
     }
     mySetupData->set_stepmode(temp1);
   }
@@ -932,7 +926,7 @@ void ASCOM_handletemperatureget()
   // addclientinfo adds clientid, clienttransactionid, servtransactionid, errornumber, errormessage and terminating }
   if ( mySetupData->get_temperatureprobestate() == 1 )
   {
-    jsonretstr = "{\"Value\":" + String(myTempProbe->read_temp(0)) + "," + ASCOM_addclientinfo( jsonretstr );
+    jsonretstr = "{\"Value\":" + String(lasttemp, 2) + "," + ASCOM_addclientinfo( jsonretstr );
   }
   else
   {

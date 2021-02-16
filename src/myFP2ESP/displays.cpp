@@ -26,17 +26,18 @@
 // EXTERNALS - PROTOTYPES
 // ----------------------------------------------------------------------------------------------
 
-extern SetupData *mySetupData;
+extern float lasttemp;
 extern unsigned long ftargetPosition;       // target position
 extern char ipStr[];                        // ip address
 extern char mySSID[];
+
 extern DriverBoard* driverboard;
 extern TempProbe *myTempProbe;
+extern SetupData *mySetupData;
+
 extern bool TimeCheck(unsigned long, unsigned long);
 
-
 //__ helper function
-
 
 bool CheckOledConnected(void)
 {
@@ -64,7 +65,6 @@ bool CheckOledConnected(void)
   return true;
 }
 
-
 // ----------------------------------------------------------------------------------------------
 // CODE NON OLED
 // ----------------------------------------------------------------------------------------------
@@ -78,7 +78,6 @@ void OLED_NON::Update_Oled(const oled_state x, const connection_status y) {}
 void OLED_NON::oled_draw_reboot(void) {}
 
 OLED_NON::OLED_NON()  {}
-
 
 // ----------------------------------------------------------------------------------------------
 // CODE OLED GRAPHICMODE
@@ -196,7 +195,7 @@ void OLED_GRAPHIC::oled_draw_main_update(const connection_status ConnectionStatu
 
   if ( mySetupData->get_temperatureprobestate() == 1)
   {
-    snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", myTempProbe->read_temp(0));
+    snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", lasttemp);
     drawString(54, 54, buffer);
   }
   else
@@ -278,14 +277,7 @@ void OLED_TEXT::displaylcdpage0(void)      // displaylcd screen
 
   //Temperature
   print(TEMPSTR);
-  if ( mySetupData->get_temperatureprobestate() == 1)
-  {
-    print(String(myTempProbe->read_temp(0)));
-  }
-  else
-  {
-    print("20.0");
-  }
+  print(String(lasttemp, 2));
   println(" c");
 
   //Motor Speed
@@ -503,14 +495,7 @@ void OLED_TEXT::display_oledtext_page0(void)           // displaylcd screen
 
   //Temperature
   print(TEMPSTR);
-  if ( mySetupData->get_temperatureprobestate() == 1)
-  {
-    print(String(myTempProbe->read_temp(0), 2));
-  }
-  else
-  {
-    print("20.0");
-  }
+  print(String(lasttemp, 2));
   print(" c");
   clearToEOL();
   println();

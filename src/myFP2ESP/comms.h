@@ -24,11 +24,8 @@ extern DriverBoard* driverboard;
 extern char mySSID[64];
 extern void software_Reboot(int);
 extern volatile bool halt_alert;
-
-//extern float read_temp(byte);
-//extern void temp_setresolution(byte);
-
-//extern byte tprobe1;
+extern int   tprobe1;
+extern float lasttemp;
 
 extern TempProbe *myTempProbe;
 extern void  start_ascomremoteserver(void);
@@ -95,7 +92,7 @@ void SendPaket(const char token, const float val, int i)    // i => decimal plac
   char buff[32];
   char temp[8];
   // Note Arduino snprintf does not support .2f
-  dtostrf(val, 4, i, temp); 
+  dtostrf(val, 4, i, temp);
   snprintf(buff, sizeof(buff), "%c%s%c", token, temp, EOFSTR);
   SendMessage(buff);
 }
@@ -156,7 +153,7 @@ void ESP_Communication()
       }
       break;
     case 6: // get temperature
-      SendPaket('Z', myTempProbe->read_temp(0), 3);
+      SendPaket('Z', lasttemp, 3);
       break;
     case 7: // set maxsteps
       {
@@ -226,14 +223,18 @@ void ESP_Communication()
     case 20: // set the temperature resolution setting for the DS18B20 temperature probe
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       paramval = WorkString.toInt();
-      mySetupData->set_tempprecision((byte) paramval);
-      if ( mySetupData->get_temperatureprobestate() == 1)
+      mySetupData->set_tempresolution((byte) paramval);
+      if ( mySetupData->get_temperatureprobestate() == 1 )    // if temp probe is enabled
       {
-        myTempProbe->temp_setresolution((byte) paramval);
+        if ( tprobe1 != 0 )                                   // if probe was found
+        {
+          myTempProbe->temp_setresolution((byte) paramval);   // set probe resolution
+          mySetupData->set_tempresolution((byte) paramval);   // and save for future use
+        }
       }
       break;
     case 21: // get temp probe resolution
-      SendPaket('Q', mySetupData->get_tempprecision());
+      SendPaket('Q', mySetupData->get_tempresolution());
       break;
     case 22: // set the temperature compensation value to xxx
       WorkString = receiveString.substring(3, receiveString.length() - 1);
@@ -267,7 +268,7 @@ void ESP_Communication()
       break;
     case 28: // home the motor to position 0
       ftargetPosition = 0; // if this is a home then set target to 0
-      break;      
+      break;
     case 29: // get stepmode
       SendPaket('S', mySetupData->get_stepmode());
       break;
@@ -393,7 +394,7 @@ void ESP_Communication()
     case 48: // save settings to FS
       mySetupData->set_fposition(driverboard->getposition());       // need to save setting
       mySetupData->SaveNow();                                       // save the focuser settings immediately
-      break;      
+      break;
     case 49: // aXXXXX
       SendPaket('a', "b552efd");
       break;
@@ -429,17 +430,17 @@ void ESP_Communication()
       break;
     case 56: // set motorspeed delay for current speed setting
       {
-         int newdelay = 1000;
-         WorkString = receiveString.substring(3, receiveString.length() - 1);
-         newdelay = WorkString.toInt();
-         newdelay = (newdelay < 1000) ? 1000: newdelay;    // ensure it is not too low
-         driverboard->setstepdelay(newdelay);
-         mySetupData->set_motorspeeddelay(newdelay);
+        int newdelay = 1000;
+        WorkString = receiveString.substring(3, receiveString.length() - 1);
+        newdelay = WorkString.toInt();
+        newdelay = (newdelay < 1000) ? 1000 : newdelay;   // ensure it is not too low
+        driverboard->setstepdelay(newdelay);
+        mySetupData->set_motorspeeddelay(newdelay);
       }
       break;
     case 57: // set Super Slow Jogging Speed
       // ignore
-      break;      
+      break;
     case 58: // get controller features .. deprecated
       SendPaket('m', 0);
       break;
@@ -448,7 +449,7 @@ void ESP_Communication()
       break;
     case 60:  // set MotorSpeed when jogging
       // ignore
-      break;   
+      break;
     case 61: // set update of position on lcd when moving (0=disable, 1=enable)
       mySetupData->set_lcdupdateonmove((byte) (receiveString[3] - '0'));
       break;
@@ -470,7 +471,7 @@ void ESP_Communication()
         pos  = (pos < 0) ? 0 : pos;
         ftargetPosition = ( pos > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)pos;
       }
-      break;  
+      break;
     case 65:  // Set jogging state enable/disable
       // ignore
       break;
@@ -487,7 +488,7 @@ void ESP_Communication()
       break;
     case 70:  // RETIRED (gets number of EEPROMWrites so far, Nano up to 10,000)
       SendPaket('W', 0);
-      break;                  
+      break;
     case 71: // set DelayAfterMove in milliseconds
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_DelayAfterMove((byte)WorkString.toInt());
@@ -510,14 +511,14 @@ void ESP_Communication()
     case 77: // set backlash in steps
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_backlashsteps_in((byte)WorkString.toInt());
-      break;      
+      break;
     case 78: // return number of backlash steps IN
       SendPaket('6', mySetupData->get_backlashsteps_in());
       break;
     case 79: // set backlash OUT steps
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_backlashsteps_out((byte)WorkString.toInt());
-      break;   
+      break;
     case 80: // return number of backlash steps OUT
       SendPaket('7', mySetupData->get_backlashsteps_out());
       break;
@@ -525,9 +526,9 @@ void ESP_Communication()
       SendPaket('8', 400);
       break;
     case 82:  // Set backlash maximum steps
-      break;         
+      break;
     case 83: // get if there is a temperature probe
-      SendPaket('c', myTempProbe->get_tprobe1());
+      SendPaket('c', tprobe1);
       break;
     case 87: // get tc direction
       SendPaket('k', mySetupData->get_tcdirection());
@@ -537,7 +538,7 @@ void ESP_Communication()
       break;
     case 89:  // Get stepper power (reads from A7) - only valid if circuit is added (1=stepperpower ON)
       SendPaket('9', 1);
-      break;   
+      break;
     case 90: // Set preset x [0-9] with position value yyyy [unsigned long]
       {
         byte preset = (byte) (receiveString[3] - '0');
@@ -546,7 +547,7 @@ void ESP_Communication()
         unsigned long tmppos = (unsigned long)WorkString.toInt();
         mySetupData->set_focuserpreset( preset, tmppos );
       }
-      break;         
+      break;
     case 91: // get focuserpreset [0-9]
       {
         byte preset = (byte) (receiveString[3] - '0');
@@ -557,7 +558,7 @@ void ESP_Communication()
     case 92: // Set OLED page display option
       WorkString = receiveString.substring(3, receiveString.length() - 1);
       mySetupData->set_oledpageoption(WorkString);
-      break;      
+      break;
     case 93: // get OLED page display option
       {
         char tempbuff[5];
@@ -618,17 +619,29 @@ void ESP_Communication()
         if ( (option & 4) == 4)
         {
           // temp probe start
-          if (mySetupData->get_temperatureprobestate() == 0)
+          if (mySetupData->get_temperatureprobestate() == 0)          // if temp probe disabled
           {
-            mySetupData->set_temperatureprobestate(1);
+            mySetupData->set_temperatureprobestate(1);                // then enable probe
+            if ( tprobe1 == 0 )                                       // if probe not started
+            {
+              myTempProbe = new TempProbe();                          // start a new probe
+            }
+            else
+            {
+              DebugPrintln("Probe already statrted");
+            }
           }
         }
         else
         {
           // temp probe stop
-          if (mySetupData->get_temperatureprobestate() == 1)
+          if (mySetupData->get_temperatureprobestate() == 1)          // if probe currently enabled
           {
-            mySetupData->set_temperatureprobestate(0);
+            mySetupData->set_temperatureprobestate(0);                // then disable it
+            if ( tprobe1 != 0 )                                       // only call this if a probe was found
+            {
+              myTempProbe->stop_temp_probe();                         // else an exception will occur
+            }
           }
         }
         if ( (option & 8) == 8 )

@@ -42,7 +42,7 @@ class SetupData
     byte get_backlash_in_enabled();
     byte get_backlash_out_enabled();
     byte get_tempcoefficient();
-    byte get_tempprecision();
+    byte get_tempresolution();
     int  get_stepmode();
     byte get_coilpower();
     byte get_reversedirection();
@@ -85,7 +85,7 @@ class SetupData
     void set_backlash_in_enabled(byte);
     void set_backlash_out_enabled(byte);
     void set_tempcoefficient(byte);
-    void set_tempprecision(byte);
+    void set_tempresolution(byte);
     void set_stepmode(int);
     void set_coilpower(byte);
     void set_reversedirection(byte);
@@ -153,8 +153,8 @@ class SetupData
     byte backlash_in_enabled;       // if 1, backlash is enabled for IN movements (lower or -ve moves)
     byte backlash_out_enabled;      // if 1, backlash is enabled for OUT movements (higher or +ve moves)
     byte tempcoefficient;           // steps per degree temperature coefficient value (maxval=255)
-    byte tempprecision;             // 9 -12
-    int stepmode;                   // stepping mode
+    byte tempresolution;            // 9 -12
+    int  stepmode;                  // stepping mode
     byte coilpower;                 // if 1, coil power is enabled
     byte reversedirection;          // if 1, motor direction is reversed
     byte stepsizeenabled;           // if 1, controller returns step size

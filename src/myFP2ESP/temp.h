@@ -15,22 +15,21 @@
 */
 #include <myDallasTemperature.h>
 
-
 // ----------------------------------------------------------------------------------------------
 // 17: TEMPERATURE - CHANGE AT YOUR OWN PERIL
 // ----------------------------------------------------------------------------------------------
-
 
 class TempProbe : public DallasTemperature
 {
   public:
     TempProbe();
-    void init_temp(void);
-    void temp_setresolution(byte rval);
+    void  init_temp(void);
+    void  temp_setresolution(byte rval);
     float read_temp(byte new_measurement);
-    void update_temp(void);
-    byte get_tprobe1(void);
+    void  update_temp(void);
+    void  start_temp_probe(void);
+    void  stop_temp_probe(void);
 
-private:
-    byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
+    // we cannot place tprobe1 here - because if the object is disposed then we cannot access it and generates an exception
+    // other functions reference tprobe1 to see if a probe was found - so it cannot be in this class
 };
