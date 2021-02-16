@@ -58,7 +58,7 @@ enum StateMachineStates { State_Idle, State_InitMove, State_Backlash, State_Movi
 #define DEFAULTSTEPSIZE       50.0          // This is the default setting for the step size in microns
 #define MINIMUMSTEPSIZE       0.0
 #define MAXIMUMSTEPSIZE       100.0
-#define TEMPPRECISION         10            // Set the default DS18B20 precision to 0.25 of a degree 9=0.5, 10=0.25, 11=0.125, 12=0.0625
+#define TEMPRESOLUTION        10            // Set the default DS18B20 precision to 0.25 of a degree 9=0.5, 10=0.25, 11=0.125, 12=0.0625
 #define LCDUPDATEONMOVE       15            // defines how many steps before refreshing position when moving if lcdupdateonmove is 1
 #define FOCUSERUPPERLIMIT     2000000000L   // arbitary focuser limit up to 2000000000
 #define FOCUSERLOWERLIMIT     1024L         // lowest value that maxsteps can be
@@ -107,6 +107,15 @@ enum StateMachineStates { State_Idle, State_InitMove, State_Backlash, State_Movi
 #endif
 #ifndef STEP32
 #define STEP32                32
+#endif
+#ifndef STEP64
+#define STEP64                64
+#endif
+#ifndef STEP128
+#define STEP128               128
+#endif
+#ifndef STEP256
+#define STEP256               256
 #endif
 
 #define EOFSTR                '#'
@@ -360,7 +369,7 @@ DebugPrintln(__PRETTY_FUNCTION__);
 // ---------------------------------------------------------------------------
 // 5. TIMING TESTS - DO NOT CHANGE / DO NOT ENABLE
 // ---------------------------------------------------------------------------
-#define TIMEDTESTS 1
+//#define TIMEDTESTS 1
 
 #ifdef TIMEDTESTS
 

@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 14x
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 142
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -265,18 +265,20 @@ byte    isMoving;                           // is the motor currently moving
 char    ipStr[16];                          // shared between BT mode and other modes
 const char ip_zero[] = "0.0.0.0";
 
-int  packetsreceived;
-int  packetssent;
-bool mdnsserverstate;                       // states for services, RUNNING | STOPPED
-bool webserverstate;
-bool ascomserverstate;
-bool ascomdiscoverystate;
-bool managementserverstate;
-bool tcpipserverstate;
-bool otaupdatestate;
-bool duckdnsstate;
-bool displaystate;
-bool reboot;                                // flag used to indicate a reboot has occurred
+int   packetsreceived;
+int   packetssent;
+bool  mdnsserverstate;                      // states for services, RUNNING | STOPPED
+bool  webserverstate;
+bool  ascomserverstate;
+bool  ascomdiscoverystate;
+bool  managementserverstate;
+bool  tcpipserverstate;
+bool  otaupdatestate;
+bool  duckdnsstate;
+bool  displaystate;
+bool  reboot;                               // flag used to indicate a reboot has occurred
+int   tprobe1;                              // true if a temperature probe was detected
+float lasttemp;                             // last valid temp reading
 
 SetupData *mySetupData;                     // focuser data
 
@@ -1032,9 +1034,15 @@ void setup()
   DebugPrint(F("In/Out LED's state="));
   DebugPrintln(mySetupData->get_inoutledstate());
 
-  if ( mySetupData->get_temperatureprobestate() == 1)
+  tprobe1 = 0;
+  lasttemp = 20.0;
+  if ( mySetupData->get_temperatureprobestate() == 1)   // if temperature probe enabled then try to start new probe
   {
-    myTempProbe = new TempProbe;
+    myTempProbe = new TempProbe;                        // create temp probe - should set tprobe1=true if probe found
+  }
+  else
+  {
+    tprobe1 = 0;
   }
 
 #ifdef READWIFICONFIG
@@ -1268,11 +1276,19 @@ void setup()
 
   isMoving = 0;
 
-  if ( mySetupData->get_temperatureprobestate() == 1)
+  if ( mySetupData->get_temperatureprobestate() == 1)     // if temp probe "enabled" state
   {
-    myTempProbe->read_temp(1);
+    if ( tprobe1 != 0 )                                   // if a probe was found
+    {
+      DebugPrintln("tprobe1 != 0. read_temp");
+      myTempProbe->read_temp(1);                          // read the temperature
+    }
+    else
+    {
+      DebugPrintln("tprobe1 is 1");
+    }
   }
-
+  
 #ifdef OTAUPDATES
   start_otaservice();                       // Start the OTA service
 #endif // if defined(OTAUPDATES)
@@ -1489,9 +1505,17 @@ void loop()
         }
         myoled->Update_Oled(oled, ConnectionStatus);
 
-        if ( mySetupData->get_temperatureprobestate() == 1)
+        if ( mySetupData->get_temperatureprobestate() == 1)           // if probe is enabled
         {
-          myTempProbe->update_temp();
+          if( tprobe1 != 0 )                                          // if probe was found
+          {
+            DebugPrintln("loop: update_temp()");
+            myTempProbe->update_temp();
+          }
+          else
+          {
+            DebugPrintln("loop: tprobe1 = 0");
+          }
         }
 
         if (Parked == false)

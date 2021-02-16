@@ -24,15 +24,21 @@
 #endif
 #include <SPI.h>
 
-extern char ipStr[16];                          // shared between BT mode and other modes
+// ---------------------------------------------------------------------------
+// EXTERNS
+// ---------------------------------------------------------------------------
+extern unsigned long ftargetPosition;           // target position
+extern volatile bool halt_alert;
+extern char  ipStr[16];                         // shared between BT mode and other modes
+extern byte  isMoving;                          // is the motor currently moving
+extern bool  webserverstate;
+extern bool  reboot;
+extern int   tprobe1;
+extern float lasttemp;
+
+extern TempProbe *myTempProbe;
 extern SetupData *mySetupData;
 extern DriverBoard* driverboard;
-extern unsigned long ftargetPosition;           // target position
-extern byte isMoving;                           // is the motor currently moving
-extern volatile bool halt_alert;
-extern TempProbe *myTempProbe;
-extern bool webserverstate;
-extern bool reboot;
 
 void WEBSERVER_sendpresets(void);
 void WEBSERVER_sendroot(void);
@@ -773,37 +779,23 @@ void WEBSERVER_buildhome(void)
     WSpg.replace("%TPO%", String(ftargetPosition));
     WSpg.replace("%MAX%", String(mySetupData->get_maxstep()));
     WSpg.replace("%MOV%", String(isMoving));
-    if ( mySetupData->get_temperatureprobestate() == 1 )
+
+    if ( mySetupData->get_tempmode() == 1)
     {
-      if ( mySetupData->get_tempmode() == 1)
-      {
-        String tpstr = String(myTempProbe->read_temp(1), 2);
-        WSpg.replace("%TEM%", tpstr);
-        WSpg.replace("%TUN%", " c");
-      }
-      else
-      {
-        float ft = myTempProbe->read_temp(1);
-        ft = (ft * 1.8) + 32;
-        String tpstr = String(ft, 2);
-        WSpg.replace("%TEM%", tpstr);
-        WSpg.replace("%TUN%", " f");
-      }
+      String tpstr = String(lasttemp, 2);
+      WSpg.replace("%TEM%", tpstr);
+      WSpg.replace("%TUN%", " c");
     }
     else
     {
-      if ( mySetupData->get_tempmode() == 1)
-      {
-        WSpg.replace("%TEM%", "20.00");
-        WSpg.replace("%TUN%", " c");
-      }
-      else
-      {
-        WSpg.replace("%TEM%", "68.00");
-        WSpg.replace("%TUN%", " f");
-      }
+      float ft = lasttemp;
+      ft = (ft * 1.8) + 32;
+      String tpstr = String(ft, 2);
+      WSpg.replace("%TEM%", tpstr);
+      WSpg.replace("%TUN%", " f");
     }
-    WSpg.replace("%TPR%", String(mySetupData->get_tempprecision()));
+    
+    WSpg.replace("%TPR%", String(mySetupData->get_tempresolution()));
     String smbuffer = String(mySetupData->get_stepmode());
     switch ( mySetupData->get_stepmode() )
     {
@@ -1108,7 +1100,14 @@ void WEBSERVER_handleroot()
     {
       temp = 12;
     }
-    mySetupData->set_tempprecision(temp);
+    mySetupData->set_tempresolution(temp);
+    if( mySetupData->get_temperatureprobestate() == 1 )       // if probe enabled
+    {
+      if( tprobe1 != 0 )                                      // if there was a probe found
+      {
+        myTempProbe->temp_setresolution((byte)temp);          // set resolution
+      }
+    }
   }
 
   // if update display state

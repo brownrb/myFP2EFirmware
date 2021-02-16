@@ -49,7 +49,7 @@ extern bool tcpipserverstate;
 extern bool otaupdatestate;
 extern bool duckdnsstate;
 extern int  staticip;
-
+extern int  tprobe1;
 // ---------------------------------------------------------------------------
 // Extern functions
 // ---------------------------------------------------------------------------
@@ -982,7 +982,6 @@ void MANAGEMENT_buildadminpg2(void)
     // only esp32?
     MSpg.replace("%HEA%", String(ESP.getFreeHeap()));
     DebugPrintln(PROCESSPAGEENDSTR);
-    Serial.println("Interrupts back on");
   }
   else
   {
@@ -1266,14 +1265,20 @@ void MANAGEMENT_handleadminpg2(void)
   if ( msg != "" )
   {
     // check if already enabled
-    if (mySetupData->get_temperatureprobestate() == 1)
+    if (mySetupData->get_temperatureprobestate() == 1)                // if probe is enabled
     {
-      // nothing to do, ignore
+      if( tprobe1 == 0 )                                              // if probe not found
+      {
+        myTempProbe = new TempProbe;                                  // attempt to start probe and search for probe
+      }
     }
     else
     {
-      mySetupData->set_temperatureprobestate(1);
-//      init_temp();                                                    // we need to reinitialise it   ????????????????????????????????????????????????????????????????????????????????????????????
+      mySetupData->set_temperatureprobestate(1);                      // enable probe
+      if( tprobe1 == 0 )                                              // if probe not found
+      {
+        myTempProbe = new TempProbe;                                  // attempt to start probe and search for probe
+      }
     }
   }
   msg = mserver.arg("stoptp");
@@ -1282,13 +1287,16 @@ void MANAGEMENT_handleadminpg2(void)
     if ( mySetupData->get_temperatureprobestate() == 1 )
     {
       // there is no destructor call
+      tprobe1 = 0;
       mySetupData->set_temperatureprobestate(0);
     }
     else
     {
       // do nothing, already disabled
+      tprobe1 = 0;
     }
   }
+  
   // Temperature probe celsius/farentheit
   msg = mserver.arg("tm");
   if ( msg != "" )
@@ -2180,10 +2188,13 @@ void MANAGEMENT_ledson(void)
 void MANAGEMENT_tempoff(void)
 {
   // temp probe stop
-  if (mySetupData->get_temperatureprobestate() == 1)
+  if (mySetupData->get_temperatureprobestate() == 1)              // if probe enabled
   {
     DebugPrintln("temp off");
-    mySetupData->set_temperatureprobestate(0);
+    // there is no destructor call
+    mySetupData->set_temperatureprobestate(0);                    // disable probe
+    myTempProbe->stop_temp_probe();                               // stop probe
+    tprobe1 = 0;                                                  // indicate no probe found
   }
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe Off");
 }
@@ -2191,10 +2202,18 @@ void MANAGEMENT_tempoff(void)
 void MANAGEMENT_tempon(void)
 {
   // temp probe start
-  if (mySetupData->get_temperatureprobestate() == 0)
+  if ( mySetupData->get_temperatureprobestate() == 0)               // if probe is disabled
   {
-    DebugPrintln("temp on");
-    mySetupData->set_temperatureprobestate(1);
+    mySetupData->set_temperatureprobestate(1);                      // enable it
+    if ( tprobe1 == 0 )                                             // if there was no probe found
+    {
+      Serial.println("Create new tempprobe");               
+      myTempProbe = new TempProbe;                                  // create new instance and look for probe
+    }
+    else
+    {
+      Serial.println("myTempProbe already created");
+    }
   }
   mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe On");
 }

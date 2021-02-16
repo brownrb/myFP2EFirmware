@@ -87,7 +87,7 @@ byte SetupData::LoadConfiguration()
       this->backlash_in_enabled   = doc_per["backlash_in_enabled"];
       this->backlash_out_enabled  = doc_per["backlash_out_enabled"];
       this->tempcoefficient       = doc_per["tempcoefficient"];           // steps per degree temperature coefficient value (maxval=256)
-      this->tempprecision         = doc_per["tempprecision"];             // 9 -12
+      this->tempresolution        = doc_per["tempresolution"];            // 9 -12
       this->stepmode              = doc_per["stepmode"];
       this->coilpower             = doc_per["coilpwr"];
       this->reversedirection      = doc_per["rdirection"];
@@ -193,7 +193,7 @@ void SetupData::LoadDefaultPersistantData()
   this->backlash_in_enabled   = DEFAULTON;
   this->backlash_out_enabled  = DEFAULTON;
   this->tempcoefficient       = DEFAULTOFF;
-  this->tempprecision         = TEMPPRECISION;        // 0.25 degrees
+  this->tempresolution        = TEMPRESOLUTION;       // 0.25 degrees
   this->stepmode              = STEP1;                // step mode 1=full, 2, 4, 8, 16, 32
   this->tcdirection           = DEFAULTOFF;           // temperature compensation direction 1
   this->tempmode              = DEFAULTCELSIUS;       // default is celsius
@@ -320,7 +320,7 @@ byte SetupData::SavePersitantConfiguration()
   doc["backlash_in_enabled"] = this->backlash_in_enabled;
   doc["backlash_out_enabled"] = this->backlash_out_enabled;
   doc["tempcoefficient"]    = this->tempcoefficient;            // steps per degree temperature coefficient value (maxval=256)
-  doc["tempprecision"]      = this->tempprecision;
+  doc["tempresolution"]     = this->tempresolution;
   doc["stepmode"]           = this->stepmode;
   doc["coilpwr"]            = this->coilpower;
   doc["rdirection"]         = this->reversedirection;
@@ -469,9 +469,9 @@ byte SetupData::get_tempcoefficient()
   return this->tempcoefficient;       // steps per degree temperature coefficient value (maxval=256)
 }
 
-byte SetupData::get_tempprecision()
+byte SetupData::get_tempresolution()
 {
-  return this->tempprecision;         // precision of temperature measurement 9-12
+  return this->tempresolution;        // resolution of temperature measurement 9-12
 }
 
 int  SetupData::get_stepmode()
@@ -677,9 +677,9 @@ void SetupData::set_tempcoefficient(byte tempcoefficient)
   this->StartDelayedUpdate(this->tempcoefficient, tempcoefficient); // steps per degree temperature coefficient value (maxval=256)
 }
 
-void SetupData::set_tempprecision(byte tempprecision)
+void SetupData::set_tempresolution(byte tempresolution)
 {
-  this->StartDelayedUpdate(this->tempprecision, tempprecision);
+  this->StartDelayedUpdate(this->tempresolution, tempresolution);
 }
 
 void SetupData::set_stepmode(int stepmode)

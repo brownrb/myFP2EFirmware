@@ -1,3 +1,10 @@
+142
+managementserver.cpp - line 985 change to DELETE LINE Serial.print
+Add stepmode up to 256 for future support of Trimac steppers
+Rename temprecision to tempresolution
+Disable TIMEDTESTS in generalDefinitions.h
+Fix error of reboot cause by Enabling/Disabling temperature probe
+
 141
 Change driverboard->halt() - no need to return stepcount
 Fix for using Serial.print commands in MachineStateBacklash - changed to DebugPrint
