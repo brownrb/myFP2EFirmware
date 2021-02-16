@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 142
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 143
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -234,7 +234,6 @@ String ServerLocalIP;
 WiFiServer myserver(SERVERPORT);
 WiFiClient myclient;                          // only one client supported, multiple connections denied
 IPAddress myIP;
-long rssi;
 #endif // #if defined(ACCESSPOINT) || defined(STATIONMODE)
 
 #include "temp.h"
@@ -260,11 +259,11 @@ unsigned long ftargetPosition;              // target position
 volatile bool halt_alert;
 
 boolean displayfound;
-//byte    tprobe1;                            // indicate if there is a probe attached to myFocuserPro2
 byte    isMoving;                           // is the motor currently moving
 char    ipStr[16];                          // shared between BT mode and other modes
 const char ip_zero[] = "0.0.0.0";
 
+long  rssi;                                 // network signal strength
 int   packetsreceived;
 int   packetssent;
 bool  mdnsserverstate;                      // states for services, RUNNING | STOPPED
@@ -1045,6 +1044,11 @@ void setup()
     tprobe1 = 0;
   }
 
+  // set packet counts to 0
+  packetsreceived = 0;
+  packetssent = 0;
+  rssi = -100;
+  
 #ifdef READWIFICONFIG
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   readwificonfig(mySSID, myPASSWORD, 0);                // read mySSID,myPASSWORD from FS if exist, otherwise use defaults
@@ -1165,6 +1169,7 @@ void setup()
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   HDebugPrintln("setup(): tcpip server");
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
+  rssi = WiFi.RSSI();                           // get network strength
   // Starting TCP Server
   DebugPrintln(STARTTCPSERVERSTR);
   myoled->oledtextmsg(STARTTCPSERVERSTR, -1, false, true);
@@ -1176,10 +1181,6 @@ void setup()
   myoled->oledtextmsg(TCPSERVERSTARTEDSTR, -1, false, true);
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
-
-  // set packet counts to 0
-  packetsreceived = 0;
-  packetssent = 0;
 
   // connection established
   DebugPrint(SSIDSTR);

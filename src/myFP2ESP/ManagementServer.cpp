@@ -50,6 +50,8 @@ extern bool otaupdatestate;
 extern bool duckdnsstate;
 extern int  staticip;
 extern int  tprobe1;
+extern long rssi;
+
 // ---------------------------------------------------------------------------
 // Extern functions
 // ---------------------------------------------------------------------------
@@ -1900,6 +1902,11 @@ void MANAGEMENT_handleget(void)
     jsonstr = "{ \"reverse\":" + String(mySetupData->get_reversedirection()) + " }";
     MANAGEMENT_sendjson(jsonstr);
   }
+  else if ( mserver.argName(0) == "rssi" )
+  {
+    jsonstr = "{ \"rssi\":" + String(rssi) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
   else
   {
     jsonstr = "{ \"error\":\"unknown-command\" }";
@@ -2245,6 +2252,11 @@ void MANAGEMENT_halt(void)
   halt_alert = true;
 }
 
+void MANAGEMENT_rssi(void)
+{
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(rssi) );
+}
+
 // reboot controller
 void MANAGEMENT_reboot(void)
 {
@@ -2291,7 +2303,7 @@ void start_management(void)
   mserver.on("/tempoff",      HTTP_GET,  MANAGEMENT_tempoff);
   mserver.on("/webserveroff", HTTP_GET,  MANAGEMENT_webserveroff);
   mserver.on("/webserveron",  HTTP_GET,  MANAGEMENT_webserveron);
-  
+  mserver.on("/rssi",         HTTP_GET,  MANAGEMENT_rssi);  
   mserver.on("/set",                 MANAGEMENT_handleset);               // generic set function
   mserver.on("/get",                 MANAGEMENT_handleget);               // generic get function
   
