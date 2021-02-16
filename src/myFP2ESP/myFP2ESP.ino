@@ -1712,6 +1712,9 @@ void loop()
         {
           steppermotormove(!DirOfTravel);
         }
+
+        delayMicroseconds(driverboard->getstepdelay()); // Ensure delay between steps
+        
         stepstaken++;                                   // increment steps taken
         if ( stepstaken > HOMESTEPS )                   // this prevents the endless loop if the hpsw is not connected or is faulty
         {
@@ -1730,6 +1733,8 @@ void loop()
       driverboard->setposition(0);
       mySetupData->set_fposition(0);
 
+      mySetupData->set_focuserdirection(DirOfTravel);   // set direction of last move
+      
       if ( mySetupData->get_showhpswmsg() == 1)         // check if display home position switch messages is enabled
       {
         if (mySetupData->get_displayenabled() == 1)
