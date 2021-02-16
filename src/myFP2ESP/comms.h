@@ -35,6 +35,8 @@ extern void  start_webserver();
 extern void  stop_webserver();
 extern long  getrssi(void);
 
+extern void init_homepositionswitch(void);
+
 // ---------------------------------------------------------------------------
 // DATA
 // ---------------------------------------------------------------------------
@@ -406,12 +408,15 @@ void ESP_Communication()
     case 49: // aXXXXX
       SendPaket('a', "b552efd");
       break;
-    case 50: // Get if Home Position Switch enabled in firmware, 0 = no, 1 = yes
-#if defined(HOMEPOSITIONSWITCH)
-      SendPaket('l', 1);
-#else
-      SendPaket('l', 0);
-#endif
+    case 50: // Get if Home Position Switch enabled, 0 = no, 1 = yes
+      if ( mySetupData->get_homepositionswitch() == 1)
+      {
+        SendPaket('l', 1);
+      }
+      else
+      {
+        SendPaket('l', 0);
+      }
       break;
     case 51: // return ESP8266Wifi Controller IP Address
       SendPaket('d', ipStr);
@@ -465,11 +470,14 @@ void ESP_Communication()
       SendPaket('L', mySetupData->get_lcdupdateonmove());
       break;
     case 63: // get status of home position switch (0=off, 1=closed, position 0)
-#ifdef HOMEPOSITIONSWITCH
-      SendPaket('H', digitalRead(HPSWPIN));
-#else
-      SendPaket('H', "0");
-#endif
+      if ( mySetupData->get_homepositionswitch() == 1)
+      {
+        SendPaket('H', digitalRead(HPSWPIN));
+      }
+      else
+      {
+        SendPaket('H', "0");
+      }
       break;
     case 64: // move a specified number of steps
       if ( isMoving == 0 )
@@ -695,10 +703,22 @@ void ESP_Communication()
         SendPaket('o', option);
       }
       break;
-    case 98:
+    case 98:  // get network strength dbm
       {
         long rssi = getrssi();
         SendPaket('s', rssi);
+      }
+      break;
+    case 99:  // set homepositonswitch state, 0 or 1
+      {
+        int enablestate = 0;
+        WorkString = receiveString.substring(3, receiveString.length() - 1);
+        enablestate = WorkString.toInt();
+        mySetupData->set_homepositionswitch(enablestate);
+        if( enablestate == 1 )
+        {
+          init_homepositionswitch();
+        }
       }
       break;
   }

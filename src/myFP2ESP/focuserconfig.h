@@ -28,7 +28,7 @@
 
 // do NOT uncomment HOMEPOSITIONSWITCH if you do not have the switch fitted
 // To enable the HOMEPOSITION SWITCH [ESP32 only], uncomment the next line
-//#define HOMEPOSITIONSWITCH 1
+// This has moved to MANAGEMENT SERVER
 
 // To enable In and Out Pushbuttons [ESP32 only], uncomment the next line
 //#define PUSHBUTTONS 1
@@ -152,16 +152,6 @@
 #endif
 #if defined(JOYSTICK1) || defined(JOYSTICK2)
 #halt // ERROR - JOYSTICK not supported for WEMOS or NODEMCUV1 ESP8266 chips
-#endif
-#endif // 
-
-// DO NOT CHANGE
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2EDRV8825BIG \
-  || DRVBRD == PRO2EULN2003 || DRVBRD == PRO2EL298N   || DRVBRD == PRO2EL293DMINI \
-  || DSRVBRD == PRO2EL9110S || DRVBRD == PRO2EL293D )
-// no support for home position switch
-#ifdef HOMEPOSITIONSWITCH
-#halt // ERROR - Home Position Switch not supported for WEMOS or NODEMCUV1 ESP8266 chips
 #endif
 #endif // 
 

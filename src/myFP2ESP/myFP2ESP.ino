@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 144
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 145
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
@@ -321,11 +321,14 @@ extern void start_webserver(void);
 
 bool HPS_alert()
 {
-#ifdef HOMEPOSITIONSWITCH
-  return !((bool)digitalRead(HPSWPIN));
-#else
-  return false;
-#endif
+  if ( mySetupData->get_homepositionswitch() == 1)
+  {
+    return !((bool)digitalRead(HPSWPIN));
+  }
+  else
+  {
+    return false;
+  }
 }
 
 // ----------------------------------------------------------------------------------------------
@@ -801,6 +804,14 @@ long getrssi()
   return strength;
 }
 
+void init_homepositionswitch()
+{
+  if ( mySetupData->get_homepositionswitch() == 1)
+  {
+    pinMode(HPSWPIN, INPUT_PULLUP);
+  }
+}
+
 #ifdef READWIFICONFIG
 bool readwificonfig( char* xSSID, char* xPASSWORD, bool retry )
 {
@@ -1054,7 +1065,7 @@ void setup()
   packetsreceived = 0;
   packetssent = 0;
   rssi = -100;
-  
+
 #ifdef READWIFICONFIG
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   readwificonfig(mySSID, myPASSWORD, 0);                // read mySSID,myPASSWORD from FS if exist, otherwise use defaults
@@ -1175,7 +1186,7 @@ void setup()
   HDebugPrintf("%u\n", ESP.getFreeHeap());
   HDebugPrintln("setup(): tcpip server");
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
-  rssi = getrssi();                             // get network strength 
+  rssi = getrssi();                             // get network strength
   // Starting TCP Server
   DebugPrintln(STARTTCPSERVERSTR);
   myoled->oledtextmsg(STARTTCPSERVERSTR, -1, false, true);
@@ -1263,9 +1274,7 @@ void setup()
   delay(5);
 
   // setup home position switch input pin
-#ifdef HOMEPOSITIONSWITCH
-  pinMode(HPSWPIN, INPUT_PULLUP);
-#endif
+  init_homepositionswitch();
 
   // Setup infra red remote
 #ifdef INFRAREDREMOTE
@@ -1295,7 +1304,7 @@ void setup()
       DebugPrintln("tprobe1 is 1");
     }
   }
-  
+
 #ifdef OTAUPDATES
   start_otaservice();                       // Start the OTA service
 #endif // if defined(OTAUPDATES)
@@ -1373,10 +1382,8 @@ void loop()
   static connection_status ConnectionStatus = disconnected;
   static oled_state oled = oled_on;
 
-#ifdef HOMEPOSITIONSWITCH
   int stepstaken = 0;
   bool hpswstate = false;
-#endif
 
 #ifdef TIMELOOP
   Serial.print("loop(): ");
@@ -1514,7 +1521,7 @@ void loop()
 
         if ( mySetupData->get_temperatureprobestate() == 1)           // if probe is enabled
         {
-          if( tprobe1 != 0 )                                          // if probe was found
+          if ( tprobe1 != 0 )                                         // if probe was found
           {
             DebugPrintln("loop: update_temp()");
             myTempProbe->update_temp();
@@ -1610,7 +1617,7 @@ void loop()
         // if target pos > current pos then steps = target pos - current pos
         // if target pos < current pos then steps = current pos - target pos
         driverboard->initmove(DirOfTravel, steps, mySetupData->get_motorSpeed(), mySetupData->get_inoutledstate(), mySetupData->get_reversedirection());
-        DebugPrint("Steps: "); 
+        DebugPrint("Steps: ");
         DebugPrintln(steps);
         MainStateMachine = State_Moving;
       }
@@ -1719,61 +1726,62 @@ void loop()
 
     case State_SetHomePosition:                         // move out till home position switch opens
       DebugPrintln("State_SetHomePosition");
-#ifdef HOMEPOSITIONSWITCH
-      // check if display home position switch messages is enabled
-      if ( mySetupData->get_showhpswmsg() == 1)
+      if ( mySetupData->get_homepositionswitch() == 1)
       {
-        if (mySetupData->get_displayenabled() == 1)
+        // check if display home position switch messages is enabled
+        if ( mySetupData->get_showhpswmsg() == 1)
         {
-          myoled->oledtextmsg(HPMOVETILLOPENSTR, -1, false, true);
+          if (mySetupData->get_displayenabled() == 1)
+          {
+            myoled->oledtextmsg(HPMOVETILLOPENSTR, -1, false, true);
+          }
         }
-      }
-      // HOME POSITION SWITCH IS CLOSED - Step out till switch opens then set position = 0
-      stepstaken = 0;                                   // Count number of steps to prevent going too far
-      DebugPrintln(HPMOVETILLOPENSTR);
-      DirOfTravel = !DirOfTravel;                       // We were going in, now we need to reverse and go out
-      hpswstate = HPSWCLOSED;                           // We know we got here because switch was closed
-      while ( hpswstate == HPSWCLOSED )
-      {
-        if ( mySetupData->get_reversedirection() == 0 )
+        // HOME POSITION SWITCH IS CLOSED - Step out till switch opens then set position = 0
+        stepstaken = 0;                                   // Count number of steps to prevent going too far
+        DebugPrintln(HPMOVETILLOPENSTR);
+        DirOfTravel = !DirOfTravel;                       // We were going in, now we need to reverse and go out
+        hpswstate = HPSWCLOSED;                           // We know we got here because switch was closed
+        while ( hpswstate == HPSWCLOSED )
         {
-          steppermotormove(DirOfTravel);                // take 1 step
-        }
-        else
-        {
-          steppermotormove(!DirOfTravel);
-        }
+          if ( mySetupData->get_reversedirection() == 0 )
+          {
+            steppermotormove(DirOfTravel);                // take 1 step
+          }
+          else
+          {
+            steppermotormove(!DirOfTravel);
+          }
 
-        delayMicroseconds(driverboard->getstepdelay()); // Ensure delay between steps
-        
-        stepstaken++;                                   // increment steps taken
-        if ( stepstaken > HOMESTEPS )                   // this prevents the endless loop if the hpsw is not connected or is faulty
-        {
-          DebugPrintln(HPMOVEOUTERRORSTR);
-          hpswstate = HPSWOPEN;
-        }
-        else
-        {
-          hpswstate = !(digitalRead(HPSWPIN));          // read state of HPSW
-        }
-      }
-      DebugPrint(F(HPMOVEOUTSTEPSSTR));
-      DebugPrintln(stepstaken);
-      DebugPrintln(F(HPMOVEOUTFINISHEDSTR));
-      ftargetPosition = 0;
-      driverboard->setposition(0);
-      mySetupData->set_fposition(0);
+          delayMicroseconds(driverboard->getstepdelay()); // Ensure delay between steps
 
-      mySetupData->set_focuserdirection(DirOfTravel);   // set direction of last move
-      
-      if ( mySetupData->get_showhpswmsg() == 1)         // check if display home position switch messages is enabled
-      {
-        if (mySetupData->get_displayenabled() == 1)
-        {
-          myoled->oledtextmsg(HPMOVEOUTFINISHEDSTR, -1, true, true);
+          stepstaken++;                                   // increment steps taken
+          if ( stepstaken > HOMESTEPS )                   // this prevents the endless loop if the hpsw is not connected or is faulty
+          {
+            DebugPrintln(HPMOVEOUTERRORSTR);
+            hpswstate = HPSWOPEN;
+          }
+          else
+          {
+            hpswstate = !(digitalRead(HPSWPIN));          // read state of HPSW
+          }
         }
-      }
-#endif // #ifdef HOMEPOSITIONSWITCH
+        DebugPrint(F(HPMOVEOUTSTEPSSTR));
+        DebugPrintln(stepstaken);
+        DebugPrintln(F(HPMOVEOUTFINISHEDSTR));
+        ftargetPosition = 0;
+        driverboard->setposition(0);
+        mySetupData->set_fposition(0);
+
+        mySetupData->set_focuserdirection(DirOfTravel);   // set direction of last move
+
+        if ( mySetupData->get_showhpswmsg() == 1)         // check if display home position switch messages is enabled
+        {
+          if (mySetupData->get_displayenabled() == 1)
+          {
+            myoled->oledtextmsg(HPMOVEOUTFINISHEDSTR, -1, true, true);
+          }
+        }
+      } //  if( mySetupData->get_homepositionswitch() == 1)
       MainStateMachine = State_DelayAfterMove;
       TimeStampDelayAfterMove = millis();
       DebugPrintln(STATEDELAYAFTERMOVE);

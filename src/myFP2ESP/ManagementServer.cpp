@@ -63,6 +63,7 @@ extern void stop_ascomremoteserver(void);
 extern void init_leds(void);
 extern void software_Reboot(int);
 extern long getrssi(void);
+extern void init_homepositionswitch(void);
 
 #ifdef MDNSSERVER
 extern void start_mdns_service(void);
@@ -739,15 +740,15 @@ void MANAGEMENT_buildadminpg3(void)
       MSpg.replace("%BOE%", String(ENABLEBKOUTSTR));
       MSpg.replace("%STO%", String(NOTENABLEDSTR));
     }
-    
+
     MSpg.replace("%BIS%", String(BLINSTEPSTR));
     MSpg.replace("%BOS%", String(BLOUTSTEPSTR));
     MSpg.replace("%bins%", String(mySetupData->get_backlashsteps_in()));
     MSpg.replace("%bous%", String(mySetupData->get_backlashsteps_out()));
-    
+
     // motor speed delay
     MSpg.replace("%MS%", "<form action=\"/msindex3\" method=\"post\">Delay: <input type=\"text\" name=\"msd\" size=\"6\" value=" + String(driverboard->getstepdelay()) + "> <input type=\"submit\" name=\"setmsd\" value=\"Set\"></form>");
-   
+
     MSpg.replace("%BT%", String(CREBOOTSTR));           // add code to handle reboot controller
 
     DebugPrintln(PROCESSPAGEENDSTR);
@@ -846,12 +847,12 @@ void MANAGEMENT_handleadminpg3(void)
     {
       unsigned long newspeed = 0;
       newspeed = ms.toInt();
-      newspeed = (newspeed < 1000) ? 1000: newspeed;    // ensure it is not too low
+      newspeed = (newspeed < 1000) ? 1000 : newspeed;   // ensure it is not too low
       driverboard->setstepdelay(newspeed);
       mySetupData->set_motorspeeddelay(newspeed);
     }
   }
-  
+
   MANAGEMENT_sendadminpg3();
 #ifdef TIMEMSHANDLEPG3
   Serial.print("ms_handlepg3: ");
@@ -975,6 +976,17 @@ void MANAGEMENT_buildadminpg2(void)
     {
       MSpg.replace("%INO%", String(ENABLELEDSTR));
       MSpg.replace("%INL%", String(NOTENABLEDSTR));
+    }
+
+    if ( mySetupData->get_homepositionswitch() == 1)
+    {
+      MSpg.replace("%HPO%", String(DISABLEHPSWSTR));   // button
+      MSpg.replace("%HPL%", String(ENABLEDSTR));       // state
+    }
+    else
+    {
+      MSpg.replace("%HPO%", String(ENABLEHPSWSTR));
+      MSpg.replace("%HPL%", String(NOTENABLEDSTR));
     }
 
     // add code to handle reboot controller %BT%
@@ -1269,7 +1281,7 @@ void MANAGEMENT_handleadminpg2(void)
     // check if already enabled
     if (mySetupData->get_temperatureprobestate() == 1)                // if probe is enabled
     {
-      if( tprobe1 == 0 )                                              // if probe not found
+      if ( tprobe1 == 0 )                                             // if probe not found
       {
         myTempProbe = new TempProbe;                                  // attempt to start probe and search for probe
       }
@@ -1277,7 +1289,7 @@ void MANAGEMENT_handleadminpg2(void)
     else
     {
       mySetupData->set_temperatureprobestate(1);                      // enable probe
-      if( tprobe1 == 0 )                                              // if probe not found
+      if ( tprobe1 == 0 )                                             // if probe not found
       {
         myTempProbe = new TempProbe;                                  // attempt to start probe and search for probe
       }
@@ -1298,7 +1310,7 @@ void MANAGEMENT_handleadminpg2(void)
       tprobe1 = 0;
     }
   }
-  
+
   // Temperature probe celsius/farentheit
   msg = mserver.arg("tm");
   if ( msg != "" )
@@ -1338,6 +1350,24 @@ void MANAGEMENT_handleadminpg2(void)
       mySetupData->set_inoutledstate(0);
     }
   }
+
+  // HOME POSITION SWITCH, enable, disable
+  msg = mserver.arg("hpswon");
+  if ( msg != "" )
+  {
+    // if current state is disabled then enable
+    if ( mySetupData->get_homepositionswitch() == 0)
+    {
+      mySetupData->set_homepositionswitch(1);
+      init_homepositionswitch();
+    }
+  }
+  msg = mserver.arg("hpswoff");
+  if ( msg != "" )
+  {
+      mySetupData->set_homepositionswitch(0);
+  }
+
   MANAGEMENT_sendadminpg2();
 #ifdef TIMEMSHANDLEPG2
   Serial.print("ms_handlepg2: ");
@@ -1470,7 +1500,7 @@ void MANAGEMENT_buildadminpg1(void)
     MSpg.replace("%PT%", String(mySetupData->get_lcdpagetime()) );
     oled = "<form action=\"/\" method=\"post\"><input type=\"text\" name=\"pt\" size=\"12\" value=" + String(mySetupData->get_lcdpagetime()) + "> <input type=\"submit\" name=\"setpt\" value=\"Set\"></form>";
     MSpg.replace("%PGT%", oled );
-    
+
     // startscreen %SS%
     if ( mySetupData->get_showstartscreen() == 1 )
     {
@@ -1631,7 +1661,7 @@ void MANAGEMENT_handleadminpg1(void)
     }
   }
 
-    // if oled display page group option update
+  // if oled display page group option update
   // OLED Page Group Option [State] [options][SET]
   msg = mserver.arg("setpg");
   if ( msg != "" )
@@ -1907,7 +1937,12 @@ void MANAGEMENT_handleget(void)
     long rssi = getrssi();
     jsonstr = "{ \"rssi\":" + String(rssi) + " }";
     MANAGEMENT_sendjson(jsonstr);
-  } 
+  }
+  else if ( mserver.argName(0) == "hpsw" )
+  {
+    jsonstr = "{ \"hpsw\":" + String(mySetupData->get_homepositionswitch()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
   else
   {
     jsonstr = "{ \"error\":\"unknown-command\" }";
@@ -2133,6 +2168,24 @@ void MANAGEMENT_handleset(void)
     }
   }
 
+  // home position switch
+  value = mserver.arg("hpsw");
+  if ( value != "" )
+  {
+    DebugPrint("hpsw:");
+    DebugPrintln(value);
+    if ( value == "on" )
+    {
+      mySetupData->set_homepositionswitch(1);
+      rflag = true;
+    }
+    else if ( value == "off" )
+    {
+      mySetupData->set_homepositionswitch(0);
+      rflag = true;
+    }
+  }
+
   // send generic OK
   if ( rflag == true )
   {
@@ -2215,7 +2268,7 @@ void MANAGEMENT_tempon(void)
     mySetupData->set_temperatureprobestate(1);                      // enable it
     if ( tprobe1 == 0 )                                             // if there was no probe found
     {
-      Serial.println("Create new tempprobe");               
+      Serial.println("Create new tempprobe");
       myTempProbe = new TempProbe;                                  // create new instance and look for probe
     }
     else
@@ -2296,7 +2349,7 @@ void start_management(void)
   mserver.on("/delete",   HTTP_POST, MANAGEMENT_handledeletefile);
   mserver.on("/list",     HTTP_GET,  MANAGEMENT_listFSfiles);
   mserver.on("/upload",   HTTP_GET,  MANAGEMENT_displayfileupload);
-  
+
   mserver.on("/ascomoff",     HTTP_GET,  MANAGEMENT_ascomoff);
   mserver.on("/ascomon",      HTTP_GET,  MANAGEMENT_ascomon);
   mserver.on("/ledsoff",      HTTP_GET,  MANAGEMENT_ledsoff);
@@ -2305,10 +2358,10 @@ void start_management(void)
   mserver.on("/tempoff",      HTTP_GET,  MANAGEMENT_tempoff);
   mserver.on("/webserveroff", HTTP_GET,  MANAGEMENT_webserveroff);
   mserver.on("/webserveron",  HTTP_GET,  MANAGEMENT_webserveron);
-  mserver.on("/rssi",         HTTP_GET,  MANAGEMENT_rssi);  
+  mserver.on("/rssi",         HTTP_GET,  MANAGEMENT_rssi);
   mserver.on("/set",                 MANAGEMENT_handleset);               // generic set function
   mserver.on("/get",                 MANAGEMENT_handleget);               // generic get function
-  
+
   mserver.on("/upload",   HTTP_POST, []() {
     mserver.send(NORMALWEBPAGE);
   }, MANAGEMENT_handlefileupload );
