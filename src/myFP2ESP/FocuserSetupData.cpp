@@ -121,6 +121,7 @@ byte SetupData::LoadConfiguration()
       this->forcedownload         = doc_per["fcdownld"];
       this->oledpageoption        = doc_per["oledpg"].as<char*>();
       this->motorspeeddelay       = doc_per["msdelay"];
+      this->homepositionswitch    = doc_per["hpsw"];
     }
     file.close();
     DebugPrintln(F("config file persistant data loaded"));
@@ -224,6 +225,7 @@ void SetupData::LoadDefaultPersistantData()
   this->forcedownload         = DEFAULTOFF;           // this should be default OFF, MANAGEMENT Server only
   this->oledpageoption        = OLEDPGOPTIONALL;
   this->motorspeeddelay       = 0;                    // needs to come from driverboard
+  this->homepositionswitch    = 0;
   this->SavePersitantConfiguration();                 // write default values to SPIFFS
 }
 
@@ -354,7 +356,8 @@ byte SetupData::SavePersitantConfiguration()
   doc["fcdownld"]           = this->forcedownload;
   doc["oledpg"]             = this->oledpageoption;
   doc["msdelay"]            = this->motorspeeddelay;
-    
+  doc["hpsw"]               = this->homepositionswitch;
+  
   // Serialize JSON to file
   DebugPrintln("Writing to file");
   if (serializeJson(doc, file) == 0)
@@ -625,6 +628,11 @@ int SetupData::get_motorspeeddelay()
   return this->motorspeeddelay;
 }
 
+int SetupData::get_homepositionswitch()
+{
+  return this->homepositionswitch;
+}
+
 //__Setter
 
 void SetupData::set_fposition(unsigned long fposition)
@@ -830,6 +838,11 @@ void SetupData::set_oledpageoption(String newval)
 void SetupData::set_motorspeeddelay(int newval)
 {
   this->StartDelayedUpdate(this->motorspeeddelay, newval);
+}
+
+void SetupData::set_homepositionswitch(int newval)
+{
+  this->StartDelayedUpdate(this->homepositionswitch, newval);
 }
 
 void SetupData::StartDelayedUpdate(int & org_data, int new_data)

@@ -73,6 +73,7 @@ class SetupData
     byte get_forcedownload();
     String  get_oledpageoption();
     int get_motorspeeddelay();
+    int get_homepositionswitch();
       
     //__setter
     void set_fposition(unsigned long);
@@ -116,7 +117,8 @@ class SetupData
     void set_forcedownload(byte);
     void set_oledpageoption(String);
     void set_motorspeeddelay(int);
-         
+    void set_homepositionswitch(int);
+     
   private:
     byte SavePersitantConfiguration();
     byte SaveVariableConfiguration();
@@ -184,4 +186,5 @@ class SetupData
     byte forcedownload;             // if 1, in the MANAGEMENT SERVER, a file is downloaded instead of being displayed is web browser window
     String oledpageoption;
     int motorspeeddelay;
+    int homepositionswitch;
 };
