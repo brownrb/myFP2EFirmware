@@ -1,0 +1,539 @@
+managementserver.cpp
+line 985 change to DELETE LINE Serial.print
+
+
+// ----------------------------------------------------------------------------------------------
+generalDefinitions.h
+111
+#ifndef STEP64
+#define STEP64                64
+#endif
+#ifndef STEP128
+#define STEP128               128
+#endif
+#ifndef STEP256
+#define STEP256               256
+#endif
+
+Line 393
+change to //#define TIMEDTESTS 1
+
+// ----------------------------------------------------------------------------------------------
+ascom.cpp
+extern float lasttemp;
+
+delete  extern TempProbe *myTempProbe;
+
+647
+  // (1=Full, 2=Half, 4=1/4, 8=1/8, 16=1/16, 32=1/32, 64=1/64, 128=1/128, 256=1/256)
+  String fsm_str = ascomserver->arg("sm");
+  if ( fsm_str != "" )
+  {
+    int temp1 = 0;
+    DebugPrint("root() -stepmode:");
+    DebugPrintln(fsm_str);
+    temp1 = fsm_str.toInt();
+    if ( temp1 < STEP1 )
+    {
+      temp1 = STEP1;
+    }
+    if ( temp1 > STEP256 )
+    {
+      temp1 = STEP256;
+    }
+    mySetupData->set_stepmode(temp1);
+  }
+
+934
+  jsonretstr = "{\"Value\":" + String(lasttemp, 2) + "," + ASCOM_addclientinfo( jsonretstr );
+
+
+// ----------------------------------------------------------------------------------------------
+managementserver.cpp
+extern int tprobe1;
+1263
+  value = mserver.arg("starttp");
+  if ( msg != "" )
+  {
+    // check if already enabled
+    if (mySetupData->get_temperatureprobestate() == 1)                // if probe is enabled
+    {
+      if( tprobe1 == 0 )                                              // if probe not found
+      {
+        myTempProbe = new TempProbe;                                  // attempt to start probe and search for probe
+      }
+    }
+    else
+    {
+      mySetupData->set_temperatureprobestate(1);                      // enable probe
+      if( tprobe1 == 0 )                                              // if probe not found
+      {
+        myTempProbe = new TempProbe;                                  // attempt to start probe and search for probe
+      }
+    }
+  }
+  msg = mserver.arg("stoptp");
+  if ( msg != "" )
+  {
+    if ( mySetupData->get_temperatureprobestate() == 1 )
+    {
+      // there is no destructor call
+      tprobe1 = 0;
+      mySetupData->set_temperatureprobestate(0);
+    }
+    else
+    {
+      // do nothing, already disabled
+      tprobe1 = 0;
+    }
+  }
+
+void MANAGEMENT_tempoff(void)
+{
+  // temp probe stop
+  if (mySetupData->get_temperatureprobestate() == 1)              // if probe enabled
+  {
+    DebugPrintln("temp off");
+    // there is no destructor call
+    mySetupData->set_temperatureprobestate(0);                    // disable probe
+    myTempProbe->stop_temp_probe();                               // stop probe
+    tprobe1 = 0;                                                  // indicate no probe found
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe Off");
+}
+
+void MANAGEMENT_tempon(void)
+{
+  // temp probe start
+  if ( mySetupData->get_temperatureprobestate() == 0)               // if probe is disabled
+  {
+    mySetupData->set_temperatureprobestate(1);                      // enable it
+    if ( tprobe1 == 0 )                                             // if there was no probe found
+    {
+      Serial.println("Create new tempprobe");               
+      myTempProbe = new TempProbe;                                  // create new instance and look for probe
+    }
+    else
+    {
+      Serial.println("myTempProbe already created");
+    }
+  }
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, "Temperature probe On");
+}
+
+
+// ----------------------------------------------------------------------------------------------
+myFP2ESP.ino
+279
+int   tprobe1;                               // true if a temperature probe was detected
+float lasttemp;                             // last valid temp reading
+
+1037
+  tprobe1 = 0;
+  lasttemp = 20.0;
+  if ( mySetupData->get_temperatureprobestate() == 1)   // if temperature probe enabled then try to start new probe
+  {
+    myTempProbe = new TempProbe;                        // create temp probe - should set tprobe1=true if probe found
+  }
+  else
+  {
+    tprobe1 = 0;
+  }
+
+1276
+  if ( mySetupData->get_temperatureprobestate() == 1)     // if temp probe "enabled" state
+  {
+    if ( tprobe1 != 0 )                                   // if a probe was found
+    {
+      DebugPrintln("tprobe1 != 0. read_temp");
+      myTempProbe->read_temp(1);                          // read the temperature
+    }
+    else
+    {
+      DebugPrintln("tprobe1 is 1");
+    }
+  }
+
+
+1508
+        if ( mySetupData->get_temperatureprobestate() == 1)           // if probe is enabled
+        {
+          if( tprobe1 != 0 )                                          // if probe was found
+          {
+            DebugPrintln("loop: update_temp()");
+            myTempProbe->update_temp();
+          }
+          else
+          {
+            DebugPrintln("loop: tprobe1 = 0");
+          }
+        }
+
+
+temp.h
+// ----------------------------------------------------------------------------------------------
+18
+remove extern byte tprobe1;
+
+comms.h
+// ----------------------------------------------------------------------------------------------
+27
+extern int   tprobe1;
+extern float lasttemp;
+
+155
+    case 6: // get temperature
+      SendPaket('Z', lasttemp, 3);
+
+223
+    case 20: // set the temperature resolution setting for the DS18B20 temperature probe
+      WorkString = receiveString.substring(3, receiveString.length() - 1);
+      paramval = WorkString.toInt();
+      mySetupData->set_tempprecision((byte) paramval);
+      if( mySetupData->get_temperatureprobestate() == 1 )     // if temp probe is enabled
+      {
+        if( tprobe1 != 0 )                                 // if probe was found
+        {
+          myTempProbe->temp_setresolution((byte) paramval);   // set probe resolution
+          mySetupData->set_tempprecision((byte) paramval);    // and save for future use      
+        }
+      }
+      break;
+
+530
+    case 83: // get if there is a temperature probe
+      SendPaket('c', tprobe1);
+      break;
+
+621
+case 96:
+              // temp probe start
+              if (mySetupData->get_temperatureprobestate() == 0)          // if temp probe disabled
+              {
+                mySetupData->set_temperatureprobestate(1);                // then enable probe
+                if ( tprobe1 == 0 )                                       // if probe not started
+                {
+                  myTempProbe = new TempProbe();                          // start a new probe
+                }
+                else
+                {
+                  DebugPrintln("Probe already statrted");
+                }
+              }
+            }
+            else
+            {
+              // temp probe stop
+              if (mySetupData->get_temperatureprobestate() == 1)          // if probe currently enabled
+              {
+                mySetupData->set_temperatureprobestate(0);                // then disable it
+                if ( tprobe1 != 0 )                                       // only call this if a probe was found
+                {
+                  myTempProbe->stop_temp_probe();                          // else an exception will occur
+                }
+              }
+            }
+
+
+display.cpp
+// ----------------------------------------------------------------------------------------------
+36
+extern float lasttemp;
+197
+  snprintf(buffer, sizeof(buffer), "TEMP: %.2f C", lasttemp);
+  drawString(54, 54, buffer);
+272
+  //Temperature
+  print(TEMPSTR);
+  print(String(lasttemp, 2));
+  println(" c");
+490
+  //Temperature
+  print(TEMPSTR);
+  print(String(lasttemp, 2));
+  print(" c");
+  clearToEOL();
+  println();
+
+
+webserver.cpp
+// ----------------------------------------------------------------------------------------------
+37
+extern int   tprobe1;
+extern float lasttemp;
+
+778
+    WSpg.replace("%MOV%", String(isMoving));
+
+    if ( mySetupData->get_tempmode() == 1)
+    {
+      String tpstr = String(lasttemp, 2);
+      WSpg.replace("%TEM%", tpstr);
+      WSpg.replace("%TUN%", " c");
+    }
+    else
+    {
+      float ft = lasttemp;
+      ft = (ft * 1.8) + 32;
+      String tpstr = String(ft, 2);
+      WSpg.replace("%TEM%", tpstr);
+      WSpg.replace("%TUN%", " f");
+    }
+
+1085
+  if ( tres_str != "" )
+  {
+    int temp = 0;
+    DebugPrint("root() -temperature resolution:");
+    DebugPrintln(tres_str);
+    temp = tres_str.toInt();
+    if ( temp < 9 )
+    {
+      // error, do not change
+      temp = 9;
+    }
+    if ( temp > 12 )
+    {
+      temp = 12;
+    }
+    mySetupData->set_tempprecision(temp);
+    if( mySetupData->get_temperatureprobestate() == 1 )       // if probe enabled
+    {
+      if( tprobe1 != 0 )                                      // if there was a probe found
+      {
+        myTempProbe->temp_setresolution((byte)temp);          // set resolution
+      }
+    }
+  }
+
+
+
+temp.h
+// ----------------------------------------------------------------------------------------------
+class TempProbe : public DallasTemperature
+{
+  public:
+
+    void  start_temp_probe(void);
+    void  stop_temp_probe(void);
+and remove Private data
+
+
+temperature.cpp
+// ----------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
+// temp.cpp : myFP2ESP temperature probe
+// ----------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------
+// COPYRIGHT
+// ----------------------------------------------------------------------------------------------
+// (c) Copyright Robert Brown 2014-2021. All Rights Reserved.
+// (c) Copyright Holger Manz, 2020-2021. All Rights Reserved.
+// ----------------------------------------------------------------------------------------------
+
+#include <Arduino.h>
+#include "FocuserSetupData.h"
+#include "generalDefinitions.h"
+#include "myBoards.h"
+#include <OneWire.h>                          // https://github.com/PaulStoffregen/OneWire
+//#include <myDallasTemperature.h>
+#include "temp.h"
+
+// ----------------------------------------------------------------------------------------------
+// EXTERNALS
+// ----------------------------------------------------------------------------------------------
+extern int   tprobe1;
+extern float lasttemp;
+
+extern SetupData *mySetupData;
+extern bool TimeCheck(unsigned long, unsigned long);
+extern unsigned long ftargetPosition;         // target position
+
+// ----------------------------------------------------------------------------------------------
+// DATA
+// ----------------------------------------------------------------------------------------------
+OneWire oneWirech1(TEMPPIN);                  // setup temperature probe
+DallasTemperature sensor1(&oneWirech1);
+DeviceAddress tpAddress;                      // holds address of the temperature probe
+
+// ----------------------------------------------------------------------------------------------
+// CLASS
+// ----------------------------------------------------------------------------------------------
+TempProbe::TempProbe()  :  DallasTemperature (&oneWirech1)
+{
+  start_temp_probe();
+}
+
+void TempProbe::start_temp_probe()
+{
+  Serial.println("start_temp_probe()");
+  tprobe1 = false;
+  pinMode(TEMPPIN, INPUT);                      // Configure GPIO pin for temperature probe
+  DebugPrintln(CHECKFORTPROBESTR);
+  Serial.println("start_temp_probe(): begin");
+  begin();
+  DebugPrintln(GETTEMPPROBESSTR);
+  tprobe1 = getDeviceCount();                   // should return 1 if probe connected
+  DebugPrint(TPROBESTR);
+  DebugPrintln(tprobe1);
+  if ( tprobe1 != 0 )
+  {
+    if (getAddress(tpAddress, 0) == true)       // get the address so we can set the probe resolution
+    {
+      tprobe1 = 1;                              // address was found so there was a probe
+      setResolution(tpAddress, mySetupData->get_tempprecision());    // set probe resolution
+      DebugPrint(SETTPROBERESSTR);
+      switch (mySetupData->get_tempprecision())
+      {
+        case 9: DebugPrintln(F("0.5"));
+          break;
+        case 10: DebugPrint(F("0.25"));
+          break;
+        case 11: DebugPrintln(F("0.125"));
+          break;
+        case 12: DebugPrintln(F("0.0625"));
+          break;
+        default:
+          DebugPrintln(F("Unknown"));
+          break;
+      }
+      requestTemperatures();                    // request the sensor to begin a temperature reading
+    }
+  }
+  else
+  {
+    DebugPrintln(TPROBENOTFOUNDSTR);
+  }
+}
+
+void TempProbe::stop_temp_probe()
+{
+  tprobe1 = 0;
+}
+
+void TempProbe::temp_setresolution(byte rval)
+{
+  if ( tprobe1 != 0 )
+  {
+    setResolution(tpAddress, rval);             // set the probe resolution (9=0.25, 12=0.00125)
+  }
+  else
+  {
+    DebugPrintln("Cannot set resolution. No probe found.");
+  }
+}
+
+float TempProbe::read_temp(byte new_measurement)
+{
+  static float lasttemp = 20.0;               // keep track of previous temperature value
+  if (!new_measurement || ( tprobe1 == 0 ))
+  {
+    return lasttemp;                          // return previous measurement
+  }
+
+  float result = getTempCByIndex(0);          // get temperature, always in celsius
+  DebugPrint(TEMPSTR);
+  DebugPrintln(result);
+  if (result > -40.0 && result < 80.0)        // avoid erronous readings
+  {
+    lasttemp = result;
+  }
+  else
+  {
+    result = lasttemp;
+  }
+  return result;
+}
+
+void TempProbe::update_temp(void)
+{
+  static byte tcchanged = mySetupData->get_tempcompenabled();  // keeps track if tempcompenabled changes
+
+  if ( mySetupData->get_temperatureprobestate() == 1)
+  {
+    if (tprobe1 == 1)
+    {
+      static unsigned long lasttempconversion = 0;
+      static byte requesttempflag = 0;                  // start with request
+      unsigned long tempnow = millis();
+
+      // see if the temperature needs updating - done automatically every 1.5s
+      if (TimeCheck(lasttempconversion, TEMPREFRESHRATE))   // see if the temperature needs updating
+      {
+        static float tempval;
+        static float starttemp;                         // start temperature to use when temperature compensation is enabled
+
+        if ( tcchanged != mySetupData->get_tempcompenabled() )
+        {
+          tcchanged = mySetupData->get_tempcompenabled();
+          if ( tcchanged == 1 )
+          {
+            starttemp = read_temp(1);
+          }
+        }
+
+        lasttempconversion = tempnow;                   // update time stamp
+
+        if (requesttempflag)
+        {
+          tempval = read_temp(1);
+        }
+        else
+        {
+          requestTemperatures();
+        }
+
+        requesttempflag ^= 1; // toggle flag
+
+        if (mySetupData->get_tempcompenabled() == 1)    // check for temperature compensation
+        {
+          if ((abs)(starttemp - tempval) >= 1)          // calculate if temp has moved by more than 1 degree
+          {
+            unsigned long newPos;
+            byte temperaturedirection;                  // did temperature fall (1) or rise (0)?
+            temperaturedirection = (tempval < starttemp) ? 1 : 0;
+            if (mySetupData->get_tcdirection() == 0)    // check if tc direction for compensation is inwards
+            {
+              // temperature compensation direction is in, if a fall then move in else move out
+              if ( temperaturedirection == 1 )          // check if temperature is falling
+              {
+                newPos = ftargetPosition - mySetupData->get_tempcoefficient();    // then move inwards
+              }
+              else
+              {
+                newPos = ftargetPosition + mySetupData->get_tempcoefficient();    // else move outwards
+              }
+            }
+            else
+            {
+              // temperature compensation direction is out, if a fall then move out else move in
+              if ( temperaturedirection == 1 )
+              {
+                newPos = ftargetPosition + mySetupData->get_tempcoefficient();
+              }
+              else
+              {
+                newPos = ftargetPosition - mySetupData->get_tempcoefficient();
+              }
+            }
+            newPos = (newPos > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : newPos;
+            // newPos should be checked for < 0 but cannot due to unsigned
+            // newPos = (newPos < 0 ) ? 0 : newPos;
+            ftargetPosition = newPos;
+            starttemp = tempval;                        // save this current temp point for future reference
+          } // end of check for tempchange >=1
+        } // end of check for tempcomp enabled
+      } // end of check for temperature needs updating
+    } // end of if tprobe
+    else
+    {
+      DebugPrintln("Cannot update_temp. No probe found.");
+    }
+  }
+  else
+  {
+    DebugPrintln("Cannot update_temp. Probe not enabled.");
+  }
+}
+

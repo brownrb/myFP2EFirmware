@@ -1,0 +1,15 @@
+compiler warnings
+managementserver.cpp
+1678
+    for ( unsigned int i = 0; i < tp.length(); i++)     // check for 0 or 1
+2070
+    ftargetPosition = ( temp > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : temp;
+2083
+    ftargetPosition = ( temp > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : temp;
+
+myFP2ESP.ino
+1105
+  WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
+1143
+    WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
+

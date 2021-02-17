@@ -976,7 +976,7 @@ void setup()
 #else
   myoled = new OLED_NON;
   displaystate = false;
-#endif
+#endif // #ifdef OLED_MODE
 
   HDebugPrint("Heap = ");
   HDebugPrintf("%u\n", ESP.getFreeHeap());
@@ -1066,7 +1066,7 @@ void setup()
   packetssent = 0;
   rssi = -100;
 
-#ifdef READWIFICONFIG
+#if defined(READWIFICONFIG)
 #if defined(ACCESSPOINT) || defined(STATIONMODE)
   readwificonfig(mySSID, myPASSWORD, 0);                // read mySSID,myPASSWORD from FS if exist, otherwise use defaults
 #endif
@@ -1102,7 +1102,7 @@ void setup()
   }
 
   // attempt to connect using mySSID and myPASSWORD
-  byte connstatus = WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
+  WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
   DebugPrint(WIFIBEGINSTATUSSTR);
   DebugPrintln(String(connstatus));
   delay(1000);                                      // wait 1s
@@ -1138,9 +1138,9 @@ void setup()
     memset( mySSID, 0, 64);
     memset( myPASSWORD, 0, 64);
     memcpy( mySSID, mySSID_1, (sizeof(mySSID_1) / sizeof(mySSID_1[0]) ));
-    memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1 / sizeof(myPASSWORD_1[0]) );
+    memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1) / sizeof(myPASSWORD_1[0])) );
 #endif
-    connstatus = WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
+    WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
     DebugPrint(WIFIBEGINSTATUSSTR);
     DebugPrintln(String(connstatus));
     delay(1000);                                  // wait 1s

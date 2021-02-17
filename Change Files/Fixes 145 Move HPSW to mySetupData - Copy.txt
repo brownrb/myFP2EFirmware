@@ -1,0 +1,181 @@
+Move HPSW to mySetupData
+
+changes to msindex2.html
+<h3 style="color: #%HEC%">HOME POSITION SWITCH</h3><p>%HPO%</p>
+
+generalDefinitions.h
+#define ENABLEHPSWSTR             "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%HPL%]: <input type=\"hidden\" name=\"hpswon\" value=\"true\"><input type=\"submit\" value=\"ENABLE\"></form>"
+#define DISABLEHPSWSTR            "<form action=\"/msindex2\" method=\"post\"><b>State</b> [%HPL%]: <input type=\"hidden\" name=\"hpswoff\" value=\"true\"><input type=\"submit\" value=\"DISABLE\"></form>"
+
+
+myFP2ESP.ino
+323
+bool HPS_alert()
+{
+  if ( mySetupData->get_homepositionswitch() == 1)
+  {
+    return !((bool)digitalRead(HPSWPIN));
+  }
+  else
+  {
+    return false;
+  }
+}
+
+806
+void init_homepositionswitch()
+{
+  if ( mySetupData->get_homepositionswitch() == 1)
+  {
+    pinMode(HPSWPIN, INPUT_PULLUP);
+  }
+}
+
+1276
+  // setup home position switch input pin
+  init_homepositionswitch();
+
+1385 remove #ifdef
+  int stepstaken = 0;
+  bool hpswstate = false;
+
+1698
+    case State_SetHomePosition:                         // move out till home position switch opens
+      DebugPrintln("State_SetHomePosition");
+      if( mySetupData->get_homepositionswitch() == 1)
+      {
+
+      }
+      MainStateMachine = State_DelayAfterMove;
+      TimeStampDelayAfterMove = millis();
+      DebugPrintln(STATEDELAYAFTERMOVE);
+      break;
+
+comms.h
+38
+extern void init_homepositionswitch(void);
+
+411
+    case 50: // Get if Home Position Switch enabled, 0 = no, 1 = yes
+      if ( mySetupData->get_homepositionswitch() == 1)
+      {
+        SendPaket('l', 1);
+      }
+      else
+      {
+        SendPaket('l', 0);
+      }
+      break;
+
+472
+    case 63: // get status of home position switch (0=off, 1=closed, position 0)
+      if ( mySetupData->get_homepositionswitch() == 1)
+      {
+        SendPaket('H', digitalRead(HPSWPIN));
+      }
+      else
+      {
+        SendPaket('H', "0");
+      }
+      break;
+
+712
+    case 99:  // set homepositonswitch state, 0 or 1
+      {
+        int enablestate = 0;
+        WorkString = receiveString.substring(3, receiveString.length() - 1);
+        enablestate = WorkString.toInt();
+        mySetupData->set_homepositionswitch(enablestate);
+        if( enablestate == 1 )
+        {
+          init_homepositionswitch();
+        }
+      }
+      break;
+
+FocuserSetupData.h
+class SetupData
+{
+  public:
+
+    int get_homepositionswitch();
+    void set_homepositionswitch(int);
+
+    int homepositionswitch;
+
+
+FocuserSetupData.cpp
+124
+      this->homepositionswitch    = doc_per["hpsw"];
+228
+  this->homepositionswitch    = 0;
+359
+  doc["hpsw"]               = this->homepositionswitch;
+631
+int SetupData::get_homepositionswitch()
+{
+  return this->homepositionswitch;
+}
+843
+void SetupData::set_homepositionswitch(int newval)
+{
+  this->StartDelayedUpdate(this->homepositionswitch, newval);
+}
+
+managementserver.cpp
+66
+extern void init_homepositionswitch(void);
+981
+    if ( mySetupData->get_homepositionswitch() == 1)
+    {
+      MSpg.replace("%HPO%", String(DISABLEHPSWSTR));   // button
+      MSpg.replace("%HPL%", String(ENABLEDSTR));       // state
+    }
+    else
+    {
+      MSpg.replace("%HPO%", String(ENABLEHPSWSTR));
+      MSpg.replace("%HPL%", String(NOTENABLEDSTR));
+    }
+1354
+  // HOME POSITION SWITCH, enable, disable
+  msg = mserver.arg("hpswon");
+  if ( msg != "" )
+  {
+    // if current state is disabled then enable
+    if ( mySetupData->get_homepositionswitch() == 0)
+    {
+      mySetupData->set_homepositionswitch(1);
+      init_homepositionswitch();
+    }
+  }
+  msg = mserver.arg("hpswoff");
+  if ( msg != "" )
+  {
+      mySetupData->set_homepositionswitch(0);
+  }
+1941
+  else if ( mserver.argName(0) == "hpsw" )
+  {
+    jsonstr = "{ \"hpsw\":" + String(mySetupData->get_homepositionswitch()) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  }
+2172
+  value = mserver.arg("hpsw");
+  if ( value != "" )
+  {
+    DebugPrint("hpsw:");
+    DebugPrintln(value);
+    if ( value == "on" )
+    {
+      mySetupData->set_homepositionswitch(1);
+      init_homepositionswitch();
+      rflag = true;
+    }
+    else if ( value == "off" )
+    {
+      mySetupData->set_homepositionswitch(0);
+      rflag = true;
+    }
+  }
+
+

@@ -1675,7 +1675,7 @@ void MANAGEMENT_handleadminpg1(void)
     {
       tp = OLEDPGOPTIONALL;
     }
-    for ( int i = 0; i < tp.length(); i++)              // check for 0 or 1
+    for ( unsigned int i = 0; i < tp.length(); i++)     // check for 0 or 1
     {
       if ( (tp[i] != '0') && (tp[i] != '1') )
       {
@@ -2067,7 +2067,7 @@ void MANAGEMENT_handleset(void)
     unsigned long temp = value.toInt();
     DebugPrint("Set position: ");
     DebugPrintln(temp);
-    ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+    ftargetPosition = ( temp > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : temp;
     mySetupData->set_fposition(ftargetPosition);      // current position in SPIFFS
     driverboard->setposition(ftargetPosition);        // current position in driver board
     rflag = true;
@@ -2080,7 +2080,7 @@ void MANAGEMENT_handleset(void)
     unsigned long temp = value.toInt();
     DebugPrint("Move to position: ");
     DebugPrintln(temp);
-    ftargetPosition = ( temp > (long)mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : (unsigned long)temp;
+    ftargetPosition = ( temp > mySetupData->get_maxstep()) ? mySetupData->get_maxstep() : temp;
     rflag = true;
   }
 
@@ -2177,6 +2177,7 @@ void MANAGEMENT_handleset(void)
     if ( value == "on" )
     {
       mySetupData->set_homepositionswitch(1);
+      init_homepositionswitch();
       rflag = true;
     }
     else if ( value == "off" )
