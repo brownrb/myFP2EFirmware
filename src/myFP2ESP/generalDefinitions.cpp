@@ -9,7 +9,7 @@
 // (c) Copyright Holger M, 2019-2021. All Rights Reserved.
 // ----------------------------------------------------------------------------------------------
 
-const char* programVersion        = "145";
+const char* programVersion        = "147";
 const char* ProgramAuthor         = "(c) R BROWN 2020";
 
 const char* STATEMOVINGSTR        = ">Moving";
@@ -96,6 +96,7 @@ const char* HPCLOSEDFP0STR        = "HP Sw=1, Pos=0";
 const char* HPMOVETILLOPENSTR     = "HP Sw=0, Mov out";
 const char* HPMOVEOUTERRORSTR     = "HP Sw=0, Mov out err";
 const char* HPMOVEOUTFINISHEDSTR  = "HP Sw=0, Mov out ok";
+const char* HPMOVEOUTSTEPSSTR     = "HP Sw, Mov out steps:";
 
 // oled messages
 const char* CURRENTPOSSTR       =  "Current Pos = ";
