@@ -62,5 +62,8 @@
 #ifndef PRO2ESP32R3WEMOS
 #define PRO2ESP32R3WEMOS      49         // https://www.ebay.com/itm/R3-Wemos-UNO-D1-R32-ESP32-WIFI-Bluetooth-CH340-Devolopment-Board-For-Arduino/264166013552
 #endif
+#ifndef WEMOSDRV8825H
+#define WEMOSDRV8825H         50         // this is for Holger
+#endif
 
 #endif

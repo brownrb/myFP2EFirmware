@@ -14,7 +14,9 @@
 #include "myBoards.h"
 
 // ____ESP8266 Boards
-#if DRVBRD == WEMOSDRV8825
+#if DRVBRD == WEMOSDRV8825H
+const char* DRVBRD_ID = "WEMOSDRV8825H";
+#elif DRVBRD == WEMOSDRV8825
 const char* DRVBRD_ID = "WEMOSDRV8825";
 #elif  DRVBRD == PRO2EULN2003
 const char* DRVBRD_ID = "PRO2EULN2003";
@@ -188,7 +190,7 @@ DriverBoard::DriverBoard(byte brdtype, unsigned long startposition) : boardtype(
 
     this->stepdelay = MSPEED;
 
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32R3WEMOS || DRVBRD == WEMOSDRV8825H )
     pinMode(ENABLEPIN, OUTPUT);
     pinMode(DIRPIN, OUTPUT);
     pinMode(STEPPIN, OUTPUT);
@@ -304,7 +306,7 @@ int DriverBoard::getstepmode(void)
 void DriverBoard::setstepmode(int smode)
 {
   do {
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32R3WEMOS || DRVBRD == WEMOSDRV8825H)
     // for PRO2EDRV8825 stepmode is set in hardware jumpers, cannot set by software
     this->stepmode = DRV8825TEPMODE;       // defined at beginning of myBoards.h
 
@@ -380,7 +382,7 @@ void DriverBoard::setstepmode(int smode)
 
 void DriverBoard::enablemotor(void)
 {
-#if (DRVBRD == WEMOSDRV8825    || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS || DRVBRD == WEMOSDRV8825H)
   digitalWrite(ENABLEPIN, 0);
   delay(1);                     // boards require 1ms before stepping can occur
 #endif
@@ -388,7 +390,7 @@ void DriverBoard::enablemotor(void)
 
 void DriverBoard::releasemotor(void)
 {
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS || DRVBRD == WEMOSDRV8825H)
   digitalWrite(ENABLEPIN, 1);
 
 #elif (DRVBRD == PRO2EULN2003   || DRVBRD == PRO2ESP32ULN2003 \
@@ -415,7 +417,7 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
   }
 #endif
 
-#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+#if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS || DRVBRD == WEMOSDRV8825H)
   if ( reverse_dir == 1 )
   {
     digitalWrite(DIRPIN, !dir);         // set Direction of travel
@@ -451,7 +453,7 @@ void DriverBoard::movemotor(byte dir, bool updatefpos)
   }
 #endif // #if defined(ESP8266)
   digitalWrite(STEPPIN, 0);               // Step pin off
-#endif // #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS )
+#endif // #if (DRVBRD == WEMOSDRV8825 || DRVBRD == PRO2EDRV8825 || DRVBRD == PRO2ESP32DRV8825 || DRVBRD == PRO2ESP32R3WEMOS || DRVBRD == WEMOSDRV8825H)
 
 #if (DRVBRD == PRO2EULN2003     || DRVBRD == PRO2ESP32ULN2003  \
     || DRVBRD == PRO2EL298N     || DRVBRD == PRO2ESP32L298N \

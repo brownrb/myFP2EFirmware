@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------
-// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 145
+// TITLE: myFP2ESP FIRMWARE OFFICIAL RELEASE 147
 // ----------------------------------------------------------------------------------------------
 // myFP2ESP - Firmware for ESP8266 and ESP32 myFocuserPro2 WiFi Controllers
 // Supports Driver boards DRV8825, ULN2003, L298N, L9110S, L293DMINI, L293D
