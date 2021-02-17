@@ -10,6 +10,8 @@ managementserver.cpp
 myFP2ESP.ino
 1105
   WiFi.begin(mySSID, myPASSWORD); // attempt to start the WiFi
+1141
+    memcpy( myPASSWORD, myPASSWORD_1, (sizeof(myPASSWORD_1) / sizeof(myPASSWORD_1[0])) );
 1143
     WiFi.begin(mySSID, myPASSWORD);  // attempt to start the WiFi
 
