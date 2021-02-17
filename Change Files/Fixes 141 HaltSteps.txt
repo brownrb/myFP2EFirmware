@@ -1,0 +1,31 @@
+add alternative wifi network credentials
+
+remove halt steps - no longer needed
+
+
+myFP2ESP.ino
+1651
+          int haltsteps = driverboard->halt();            // halt returns stepcount
+	  // we no longer etc
+change to
+          driverboard->halt();                            // halt stepper motor
+
+myBoards.h
+212 Change to
+    void      halt(void);
+
+
+myBoards.cpp
+501
+void DriverBoard::halt(void)
+{
+#if defined(ESP8266)
+  myfp2Timer.detachInterrupt();
+#else
+  timerAlarmDisable(myfp2timer);      // stop alarm
+  timerDetachInterrupt(myfp2timer);   // detach interrupt
+  timerEnd(myfp2timer);               // end timer
+#endif
+  DebugPrint(F(">halt_alert "));
+  delay(10);
+}

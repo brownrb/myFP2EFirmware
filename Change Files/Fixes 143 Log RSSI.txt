@@ -1,0 +1,53 @@
+
+
+myFP2ESP.ino
+266
+long  rssi;                                  // network signal strength
+
+799 insert code
+long getrssi()
+{
+  long strength = WiFi.RSSI();
+  return strength;
+}
+
+
+1185
+#if defined(ACCESSPOINT) || defined(STATIONMODE)
+  rssi = getrssi();                          // get network strength
+  // Starting TCP Server
+
+comms.h
+29
+extern long rssi;
+36
+extern long getrssi(void);
+698
+    case 98:
+      {
+        long rssi = getrssi();
+        SendPaket('s', rssi);
+      }
+      break;
+
+
+ManagementServer.cpp
+53 delete
+extern long rssi;
+65
+extern long getrssi(void);
+
+2260
+void MANAGEMENT_rssi(void)
+{
+  long rssi = getrssi();
+  mserver.send(NORMALWEBPAGE, PLAINTEXTPAGETYPE, String(rssi) );
+}
+
+1905
+  else if ( mserver.argName(0) == "rssi" )
+  {
+    long rssi = getrssi();
+    jsonstr = "{ \"rssi\":" + String(rssi) + " }";
+    MANAGEMENT_sendjson(jsonstr);
+  } 
