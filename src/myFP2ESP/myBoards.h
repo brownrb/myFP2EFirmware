@@ -21,7 +21,7 @@
 // Uncomment only your board - ONLY ONE BOARD SHOULD BE UNCOMMENTED
 
 // ESP8266 Boards
-//#define DRVBRD WEMOSDRV8825H                    // driver definition for Holger
+#define DRVBRD WEMOSDRV8825H                    // driver definition for Holger
 //#define DRVBRD WEMOSDRV8825
 //#define DRVBRD PRO2EULN2003
 //#define DRVBRD PRO2EDRV8825
@@ -31,7 +31,7 @@
 //#define DRVBRD PRO2EL293DMINI
 //#define DRVBRD PRO2EL9110S
 // ESP32 Boards
-#define DRVBRD PRO2ESP32DRV8825
+//#define DRVBRD PRO2ESP32DRV8825
 //#define DRVBRD PRO2ESP32ULN2003
 //#define DRVBRD PRO2ESP32L298N
 //#define DRVBRD PRO2ESP32L293DMINI
@@ -81,6 +81,12 @@
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
 #define MSPEED        2000
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == WEMOSDRV8825 )
 #define TEMPPIN       4
@@ -90,6 +96,12 @@
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
 #define MSPEED        8000
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2EDRV8825 )           // 
 #define TEMPPIN       10
@@ -99,6 +111,12 @@
 #define STEPPIN       12                // D6 GPIO12
 #define ENABLEPIN     14                // D5 GPIO14
 #define MSPEED        8000
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2EULN2003 )           // DONE
 #define TEMPPIN       10
@@ -109,6 +127,12 @@
 #define IN3           14
 #define IN4           2
 #define MSPEED        17500
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2EL293DNEMA)          // DONE
 #define TEMPPIN       10                // Temperature somehow does not work now for this shield
@@ -119,6 +143,12 @@
 #define IN3           4                 // DIR A
 #define IN4           2                 // PWM_B 
 #define MSPEED        10500             // 8000=Crash, 10500=long move of 30000 at fast = 0k
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2EL293D28BYJ48)       // DONE 
 #define TEMPPIN       10
@@ -129,6 +159,12 @@
 #define IN3           4                 // DIR A
 #define IN4           2                 // PWM_B 
 #define MSPEED        17500
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2EL298N)              // DONE
 #define TEMPPIN       10
@@ -139,6 +175,12 @@
 #define IN3           14
 #define IN4           2
 #define MSPEED        16500             // 15000=Crash, 16500=long move of 30000 at fast = OK
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif  
 #if (DRVBRD == PRO2EL293DMINI)          // DONE
 #define TEMPPIN       10
@@ -149,6 +191,12 @@
 #define IN3           14
 #define IN4           2
 #define MSPEED        8000
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2EL9110S)             // DONE
 #define TEMPPIN       10
@@ -159,6 +207,12 @@
 #define IN3           14
 #define IN4           2
 #define MSPEED        8000
+#define INPBPIN       -1                // not supported
+#define OUTPBPIN      -1                // not supported
+#define INLEDPIN      -1                // not supported
+#define OUTLEDPIN     -1                // not supported
+#define IRPIN         -1                // not supported
+#define HPSWPIN       -1                // not supported
 #endif
 #if (DRVBRD == PRO2ESP32DRV8825 )       // DONE
 #define TEMPPIN       13
